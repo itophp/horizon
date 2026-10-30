@@ -14,8 +14,9 @@ func PermissionCatalog() []*genidentity.PermissionDefinition {
 	}
 	out = append(out,
 		&genidentity.PermissionDefinition{Code: "access:manage", Module: "access", Function: "policies", Action: "manage"},
-		&genidentity.PermissionDefinition{Code: "temporary:approve", Module: "access", Function: "temporary", Action: "approve"})
-	for resource, actions := range map[string][]string{"settings": {"read", "update", "publish", "history", "rollback", "export"}, "dictionaries": {"read", "create", "update", "delete", "publish", "import", "export", "history", "rollback", "use"}, "files": {"read", "create", "delete"}, "notifications": {"read", "retry", "test", "send"}} {
+		&genidentity.PermissionDefinition{Code: "temporary:approve", Module: "access", Function: "temporary", Action: "approve"},
+		&genidentity.PermissionDefinition{Code: "mcp:revoke", Module: "system", Function: "mcp", Action: "revoke", ScopeConfigurable: false, TemporaryEligible: false})
+	for resource, actions := range map[string][]string{"settings": {"read", "update", "publish", "history", "rollback", "export"}, "dictionaries": {"read", "create", "update", "delete", "publish", "import", "export", "history", "rollback", "use"}, "files": {"read", "create", "delete"}, "notifications": {"read", "retry", "test", "send"}, "assistant": {"use"}} {
 		for _, action := range actions {
 			out = append(out, &genidentity.PermissionDefinition{Code: resource + ":" + action, Module: "system", Function: resource, Action: action, ScopeConfigurable: resource != "settings" && (resource != "dictionaries" || action == "use"), TemporaryEligible: resource == "files" && action == "read" || resource == "dictionaries" && action == "use"})
 		}

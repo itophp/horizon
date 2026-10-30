@@ -1,4 +1,6 @@
 import { WebMcpProvider } from "@/features/webmcp/provider";
+import { AssistantProvider } from "@/features/assistant/provider";
+import { AssistantLauncher } from "@/features/assistant/widget";
 import { PublishedLogo, useBranding } from "@/features/governance/branding";
 import { NotificationBell } from "@/features/governance/notifications";
 import { useConfiguration } from "@/features/governance/runtime";
@@ -27,13 +29,11 @@ import {
   ChevronDown,
   LogOut,
   UserRound,
-  Bell,
   BookOpen,
   ArrowUpRight,
   X,
   Command,
   Settings2,
-  Layers3,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -83,7 +83,10 @@ export function RequireSession() {
       <WebMcpProvider
         key={`${auth.profile.tenantId}:${auth.profile.account.id}:${auth.profile.activeDepartmentId}:${auth.profile.csrfToken}`}
       >
-        <Outlet />
+        <AssistantProvider>
+          <Outlet />
+          <AssistantLauncher />
+        </AssistantProvider>
       </WebMcpProvider>
     </RuntimeProvider>
   );
@@ -120,62 +123,37 @@ export function AdminLayout() {
       to: "/",
       label: t("admin:nav.overview"),
       icon: LayoutDashboard,
-      permission: "",
+      permissions: [],
     },
     {
       to: "/accounts",
       label: t("admin:nav.accounts"),
       icon: Users,
-      permission: "accounts:read",
+      permissions: ["accounts:read"],
     },
     {
       to: "/organizations",
       label: t("admin:nav.organizations"),
       icon: Building2,
-      permission: "organizations:read",
-    },
-    {
-      to: "/departments",
-      label: t("admin:nav.departments"),
-      icon: Network,
-      permission: "departments:read",
-    },
-    {
-      to: "/roles",
-      label: t("admin:nav.roles"),
-      icon: ShieldCheck,
-      permission: "roles:read",
+      permissions: ["organizations:read", "departments:read"],
     },
     {
       to: "/permissions",
       label: t("admin:nav.permissions"),
       icon: KeyRound,
-      permission: "access:manage",
+      permissions: ["access:manage", "roles:read"],
     },
     {
-      to: "/notifications",
-      label: t("governance:notificationCenter"),
-      icon: Bell,
-      permission: "",
+      to: "/mcp",
+      label: t("mcp:hub.nav"),
+      icon: Command,
+      permissions: [],
     },
-    { to: "/webmcp", label: t("webmcp:title"), icon: Command, permission: "" },
     {
       to: "/settings",
       label: t("governance:settings"),
       icon: Settings2,
-      permission: "settings:read",
-    },
-    {
-      to: "/dictionaries",
-      label: t("governance:dictionaries"),
-      icon: BookOpen,
-      permission: "dictionaries:read",
-    },
-    {
-      to: "/attachments",
-      label: t("governance:files"),
-      icon: Layers3,
-      permission: "files:read",
+      permissions: ["settings:read", "dictionaries:read"],
     },
   ];
   const current =
@@ -183,9 +161,11 @@ export function AdminLayout() {
       ? { label: t("governance:preferences") }
       : location.pathname === "/notifications"
         ? { label: t("governance:notificationCenter") }
-        : location.pathname === "/temporary-access"
-          ? { label: t("admin:temporary.title") }
-          : (links.find((link) => link.to === location.pathname) ?? links[0]);
+        : location.pathname === "/notifications/compose"
+          ? { label: t("governance:composeNotification") }
+          : location.pathname === "/temporary-access"
+            ? { label: t("admin:temporary.title") }
+            : (links.find((link) => link.to === location.pathname) ?? links[0]);
   const matched = search.trim().toLowerCase();
   const results = matched
     ? [
@@ -305,8 +285,10 @@ export function AdminLayout() {
               .slice(1)
               .filter(
                 (link) =>
-                  !link.permission ||
-                  session.permissions.includes(link.permission),
+                  !link.permissions.length ||
+                  link.permissions.some((permission) =>
+                    session.permissions.includes(permission),
+                  ),
               )
               .map((link) => (
                 <NavLink
@@ -440,17 +422,13 @@ export function AdminLayout() {
             <div className="topbar-actions">
               <NavLink
                 to="/temporary-access"
-                className={`${buttonVariants({ variant: "outline", size: "sm" })} topbar-temporary-access`}
+                className={`${buttonVariants({ variant: "outline", size: "icon-sm" })} topbar-temporary-access`}
                 aria-label={t("admin:temporary.create")}
                 title={t("admin:temporary.create")}
               >
                 <KeyRound aria-hidden="true" />
-                <span>{t("admin:temporary.create")}</span>
               </NavLink>
               <NotificationBell />
-              <span className="topbar-workspace-label">
-                {t("admin:console")}
-              </span>
               <select
                 aria-label={t("common:language")}
                 value={i18n.resolvedLanguage}

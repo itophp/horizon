@@ -1,6 +1,15 @@
 // This inventory includes public routes even though the authenticated provider
 // deliberately disconnects before entering them.
 export const webMcpRoutes = [
+  { path: "/mcp", module: "development", permission: "", connected: true },
+  // Legacy entry points redirect to the unified page; kept so older links and
+  // agent instructions still resolve.
+  {
+    path: "/mcp-settings",
+    module: "development",
+    permission: "",
+    connected: true,
+  },
   { path: "/", module: "workspace", permission: "", connected: true },
   {
     path: "/accounts",
@@ -14,6 +23,8 @@ export const webMcpRoutes = [
     permission: "organizations:read",
     connected: true,
   },
+  // Departments, roles and dictionaries are merged into their parent pages and
+  // only kept as redirects for older links and agent instructions.
   {
     path: "/departments",
     module: "administration",
@@ -72,6 +83,18 @@ export const webMcpRoutes = [
     path: "/notifications",
     module: "governance",
     permission: "",
+    connected: true,
+  },
+  {
+    path: "/notifications/:id",
+    module: "governance",
+    permission: "",
+    connected: true,
+  },
+  {
+    path: "/notifications/compose",
+    module: "governance",
+    permission: "notifications:send",
     connected: true,
   },
   { path: "/webmcp", module: "development", permission: "", connected: true },

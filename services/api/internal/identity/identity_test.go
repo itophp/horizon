@@ -89,7 +89,7 @@ func TestGovernanceCatalogDoesNotMakeManagementTemporary(t *testing.T) {
 			}
 		}
 	}
-	if len(seen) != 41 {
+	if len(seen) != 43 {
 		t.Fatal("unexpected catalog", len(seen))
 	}
 }

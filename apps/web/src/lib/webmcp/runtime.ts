@@ -122,6 +122,9 @@ export class PageToolRegistry {
     }
   }
   async activate(context: ModelContext) {
+    // A second activation with the same context must not republish: the embedded
+    // assistant and the remote MCP client share this registry.
+    if (this.connected && this.context === context) return;
     this.context = context;
     this.connected = true;
     try {
@@ -138,6 +141,9 @@ export class PageToolRegistry {
     for (const controller of this.controllers.values()) controller.abort();
     this.controllers.clear();
     this.context = undefined;
+  }
+  isActive() {
+    return this.connected && this.context !== undefined;
   }
   list() {
     return [...this.tools.values()].map(

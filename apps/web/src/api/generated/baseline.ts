@@ -25,11 +25,15 @@ import type {
   AccessError,
   AccountRecord,
   AdminSnapshot,
+  AssistantReply,
+  AssistantStatus,
   ChangeEntry,
   ChangeRecord,
+  ChatRequestBody,
   CreateAccountRequestBody,
   CreateDepartmentRequestBody,
   CreateOrganizationRequestBody,
+  CreateRequestBody,
   CreateRoleRequestBody,
   DeliveryRecord,
   DepartmentRecord,
@@ -54,7 +58,11 @@ import type {
   InboxMessage,
   LoginRequestBody,
   LoginResult,
+  MCPAudit,
+  MCPToken,
+  MCPTokenCreated,
   ManagedFile,
+  McpManagementCapabilitiesParams,
   NotificationAudience,
   OrganizationRecord,
   OverrideRequestBody,
@@ -66,6 +74,7 @@ import type {
   ReauthenticateRequestBody,
   RequestTemporaryAccessRequestBody,
   ReviewTemporaryAccessRequestBody,
+  RevokeRequestBody,
   RoleRecord,
   RollbackRequestBody,
   ScheduleRequestBody,
@@ -4027,6 +4036,187 @@ export function useFilesContent<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export type mcpManagementAdminRevokeResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type mcpManagementAdminRevokeResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementAdminRevokeResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementAdminRevokeResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementAdminRevokeResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementAdminRevokeResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementAdminRevokeResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementAdminRevokeResponseSuccess =
+  mcpManagementAdminRevokeResponse204 & {
+    headers: Headers;
+  };
+export type mcpManagementAdminRevokeResponseError = (
+  | mcpManagementAdminRevokeResponse400
+  | mcpManagementAdminRevokeResponse401
+  | mcpManagementAdminRevokeResponse403
+  | mcpManagementAdminRevokeResponse404
+  | mcpManagementAdminRevokeResponse500
+  | mcpManagementAdminRevokeResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementAdminRevokeResponse =
+  | mcpManagementAdminRevokeResponseSuccess
+  | mcpManagementAdminRevokeResponseError;
+
+export const getMcpManagementAdminRevokeUrl = (id: number) => {
+  return `/api/admin/mcp/tokens/${id}`;
+};
+
+/**
+ * @summary admin_revoke mcp_management
+ */
+export const mcpManagementAdminRevoke = async (
+  id: number,
+  revokeRequestBody: RevokeRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementAdminRevokeResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<mcpManagementAdminRevokeResponse>(
+    getMcpManagementAdminRevokeUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(revokeRequestBody),
+    },
+  );
+};
+
+export const getMcpManagementAdminRevokeMutationKey = () =>
+  ["mcpManagementAdminRevoke"] as const;
+
+export const getMcpManagementAdminRevokeMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
+    TError,
+    McpManagementAdminRevokeMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
+  TError,
+  McpManagementAdminRevokeMutationVariables,
+  TContext
+> => {
+  const mutationKey = getMcpManagementAdminRevokeMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
+    McpManagementAdminRevokeMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return mcpManagementAdminRevoke(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type McpManagementAdminRevokeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementAdminRevoke>>
+>;
+export type McpManagementAdminRevokeMutationBody = RevokeRequestBody;
+export type McpManagementAdminRevokeMutationError = IAMProblem;
+export type McpManagementAdminRevokeMutationVariables = {
+  id: number;
+  data: RevokeRequestBody;
+};
+
+/**
+ * @summary admin_revoke mcp_management
+ */
+export const useMcpManagementAdminRevoke = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
+      TError,
+      McpManagementAdminRevokeMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
+  TError,
+  McpManagementAdminRevokeMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getMcpManagementAdminRevokeMutationOptions(options),
+    queryClient,
+  );
+};
 
 export type notificationsAudienceResponse200 = {
   data: NotificationAudience[];
@@ -8970,6 +9160,364 @@ export const useIdentityRevokeTemporaryAccess = <
   );
 };
 
+export type assistantChatResponse200 = {
+  data: AssistantReply;
+  status: 200;
+};
+
+export type assistantChatResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type assistantChatResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type assistantChatResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type assistantChatResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type assistantChatResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type assistantChatResponseSuccess = assistantChatResponse200 & {
+  headers: Headers;
+};
+export type assistantChatResponseError = (
+  | assistantChatResponse400
+  | assistantChatResponse401
+  | assistantChatResponse403
+  | assistantChatResponse500
+  | assistantChatResponse503
+) & {
+  headers: Headers;
+};
+
+export type assistantChatResponse =
+  assistantChatResponseSuccess | assistantChatResponseError;
+
+export const getAssistantChatUrl = () => {
+  return `/api/assistant/chat`;
+};
+
+/**
+ * Send the conversation and the currently registered page tools; returns assistant text plus any requested tool calls.
+ * @summary chat assistant
+ */
+export const assistantChat = async (
+  chatRequestBody: ChatRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<assistantChatResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<assistantChatResponse>(getAssistantChatUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(chatRequestBody),
+  });
+};
+
+export const getAssistantChatMutationKey = () => ["assistantChat"] as const;
+
+export const getAssistantChatMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assistantChat>>,
+    TError,
+    AssistantChatMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assistantChat>>,
+  TError,
+  AssistantChatMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAssistantChatMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assistantChat>>,
+    AssistantChatMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return assistantChat(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AssistantChatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assistantChat>>
+>;
+export type AssistantChatMutationBody = ChatRequestBody;
+export type AssistantChatMutationError = IAMProblem;
+export type AssistantChatMutationVariables = { data: ChatRequestBody };
+
+/**
+ * @summary chat assistant
+ */
+export const useAssistantChat = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof assistantChat>>,
+      TError,
+      AssistantChatMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof assistantChat>>,
+  TError,
+  AssistantChatMutationVariables,
+  TContext
+> => {
+  return useMutation(getAssistantChatMutationOptions(options), queryClient);
+};
+
+export type assistantStatusResponse200 = {
+  data: AssistantStatus;
+  status: 200;
+};
+
+export type assistantStatusResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type assistantStatusResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type assistantStatusResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type assistantStatusResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type assistantStatusResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type assistantStatusResponseSuccess = assistantStatusResponse200 & {
+  headers: Headers;
+};
+export type assistantStatusResponseError = (
+  | assistantStatusResponse400
+  | assistantStatusResponse401
+  | assistantStatusResponse403
+  | assistantStatusResponse500
+  | assistantStatusResponse503
+) & {
+  headers: Headers;
+};
+
+export type assistantStatusResponse =
+  assistantStatusResponseSuccess | assistantStatusResponseError;
+
+export const getAssistantStatusUrl = () => {
+  return `/api/assistant/status`;
+};
+
+/**
+ * Report whether the assistant is enabled for this workspace and which model is configured.
+ * @summary status assistant
+ */
+export const assistantStatus = async (
+  options?: Parameters<typeof request>[1],
+): Promise<assistantStatusResponse> => {
+  return request<assistantStatusResponse>(getAssistantStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAssistantStatusQueryKey = () => {
+  return [`/api/assistant/status`] as const;
+};
+
+export const getAssistantStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof assistantStatus>>,
+  TError = IAMProblem,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof assistantStatus>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof request>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAssistantStatusQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof assistantStatus>>> = ({
+    signal,
+  }) => assistantStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof assistantStatus>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AssistantStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof assistantStatus>>
+>;
+export type AssistantStatusQueryError = IAMProblem;
+
+export function useAssistantStatus<
+  TData = Awaited<ReturnType<typeof assistantStatus>>,
+  TError = IAMProblem,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantStatus>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof assistantStatus>>,
+          TError,
+          Awaited<ReturnType<typeof assistantStatus>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAssistantStatus<
+  TData = Awaited<ReturnType<typeof assistantStatus>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantStatus>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof assistantStatus>>,
+          TError,
+          Awaited<ReturnType<typeof assistantStatus>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAssistantStatus<
+  TData = Awaited<ReturnType<typeof assistantStatus>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantStatus>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary status assistant
+ */
+
+export function useAssistantStatus<
+  TData = Awaited<ReturnType<typeof assistantStatus>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantStatus>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAssistantStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export type settingsLogoResponse200 = {
   data: FileContent;
   status: 200;
@@ -10089,6 +10637,1180 @@ export const useIdentityLogout = <TError = IAMProblem, TContext = unknown>(
   TContext
 > => {
   return useMutation(getIdentityLogoutMutationOptions(options), queryClient);
+};
+
+export type mcpManagementAuditResponse200 = {
+  data: MCPAudit[];
+  status: 200;
+};
+
+export type mcpManagementAuditResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementAuditResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementAuditResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementAuditResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementAuditResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementAuditResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementAuditResponseSuccess =
+  mcpManagementAuditResponse200 & {
+    headers: Headers;
+  };
+export type mcpManagementAuditResponseError = (
+  | mcpManagementAuditResponse400
+  | mcpManagementAuditResponse401
+  | mcpManagementAuditResponse403
+  | mcpManagementAuditResponse404
+  | mcpManagementAuditResponse500
+  | mcpManagementAuditResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementAuditResponse =
+  mcpManagementAuditResponseSuccess | mcpManagementAuditResponseError;
+
+export const getMcpManagementAuditUrl = () => {
+  return `/api/auth/mcp/audit`;
+};
+
+/**
+ * @summary audit mcp_management
+ */
+export const mcpManagementAudit = async (
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementAuditResponse> => {
+  return request<mcpManagementAuditResponse>(getMcpManagementAuditUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getMcpManagementAuditQueryKey = () => {
+  return [`/api/auth/mcp/audit`] as const;
+};
+
+export const getMcpManagementAuditQueryOptions = <
+  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
+  TError = IAMProblem,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof mcpManagementAudit>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof request>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getMcpManagementAuditQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof mcpManagementAudit>>
+  > = ({ signal }) => mcpManagementAudit({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof mcpManagementAudit>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type McpManagementAuditQueryResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementAudit>>
+>;
+export type McpManagementAuditQueryError = IAMProblem;
+
+export function useMcpManagementAudit<
+  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
+  TError = IAMProblem,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementAudit>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mcpManagementAudit>>,
+          TError,
+          Awaited<ReturnType<typeof mcpManagementAudit>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useMcpManagementAudit<
+  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementAudit>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mcpManagementAudit>>,
+          TError,
+          Awaited<ReturnType<typeof mcpManagementAudit>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useMcpManagementAudit<
+  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementAudit>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary audit mcp_management
+ */
+
+export function useMcpManagementAudit<
+  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementAudit>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getMcpManagementAuditQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type mcpManagementCapabilitiesResponse200 = {
+  data: string[];
+  status: 200;
+};
+
+export type mcpManagementCapabilitiesResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementCapabilitiesResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementCapabilitiesResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementCapabilitiesResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementCapabilitiesResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementCapabilitiesResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementCapabilitiesResponseSuccess =
+  mcpManagementCapabilitiesResponse200 & {
+    headers: Headers;
+  };
+export type mcpManagementCapabilitiesResponseError = (
+  | mcpManagementCapabilitiesResponse400
+  | mcpManagementCapabilitiesResponse401
+  | mcpManagementCapabilitiesResponse403
+  | mcpManagementCapabilitiesResponse404
+  | mcpManagementCapabilitiesResponse500
+  | mcpManagementCapabilitiesResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementCapabilitiesResponse =
+  | mcpManagementCapabilitiesResponseSuccess
+  | mcpManagementCapabilitiesResponseError;
+
+export const getMcpManagementCapabilitiesUrl = (
+  params?: McpManagementCapabilitiesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/auth/mcp/capabilities?${stringifiedParams}`
+    : `/api/auth/mcp/capabilities`;
+};
+
+/**
+ * @summary capabilities mcp_management
+ */
+export const mcpManagementCapabilities = async (
+  params?: McpManagementCapabilitiesParams,
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementCapabilitiesResponse> => {
+  return request<mcpManagementCapabilitiesResponse>(
+    getMcpManagementCapabilitiesUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getMcpManagementCapabilitiesQueryKey = (
+  params?: McpManagementCapabilitiesParams,
+) => {
+  return [`/api/auth/mcp/capabilities`, ...(params ? [params] : [])] as const;
+};
+
+export const getMcpManagementCapabilitiesQueryOptions = <
+  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+  TError = IAMProblem,
+>(
+  params?: McpManagementCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getMcpManagementCapabilitiesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof mcpManagementCapabilities>>
+  > = ({ signal }) =>
+    mcpManagementCapabilities(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type McpManagementCapabilitiesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementCapabilities>>
+>;
+export type McpManagementCapabilitiesQueryError = IAMProblem;
+
+export function useMcpManagementCapabilities<
+  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+  TError = IAMProblem,
+>(
+  params: undefined | McpManagementCapabilitiesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+          TError,
+          Awaited<ReturnType<typeof mcpManagementCapabilities>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useMcpManagementCapabilities<
+  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+  TError = IAMProblem,
+>(
+  params?: McpManagementCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+          TError,
+          Awaited<ReturnType<typeof mcpManagementCapabilities>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useMcpManagementCapabilities<
+  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+  TError = IAMProblem,
+>(
+  params?: McpManagementCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary capabilities mcp_management
+ */
+
+export function useMcpManagementCapabilities<
+  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+  TError = IAMProblem,
+>(
+  params?: McpManagementCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getMcpManagementCapabilitiesQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type mcpManagementListResponse200 = {
+  data: MCPToken[];
+  status: 200;
+};
+
+export type mcpManagementListResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementListResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementListResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementListResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementListResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementListResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementListResponseSuccess = mcpManagementListResponse200 & {
+  headers: Headers;
+};
+export type mcpManagementListResponseError = (
+  | mcpManagementListResponse400
+  | mcpManagementListResponse401
+  | mcpManagementListResponse403
+  | mcpManagementListResponse404
+  | mcpManagementListResponse500
+  | mcpManagementListResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementListResponse =
+  mcpManagementListResponseSuccess | mcpManagementListResponseError;
+
+export const getMcpManagementListUrl = () => {
+  return `/api/auth/mcp/tokens`;
+};
+
+/**
+ * @summary list mcp_management
+ */
+export const mcpManagementList = async (
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementListResponse> => {
+  return request<mcpManagementListResponse>(getMcpManagementListUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getMcpManagementListQueryKey = () => {
+  return [`/api/auth/mcp/tokens`] as const;
+};
+
+export const getMcpManagementListQueryOptions = <
+  TData = Awaited<ReturnType<typeof mcpManagementList>>,
+  TError = IAMProblem,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof mcpManagementList>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof request>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getMcpManagementListQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof mcpManagementList>>
+  > = ({ signal }) => mcpManagementList({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof mcpManagementList>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type McpManagementListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementList>>
+>;
+export type McpManagementListQueryError = IAMProblem;
+
+export function useMcpManagementList<
+  TData = Awaited<ReturnType<typeof mcpManagementList>>,
+  TError = IAMProblem,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementList>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mcpManagementList>>,
+          TError,
+          Awaited<ReturnType<typeof mcpManagementList>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useMcpManagementList<
+  TData = Awaited<ReturnType<typeof mcpManagementList>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementList>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mcpManagementList>>,
+          TError,
+          Awaited<ReturnType<typeof mcpManagementList>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useMcpManagementList<
+  TData = Awaited<ReturnType<typeof mcpManagementList>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementList>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary list mcp_management
+ */
+
+export function useMcpManagementList<
+  TData = Awaited<ReturnType<typeof mcpManagementList>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof mcpManagementList>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getMcpManagementListQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type mcpManagementCreateResponse201 = {
+  data: MCPTokenCreated;
+  status: 201;
+};
+
+export type mcpManagementCreateResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementCreateResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementCreateResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementCreateResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementCreateResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementCreateResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementCreateResponseSuccess =
+  mcpManagementCreateResponse201 & {
+    headers: Headers;
+  };
+export type mcpManagementCreateResponseError = (
+  | mcpManagementCreateResponse400
+  | mcpManagementCreateResponse401
+  | mcpManagementCreateResponse403
+  | mcpManagementCreateResponse404
+  | mcpManagementCreateResponse500
+  | mcpManagementCreateResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementCreateResponse =
+  mcpManagementCreateResponseSuccess | mcpManagementCreateResponseError;
+
+export const getMcpManagementCreateUrl = () => {
+  return `/api/auth/mcp/tokens`;
+};
+
+/**
+ * @summary create mcp_management
+ */
+export const mcpManagementCreate = async (
+  createRequestBody: CreateRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementCreateResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<mcpManagementCreateResponse>(getMcpManagementCreateUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(createRequestBody),
+  });
+};
+
+export const getMcpManagementCreateMutationKey = () =>
+  ["mcpManagementCreate"] as const;
+
+export const getMcpManagementCreateMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mcpManagementCreate>>,
+    TError,
+    McpManagementCreateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mcpManagementCreate>>,
+  TError,
+  McpManagementCreateMutationVariables,
+  TContext
+> => {
+  const mutationKey = getMcpManagementCreateMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mcpManagementCreate>>,
+    McpManagementCreateMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return mcpManagementCreate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type McpManagementCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementCreate>>
+>;
+export type McpManagementCreateMutationBody = CreateRequestBody;
+export type McpManagementCreateMutationError = IAMProblem;
+export type McpManagementCreateMutationVariables = { data: CreateRequestBody };
+
+/**
+ * @summary create mcp_management
+ */
+export const useMcpManagementCreate = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof mcpManagementCreate>>,
+      TError,
+      McpManagementCreateMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof mcpManagementCreate>>,
+  TError,
+  McpManagementCreateMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getMcpManagementCreateMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type mcpManagementRevokeResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type mcpManagementRevokeResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementRevokeResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementRevokeResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementRevokeResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementRevokeResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementRevokeResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementRevokeResponseSuccess =
+  mcpManagementRevokeResponse204 & {
+    headers: Headers;
+  };
+export type mcpManagementRevokeResponseError = (
+  | mcpManagementRevokeResponse400
+  | mcpManagementRevokeResponse401
+  | mcpManagementRevokeResponse403
+  | mcpManagementRevokeResponse404
+  | mcpManagementRevokeResponse500
+  | mcpManagementRevokeResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementRevokeResponse =
+  mcpManagementRevokeResponseSuccess | mcpManagementRevokeResponseError;
+
+export const getMcpManagementRevokeUrl = (id: number) => {
+  return `/api/auth/mcp/tokens/${id}`;
+};
+
+/**
+ * @summary revoke mcp_management
+ */
+export const mcpManagementRevoke = async (
+  id: number,
+  revokeRequestBody: RevokeRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementRevokeResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<mcpManagementRevokeResponse>(getMcpManagementRevokeUrl(id), {
+    ...options,
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(revokeRequestBody),
+  });
+};
+
+export const getMcpManagementRevokeMutationKey = () =>
+  ["mcpManagementRevoke"] as const;
+
+export const getMcpManagementRevokeMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mcpManagementRevoke>>,
+    TError,
+    McpManagementRevokeMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mcpManagementRevoke>>,
+  TError,
+  McpManagementRevokeMutationVariables,
+  TContext
+> => {
+  const mutationKey = getMcpManagementRevokeMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mcpManagementRevoke>>,
+    McpManagementRevokeMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return mcpManagementRevoke(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type McpManagementRevokeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementRevoke>>
+>;
+export type McpManagementRevokeMutationBody = RevokeRequestBody;
+export type McpManagementRevokeMutationError = IAMProblem;
+export type McpManagementRevokeMutationVariables = {
+  id: number;
+  data: RevokeRequestBody;
+};
+
+/**
+ * @summary revoke mcp_management
+ */
+export const useMcpManagementRevoke = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof mcpManagementRevoke>>,
+      TError,
+      McpManagementRevokeMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof mcpManagementRevoke>>,
+  TError,
+  McpManagementRevokeMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getMcpManagementRevokeMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type mcpManagementRotateResponse201 = {
+  data: MCPTokenCreated;
+  status: 201;
+};
+
+export type mcpManagementRotateResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type mcpManagementRotateResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type mcpManagementRotateResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type mcpManagementRotateResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type mcpManagementRotateResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type mcpManagementRotateResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type mcpManagementRotateResponseSuccess =
+  mcpManagementRotateResponse201 & {
+    headers: Headers;
+  };
+export type mcpManagementRotateResponseError = (
+  | mcpManagementRotateResponse400
+  | mcpManagementRotateResponse401
+  | mcpManagementRotateResponse403
+  | mcpManagementRotateResponse404
+  | mcpManagementRotateResponse500
+  | mcpManagementRotateResponse503
+) & {
+  headers: Headers;
+};
+
+export type mcpManagementRotateResponse =
+  mcpManagementRotateResponseSuccess | mcpManagementRotateResponseError;
+
+export const getMcpManagementRotateUrl = (id: number) => {
+  return `/api/auth/mcp/tokens/${id}/rotate`;
+};
+
+/**
+ * @summary rotate mcp_management
+ */
+export const mcpManagementRotate = async (
+  id: number,
+  revokeRequestBody: RevokeRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<mcpManagementRotateResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<mcpManagementRotateResponse>(getMcpManagementRotateUrl(id), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(revokeRequestBody),
+  });
+};
+
+export const getMcpManagementRotateMutationKey = () =>
+  ["mcpManagementRotate"] as const;
+
+export const getMcpManagementRotateMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mcpManagementRotate>>,
+    TError,
+    McpManagementRotateMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mcpManagementRotate>>,
+  TError,
+  McpManagementRotateMutationVariables,
+  TContext
+> => {
+  const mutationKey = getMcpManagementRotateMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mcpManagementRotate>>,
+    McpManagementRotateMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return mcpManagementRotate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type McpManagementRotateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mcpManagementRotate>>
+>;
+export type McpManagementRotateMutationBody = RevokeRequestBody;
+export type McpManagementRotateMutationError = IAMProblem;
+export type McpManagementRotateMutationVariables = {
+  id: number;
+  data: RevokeRequestBody;
+};
+
+/**
+ * @summary rotate mcp_management
+ */
+export const useMcpManagementRotate = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof mcpManagementRotate>>,
+      TError,
+      McpManagementRotateMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof mcpManagementRotate>>,
+  TError,
+  McpManagementRotateMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getMcpManagementRotateMutationOptions(options),
+    queryClient,
+  );
 };
 
 export type identityMeResponse200 = {

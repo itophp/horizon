@@ -1,0 +1,24 @@
+{
+  "title": "工作区助手",
+  "open": "打开助手",
+  "close": "关闭助手",
+  "minimize": "收起助手",
+  "clear": "清空对话",
+  "subtitle": "{{model}}",
+  "subtitleUnknown": "模型未配置",
+  "emptyTitle": "问问这个工作区",
+  "emptyHint": "助手可以读取当前路由，并调用你有权使用的页面工具；业务数据仍需经过原有权限校验。",
+  "toolCount": "可用页面工具 {{count}} 个",
+  "toolRunning": "调用 {{name}}",
+  "toolResult": "工具返回",
+  "thinking": "正在思考…",
+  "placeholder": "问问当前页面…",
+  "send": "发送",
+  "stop": "停止",
+  "notConfigured": "助手已开启，但缺少模型凭证。需要管理员在系统设置的「AI 助手」分组中补全模型地址与 Token 后才能回答。",
+  "errors": {
+    "failed": "请求失败，请重试。",
+    "forbidden": "你没有使用助手的权限。",
+    "unavailable": "模型服务不可用或未配置，请稍后再试。"
+  }
+}

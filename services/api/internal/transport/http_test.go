@@ -18,6 +18,22 @@ type denyAuthorizer struct{}
 func (denyAuthorizer) Allow(auth.Principal, string, string) (bool, error) {
 	return false, errors.New("policy engine unavailable")
 }
+func TestSessionGuardCoversEveryAuthenticatedSurface(t *testing.T) {
+	for path, guarded := range map[string]bool{
+		"/api/admin/settings":     true,
+		"/api/auth/configuration": true,
+		"/api/assistant/status":   true,
+		"/api/assistant/chat":     true,
+		"/api/health":             false,
+		"/api/demo/records":       false,
+		"/api/assistant":          false,
+	} {
+		if got := guardedPath(path); got != guarded {
+			t.Fatalf("%s guarded = %v, want %v", path, got, guarded)
+		}
+	}
+}
+
 func TestHTTP(t *testing.T) {
 	e, err := authorization.New()
 	if err != nil {

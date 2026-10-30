@@ -19,7 +19,9 @@ export async function request<T>(
     url.startsWith("/api/admin/files") ||
     url.startsWith("/api/admin/dictionaries")
       ? 120000
-      : 10000;
+      : url.startsWith("/api/assistant/chat")
+        ? 120000
+        : 10000;
   const signal = options.signal
     ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)])
     : AbortSignal.timeout(timeout);

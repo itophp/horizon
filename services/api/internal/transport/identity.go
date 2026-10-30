@@ -72,11 +72,20 @@ func identityStatus(err error) int {
 	}
 	return 500
 }
+
+// guardedPath lists the session-scoped API surfaces. The guard attaches the
+// trusted Principal and enforces Origin/CSRF for unsafe methods; a path outside
+// these prefixes reaches its handler without an authenticated principal.
+func guardedPath(path string) bool {
+	return strings.HasPrefix(path, "/api/admin/") ||
+		strings.HasPrefix(path, "/api/auth/") ||
+		strings.HasPrefix(path, "/api/assistant/")
+}
 func mountIdentity(mux goahttp.Muxer, service *identity.Service, onError func(context.Context, http.ResponseWriter, error)) func(http.ResponseWriter, *http.Request) (*http.Request, bool) {
 	identityhttp.Mount(mux, identityhttp.New(genidentity.NewEndpoints(service), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, onError, nil))
 	limiter := &loginLimiter{buckets: map[string]loginBucket{}}
 	return func(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
-		if !strings.HasPrefix(r.URL.Path, "/api/admin/") && !strings.HasPrefix(r.URL.Path, "/api/auth/") {
+		if !guardedPath(r.URL.Path) {
 			return r, true
 		}
 		unsafe := r.Method != "GET" && r.Method != "HEAD" && r.Method != "OPTIONS"

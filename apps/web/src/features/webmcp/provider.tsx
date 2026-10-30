@@ -39,6 +39,7 @@ class WebMcpConnection {
   private sessionId = "";
   private removeToolSubscription?: () => void;
   private notificationPending = false;
+  private localReady = false;
   port = defaultWebMcpPort;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -61,6 +62,23 @@ class WebMcpConnection {
       this.update("failed");
     };
   }
+  /**
+   * Publish page tools to the browser builtin WebMCP context so the embedded
+   * assistant can read the same registry as the remote MCP client. Callers must be
+   * an explicit capability: a paired remote connection, or an enabled assistant.
+   * Revocation still withdraws every page tool.
+   */
+  async ensureLocalTools() {
+    if (this.localReady && this.registry.isActive()) return;
+    const { initializeBuiltinWebMCP } = await import("@opentiny/next-sdk/core");
+    initializeBuiltinWebMCP();
+    const context = (document as Document & { modelContext?: ModelContext })
+      .modelContext;
+    if (!context) throw new Error("webmcp_unavailable");
+    await this.registry.activate(context);
+    if (!this.registry.isActive()) throw new Error("webmcp_unavailable");
+    this.localReady = true;
+  }
   async connect(port: number, token: string) {
     endpoint(port);
     if (!/^[a-f0-9]{64}$/.test(token)) throw new Error("invalid_pairing_key");
@@ -69,14 +87,9 @@ class WebMcpConnection {
     this.update("connecting");
     let candidate: { close: () => Promise<void> } | undefined;
     try {
-      const { initializeBuiltinWebMCP, WebMcpClient } =
-        await import("@opentiny/next-sdk/core");
+      const { WebMcpClient } = await import("@opentiny/next-sdk/core");
       if (generation !== this.generation) return;
-      initializeBuiltinWebMCP();
-      const context = (document as Document & { modelContext?: ModelContext })
-        .modelContext;
-      if (!context) throw new Error("webmcp_unavailable");
-      await this.registry.activate(context);
+      await this.ensureLocalTools();
       if (generation !== this.generation) return;
       const client = new WebMcpClient();
       candidate = client;
@@ -128,10 +141,17 @@ class WebMcpConnection {
     ++this.generation;
     this.removeToolSubscription?.();
     this.removeToolSubscription = undefined;
+    // Signing out, a 401 or a failed pairing withdraws every page tool; the
+    // assistant must request publication again through ensureLocalTools.
+    this.localReady = false;
     this.registry.deactivate();
     this.token = "";
     this.sessionId = "";
     this.update(status);
+  }
+  shutdown() {
+    this.localReady = false;
+    this.registry.deactivate();
   }
   async disconnect() {
     const client = this.client;
@@ -167,6 +187,7 @@ export function WebMcpProvider({ children }: PropsWithChildren) {
           "WebMCP transport cleanup failed; page tools are disabled.",
         );
       });
+      connection.shutdown();
     };
   }, [connection]);
   return (

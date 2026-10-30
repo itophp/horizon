@@ -81,6 +81,13 @@ func buildRegistry() []Definition {
 	add("storage.driver", "storage", "enum", `"local"`, workspace, true, false, false, 0, 0, "local")
 	add("storage.directory", "storage", "string", `"uploads"`, workspace, true, false, false, 1, 200)
 	add("storage.baseUrl", "storage", "string", `""`, workspace, true, false, false, 0, 500)
+	// Embedded assistant: the endpoint, model and credential are deployment settings,
+	// so they stay workspace scoped and the credential is sealed at rest.
+	assistantScope := []string{"workspace"}
+	add("assistant.enabled", "assistant", "boolean", `false`, assistantScope, false, false, true, 0, 0)
+	add("assistant.baseUrl", "assistant", "string", `"https://open.bigmodel.cn/api/v1"`, assistantScope, false, false, true, 8, 500)
+	add("assistant.model", "assistant", "string", `"glm-5.3-flash"`, assistantScope, false, false, true, 1, 100)
+	add("assistant.token", "assistant", "secret", `""`, assistantScope, true, true, true, 0, 500)
 	limits := []string{"workspace"}
 	add("files.maxBytes", "files", "integer", `20971520`, limits, false, false, false, 1024, 20971520)
 	add("files.logoMaxBytes", "files", "integer", `2097152`, limits, false, false, false, 1024, 2097152)
@@ -141,6 +148,18 @@ func (d Definition) Validate(raw string) error {
 		if d.Key == "storage.baseUrl" && v != "" {
 			u, err := url.Parse(v)
 			if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Scheme != "https" && u.Scheme != "http") {
+				return Problem("invalid")
+			}
+		}
+		if d.Key == "assistant.baseUrl" {
+			u, err := url.Parse(v)
+			if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" || strings.ContainsAny(v, "\r\n\x00\t ") {
+				return Problem("invalid")
+			}
+			// The server calls this endpoint with its own credential, so only TLS
+			// endpoints are reachable; plain HTTP stays limited to loopback testing.
+			loopback := u.Hostname() == "127.0.0.1" || u.Hostname() == "localhost" || u.Hostname() == "::1"
+			if u.Scheme != "https" && !(u.Scheme == "http" && loopback) {
 				return Problem("invalid")
 			}
 		}

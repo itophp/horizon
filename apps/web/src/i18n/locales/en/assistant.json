@@ -1,0 +1,24 @@
+{
+  "title": "Workspace assistant",
+  "open": "Open assistant",
+  "close": "Close assistant",
+  "minimize": "Minimize assistant",
+  "clear": "Clear conversation",
+  "subtitle": "{{model}}",
+  "subtitleUnknown": "Model not configured",
+  "emptyTitle": "Ask about this workspace",
+  "emptyHint": "The assistant can read the current route and run the page tools you are allowed to use. Business records still require your existing permissions.",
+  "toolCount": "{{count}} page tools available",
+  "toolRunning": "Requested {{name}}",
+  "toolResult": "Tool result",
+  "thinking": "Thinking…",
+  "placeholder": "Ask about this page…",
+  "send": "Send",
+  "stop": "Stop",
+  "notConfigured": "The assistant is switched on but the model credential is missing. An administrator must complete the assistant settings before it can answer.",
+  "errors": {
+    "failed": "The request failed. Try again.",
+    "forbidden": "You are not allowed to use the assistant.",
+    "unavailable": "The model service is unavailable or not configured. Try again later."
+  }
+}

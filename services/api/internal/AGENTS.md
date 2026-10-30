@@ -24,3 +24,10 @@
 人工通知按 [ADR 008](../../../docs/decisions/008-notification-center.md)：notifications:send 正式权限，组织成员全部范围校验和账号去重；announcement/快照/附件/投递同事务且幂等。附件通过 recipient+有效归属+通知文件绑定 SQL 读取，不能套用全局 files:read 放大收件人权限；旧临时权限事件不伪造或替换。
 
 设置排期按 [ADR 010](../../../docs/decisions/010-settings-schedules.md)：排期时正式 publish/ALL，敏感证明绑定 settings.schedule；到期重建原部门 Principal 并重查正式权限、草稿摘要、版本及依赖。共用发布事务并与完成状态原子提交，保存失败码。不能用旧会话/临时权限或后台特权绕过授权；读取验证共用事务，避免跨池/单连接死锁。
+
+
+账号级远程 MCP 见 [需求与实现方案](../../../docs/mcp-service-plan.md)（首阶段开发实现，验收状态见交付记录）。开发使用 baseline-mcp-development，功能变动主动确认暴露范围；账号 Token 与本机 WebMCP 配对分离。实施复用可信 Principal、Casbin、SQL 范围及字段投影，Token 固化工具集合与当前正式权限取交集，撤销/禁用实时生效，秘密仅一次显示且不进入日志/配置包。实现入口为 internal/mcp，协议、数据库和客户端验收须分别记录。
+
+账号远程 MCP 按 [ADR 011](../../../docs/decisions/011-remote-mcp.md)：工具复用原授权用例，凭证绑定本人/部门和固化集合；敏感管理操作重新认证，身份变更撤销与延迟归属检查、客户端配对/备份及协议专项测试同步维护。禁止将安装状态当连接成功。
+
+内嵌助手按 [ADR 012](../../../docs/decisions/012-embedded-assistant.md)：使用能力为正式 `assistant:use`（不在旧 viewer 种子内），模型/端点/Token 是工作空间设置（token 密封，发布需敏感项重新认证），只在 `internal/assistant` 解析并调用 OpenAI Response 端点。DTO 不返回 endpoint、Token 或密文；上游错误体不转发；baseUrl 仅 TLS（回环 HTTP 仅供本地），拒绝 userinfo/查询串/片段。浏览器只提交会话与工具定义，工具在页面执行并沿用注册期权限过滤；退出/401/切换部门撤销页面工具注册。
