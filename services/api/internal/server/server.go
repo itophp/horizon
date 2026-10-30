@@ -9,6 +9,7 @@ import (
 	"baseline/services/api/internal/files"
 	"baseline/services/api/internal/governance"
 	"baseline/services/api/internal/identity"
+	"baseline/services/api/internal/mcp"
 	"baseline/services/api/internal/notifications"
 	"baseline/services/api/internal/repository"
 	"baseline/services/api/internal/repository/dbgen"
@@ -50,6 +51,7 @@ func Run(ctx context.Context, c config.Config) error {
 	iam.Policies = core
 	if identityPool != nil {
 		fileService := files.New(core)
+		mcpService := mcp.New(identityPool, iam)
 		worker := notifications.New(core)
 		go worker.Run(workerCtx)
 		go settings.New(core).RunScheduled(workerCtx)
@@ -61,6 +63,9 @@ func Run(ctx context.Context, c config.Config) error {
 				case <-workerCtx.Done():
 					return
 				case <-timer.C:
+					if e := mcpService.Purge(workerCtx); e != nil {
+						slog.Error("MCP retention purge failed", "code", "internal")
+					}
 					if e := fileService.Purge(ctx); e != nil {
 						slog.Error("file purge failed", "code", governance.Code(e))
 					}

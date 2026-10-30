@@ -1,5 +1,33 @@
 export const defaultWebMcpPort = 18793;
 export type AgentClient = "codex" | "workbuddy";
+export type LocalConnection = { port: number; token: string };
+function isLocalConnection(value: unknown): value is LocalConnection {
+  if (typeof value !== "object" || value === null) return false;
+  const saved = value as Record<string, unknown>;
+  return (
+    typeof saved.port === "number" &&
+    Number.isInteger(saved.port) &&
+    saved.port >= 1024 &&
+    saved.port <= 65535 &&
+    typeof saved.token === "string" &&
+    /^[a-f0-9]{64}$/.test(saved.token)
+  );
+}
+// Development-only helper served by the Vite dev server; it returns nothing in
+// builds, so callers fall back to manual entry.
+export async function fetchLocalConnection(): Promise<LocalConnection | null> {
+  try {
+    const response = await fetch("/__webmcp/connection", {
+      headers: { Accept: "application/json" },
+      credentials: "omit",
+    });
+    if (!response.ok) return null;
+    const body: unknown = await response.json();
+    return isLocalConnection(body) ? body : null;
+  } catch {
+    return null;
+  }
+}
 export function endpoint(port: number) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535)
     throw new Error("invalid_port");

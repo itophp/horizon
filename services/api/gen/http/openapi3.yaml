@@ -4222,6 +4222,84 @@ paths:
                                 code: Architecto temporibus atque.
             security:
                 - browser_session_header_Cookie: []
+    /api/admin/mcp/tokens/{id}:
+        delete:
+            tags:
+                - mcp_management
+            summary: admin_revoke mcp_management
+            operationId: mcp_management#admin_revoke
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    example: 2521078975200357226
+                    format: int64
+                    minimum: 1
+                  example: 2521078975200357226
+            requestBody:
+                description: Request body for admin_revoke.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevokeRequestBody'
+                        example:
+                            password: i
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Omnis sint distinctio voluptatum quae ut nesciunt.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Incidunt perspiciatis porro asperiores.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quas velit magnam amet.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Corporis cum blanditiis non nulla harum quia.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Enim dignissimos consequuntur qui.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Libero cumque facere.
+            security:
+                - browser_session_header_Cookie: []
     /api/admin/notifications/audience:
         get:
             tags:
@@ -9014,6 +9092,196 @@ paths:
                                 code: Accusantium neque fugiat veniam ab.
             security:
                 - browser_session_header_Cookie: []
+    /api/assistant/chat:
+        post:
+            tags:
+                - assistant
+            summary: chat assistant
+            description: Send the conversation and the currently registered page tools; returns assistant text plus any requested tool calls.
+            operationId: assistant#chat
+            requestBody:
+                description: Request body for chat.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChatRequestBody'
+                        example:
+                            messages:
+                                - content: gbw
+                                  role: user
+                                  toolCallId: lkf
+                                  toolCalls:
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                - content: gbw
+                                  role: user
+                                  toolCallId: lkf
+                                  toolCalls:
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                - content: gbw
+                                  role: user
+                                  toolCallId: lkf
+                                  toolCalls:
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                            tools:
+                                - description: niq
+                                  name: ni
+                                  parameters: Voluptatem omnis sapiente eos non.
+                                - description: niq
+                                  name: ni
+                                  parameters: Voluptatem omnis sapiente eos non.
+                                - description: niq
+                                  name: ni
+                                  parameters: Voluptatem omnis sapiente eos non.
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssistantReply'
+                            example:
+                                content: Sed libero placeat ipsa quasi voluptas.
+                                model: Assumenda quia facilis magnam.
+                                toolCalls:
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                                    - arguments: Impedit qui rerum minus non ipsa optio.
+                                      id: Eveniet voluptatem.
+                                      name: Et qui sit et sint reiciendis.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Sunt aperiam dolores autem id ducimus.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Perferendis voluptatem distinctio dicta voluptatem eius porro.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Molestias dolorem.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Dolore ut.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Nam explicabo eveniet.
+            security:
+                - browser_session_header_Cookie: []
+    /api/assistant/status:
+        get:
+            tags:
+                - assistant
+            summary: status assistant
+            description: Report whether the assistant is enabled for this workspace and which model is configured.
+            operationId: assistant#status
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssistantStatus'
+                            example:
+                                configured: false
+                                enabled: false
+                                model: Id eaque distinctio hic quisquam.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Corrupti consequuntur.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Aut iste architecto voluptatem sapiente aliquam blanditiis.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Cum non vitae et.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Aspernatur porro aliquid explicabo.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Aliquam sunt reiciendis.
+            security:
+                - browser_session_header_Cookie: []
     /api/auth/branding/logo:
         get:
             tags:
@@ -9727,6 +9995,629 @@ paths:
                                 $ref: '#/components/schemas/IAMProblem'
                             example:
                                 code: Corrupti occaecati unde eius.
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/audit:
+        get:
+            tags:
+                - mcp_management
+            summary: audit mcp_management
+            operationId: mcp_management#audit
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/MCPAudit'
+                                example:
+                                    - createdAt: Eos doloremque.
+                                      departmentId: 1998959071932363781
+                                      durationMs: 4991499671581515877
+                                      id: 2362399049652494097
+                                      requestId: Voluptas magnam est.
+                                      resultCode: Nihil provident voluptas et officia natus.
+                                      tokenId: 5568058068105168674
+                                      tool: Consequatur quos quis consectetur laudantium.
+                                    - createdAt: Eos doloremque.
+                                      departmentId: 1998959071932363781
+                                      durationMs: 4991499671581515877
+                                      id: 2362399049652494097
+                                      requestId: Voluptas magnam est.
+                                      resultCode: Nihil provident voluptas et officia natus.
+                                      tokenId: 5568058068105168674
+                                      tool: Consequatur quos quis consectetur laudantium.
+                                    - createdAt: Eos doloremque.
+                                      departmentId: 1998959071932363781
+                                      durationMs: 4991499671581515877
+                                      id: 2362399049652494097
+                                      requestId: Voluptas magnam est.
+                                      resultCode: Nihil provident voluptas et officia natus.
+                                      tokenId: 5568058068105168674
+                                      tool: Consequatur quos quis consectetur laudantium.
+                                    - createdAt: Eos doloremque.
+                                      departmentId: 1998959071932363781
+                                      durationMs: 4991499671581515877
+                                      id: 2362399049652494097
+                                      requestId: Voluptas magnam est.
+                                      resultCode: Nihil provident voluptas et officia natus.
+                                      tokenId: 5568058068105168674
+                                      tool: Consequatur quos quis consectetur laudantium.
+                            example:
+                                - createdAt: Eos doloremque.
+                                  departmentId: 1998959071932363781
+                                  durationMs: 4991499671581515877
+                                  id: 2362399049652494097
+                                  requestId: Voluptas magnam est.
+                                  resultCode: Nihil provident voluptas et officia natus.
+                                  tokenId: 5568058068105168674
+                                  tool: Consequatur quos quis consectetur laudantium.
+                                - createdAt: Eos doloremque.
+                                  departmentId: 1998959071932363781
+                                  durationMs: 4991499671581515877
+                                  id: 2362399049652494097
+                                  requestId: Voluptas magnam est.
+                                  resultCode: Nihil provident voluptas et officia natus.
+                                  tokenId: 5568058068105168674
+                                  tool: Consequatur quos quis consectetur laudantium.
+                                - createdAt: Eos doloremque.
+                                  departmentId: 1998959071932363781
+                                  durationMs: 4991499671581515877
+                                  id: 2362399049652494097
+                                  requestId: Voluptas magnam est.
+                                  resultCode: Nihil provident voluptas et officia natus.
+                                  tokenId: 5568058068105168674
+                                  tool: Consequatur quos quis consectetur laudantium.
+                                - createdAt: Eos doloremque.
+                                  departmentId: 1998959071932363781
+                                  durationMs: 4991499671581515877
+                                  id: 2362399049652494097
+                                  requestId: Voluptas magnam est.
+                                  resultCode: Nihil provident voluptas et officia natus.
+                                  tokenId: 5568058068105168674
+                                  tool: Consequatur quos quis consectetur laudantium.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Fuga temporibus rerum pariatur sunt dolore.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Neque aspernatur consequatur.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Odio deserunt animi quae laborum.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Eum nihil qui dolorem beatae expedita necessitatibus.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Ducimus et explicabo veniam laudantium amet et.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Est et sit iusto suscipit.
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/capabilities:
+        get:
+            tags:
+                - mcp_management
+            summary: capabilities mcp_management
+            operationId: mcp_management#capabilities
+            parameters:
+                - name: departmentId
+                  in: query
+                  allowEmptyValue: true
+                  schema:
+                    type: integer
+                    example: 8698749775231865064
+                    format: int64
+                    minimum: 1
+                  example: 8698749775231865064
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: string
+                                    example: Facilis debitis.
+                                example:
+                                    - Facilis debitis.
+                                    - Totam nam doloribus tempore ea.
+                                    - Voluptatem dolorem odio qui.
+                                    - Amet non alias asperiores sint.
+                            example:
+                                - Facilis debitis.
+                                - Totam nam doloribus tempore ea.
+                                - Voluptatem dolorem odio qui.
+                                - Amet non alias asperiores sint.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Maxime blanditiis et doloremque ex.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Nisi odit sequi.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Eos rerum et.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Vitae facere ut.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Explicabo a molestiae.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Ratione possimus.
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/tokens:
+        get:
+            tags:
+                - mcp_management
+            summary: list mcp_management
+            operationId: mcp_management#list
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/MCPToken'
+                                example:
+                                    - createdAt: Repudiandae quo.
+                                      departmentId: 4801757873491723516
+                                      expiresAt: Sed est.
+                                      id: 4220744944196883305
+                                      lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                      name: Quae commodi.
+                                      prefix: Velit assumenda illo at sunt dolore mollitia.
+                                      revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                      revokedBy: 1455915594800041645
+                                      tools:
+                                        - Aut voluptas voluptas reiciendis in et ut.
+                                        - Quod ex rerum error non minima.
+                                    - createdAt: Repudiandae quo.
+                                      departmentId: 4801757873491723516
+                                      expiresAt: Sed est.
+                                      id: 4220744944196883305
+                                      lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                      name: Quae commodi.
+                                      prefix: Velit assumenda illo at sunt dolore mollitia.
+                                      revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                      revokedBy: 1455915594800041645
+                                      tools:
+                                        - Aut voluptas voluptas reiciendis in et ut.
+                                        - Quod ex rerum error non minima.
+                                    - createdAt: Repudiandae quo.
+                                      departmentId: 4801757873491723516
+                                      expiresAt: Sed est.
+                                      id: 4220744944196883305
+                                      lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                      name: Quae commodi.
+                                      prefix: Velit assumenda illo at sunt dolore mollitia.
+                                      revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                      revokedBy: 1455915594800041645
+                                      tools:
+                                        - Aut voluptas voluptas reiciendis in et ut.
+                                        - Quod ex rerum error non minima.
+                            example:
+                                - createdAt: Repudiandae quo.
+                                  departmentId: 4801757873491723516
+                                  expiresAt: Sed est.
+                                  id: 4220744944196883305
+                                  lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                  name: Quae commodi.
+                                  prefix: Velit assumenda illo at sunt dolore mollitia.
+                                  revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                  revokedBy: 1455915594800041645
+                                  tools:
+                                    - Aut voluptas voluptas reiciendis in et ut.
+                                    - Quod ex rerum error non minima.
+                                - createdAt: Repudiandae quo.
+                                  departmentId: 4801757873491723516
+                                  expiresAt: Sed est.
+                                  id: 4220744944196883305
+                                  lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                  name: Quae commodi.
+                                  prefix: Velit assumenda illo at sunt dolore mollitia.
+                                  revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                  revokedBy: 1455915594800041645
+                                  tools:
+                                    - Aut voluptas voluptas reiciendis in et ut.
+                                    - Quod ex rerum error non minima.
+                                - createdAt: Repudiandae quo.
+                                  departmentId: 4801757873491723516
+                                  expiresAt: Sed est.
+                                  id: 4220744944196883305
+                                  lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                  name: Quae commodi.
+                                  prefix: Velit assumenda illo at sunt dolore mollitia.
+                                  revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                  revokedBy: 1455915594800041645
+                                  tools:
+                                    - Aut voluptas voluptas reiciendis in et ut.
+                                    - Quod ex rerum error non minima.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Enim quia.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Fuga a qui.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Numquam et.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quis qui repellendus tempora aut.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Architecto et sequi.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Consectetur porro est labore dignissimos rerum.
+            security:
+                - browser_session_header_Cookie: []
+        post:
+            tags:
+                - mcp_management
+            summary: create mcp_management
+            operationId: mcp_management#create
+            requestBody:
+                description: Request body for create.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRequestBody'
+                        example:
+                            days: 88
+                            departmentId: 4959054971882152553
+                            name: k9i
+                            password: 6cs
+                            tools:
+                                - Et ipsa.
+                                - Sed et in molestiae laboriosam.
+            responses:
+                "201":
+                    description: Created response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MCPTokenCreated'
+                            example:
+                                secret: Placeat mollitia omnis sint quis labore optio.
+                                token:
+                                    createdAt: Repudiandae quo.
+                                    departmentId: 4801757873491723516
+                                    expiresAt: Sed est.
+                                    id: 4220744944196883305
+                                    lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                    name: Quae commodi.
+                                    prefix: Velit assumenda illo at sunt dolore mollitia.
+                                    revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                    revokedBy: 1455915594800041645
+                                    tools:
+                                        - Aut voluptas voluptas reiciendis in et ut.
+                                        - Quod ex rerum error non minima.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quia consequuntur voluptas.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Suscipit vel pariatur.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Cupiditate architecto.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Sunt voluptatibus aut magnam quia suscipit.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Corporis dolor.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quaerat eum magni.
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/tokens/{id}:
+        delete:
+            tags:
+                - mcp_management
+            summary: revoke mcp_management
+            operationId: mcp_management#revoke
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    example: 6913699775982178330
+                    format: int64
+                    minimum: 1
+                  example: 6913699775982178330
+            requestBody:
+                description: Request body for revoke.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevokeRequestBody'
+                        example:
+                            password: "7"
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Optio quos est voluptas.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Reiciendis molestias eaque.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Natus id magnam.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Veritatis asperiores ab eius porro ut.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Consectetur consequuntur sit est odio.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Doloremque repudiandae.
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/tokens/{id}/rotate:
+        post:
+            tags:
+                - mcp_management
+            summary: rotate mcp_management
+            operationId: mcp_management#rotate
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    example: 2059930443494487771
+                    format: int64
+                    minimum: 1
+                  example: 2059930443494487771
+            requestBody:
+                description: Request body for rotate.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevokeRequestBody'
+                        example:
+                            password: "3"
+            responses:
+                "201":
+                    description: Created response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MCPTokenCreated'
+                            example:
+                                secret: Non est explicabo ratione.
+                                token:
+                                    createdAt: Repudiandae quo.
+                                    departmentId: 4801757873491723516
+                                    expiresAt: Sed est.
+                                    id: 4220744944196883305
+                                    lastUsedAt: Doloremque dolores ut a nemo nihil.
+                                    name: Quae commodi.
+                                    prefix: Velit assumenda illo at sunt dolore mollitia.
+                                    revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                                    revokedBy: 1455915594800041645
+                                    tools:
+                                        - Aut voluptas voluptas reiciendis in et ut.
+                                        - Quod ex rerum error non minima.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Numquam debitis impedit.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Sunt fugit quae voluptas.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Sunt voluptatibus ullam possimus commodi qui rerum.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Aperiam fugiat iure excepturi earum ea provident.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quidem dolore.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Similique ex in nihil odit ut libero.
             security:
                 - browser_session_header_Cookie: []
     /api/auth/me:
@@ -12085,6 +12976,168 @@ components:
                 - roles
                 - permissions
                 - catalog
+        AssistantMessage:
+            type: object
+            properties:
+                content:
+                    type: string
+                    example: gbw
+                    maxLength: 8000
+                role:
+                    type: string
+                    example: user
+                    enum:
+                        - system
+                        - user
+                        - assistant
+                        - tool
+                toolCallId:
+                    type: string
+                    example: lkf
+                    maxLength: 120
+                toolCalls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssistantToolCall'
+                    example:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                    maxItems: 10
+            description: One turn of the assistant conversation. Tool output is attributed to its call id.
+            example:
+                content: gbw
+                role: user
+                toolCallId: lkf
+                toolCalls:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+            required:
+                - role
+                - content
+        AssistantReply:
+            type: object
+            properties:
+                content:
+                    type: string
+                    example: Sed libero placeat ipsa quasi voluptas.
+                model:
+                    type: string
+                    example: Assumenda quia facilis magnam.
+                toolCalls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssistantToolCall'
+                    example:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+            example:
+                content: Sed libero placeat ipsa quasi voluptas.
+                model: Assumenda quia facilis magnam.
+                toolCalls:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+            required:
+                - content
+                - toolCalls
+                - model
+        AssistantStatus:
+            type: object
+            properties:
+                configured:
+                    type: boolean
+                    example: false
+                enabled:
+                    type: boolean
+                    example: false
+                model:
+                    type: string
+                    example: Id eaque distinctio hic quisquam.
+            description: Availability projection for the launcher. Credentials and endpoints are never returned.
+            example:
+                configured: false
+                enabled: false
+                model: Id eaque distinctio hic quisquam.
+            required:
+                - enabled
+                - configured
+                - model
+        AssistantTool:
+            type: object
+            properties:
+                description:
+                    type: string
+                    example: niq
+                    maxLength: 2000
+                name:
+                    type: string
+                    example: ni
+                    minLength: 1
+                    maxLength: 64
+                parameters:
+                    example: Voluptatem omnis sapiente eos non.
+            description: Page tool definition supplied by the browser. The model may request it; the page executes it.
+            example:
+                description: niq
+                name: ni
+                parameters: Voluptatem omnis sapiente eos non.
+            required:
+                - name
+                - description
+                - parameters
+        AssistantToolCall:
+            type: object
+            properties:
+                arguments:
+                    type: string
+                    example: Impedit qui rerum minus non ipsa optio.
+                id:
+                    type: string
+                    example: Eveniet voluptatem.
+                name:
+                    type: string
+                    example: Et qui sit et sint reiciendis.
+            example:
+                arguments: Impedit qui rerum minus non ipsa optio.
+                id: Eveniet voluptatem.
+                name: Et qui sit et sint reiciendis.
+            required:
+                - id
+                - name
+                - arguments
         ChangeEntry:
             type: object
             properties:
@@ -12347,6 +13400,124 @@ components:
                 - createdAt
                 - sensitive
                 - changes
+        ChatRequestBody:
+            type: object
+            properties:
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssistantMessage'
+                    example:
+                        - content: gbw
+                          role: user
+                          toolCallId: lkf
+                          toolCalls:
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                        - content: gbw
+                          role: user
+                          toolCallId: lkf
+                          toolCalls:
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                        - content: gbw
+                          role: user
+                          toolCallId: lkf
+                          toolCalls:
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                            - arguments: Impedit qui rerum minus non ipsa optio.
+                              id: Eveniet voluptatem.
+                              name: Et qui sit et sint reiciendis.
+                    minItems: 1
+                    maxItems: 60
+                tools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssistantTool'
+                    example:
+                        - description: niq
+                          name: ni
+                          parameters: Voluptatem omnis sapiente eos non.
+                        - description: niq
+                          name: ni
+                          parameters: Voluptatem omnis sapiente eos non.
+                        - description: niq
+                          name: ni
+                          parameters: Voluptatem omnis sapiente eos non.
+                    maxItems: 40
+            description: Request body for chat.
+            example:
+                messages:
+                    - content: gbw
+                      role: user
+                      toolCallId: lkf
+                      toolCalls:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                    - content: gbw
+                      role: user
+                      toolCallId: lkf
+                      toolCalls:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                    - content: gbw
+                      role: user
+                      toolCallId: lkf
+                      toolCalls:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                tools:
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+            required:
+                - messages
         ConfigDefinition:
             type: object
             properties:
@@ -12770,6 +13941,55 @@ components:
                 - parentId
                 - status
                 - description
+        CreateRequestBody:
+            type: object
+            properties:
+                days:
+                    type: integer
+                    default: 30
+                    example: 88
+                    format: int64
+                    minimum: 1
+                    maximum: 90
+                departmentId:
+                    type: integer
+                    example: 4959054971882152553
+                    format: int64
+                    minimum: 1
+                name:
+                    type: string
+                    example: k9i
+                    minLength: 1
+                    maxLength: 100
+                password:
+                    type: string
+                    example: 6cs
+                    minLength: 1
+                    maxLength: 128
+                tools:
+                    type: array
+                    items:
+                        type: string
+                        example: Et ipsa.
+                    example:
+                        - Et ipsa.
+                        - Sed et in molestiae laboriosam.
+                    minItems: 1
+                    maxItems: 10
+            description: Request body for create.
+            example:
+                days: 88
+                departmentId: 4959054971882152553
+                name: k9i
+                password: 6cs
+                tools:
+                    - Et ipsa.
+                    - Sed et in molestiae laboriosam.
+            required:
+                - password
+                - name
+                - departmentId
+                - tools
         CreateRoleRequestBody:
             type: object
             properties:
@@ -15792,9 +17012,9 @@ components:
             properties:
                 code:
                     type: string
-                    example: Officia reprehenderit.
+                    example: Aut iste architecto voluptatem sapiente aliquam blanditiis.
             example:
-                code: Officia reprehenderit.
+                code: Aut iste architecto voluptatem sapiente aliquam blanditiis.
             required:
                 - code
         ImportDraftRequestBody:
@@ -16173,6 +17393,146 @@ components:
                     tenantId: Dolor blanditiis.
             required:
                 - profile
+        MCPAudit:
+            type: object
+            properties:
+                createdAt:
+                    type: string
+                    example: Eos doloremque.
+                departmentId:
+                    type: integer
+                    example: 1998959071932363781
+                    format: int64
+                durationMs:
+                    type: integer
+                    example: 4991499671581515877
+                    format: int64
+                id:
+                    type: integer
+                    example: 2362399049652494097
+                    format: int64
+                requestId:
+                    type: string
+                    example: Voluptas magnam est.
+                resultCode:
+                    type: string
+                    example: Nihil provident voluptas et officia natus.
+                tokenId:
+                    type: integer
+                    example: 5568058068105168674
+                    format: int64
+                tool:
+                    type: string
+                    example: Consequatur quos quis consectetur laudantium.
+            example:
+                createdAt: Eos doloremque.
+                departmentId: 1998959071932363781
+                durationMs: 4991499671581515877
+                id: 2362399049652494097
+                requestId: Voluptas magnam est.
+                resultCode: Nihil provident voluptas et officia natus.
+                tokenId: 5568058068105168674
+                tool: Consequatur quos quis consectetur laudantium.
+            required:
+                - id
+                - tokenId
+                - departmentId
+                - tool
+                - resultCode
+                - durationMs
+                - requestId
+                - createdAt
+        MCPToken:
+            type: object
+            properties:
+                createdAt:
+                    type: string
+                    example: Repudiandae quo.
+                departmentId:
+                    type: integer
+                    example: 4801757873491723516
+                    format: int64
+                expiresAt:
+                    type: string
+                    example: Sed est.
+                id:
+                    type: integer
+                    example: 4220744944196883305
+                    format: int64
+                lastUsedAt:
+                    type: string
+                    example: Doloremque dolores ut a nemo nihil.
+                name:
+                    type: string
+                    example: Quae commodi.
+                prefix:
+                    type: string
+                    example: Velit assumenda illo at sunt dolore mollitia.
+                revokedAt:
+                    type: string
+                    example: Vitae corporis labore nisi libero dolores assumenda.
+                revokedBy:
+                    type: integer
+                    example: 1455915594800041645
+                    format: int64
+                tools:
+                    type: array
+                    items:
+                        type: string
+                        example: Aut voluptas voluptas reiciendis in et ut.
+                    example:
+                        - Aut voluptas voluptas reiciendis in et ut.
+                        - Quod ex rerum error non minima.
+            example:
+                createdAt: Repudiandae quo.
+                departmentId: 4801757873491723516
+                expiresAt: Sed est.
+                id: 4220744944196883305
+                lastUsedAt: Doloremque dolores ut a nemo nihil.
+                name: Quae commodi.
+                prefix: Velit assumenda illo at sunt dolore mollitia.
+                revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                revokedBy: 1455915594800041645
+                tools:
+                    - Aut voluptas voluptas reiciendis in et ut.
+                    - Quod ex rerum error non minima.
+            required:
+                - id
+                - departmentId
+                - name
+                - prefix
+                - tools
+                - createdAt
+                - expiresAt
+                - revokedAt
+                - lastUsedAt
+                - revokedBy
+        MCPTokenCreated:
+            type: object
+            properties:
+                secret:
+                    type: string
+                    example: Placeat mollitia omnis sint quis labore optio.
+                token:
+                    $ref: '#/components/schemas/MCPToken'
+            example:
+                secret: Placeat mollitia omnis sint quis labore optio.
+                token:
+                    createdAt: Repudiandae quo.
+                    departmentId: 4801757873491723516
+                    expiresAt: Sed est.
+                    id: 4220744944196883305
+                    lastUsedAt: Doloremque dolores ut a nemo nihil.
+                    name: Quae commodi.
+                    prefix: Velit assumenda illo at sunt dolore mollitia.
+                    revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                    revokedBy: 1455915594800041645
+                    tools:
+                        - Aut voluptas voluptas reiciendis in et ut.
+                        - Quod ex rerum error non minima.
+            required:
+                - token
+                - secret
         ManagedFile:
             type: object
             properties:
@@ -16944,6 +18304,19 @@ components:
                 - minutes
                 - decision
                 - note
+        RevokeRequestBody:
+            type: object
+            properties:
+                password:
+                    type: string
+                    example: "7"
+                    minLength: 1
+                    maxLength: 128
+            description: Request body for revoke.
+            example:
+                password: "7"
+            required:
+                - password
         RoleRecord:
             type: object
             properties:
@@ -19878,11 +21251,14 @@ components:
 tags:
     - name: demo
       description: Protected technical-only demo. Bearer identity is verified by transport middleware.
+    - name: assistant
+      description: Embedded assistant gateway. Resolves the deployment model configuration on the server; the browser never receives the credential.
     - name: settings
     - name: dictionaries
     - name: files
     - name: notifications
     - name: branding
+    - name: mcp_management
     - name: identity
       description: Persistent account, organization, department and access administration
     - name: system

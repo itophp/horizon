@@ -1,8 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+// 默认 1 个 worker：所有用例共用同一套 Go 服务与隔离 schema，并行只对互不写
+// 全局设置的文件安全。要提速优先用 make test-e2e-parallel（两套独立栈）。
+const requestedWorkers = Number(process.env.E2E_WORKERS ?? "1");
+const workers =
+  Number.isInteger(requestedWorkers) && requestedWorkers > 0
+    ? requestedWorkers
+    : 1;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
-  workers: 1,
+  workers,
   timeout: 120000,
   expect: { timeout: 30000 },
   forbidOnly: !!process.env.CI,

@@ -57,7 +57,7 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 		response := applicantClient.request(t, "GET", "/api/admin/temporary-access", nil, false)
 		checkStatus(t, response, 200)
 		workspace := decodeBody[genidentity.TemporaryAccessWorkspace](t, response)
-		if workspace.CanReview || len(workspace.Catalog) != 41 || len(workspace.Departments) != 2 {
+		if workspace.CanReview || len(workspace.Catalog) != 42 || len(workspace.Departments) != 2 {
 			t.Fatal("request directory or independent approval permission incorrect")
 		}
 		response = manager.request(t, "GET", "/api/admin/temporary-access", nil, false)

@@ -4,7 +4,7 @@
 
 采用“连续开发累计变更 → 阶段验收集中验证 → 发布/CI 全量回归”。测试覆盖要求保留，执行时机按批次安排；单个功能完成、一次回复或聊天结束都不自动构成验收节点，也不必为是否运行测试反复询问用户。
 
-- 普通开发：完成实现并按风险补充测试，记录受影响模块和待验命令，继续后续功能；不自动启动 ci-fast、数据库集成或 E2E，也不要求每完成一个普通功能就运行单元测试。
+- 普通开发：完成实现并按风险补充测试，记录受影响模块和待验命令，继续后续功能；不自动启动 ci-fast、数据库集成或 E2E，也不要求每完成一个普通功能就运行单元测试。需要浏览器旁证时用 `make test-e2e-changed` 只跑改动对应的文件，纯文档/规则改动不启动浏览器。
 - 提前定向验证：复现缺陷、排查编译错误，以及认证/授权/数据范围、敏感字段、迁移/事务、契约兼容等高风险改动，应在继续依赖该行为的开发前运行最小相关检查。SQL 行为使用真实隔离 PostgreSQL，权限覆盖允许与拒绝；这不触发无关模块或全量回归。
 - 阶段验收：用户要求验收/测试，或准备提交、创建 PR 时，对累计代码变更统一运行一次 make ci-fast；涉及 SQL/事务追加 test-integration，涉及安全追加 test-security（已包含 integration，不再单独重复），关键跨层流程选相关 E2E 文件。仅文档/规则运行 make check-rules。普通跨层功能完成本身不触发 make ci。
 - 完整回归：发布候选、用户明确要求全量验收或 CI 使用默认 make ci；保留现有 CI 全量覆盖。若已决定运行 make ci，不先另跑一遍 ci-fast、integration 和 E2E。
@@ -22,9 +22,21 @@
 | make test-integration | 隔离真实 PostgreSQL、迁移、约束、scope、事务与并发 | SQL、Repository、事务或权限范围改动 |
 | make test-security | 认证/授权/config/scope/HTTP 单元负向用例 + 数据库范围/字段投影/撤销 | 受保护端点、身份、权限、租户、敏感字段及配置边界变更 |
 | make test-e2e | 真实 Go + 生产构建 preview 的关键流程，失败 screenshot/trace 和诊断 | 完成关键用户流程、路由/语言持久化或跨层功能 |
+| make test-e2e-changed | 按 git 改动映射到相关 spec 文件；纯文档/规则改动直接不启动浏览器 | 日常改动后需要一处跨层旁证 |
+| make test-e2e-smoke | `@smoke` 两条最便宜链路：API→SDK→UI、登录会话与主题持久化 | 改动路径没有专属 spec 时的快速旁证 |
+| make test-e2e-parallel | 默认栈与 governance 栈并行，覆盖与 test-e2e 相同的文件 | 需要完整浏览器集合但不想等串行 |
 | make ci | ci-fast → integration → E2E，顺序执行 | 发布候选、明确全量验收和 CI |
 
 表中“何时执行”表示覆盖要求，执行时机统一遵循上方批次规则，不表示每个功能都立即执行。文档-only 批次运行 check-rules 并审查语义，不为无关改动启动慢测试。前端快速迭代可先运行受影响 Vitest，后端先运行相关包 go test。纯布局变更用可观察交互/可访问性验证，不编写只镜像 CSS 常量的测试。
+
+### 浏览器集合的加速入口
+
+`test-e2e-changed`、`test-e2e-smoke` 与 `test-e2e-parallel` 只为缩短等待，不等于全量：只有 `make test-e2e` 和 `make ci` 代表完整浏览器集合。用前两个交付时必须写明选中的文件、未重跑的集合和理由，不能宣称全量通过。
+
+- 映射表在 `scripts/e2e-changed.mjs`：`features/<模块>` 对应同名 spec，`src/{api,i18n,app,lib,components}`、`design/` 与 `internal/server` 对应 foundation，改了 spec 就跑该 spec；无映射的路径（如迁移 SQL）会被列出并退回 `@smoke`，不会静默扩成全集。`node scripts/e2e-changed.mjs --dry-run` 只打印选择结果。
+- `@smoke` 用 Playwright 标题后缀标记，选择标准是“单文件内最便宜且真的跨层”，不把慢用例塞进快速集。
+- `test-e2e-parallel` 按端口分组：默认栈（5179/8099/WebMCP 18794）跑 administration、foundation、mcp、webmcp；governance 栈（5183/8101）跑 governance、notifications、settings-schedules。分组由 spec 内写死的 Origin 决定，新增 spec 必须先确认它连哪个栈才能改分组。
+- `E2E_WORKERS` 可提高单进程 worker 数，但所有用例共用一套 Go 服务与隔离 schema，只有所选文件互不写全局设置时才安全；默认 1。
 
 ## 测试设计
 
@@ -57,7 +69,7 @@ check-rules 能检查结构完整与引用，不理解自然语言是否写对�
 
 公共配置变更遵循 ADR 007：验证多公司/部门切换时系统参数与静态字典相同、本人偏好独立，旧组织目标/字典覆盖拒绝，旧受限管理权限不自动扩为 ALL。governance_global_migration_test.go 验证迁移保留字典 ID/代码/引用且不搬移旧组织设置；governance_scope_test.go 继续验证文件与跨租户隔离。公共消费功能按 baseline-shared-capabilities 选择现有消费者/选项/附件的真实允许与拒绝用例。
 
-通知中心按 ADR 008 覆盖混选组织/账号去重、范围外组织拒绝、重复发送幂等/内容冲突、偏好/失效归属、绑定附件读取及跨租户/未绑定文件拒绝。Markdown 组件覆盖 HTML/脚本 URL/未绑定引用、GFM 与安全图片；真实浏览器从编写/上传/预览/发送走到收取/下载/投递记录，SMTP 仅隔离测试服务器。
+通知中心按 ADR 008 覆盖混选组织/账号去重、范围外组织拒绝、重复发送幂等/内容冲突、偏好/失效归属、绑定附件读取及跨租户/未绑定文件拒绝。Markdown 组件覆盖 HTML/脚本 URL/未绑定引用、GFM 与安全图片；真实浏览器用例通过接口落地一条带绑定附件的通知，再验证收到的列表只显示标题与时间、点击进入 `/notifications/:id` 详情、附件下载、标为已读、已发送正文默认收起以及投递记录，SMTP 仅隔离测试服务器。发送页编辑器是第三方富文本组件，浏览器只验证其表单接线由组件测试承担，不在浏览器里驱动 Lexical；写入/校验/幂等由 Go 集成与组件测试覆盖。
 
 `E2E_ARGS` 可显式选择相关浏览器文件，例如 `make ci E2E_ARGS="e2e/governance.spec.ts e2e/notifications.spec.ts"`。默认 `make ci` 仍跑全部浏览器用例。使用该参数交付时必须报告选择的文件和未重跑集合，不能宣称全量浏览器通过；本机已有无关用例总预算超时的诊断保留在 verification.md。
 
@@ -65,10 +77,16 @@ check-rules 能检查结构完整与引用，不理解自然语言是否写对�
 
 快速门禁包含工具参数、生命周期、元数据、重复名称和路由清单一致性测试。`make test-webmcp-e2e` 使用真实 MCP 客户端、桥接和浏览器验证连接、模块/页面上下文、账号筛选和撤销；`make ci` 在生成检查及数据库集成测试后、完整浏览器集之前运行此专项测试。它不依赖模型，也不能代替用户交互或后端授权测试。新增工具应验证正常及拒绝分支、页面状态与实际数据结果；保留真实点击、可访问性和后端范围测试。Agent 模型评测应作为独立的可选评测记录工具选择、参数、业务结果和失败原因，不能把概率性结果当作确定性门禁。
 
-`pnpm webmcp:test` 已纳入 `make ci-fast`：真实 loopback HTTP 验证 Bearer、Origin、Host、有效会话和安装客户端白名单；临时 home 验证配置合并、备份、坏配置拒绝与技能安装。Vitest 验证严格参数、脱敏错误、权限导航和撤销旧句柄，以及设置页真实点击到安装传输。`e2e/webmcp.spec.ts` 启动隔离 WebMCP 18794、Go 8099、preview 5179，使用真实 MCP Client 读取/调用页面工具并检查路由卸载/断开；不在 E2E 写用户全局客户端配置。`WEBMCP_STATE_DIR=.local/webmcp-e2e` 隔离测试配对状态。
+`pnpm webmcp:test` 已纳入 `make ci-fast`：真实 loopback HTTP 验证 Bearer、Origin、Host、有效会话和安装客户端白名单；临时 home 验证配置合并、备份、坏配置拒绝与技能安装。Vitest 验证严格参数、脱敏错误、权限导航和撤销旧句柄，以及设置页真实点击到安装传输。`e2e/webmcp.spec.ts` 从 `/mcp` 的 WebMCP 标签（旧 `/webmcp` 重定向）启动隔离 WebMCP 18794、Go 8099、preview 5179，使用真实 MCP Client 读取/调用页面工具并检查路由卸载/断开；不在 E2E 写用户全局客户端配置。`WEBMCP_STATE_DIR=.local/webmcp-e2e` 隔离测试配对状态。
 
 治理/通知可用 `make test-e2e E2E_ARGS="--config=playwright.governance.config.ts"` 独立验收。该配置仍构建完整应用并运行真实 Go/隔离 PostgreSQL，使用 5183/8101、独立 .local/governance-preview、governance-results 和 governance-report，不覆盖默认端口/构建/报告，也不启动无关连接测试服务。E2E_ORIGIN 由配置传给测试，Origin/CSRF 校验保持真实。此配置覆盖所选治理、通知和定时发布用例，不代表默认全量集合已通过。
 
 设置排期的真实数据库用例在 settings_schedules_test.go，覆盖未到期、取消、重复/并发、敏感用途证明、版本冲突、会话过期、范围/账号失效、单连接文件校验与真实 worker 循环。界面由 settings-schedules.test.tsx 和 e2e/settings-schedules.spec.ts 验证；独立配置命令 `make ci E2E_ARGS="--config=playwright.governance.config.ts e2e/settings-schedules.spec.ts"`，仍须区分所选用例与默认全量。数据库测试推进隔离记录的 due 时间，不写开发库测试排期。
 
 WebMCP 专项 E2E 还验证 `notifications/tools/list_changed` 从浏览器经过官方代理、stdio 到达真实 MCP Client，确保动态页面工具的目录变化可被客户端发现。
+
+## 账号远程 MCP
+
+`make test-mcp` 执行本机助手、Go 协议和真实隔离数据库专项；`make test-mcp-e2e` 运行精确 e2e/mcp.spec.ts 文件，验证真实 Go+浏览器、同源代理、Token/诊断、实际 Codex CLI 配置合并及安装后 stdio 独立调用。`make ci-fast` 包含本机助手测试，`make test-security` 包含 MCP 单元和完整数据库集合；生成一致性检查先于浏览器。真实桌面客户端互通须独立记录，不能用已安装配置或通用 SDK 客户端通过代替。
+
+`make test-mcp-native` 使用本机 Codex 与 WORKBUDDY_CLI 指定的腾讯客户端随附 CLI，真实执行原生连接/工具调用与撤销拒绝，不启动模型 turn；`make test-mcp-native-e2e` 显式开启浏览器内原生客户端验收。常规浏览器集合不依赖全局安装的 Codex 或 WorkBuddy。桌面端的最终手动调用记录与 CLI health 分开。

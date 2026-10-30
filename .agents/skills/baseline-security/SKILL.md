@@ -58,3 +58,7 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 组织、部门、角色搜索工具只更新页面筛选状态，要求对应 read 权限及已加载的授权快照，不导出记录或提交业务变更。
 
 设置定时发布按 [ADR 010](../../../docs/decisions/010-settings-schedules.md)：正式 publish/ALL，敏感单次 settings.schedule 证明在排期事务消费，到期重建原部门 Principal 并复查权限/摘要/依赖/版本；行锁与 savepoint 保证配置和结果原子提交，取消/重启/并发不能重复发布。UI 明示设备时区并转 UTC，使用生成 SDK；后台不借旧会话或临时权执行。修改时同步公共能力与权限规则并覆盖真实数据库、状态和取消测试。
+
+账号远程 MCP 按 [实现方案](../../../docs/mcp-service-plan.md)（首阶段实现）：复用可信身份与范围，Token 固化工具集合与当前正式权限取交集，禁用/撤销实时生效，秘密仅一次显示，不入日志/配置包；账号凭证与页面配对密钥隔离。
+
+远程 MCP 精确规则见 [ADR 011](../../../docs/decisions/011-remote-mcp.md)。创建/轮换/撤销须 VerifyCurrentPassword 和浏览器会话/Origin/CSRF；MCP 复用 PrincipalForTask 的正式授权。数据库延迟归属检查避免清空重建误撤销，但删除后重新加入不复活 Token，停用/密码重置也撤销。扩展测试须包含重认证拒绝、并发轮换、跨账号/租户、范围外 ID、身份失效及秘密投影。助手固定远程来源，不接受任意地址/命令/路径，安装证明短时单次且校验 Token 账号/部门。

@@ -70,7 +70,7 @@ test.beforeEach(async ({ page, request }) => {
     localStorage.setItem("baseline.language", "en");
   });
 });
-test("session protection, compact login, theme persistence and logout", async ({
+test("session protection, compact login, theme persistence and logout @smoke", async ({
   page,
 }, testInfo) => {
   test.setTimeout(180000);
@@ -150,7 +150,16 @@ test("organization, department, role and account changes persist through real AP
       page.getByRole("row", { name: new RegExp(enterpriseName) }),
     ).toBeVisible();
 
-    await page.getByRole("link", { name: "Departments", exact: true }).click();
+    // Departments now live in the second tab of Organization management.
+    await page
+      .getByRole("button", { name: "Departments", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", {
+        name: "Organization management",
+        exact: true,
+      }),
+    ).toBeVisible();
     await page
       .getByRole("button", { name: "Create department", exact: true })
       .click();
@@ -168,7 +177,9 @@ test("organization, department, role and account changes persist through real AP
       page.getByRole("row", { name: new RegExp(departmentName) }),
     ).toBeVisible();
 
-    await page.getByRole("link", { name: "Roles", exact: true }).click();
+    // Role maintenance now lives in the third tab of Permission management.
+    await page.getByRole("link", { name: "Permissions", exact: true }).click();
+    await page.getByRole("button", { name: "Roles", exact: true }).click();
     await page
       .getByRole("button", { name: "Create role", exact: true })
       .click();

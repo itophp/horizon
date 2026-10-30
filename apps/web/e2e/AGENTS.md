@@ -4,6 +4,8 @@
 
 使用可提交的 Playwright 测试和真实 Go + 生产构建 preview；不能用 MCP 手动点击或截图目测替代。默认独立端口 5179/8099，禁止为了测试停止用户已有服务。
 
+日常只跑相关文件：`make test-e2e-changed` 按改动选文件（映射在 scripts/e2e-changed.mjs），`make test-e2e-smoke` 只跑标题带 `@smoke` 的用例；两者都不等于全量，交付时须写明选择与未覆盖集合。`@smoke` 只标记单文件内最便宜且真正跨层的用例，不改动断言强度。需要完整集合又不想等串行时用 `make test-e2e-parallel`，分组依据是各 spec 内写死的 Origin，新增 spec 先确认归属栈。
+
 优先 role/label/name 定位；data-testid 仅用于无稳定可访问定位的元素。数据、浏览器上下文、语言和时区独立；等待明确 UI/请求状态，不用固定 sleep 或跨用例前置状态。
 
 保留断言、console/page/network 诊断和失败 screenshot/trace。刷新/路由会取消查询，先明确测试期待的完成状态；不要把所有 ERR_ABORTED 粗略屏蔽。发现确定环境预算不足可记录证据并设置有界超时，不无限加重试。

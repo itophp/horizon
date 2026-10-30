@@ -7,6 +7,8 @@ description: "Implement or change a feature in this repository; route affected l
 
 先读根 AGENTS.md 和 [任务工具矩阵](../../../docs/agent-tooling.md)。修改任何路径前，读取根到目标文件父目录之间的 AGENTS.md；不要假设未进入的子目录规则已经加载。
 
+功能新增/需求变化先使用 [baseline-mcp-development](../baseline-mcp-development/SKILL.md) 集中确认 MCP 暴露操作、客户端、读写/确认范围，沿用已答选择。待定时继续独立开发但不默认开放；已有工具受影响仍需同步维护。
+
 把用户需求转成可观察的验收条件，确认涉及 UI、API、持久化、权限、国际化中的哪些层。只加载相关 Skill：
 
 - 需要设置项、字典选项、文件上传/读取/下载或通知：先用 baseline-shared-capabilities 复用公共服务，再按层路由。

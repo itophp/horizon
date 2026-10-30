@@ -178,7 +178,7 @@ Playwright 1.64.1 配套 Chromium 下载缓慢，已中止；本地使用已安�
 
 ## 2026-10-29 WebMCP 与 WebSkills
 
-按 [ADR 009](decisions/009-webmcp.md) 接入 OpenTiny：独立 `/webmcp` 页面、默认 loopback 18793 服务、显式配对、Codex/WorkBuddy MCP 与三套 WebSkills 一键安装，未来助手预留共享注册表 list/invoke。继续使用 React/Router/shadcn、TanStack Query、React Hook Form/Zod 和 i18next；未新增业务 API、数据库迁移或业务写工具。
+按 [ADR 009](decisions/009-webmcp.md) 接入 OpenTiny：`/mcp` 统一接入页（远程 MCP / WebMCP / WebSkills 三标签，旧 `/webmcp`、`/mcp-settings` 重定向）、默认 loopback 18793 服务、显式配对、Codex/WorkBuddy MCP 与三套 WebSkills 一键安装，未来助手预留共享注册表 list/invoke。继续使用 React/Router/shadcn、TanStack Query、React Hook Form/Zod 和 i18next；未新增业务 API、数据库迁移或业务写工具。
 
 实现源：features/webmcp、lib/webmcp、scripts/webmcp-{server,install,stdio,result}.mjs、webskills。导航与账号页面挂载白名单工具；注册通过 AbortSignal 随路由撤销，401/退出/切部门/刷新清理连接。业务权限与 SQL 范围不变，账号详情只用已有授权快照；诊断只投影数量/稳定错误码。SDK 动态加载 core，固定依赖/许可证与实际接口兼容记录见 versions.md / versions.json。
 
@@ -236,3 +236,42 @@ Playwright 1.64.1 配套 Chromium 下载缓慢，已中止；本地使用已安�
 - `PLAYWRIGHT_CHANNEL=chrome make test-e2e E2E_ARGS="--config=playwright.governance.config.ts e2e/settings-schedules.spec.ts"` 退出码 0，1/1 通过（用例 2.8 分钟，整体 3.1 分钟）。真实浏览器确认保存草稿、选择排期、时区提示、未提前生效、禁止同草稿立即发布、刷新保持及取消后恢复立即发布，没有页面运行错误。浏览器未等待一小时后的到期；实际到期与重启恢复由上述真实数据库/worker 用例覆盖。
 
 最终 `make check-rules` 通过。未重跑默认全量 E2E，也未触发远程 CI 或创建 PR；Vite 既有主包体积提示仍存在。到期执行依赖 API 服务运行，停机后恢复时重新校验并处理，不承诺硬实时。
+
+
+## 2026-10-30 信息架构调整：Agent 协作入口与菜单合并
+
+侧栏一级入口收敛为：工作台、账号管理、组织管理、权限管理、通知中心、Agent 协作、系统设置（个人偏好仍从顶栏进入）。原「远程 MCP」入口改名为「Agent 协作」，页面标题同步，内部保留 MCP Server / WebMCP / WebSkills 三个标签。
+
+改动位置：`features/administration/layout.tsx`（菜单数组改为 any-of 权限过滤、顶栏临时申请改纯图标、删除“系统管理中心”文字）、`app/router/router.tsx`（`/departments`、`/roles`、`/dictionaries` 改为重定向；`/attachments` 保留路由但不再占菜单位置）、`features/administration/pages.tsx`（组织页承载组织架构/部门标签，权限页承载角色授权/账号独立授权/角色管理标签，各区块保留原表单、删除、分页与页内工具）、`features/governance/settings.tsx` 与 `dictionaries.tsx`（系统设置新增系统配置/字段管理标签，字典列表抽为 DictionarySection）、`styles/admin.css`（`.admin-page-tabs` 复用页签样式）、`i18n/locales/{en,zh-CN}/{admin,governance,mcp}.json`、`lib/webmcp/routes.ts`。
+
+权限与数据范围未改：标签可见性按正式读取权限（organizations:read 或 departments:read、access:manage 或 roles:read、settings:read 或 dictionaries:read）决定，默认标签随可用权限回退；服务端授权的允许/拒绝用例由既有集合覆盖。页内搜索更新保留其它 URL 参数（`withQuery`），避免切换标签后丢失 `?tab=`/`?type=`。旧路径重定向保留，WebMCP 路由清单同步。
+
+实际本地结果：
+
+- `npx tsc --noEmit`：退出码 0。
+- `vitest run`（apps/web）：16 个文件 / 39 项通过，含 MCP 页五个标签行为用例与设置页原生提交用例。
+- `node scripts/check-i18n.mjs`：命名空间与键集合一致。
+- `vitest run` 新增 `features/administration/navigation.test.tsx`：4 项覆盖部门标签、角色管理标签及无权限时隐藏，秒级完成。
+- 浏览器验收只做过一次临时用例（隔离 schema、Go 8099、preview 5179，1/1 通过，3.6 分钟）：确认菜单仅剩七个入口、顶栏申请为无文本图标、三个合并页标签可新建、旧路径重定向生效、`/attachments` 仍可上传、浅暗截图一致。该用例运行成本过高，验收后已删除，回归改由上面的 Vitest 用例承担；需要真实链路时按需临时补回。
+- `e2e/administration.spec.ts` 与 `e2e/governance.spec.ts` 已按新入口改写导航步骤，本轮未重跑这两个文件。
+
+未执行：`make ci-fast`、完整 E2E 集合、远程 CI 与生产部署。仓库根 `eslint .` 仍因并行开发中的未跟踪临时文件 `apps/web/shot.mjs`、`apps/web/src/preview-editor.tsx` 报错，不属于本批次改动文件。
+
+## 2026-10-30 通知中心列表只读摘要与独立详情页
+
+按用户要求调整通知中心读取体验：收到的通知列表默认只显示标题与通知时间（保留未读底色与「标为已读」操作），点击标题行跳转独立详情页 `/notifications/:id` 查看完整正文、附件与来源事件；已发送列表默认收起正文，只显示标题、收件人数与时间，需要时展开「查看内容」。邮件里的历史详情链接仍是 `?message=<id>`，通知中心会把该参数重定向到新详情页，后端邮件模板与既有测试未改动。
+
+改动位置：`features/governance/notifications.tsx`（InboxPanel 改为摘要行 + 链接、SentPanel 改为 `details` 收起、新增导出 `NotificationDetailPage`、`?message=` 重定向）、`app/router/router.tsx`（新增 `/notifications/:id`，`/notifications/compose` 仍为静态优先路由）、`styles/admin.css`（`.gov-message-summary`、`.gov-message-content`、`.gov-message-detail`、`.gov-message-meta` 复用现有 tokens）、`i18n/locales/{en,zh-CN}/governance.json`（新增 `notificationDetail`、`notificationDetailHint`、`viewContent`）、`features/governance/notifications.test.tsx`、`e2e/notifications.spec.ts`。数据读取未变化：详情继续用生成 SDK 的 `notificationsMessage`，附件走 `notificationsAttachment`，权限与数据范围未改，无新增公开端点。
+
+`e2e/notifications.spec.ts` 原用例依赖已被 ADR 008 移除的「发起通知标签页」和发送页附件上传，长期无法执行；本次改为通过真实接口上传附件并发送通知（`/api/admin/files`、`/api/admin/notifications/send`），浏览器只验证通知中心读取链路，避免驱动第三方 Lexical 编辑器。
+
+实际本地结果：
+
+- `tsc --noEmit`（apps/web）：退出码 0。
+- `vitest run src/features/governance/notifications.test.tsx`：7/7 通过，新增「列表只显示标题与时间并跳转详情」和「已发送正文默认收起」两项。
+- `node scripts/check-i18n.mjs`：命名空间与键集合一致；改动文件 ESLint 与 Prettier 检查通过。
+- `PLAYWRIGHT_CHANNEL=chrome make test-e2e E2E_ARGS="e2e/notifications.spec.ts"`：退出码 0，1/1 通过（用例 2.1 分钟，整体 2.5 分钟）。真实浏览器确认列表不含正文、时间可见、点击进入 `/notifications/<id>`、详情渲染标题/表格/附件下载、标为已读后按钮禁用、已发送正文初始隐藏且展开后可见、投递记录包含该通知，无页面运行错误。
+- 环境注记：本机设置 `HTTP_PROXY/HTTPS_PROXY=127.0.0.1:57403` 的沙箱代理会让 Playwright 的 webServer 健康检查把 8099/5179 误判为已占用，浏览器验收需 `env -u HTTP_PROXY -u HTTPS_PROXY -u http_proxy -u https_proxy` 后运行；`PLAYWRIGHT_CHANNEL=chrome` 使用本机 Chrome，因为未安装 Playwright chromium_headless_shell。
+- `make check-rules`：退出码 0。
+
+未执行：`make ci-fast`、完整 E2E 集合、远程 CI。发送页编辑器（第三方 Lexical/MDXEditor）的浏览器交互仍无自动化覆盖，写入校验/幂等由 Go 集成测试与组件测试承担；本轮未改动后端与生成物。

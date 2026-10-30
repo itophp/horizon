@@ -1,0 +1,17 @@
+.mcp-hub-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 16px;
+  padding: 0 5px;
+  border: 1px solid var(--app-line);
+  border-radius: 4px;
+  background: var(--app-elevated);
+  font-size: 9px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.admin-page-tabs > button[aria-selected="true"] .mcp-hub-count {
+  background: var(--app-panel);
+}

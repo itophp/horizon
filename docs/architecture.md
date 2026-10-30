@@ -23,6 +23,11 @@ Playwright 启动真实 Go + Vite；数据库测试使用实际 PostgreSQL 的�
 
 独立通知中心及人工 Markdown 通知按 [ADR 008](decisions/008-notification-center.md)：announcement 与接收快照/附件/投递原子写入，邮件复用持久化队列；不再把投递记录放在系统设置中。通知附件通过共享文件服务的绑定鉴权入口读取。
 
-页面 Agent 能力见 [ADR 009](decisions/009-webmcp.md)：features/webmcp 管显式连接与设置页，lib/webmcp 管受控工具注册表/本地安装传输；scripts/webmcp-server.mjs 使用官方代理包，仅在本机 18793 服务。客户端 stdio 适配器复用当前页工具，三套可安装 WebSkills 在 webskills。未来 AI 助手复用注册表 list/invoke，当前未启用模型或聊天界面。
+页面 Agent 能力见 [ADR 009](decisions/009-webmcp.md)：features/mcp 管 `/mcp` 统一接入页与远程凭证面板，features/webmcp 管显式连接、客户端设置与 WebSkills 面板，lib/webmcp 管受控工具注册表/本地安装传输；scripts/webmcp-server.mjs 使用官方代理包，仅在本机 18793 服务。客户端 stdio 适配器复用当前页工具，三套可安装 WebSkills 在 webskills。未来 AI 助手复用注册表 list/invoke，当前未启用模型或聊天界面。
 
 系统设置持久定时发布见 [ADR 010](decisions/010-settings-schedules.md)。共享设置服务复用现有发布事务，保存排期意图，worker 以数据库行锁领取并在执行时重新授权。状态随发布/失败原子保存，重启恢复 pending；不把前端定时器作为执行器。
+
+
+账号级远程 MCP 见 [需求与实现方案](mcp-service-plan.md)（首阶段开发实现，验收状态见交付记录）。开发使用 baseline-mcp-development，功能变动主动确认暴露范围；账号 Token 与本机 WebMCP 配对分离。实施复用可信 Principal、Casbin、SQL 范围及字段投影，Token 固化工具集合与当前正式权限取交集，撤销/禁用实时生效，秘密仅一次显示且不进入日志/配置包。实现入口为 internal/mcp，协议、数据库和客户端验收须分别记录。
+
+账号远程 MCP 使用官方 Go SDK Streamable HTTP，管理契约与前端仍走 Goa/Orval。工具适配复用 PrincipalForTask 和业务服务，不依赖页面；本机助手仅安装独立 stdio 桥。见 [ADR 011](decisions/011-remote-mcp.md)。

@@ -6,16 +6,18 @@
     "dev": "pnpm --filter @baseline/web dev",
     "lint": "pnpm --filter @baseline/web lint",
     "typecheck": "pnpm --filter @baseline/web typecheck",
-    "test": "pnpm --filter @baseline/web test && pnpm webmcp:test",
+    "test": "pnpm --filter @baseline/web test && pnpm webmcp:test && pnpm mcp:test",
     "build": "pnpm --filter @baseline/web build",
     "format": "pnpm --filter @baseline/web format && pnpm --filter @baseline/web exec prettier --write ../../scripts/*.mjs ../../package.json ../../docs/agent-policy.json",
     "format:check": "pnpm --filter @baseline/web format:check && pnpm --filter @baseline/web exec prettier --check ../../scripts/*.mjs ../../package.json ../../docs/agent-policy.json",
     "test:e2e": "pnpm --filter @baseline/web test:e2e",
     "i18n:check": "pnpm --filter @baseline/web i18n:check",
-    "rules:check": "node scripts/check-agent-rules.mjs && node --test scripts/check-agent-rules.test.mjs && pnpm --filter @baseline/web lint:rules",
+    "rules:check": "node scripts/check-agent-rules.mjs && node --test scripts/check-agent-rules.test.mjs scripts/e2e-changed.test.mjs && pnpm --filter @baseline/web lint:rules",
     "webmcp": "node --env-file-if-exists=.env scripts/webmcp-server.mjs",
     "webmcp:setup": "node scripts/webmcp-install.mjs",
-    "webmcp:test": "node --test scripts/webmcp*.test.mjs"
+    "webmcp:test": "node --test scripts/webmcp*.test.mjs",
+    "mcp:helper": "node --env-file-if-exists=.env scripts/mcp-business-helper.mjs",
+    "mcp:test": "node --test scripts/mcp-business*.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.25.3",

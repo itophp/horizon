@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { X } from "lucide-react";
-import { useController, useForm, useWatch } from "react-hook-form";
+import { useController, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
@@ -9,10 +9,7 @@ import {
   notificationsAudience,
   notificationsPreview,
   notificationsSend,
-  filesUpload,
 } from "@/api/generated/baseline";
-import type { NotificationAttachment } from "@/api/generated/models";
-import { useSession } from "@/features/administration/auth";
 import {
   ErrorBanner,
   Loading,
@@ -21,7 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGovKey, useGovTask } from "./shared";
-import { NotificationMarkdown } from "./markdown";
+// 富文本编辑器只在发起通知页按需加载，避免把 Lexical/CodeMirror 带进主包。
+const NotificationEditor = lazy(() =>
+  import("./notification-editor").then((module) => ({
+    default: module.NotificationEditor,
+  })),
+);
 const schema = z.object({
   title: z.string().trim().min(1).max(200),
   markdown: z
@@ -35,12 +37,9 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 export function NotificationComposer({ onSent }: { onSent: () => void }) {
   const { t } = useTranslation("governance");
-  const session = useSession();
   const task = useGovTask();
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("account");
-  const [files, setFiles] = useState<NotificationAttachment[]>([]);
-  const [lastContent, setLastContent] = useState("");
   const [clientKey, setClientKey] = useState(() => crypto.randomUUID());
   const [confirmation, setConfirmation] = useState<{
     values: Values;
@@ -50,7 +49,8 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
     resolver: zodResolver(schema),
     defaultValues: { title: "", markdown: "", targets: [], email: false },
   });
-  const values = useWatch({ control: form.control });
+  // 编辑器只在挂载时读取初始 Markdown，之后的内容由它自己维护。
+  const [initialMarkdown] = useState(() => form.getValues("markdown"));
   const { field: targetField } = useController({
     name: "targets",
     control: form.control,
@@ -70,21 +70,13 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
   return (
     <section className="admin-panel entity-card notification-composer">
       <header className="gov-card-heading">
-        <h2>{t("composeNotification")}</h2>
-        <p>{t("composeHint")}</p>
+        <h2>{t("messageContent")}</h2>
+        <p>{t("messageContentHint")}</p>
       </header>
       <form
         className="notification-form"
         onSubmit={form.handleSubmit((data) =>
           task.mutate(async () => {
-            const signature = JSON.stringify({
-              data,
-              files: files.map((f) => f.id),
-            });
-            if (lastContent !== signature) {
-              setClientKey(crypto.randomUUID());
-              setLastContent(signature);
-            }
             const response = await notificationsPreview({
               targets: targets(data.targets),
             });
@@ -122,7 +114,7 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
               />
             </label>
           </div>
-          <p>{t("selectedTargets", { count: values.targets?.length ?? 0 })}</p>
+          <p>{t("selectedTargets", { count: targetField.value.length })}</p>
           {q.isPending ? (
             <Loading />
           ) : q.error ? (
@@ -163,9 +155,9 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
                 ))}
             </div>
           )}
-          {(values.targets?.length ?? 0) > 0 && (
+          {targetField.value.length > 0 && (
             <div className="notification-selected">
-              {values.targets?.map((key) => (
+              {targetField.value.map((key) => (
                 <Button
                   key={key}
                   type="button"
@@ -173,7 +165,7 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
                   onClick={() =>
                     form.setValue(
                       "targets",
-                      (values.targets ?? []).filter((v) => v !== key),
+                      targetField.value.filter((v) => v !== key),
                     )
                   }
                 >
@@ -184,94 +176,22 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
             </div>
           )}
         </fieldset>
-        <div className="notification-editor-grid">
-          <label>
-            <span>{t("markdownBody")}</span>
-            <textarea
-              {...form.register("markdown")}
-              rows={14}
-              maxLength={50000}
-              placeholder={t("markdownHint")}
+        <div className="notification-body">
+          <span className="notification-body-label">{t("markdownBody")}</span>
+          <Suspense fallback={<Loading />}>
+            <NotificationEditor
+              value={initialMarkdown}
+              readOnly={task.isPending}
+              onChange={(markdown) =>
+                form.setValue("markdown", markdown, {
+                  shouldDirty: true,
+                  shouldValidate: form.formState.isSubmitted,
+                })
+              }
             />
-          </label>
-          <section className="notification-preview">
-            <h3>{t("preview")}</h3>
-            <NotificationMarkdown
-              markdown={values.markdown ?? ""}
-              attachments={files}
-            />
-          </section>
+          </Suspense>
+          <p className="muted-text">{t("editorLimit")}</p>
         </div>
-        {session.permissions.includes("files:create") && (
-          <label>
-            <span>{t("insertFile")}</span>
-            <Input
-              type="file"
-              accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.csv,.docx,.xlsx"
-              disabled={task.isPending || files.length >= 20}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = "";
-                if (!file) return;
-                task.mutate(async () => {
-                  const bytes = new Uint8Array(await file.arrayBuffer());
-                  let binary = "";
-                  for (const byte of bytes) binary += String.fromCharCode(byte);
-                  const r = await filesUpload({
-                    name: file.name,
-                    purpose: "attachment",
-                    content: btoa(binary),
-                  });
-                  if (r.status === 201) {
-                    const uploaded = {
-                      id: r.data.id,
-                      name: r.data.name,
-                      mime: r.data.mime,
-                    };
-                    setFiles((previous) => [...previous, uploaded]);
-                    const label = file.name.replace(/[[\]\\\r\n]/g, "_");
-                    form.setValue(
-                      "markdown",
-                      `${form.getValues("markdown")}\n\n${r.data.mime.startsWith("image/") ? "!" : ""}[${label}](file:${r.data.id})\n\n`,
-                      { shouldValidate: true },
-                    );
-                  }
-                });
-              }}
-            />
-          </label>
-        )}
-        {files.length > 0 && (
-          <div className="notification-selected">
-            {files.map((file) => (
-              <Button
-                key={file.id}
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setFiles((previous) =>
-                    previous.filter((item) => item.id !== file.id),
-                  );
-                  form.setValue(
-                    "markdown",
-                    form
-                      .getValues("markdown")
-                      .replace(
-                        new RegExp(
-                          `!?\\[([^\\]]*)\\]\\(file:${file.id}\\)`,
-                          "g",
-                        ),
-                        "$1",
-                      ),
-                    { shouldValidate: true },
-                  );
-                }}
-              >
-                {t("removeNotificationFile", { name: file.name })}
-              </Button>
-            ))}
-          </div>
-        )}
         <label className="notification-email">
           <input type="checkbox" {...form.register("email")} />
           <span>{t("alsoEmail")}</span>
@@ -310,12 +230,11 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
                     ...confirmation.values,
                     targets: targets(confirmation.values.targets),
                     clientKey,
-                    fileIds: files.map((f) => f.id),
+                    fileIds: [],
                   });
                   if (response.status === 201) {
                     setConfirmation(null);
                     form.reset();
-                    setFiles([]);
                     setClientKey(crypto.randomUUID());
                     onSent();
                   }

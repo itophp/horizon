@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("real API → SDK → UI, validation, language persistence and navigation", async ({
+test("real API → SDK → UI, validation, language persistence and navigation @smoke", async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];

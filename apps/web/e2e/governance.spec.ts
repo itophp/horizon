@@ -123,7 +123,13 @@ test("dictionary editing, import preview and private file downloads use real ser
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await signIn(page);
-  await page.getByRole("link", { name: "Dictionaries", exact: true }).click();
+  // Dictionaries (field options) now live in the Field management tab of System settings.
+  await page
+    .getByRole("link", { name: "System settings", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Field management", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Create dictionary", exact: true })
     .click();
@@ -195,7 +201,8 @@ test("dictionary editing, import preview and private file downloads use real ser
       .getByRole("combobox", { name: "Usage preview", exact: true })
       .getByRole("option", { name: "High", exact: true }),
   ).toBeAttached();
-  await page.getByRole("link", { name: "Attachments", exact: true }).click();
+  // Attachment management is no longer a menu entry; the route stays for file access.
+  await page.goto("/attachments");
   await page.getByRole("button", { name: "Upload file", exact: true }).click();
   const upload = page.getByRole("dialog");
   const filename = `e2e-${Date.now()}.txt`;

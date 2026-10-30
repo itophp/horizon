@@ -105,6 +105,6 @@ curl -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/demo/records
 
 ## WebMCP 与 WebSkills
 
-在仓库根运行 `pnpm webmcp`（默认 `127.0.0.1:18793`），登录应用进入侧栏「WebMCP 与 WebSkills」，填写终端中的配对密钥并连接。端口由 `WEBMCP_PORT` 配置，页面端口须一致。点击 Codex 或 WorkBuddy 的「一键设置 MCP + Skills」安装当前页面连接和三套技能，重启客户端后使用；Codex CLI 需在 PATH 或通过 `CODEX_BIN` 指定绝对路径。其他客户端配置 Node + `scripts/webmcp-stdio.mjs` 的绝对路径 stdio 启动即可。
+在仓库根运行 `pnpm webmcp`（默认 `127.0.0.1:18793`），登录应用进入侧栏「MCP 与 WebSkills」，切到 WebMCP 标签：开发服务器会读取 `.local/webmcp/connection.json`，自动把端口和配对密钥填进表单，直接点「连接页面」即可；未启动服务或读取失败时表单为空，再从终端复制密钥手动填写。端口由 `WEBMCP_PORT` 配置，页面端口须一致（自动填入时已对齐）。点击 Codex 或 WorkBuddy 的「一键设置 MCP + Skills」安装当前页面连接和三套技能，重启客户端后使用；Codex CLI 需在 PATH 或通过 `CODEX_BIN` 指定绝对路径。其他客户端配置 Node + `scripts/webmcp-stdio.mjs` 的绝对路径 stdio 启动即可。
 
-连接跨应用路由保留，刷新/断开/退出/切部门后清理；重新连接或选择另一个标签页后再次设置客户端。安装在运行本地服务的电脑上，先备份并合并已有配置；密钥只存忽略提交的 `.local/webmcp/connection.json`，请勿分享。可手动执行 `pnpm webmcp:setup workbuddy` / `pnpm webmcp:setup codex` 安装配置（仍须先在设置页连接并绑定页面）。工具能力、安全边界与未来助手预留见 [ADR 009](decisions/009-webmcp.md)。
+连接跨应用路由保留，刷新/断开/退出/切部门后清理；重新连接或选择另一个标签页后再次设置客户端。安装在运行本地服务的电脑上，先备份并合并已有配置；密钥只存忽略提交的 `.local/webmcp/connection.json`，请勿分享。可手动执行 `pnpm webmcp:setup workbuddy` / `pnpm webmcp:setup codex` 安装配置（仍须先在 WebMCP 标签连接并绑定页面）。工具能力、安全边界与未来助手预留见 [ADR 009](decisions/009-webmcp.md)。

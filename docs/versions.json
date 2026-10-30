@@ -352,5 +352,14 @@
     },
     "license": "MIT",
     "source": "https://registry.npmjs.org/express/5.3.0"
+  },
+  "@mdxeditor/editor": {
+    "version": "4.3.4",
+    "selectedVersion": "4.3.4",
+    "engines": {
+      "node": ">=16"
+    },
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/@mdxeditor/editor/4.3.4"
   }
 }

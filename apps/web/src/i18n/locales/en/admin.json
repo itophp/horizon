@@ -126,6 +126,8 @@
   },
   "organizations": {
     "title": "Organization management",
+    "tabOrganizations": "Structure",
+    "tabDepartments": "Departments",
     "subtitle": "Build a clear hierarchy of enterprises and companies.",
     "create": "Create organization",
     "edit": "Edit organization",
@@ -168,6 +170,7 @@
   },
   "permissions": {
     "title": "Permission management",
+    "rolesTab": "Roles",
     "subtitle": "Configure role access and individual account overrides in one place.",
     "roleTab": "Role permissions",
     "accountTab": "Account overrides",

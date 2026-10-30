@@ -569,7 +569,8 @@ body {
   background: var(--app-green);
 }
 .overview-tabs,
-.permission-page-tabs {
+.permission-page-tabs,
+.admin-page-tabs {
   display: flex;
   gap: 3px;
   background: var(--app-elevated);
@@ -580,7 +581,8 @@ body {
   margin-bottom: 22px;
 }
 .overview-tabs > button,
-.permission-page-tabs > button {
+.permission-page-tabs > button,
+.admin-page-tabs > button {
   font-size: 11px;
   padding: 5px 13px;
   border-radius: 4px;
@@ -588,12 +590,14 @@ body {
   cursor: pointer;
 }
 .overview-tabs > button.active,
-.permission-page-tabs > button.active {
+.permission-page-tabs > button.active,
+.admin-page-tabs > button.active {
   background: var(--app-panel);
   color: var(--app-ink);
   box-shadow: 0 1px 3px #0002;
 }
-.permission-page-tabs > button {
+.permission-page-tabs > button,
+.admin-page-tabs > button {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -3019,7 +3023,8 @@ body {
   .subject-item {
     padding: 8px;
   }
-  .permission-page-tabs > button {
+  .permission-page-tabs > button,
+  .admin-page-tabs > button {
     font-size: 9px;
     padding: 7px 9px;
   }
@@ -3461,6 +3466,50 @@ body {
   margin-top: 10px;
   text-decoration: underline;
 }
+.gov-message .gov-message-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 0;
+  font-size: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+.gov-message a.gov-message-summary:hover strong,
+.gov-message a.gov-message-summary:focus-visible strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gov-message a.gov-message-summary time {
+  font-size: 12px;
+}
+.gov-message-content {
+  margin-top: 12px;
+}
+.gov-message-content > summary {
+  width: fit-content;
+  color: var(--app-muted);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gov-message-content > summary:hover {
+  color: var(--app-ink);
+}
+.gov-message-content[open] > summary {
+  margin-bottom: 12px;
+}
+.gov-message-detail .gov-message {
+  border-bottom: 0;
+}
+.gov-message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
 .gov-form-section {
   padding: 24px;
   display: grid;
@@ -3641,19 +3690,13 @@ body {
   font-size: 13px;
   font-weight: 600;
 }
-.notification-form select,
-.notification-form textarea {
+.notification-form select {
   background: var(--app-bg);
   color: var(--app-ink);
   border: 1px solid var(--app-line);
   border-radius: 8px;
   padding: 10px;
   width: 100%;
-}
-.notification-form textarea {
-  resize: vertical;
-  line-height: 1.7;
-  font-family: monospace;
 }
 .notification-audience .gov-toolbar {
   margin: 16px 0;
@@ -3683,22 +3726,186 @@ body {
   gap: 8px;
   margin-top: 12px;
 }
-.notification-editor-grid {
+.notification-body {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 8px;
+  font-size: 12px;
 }
-.notification-preview {
+.notification-body-label {
+  font-weight: 500;
+}
+.notification-editor-shell {
   border: 1px solid var(--app-line);
   border-radius: 10px;
-  padding: 16px;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  background: var(--app-panel);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
 }
-.notification-preview h3 {
+.notification-editor-shell:focus-within {
+  border-color: var(--app-strong-line);
+}
+/* 变量块用双类名提高优先级，保证在编辑器样式分包后仍覆盖其默认主题变量。 */
+.notification-editor.notification-editor-surface {
+  --basePageBg: var(--app-panel);
+  --baseBase: var(--app-panel);
+  --baseBgSubtle: var(--app-subtle);
+  --baseBg: var(--app-subtle);
+  --baseBgHover: var(--app-hover);
+  --baseBgActive: var(--app-elevated);
+  --baseLine: var(--app-line);
+  --baseBorder: var(--app-line);
+  --baseBorderHover: var(--app-strong-line);
+  --baseSolid: var(--app-muted);
+  --baseSolidHover: var(--app-ink);
+  --baseText: var(--app-muted);
+  --baseTextContrast: var(--app-ink);
+  --accentBase: var(--app-subtle);
+  --accentBgSubtle: var(--app-subtle);
+  --accentBg: var(--app-elevated);
+  --accentBgHover: var(--app-hover);
+  --accentBgActive: var(--app-elevated);
+  --accentLine: var(--app-line);
+  --accentBorder: var(--app-strong-line);
+  --accentBorderHover: var(--app-ink);
+  --accentSolid: var(--app-ink);
+  --accentSolidHover: var(--app-ink);
+  --accentText: var(--app-ink);
+  --accentTextContrast: var(--app-panel);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--app-ink);
+  font-family: inherit;
+  font-size: 13px;
+}
+.notification-editor .mdxeditor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--app-subtle);
+  border-bottom: 1px solid var(--app-line);
+  border-radius: 0;
+}
+.notification-editor .mdxeditor-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--app-muted);
   font-size: 12px;
-  margin: 0 0 16px;
+  line-height: 1;
+}
+.notification-editor .mdxeditor-toolbar button:hover {
+  background: var(--app-hover);
+  color: var(--app-ink);
+}
+.notification-editor .mdxeditor-toolbar button[data-state="on"],
+.notification-editor .mdxeditor-toolbar button[aria-pressed="true"] {
+  background: var(--app-elevated);
+  color: var(--app-ink);
+}
+.notification-editor .mdxeditor-toolbar button svg {
+  width: 16px;
+  height: 16px;
+}
+.notification-editor .mdxeditor-toolbar [role="separator"] {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--app-line);
+}
+.notification-editor .mdxeditor-root-contenteditable {
+  min-height: 240px;
+  padding: 16px 18px;
+  outline: none;
+  color: var(--app-ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.notification-editor .mdxeditor-root-contenteditable p {
+  margin: 0 0 10px;
+}
+.notification-editor .mdxeditor-root-contenteditable h1,
+.notification-editor .mdxeditor-root-contenteditable h2,
+.notification-editor .mdxeditor-root-contenteditable h3 {
+  margin: 18px 0 10px;
+  color: var(--app-ink);
+  font-weight: 600;
+}
+.notification-editor .mdxeditor-root-contenteditable h1 {
+  font-size: 22px;
+}
+.notification-editor .mdxeditor-root-contenteditable h2 {
+  font-size: 18px;
+}
+.notification-editor .mdxeditor-root-contenteditable h3 {
+  font-size: 15px;
+}
+.notification-editor .mdxeditor-root-contenteditable ul,
+.notification-editor .mdxeditor-root-contenteditable ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+.notification-editor .mdxeditor-root-contenteditable ul {
+  list-style: disc;
+}
+.notification-editor .mdxeditor-root-contenteditable ol {
+  list-style: decimal;
+}
+.notification-editor .mdxeditor-root-contenteditable a {
+  color: var(--app-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.notification-editor .mdxeditor-root-contenteditable blockquote {
+  margin: 0 0 10px;
+  border-left: 3px solid var(--app-line);
+  padding-left: 12px;
+  color: var(--app-muted);
+}
+.notification-editor .mdxeditor-root-contenteditable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.notification-editor .mdxeditor-root-contenteditable th,
+.notification-editor .mdxeditor-root-contenteditable td {
+  border: 1px solid var(--app-line);
+  padding: 6px 8px;
+  text-align: left;
+}
+.notification-editor .mdxeditor-root-contenteditable code {
+  border-radius: 4px;
+  background: var(--app-subtle);
+  padding: 1px 5px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}
+.notification-editor .mdxeditor-root-contenteditable pre {
+  margin: 0 0 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+  padding: 12px;
+  overflow: auto;
+}
+.notification-editor .mdxeditor-root-contenteditable hr {
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--app-line);
+}
+/* 表格第一行是 MDXEditor 的列菜单条，去掉内边距压成细条，避免看起来像空行。 */
+.notification-editor .mdxeditor-root-contenteditable table tr:first-child > td,
+.notification-editor .mdxeditor-root-contenteditable table tr:first-child > th {
+  padding: 2px 0;
+}
+.notification-editor-placeholder {
+  color: var(--app-muted);
 }
 .notification-markdown {
   font-size: 13px;
@@ -3776,7 +3983,7 @@ body {
   flex: 1;
 }
 @media (max-width: 900px) {
-  .notification-editor-grid {
+  .notification-target-list {
     grid-template-columns: 1fr;
   }
 }

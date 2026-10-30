@@ -1,8 +1,11 @@
-import { WebMcpSettingsPage } from "@/features/webmcp/settings";
+import { McpHubPage } from "@/features/mcp/hub";
 import { SettingsPage } from "@/features/governance/settings";
-import { DictionariesPage } from "@/features/governance/dictionaries";
 import { FilesPage, FileDownloadPage } from "@/features/governance/files";
-import { NotificationsPage } from "@/features/governance/notifications";
+import {
+  NotificationsPage,
+  NotificationDetailPage,
+} from "@/features/governance/notifications";
+import { NotificationComposePage } from "@/features/governance/notification-compose";
 import { TemporaryAccessPage } from "@/features/administration/temporary-access";
 import {
   AuthBoundary,
@@ -14,11 +17,9 @@ import { DashboardPage } from "@/features/administration/dashboard";
 import {
   AccountsPage,
   OrganizationsPage,
-  DepartmentsPage,
-  RolesPage,
   PermissionsPage,
 } from "@/features/administration/pages";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Shell } from "../layouts/shell";
 import { Overview } from "@/features/example/overview";
@@ -54,15 +55,42 @@ export const router = createBrowserRouter([
               { path: "/", element: <DashboardPage /> },
               { path: "/accounts", element: <AccountsPage /> },
               { path: "/organizations", element: <OrganizationsPage /> },
-              { path: "/departments", element: <DepartmentsPage /> },
-              { path: "/roles", element: <RolesPage /> },
+              {
+                path: "/departments",
+                element: (
+                  <Navigate to="/organizations?tab=departments" replace />
+                ),
+              },
+              {
+                path: "/roles",
+                element: <Navigate to="/permissions?type=roles" replace />,
+              },
               { path: "/settings", element: <SettingsPage /> },
-              { path: "/webmcp", element: <WebMcpSettingsPage /> },
+              { path: "/mcp", element: <McpHubPage /> },
+              {
+                path: "/mcp-settings",
+                element: <Navigate to="/mcp?tab=remote" replace />,
+              },
+              {
+                path: "/webmcp",
+                element: <Navigate to="/mcp?tab=page" replace />,
+              },
               { path: "/preferences", element: <SettingsPage personal /> },
-              { path: "/dictionaries", element: <DictionariesPage /> },
+              {
+                path: "/dictionaries",
+                element: <Navigate to="/settings?tab=fields" replace />,
+              },
               { path: "/attachments", element: <FilesPage /> },
               { path: "/files/:id", element: <FileDownloadPage /> },
               { path: "/notifications", element: <NotificationsPage /> },
+              {
+                path: "/notifications/compose",
+                element: <NotificationComposePage />,
+              },
+              {
+                path: "/notifications/:id",
+                element: <NotificationDetailPage />,
+              },
               { path: "/permissions", element: <PermissionsPage /> },
               { path: "/temporary-access", element: <TemporaryAccessPage /> },
             ],

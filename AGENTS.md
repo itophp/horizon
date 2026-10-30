@@ -9,6 +9,8 @@
 3. 功能开发先使用 [baseline-feature-development](.agents/skills/baseline-feature-development/SKILL.md)，按 [任务工具矩阵](docs/agent-tooling.md) 选择相关 Skill 和测试；只读/文档任务只加载相关规则。
 4. 使用锁文件中的版本；升级或新增依赖先核对官方 API、兼容性与许可证，记录于 docs/versions.md / docs/decisions。不要通过安装 latest 绕过本项目已确认的兼容组合。
 
+功能开发或需求变动时，先按 [MCP 开发 Skill](.agents/skills/baseline-mcp-development/SKILL.md) 集中询问是否接入 MCP、接入哪些操作、目标客户端与读写/确认范围；沿用已明确选择，未回答不默认开放能力，继续独立工作。已有 MCP 工具受变更影响时必须同步兼容性与授权。远程服务方案见 [实现方案](docs/mcp-service-plan.md)。
+
 ## 不可遗漏的全局边界
 
 - 唯一 API 契约源为 services/api/design；SQL 源为 db/migrations 与 db/query。禁止手工编辑 services/api/gen、services/api/internal/repository/dbgen、apps/web/src/api/generated。修改源后 make generate、make check-generated。
@@ -27,6 +29,7 @@
 
 | 变更 | 使用的 Skill | 规则入口 |
 |---|---|---|
+| 功能 MCP 工具设计、创建、变更和暴露评估 | [baseline-mcp-development](.agents/skills/baseline-mcp-development/SKILL.md) | docs/mcp-service-plan.md |
 | 设置项/字典选项/上传读取下载/通知接入 | [baseline-shared-capabilities](.agents/skills/baseline-shared-capabilities/SKILL.md) | docs/shared-capabilities.md |
 | 页面/表单/表格/SDK 消费 | [baseline-web-development](.agents/skills/baseline-web-development/SKILL.md) | apps/web/AGENTS.md |
 | HTTP/DTO/验证/错误/安全契约 | [goa-service-designer](.agents/skills/goa-service-designer/SKILL.md) | services/api/design/AGENTS.md |
@@ -38,6 +41,7 @@
 ## 验证与交付
 
 - 测试按变更批次集中执行，不因单个功能完成、进度汇报或聊天结束自动运行测试。普通连续开发累计受影响模块与待验项；明确阶段验收、准备提交/PR 时统一运行一次 make ci-fast，并按风险追加相关数据库/安全/浏览器检查。完整 make ci 用于发布候选、用户明确要求全量验收或 CI，不作为每个功能的收尾动作。文档/规则批次仅运行 make check-rules。高风险定向验证、结果复用和具体命令见 [testing.md](docs/testing.md#测试执行节奏)。
+- 浏览器验收分档：日常改动只跑相关文件（make test-e2e-changed，或 make test-e2e-smoke 快速旁证），完整集合才用 make test-e2e / make test-e2e-parallel。只跑子集必须报告选中的文件与未覆盖集合，不能宣称全量通过；不要为每轮文件变动重跑整套浏览器测试。
 - 代码生成检查与浏览器验收串行，避免生成产物更新干扰应用。不要把缺失数据库/浏览器运行时导致的跳过报告为通过。
 - 读取完整失败结果，修复源代码或夹具，重跑失败集再跑模块集。同一根因连续三轮无解时停止该部分盲改，报告证据和选项；不弱化检查。
 - 汇报：行为和文件变化、使用的框架/Skill、实际命令与结果、生成影响、国际化/安全影响、未执行检查和剩余风险。未经执行不得宣称通过；本地验证和远程 CI 分开报告。

@@ -53,6 +53,27 @@ func (s *Service) Inbox(ctx context.Context, _ *gen.InboxPayload) (res []*gen.In
 	if err != nil {
 		return nil, err
 	}
+	return s.inboxMessages(rows, p)
+}
+func (s *Service) InboxPage(ctx context.Context, offset, limit int) ([]*gen.InboxMessage, error) {
+	p, err := identity.Current(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if offset < 0 || offset > 10000 || limit < 1 || limit > 50 {
+		return nil, governance.Problem("invalid")
+	}
+	rows, err := s.Q.GovInboxPage(ctx, dbgen.GovInboxPageParams{TenantID: p.TenantID, RecipientID: p.Account.ID, DepartmentID: p.Account.DepartmentID, CanReview: p.Can("temporary:approve"), PageLimit: int32(limit), PageOffset: int32(offset)})
+	if err != nil {
+		return nil, err
+	}
+	converted := make([]dbgen.GovInboxRow, len(rows))
+	for i, row := range rows {
+		converted[i] = dbgen.GovInboxRow(row)
+	}
+	return s.inboxMessages(converted, p)
+}
+func (s *Service) inboxMessages(rows []dbgen.GovInboxRow, p *identity.Principal) (res []*gen.InboxMessage, err error) {
 	res = []*gen.InboxMessage{}
 	for _, r := range rows {
 		var data eventPayload

@@ -26,7 +26,6 @@ import type {
 import { useSession } from "@/features/administration/auth";
 import {
   useAdminData,
-  PageHeading,
   EditorDialog,
   ErrorBanner,
   Loading,
@@ -42,7 +41,7 @@ import {
   useGovTask,
   downloadContent,
 } from "./shared";
-export function DictionariesPage() {
+export function DictionarySection() {
   const { t, i18n } = useTranslation("governance");
   const session = useSession();
   const target = { kind: "workspace" as const, id: 0 };
@@ -104,21 +103,24 @@ export function DictionariesPage() {
   if (!session.permissions.includes("dictionaries:read")) return <NoAccess />;
   return (
     <>
-      <PageHeading title={t("dictionaries")} subtitle={t("dictionariesHint")}>
-        {selected !== null ? (
-          <Button variant="outline" onClick={() => setSelected(null)}>
-            <ArrowLeft size={15} />
-            {t("dictionaries")}
-          </Button>
-        ) : (
-          session.permissions.includes("dictionaries:create") && (
-            <Button onClick={() => setCreate(true)}>
-              <Plus size={16} />
-              {t("create")}
+      <div className="standalone-toolbar">
+        <p className="muted-text">{t("dictionariesHint")}</p>
+        <div className="toolbar-right">
+          {selected !== null ? (
+            <Button variant="outline" onClick={() => setSelected(null)}>
+              <ArrowLeft size={15} />
+              {t("dictionaries")}
             </Button>
-          )
-        )}
-      </PageHeading>
+          ) : (
+            session.permissions.includes("dictionaries:create") && (
+              <Button onClick={() => setCreate(true)}>
+                <Plus size={16} />
+                {t("create")}
+              </Button>
+            )
+          )}
+        </div>
+      </div>
       {task.error && <ErrorBanner error={task.error} />}{" "}
       {selected !== null ? (
         <DictionaryEditor id={selected} target={target} />

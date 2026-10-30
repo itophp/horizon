@@ -200,3 +200,11 @@ UPDATE iam_sessions SET expires_at=LEAST(expires_at,created_at+make_interval(min
 
 -- name: GovExpireIdleSessions :exec
 DELETE FROM iam_sessions WHERE tenant_id=sqlc.arg(tenant_id) AND sqlc.arg(idle_minutes)::int>0 AND last_seen_at+make_interval(mins=>sqlc.arg(idle_minutes)::int)<=now();
+
+-- name: GovInboxPage :many
+SELECT n.id,n.payload,n.read_at,n.created_at FROM gov_notifications n
+WHERE n.tenant_id=$1 AND n.recipient_id=$2
+AND (n.department_id=$3 OR (n.announcement_id IS NOT NULL AND EXISTS(SELECT 1 FROM gov_notification_members m WHERE m.tenant_id=n.tenant_id AND m.account_id=n.recipient_id AND m.department_id=n.department_id)))
+AND n.payload->>'inApp'='true'
+AND (COALESCE(n.payload->>'event','')<>'requested' OR sqlc.arg(can_review)::boolean)
+ORDER BY n.id DESC LIMIT sqlc.arg(page_limit)::int OFFSET sqlc.arg(page_offset)::int;

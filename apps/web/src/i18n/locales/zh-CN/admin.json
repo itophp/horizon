@@ -126,6 +126,8 @@
   },
   "organizations": {
     "title": "组织管理",
+    "tabOrganizations": "组织架构",
+    "tabDepartments": "部门",
     "subtitle": "以企业与公司构建清晰的组织体系。",
     "create": "新建组织",
     "edit": "编辑组织",
@@ -168,6 +170,7 @@
   },
   "permissions": {
     "title": "权限管理",
+    "rolesTab": "角色管理",
     "subtitle": "在同一处配置角色授权与账号独立权限。",
     "roleTab": "角色授权",
     "accountTab": "账号独立授权",

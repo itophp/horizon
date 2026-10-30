@@ -55,6 +55,11 @@
       "name": "goa-service-designer",
       "file": ".agents/skills/goa-service-designer/SKILL.md",
       "kind": "upstream"
+    },
+    {
+      "name": "baseline-mcp-development",
+      "file": ".agents/skills/baseline-mcp-development/SKILL.md",
+      "kind": "project"
     }
   ],
   "references": [
@@ -70,7 +75,11 @@
     "docs/design-system.md",
     "docs/internationalization.md",
     "docs/shared-capabilities.md",
-    "docs/decisions/009-webmcp.md"
+    "docs/decisions/009-webmcp.md",
+    "docs/mcp-service-plan.md",
+    "docs/decisions/011-remote-mcp.md",
+    "docs/mcp-operations.md",
+    "docs/mcp-verification.md"
   ],
   "gates": {
     "rules": "check-rules",
@@ -78,6 +87,9 @@
     "integration": "test-integration",
     "security": "test-security",
     "e2e": "test-e2e",
+    "e2e-changed": "test-e2e-changed",
+    "e2e-smoke": "test-e2e-smoke",
+    "e2e-parallel": "test-e2e-parallel",
     "complete": "ci",
     "generate": "generate",
     "generated": "check-generated"
@@ -171,7 +183,7 @@
         "services/api/tests/AGENTS.md"
       ],
       "tools": ["Vitest", "React Testing Library", "Go testing", "Playwright"],
-      "gates": ["fast", "integration", "e2e"]
+      "gates": ["fast", "integration", "e2e-changed", "e2e"]
     },
     {
       "id": "rules",
@@ -183,6 +195,22 @@
       ],
       "tools": ["Repository rule checker", "Skill Creator author validation"],
       "gates": ["rules"]
+    },
+    {
+      "id": "mcp",
+      "skills": [
+        "baseline-mcp-development",
+        "baseline-security",
+        "baseline-quality-gates"
+      ],
+      "instructions": ["AGENTS.md", "services/api/internal/AGENTS.md"],
+      "tools": [
+        "MCP protocol adapter",
+        "Personal token lifecycle",
+        "Scoped application services",
+        "Client onboarding"
+      ],
+      "gates": ["rules", "fast", "security", "generated", "e2e"]
     }
   ]
 }

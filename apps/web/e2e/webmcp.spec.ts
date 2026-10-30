@@ -18,8 +18,12 @@ test("real WebMCP connection follows routes, limits account tools and revokes on
   expect(login.ok()).toBe(true);
   await page.goto("/webmcp");
   await expect(
-    page.getByRole("heading", { name: "WebMCP & WebSkills" }),
+    page.getByRole("heading", { name: "MCP & WebSkills" }),
   ).toBeVisible();
+  // The legacy /webmcp entry redirects into the WebMCP tab of the unified page.
+  await expect(
+    page.getByRole("tab", { name: "WebMCP", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
   await page.getByRole("button", { name: "Connect page", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText(
     "Enter the 64-character pairing key printed by the local service.",
@@ -71,7 +75,7 @@ test("real WebMCP connection follows routes, limits account tools and revokes on
       name: "baseline_page_context",
       arguments: {},
     });
-    expect(JSON.stringify(context)).toContain("/webmcp");
+    expect(JSON.stringify(context)).toContain("/mcp");
     expect(JSON.stringify(context)).not.toContain(credential.token);
     const moduleContext = await client.callTool({
       name: "baseline_module_context",
@@ -82,7 +86,7 @@ test("real WebMCP connection follows routes, limits account tools and revokes on
       name: "baseline_current_page",
       arguments: {},
     });
-    expect(JSON.stringify(currentPage)).toContain("/webmcp");
+    expect(JSON.stringify(currentPage)).toContain("/mcp");
     const rejected = await client.callTool({
       name: "baseline_navigate",
       arguments: { path: "https://evil.test" },
@@ -163,7 +167,7 @@ test("real WebMCP connection follows routes, limits account tools and revokes on
       arguments: { path: "/webmcp" },
     });
     await expect(
-      page.getByRole("heading", { name: "WebMCP & WebSkills" }),
+      page.getByRole("heading", { name: "MCP & WebSkills" }),
     ).toBeVisible();
     await expect
       .poll(async () =>

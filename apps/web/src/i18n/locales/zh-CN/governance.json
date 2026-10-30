@@ -1,5 +1,7 @@
 {
   "settings": "系统设置",
+  "generalTab": "系统配置",
+  "fieldsTab": "字段管理",
   "settingsHint": "统一管理公共系统设置与已发布版本。",
   "dictionaries": "字典管理",
   "dictionariesHint": "为工作空间维护稳定的选项数据。",
@@ -147,7 +149,8 @@
     "notifications": "通知偏好",
     "templates": "邮件模板",
     "storage": "附件存储",
-    "files": "上传限制"
+    "files": "上传限制",
+    "assistant": "AI 助手"
   },
   "labels": {
     "branding_name": "产品名称",
@@ -208,7 +211,11 @@
     "templates_revoked_en_body": "撤销 · 英文正文",
     "templates_revoked_zh-CN_subject": "撤销 · 中文主题",
     "templates_revoked_zh-CN_body": "撤销 · 中文正文",
-    "smtp_username": "SMTP 用户名"
+    "smtp_username": "SMTP 用户名",
+    "assistant_enabled": "开启 AI 助手",
+    "assistant_baseUrl": "模型地址",
+    "assistant_model": "模型",
+    "assistant_token": "API Token"
   },
   "choices": {
     "en": "English",
@@ -246,7 +253,8 @@
     "use": "消费选项",
     "retry": "重试投递",
     "test": "SMTP 测试",
-    "send": "发送通知"
+    "send": "发送通知",
+    "revoke": "撤销"
   },
   "noLogo": "默认品牌标志",
   "logoHint": "在附件管理上传 PNG/JPEG Logo 后，在此选择。",
@@ -267,7 +275,7 @@
   "notificationCenter": "通知中心",
   "notificationCenterHint": "编写消息、选择收件人并追踪投递结果。",
   "composeNotification": "发起通知",
-  "composeHint": "向账号或组织成员发送支持 Markdown 和私有附件的消息。",
+  "composeHint": "在独立页面用所见即所得编辑器编写 Markdown 消息，选择收件人后发送。",
   "notificationTitle": "通知标题",
   "recipients": "收件人",
   "audienceHint": "支持混选多个人员和组织，部门包含子部门，重复账号只接收一份通知。",
@@ -275,9 +283,11 @@
   "searchRecipients": "搜索收件人",
   "selectedTargets": "已选择 {{count}} 个目标",
   "recipientCount": "{{count}} 位收件人",
+  "messageContent": "消息内容",
+  "messageContentHint": "标题显示在通知列表中，正文在所见即所得编辑器中直接排版。",
   "markdownBody": "Markdown 正文",
-  "markdownHint": "支持标题、列表、表格和链接，上传文件后自动插入受保护的引用。",
-  "insertFile": "上传并插入文件",
+  "markdownHint": "直接输入正文，标题、列表、表格和链接会即时呈现。",
+  "editorLimit": "正文最多 50,000 字符，不支持原始 HTML 和外部图片。",
   "messageFiles": "通知附件",
   "alsoEmail": "同时发送邮件（需要已配置 SMTP）",
   "notificationValidation": "请填写标题、正文并选择至少一个收件人，最多选择 200 个目标。",
@@ -289,7 +299,6 @@
   "announcement": "消息通知",
   "notificationTabs": {
     "inbox": "收到的通知",
-    "compose": "发起通知",
     "sent": "已发送",
     "deliveries": "投递记录"
   },
@@ -306,7 +315,82 @@
     "smtp": "邮件"
   },
   "backToInbox": "返回收到的通知",
-  "removeNotificationFile": "移除 {{name}}",
+  "backToCenter": "返回通知中心",
+  "notificationDetail": "通知详情",
+  "notificationDetailHint": "查看通知的标题、时间、完整正文与附件。",
+  "viewContent": "查看内容",
+  "notificationEditor": {
+    "contentArea": {
+      "editableMarkdown": "通知正文编辑区"
+    },
+    "toolbar": {
+      "toggleGroup": "文本格式",
+      "undo": "撤销 {{shortcut}}",
+      "redo": "重做 {{shortcut}}",
+      "bold": "加粗",
+      "removeBold": "取消加粗",
+      "italic": "斜体",
+      "removeItalic": "取消斜体",
+      "underline": "下划线",
+      "removeUnderline": "取消下划线",
+      "strikethrough": "删除线",
+      "removeStrikethrough": "取消删除线",
+      "subscript": "下标",
+      "removeSubscript": "取消下标",
+      "superscript": "上标",
+      "removeSuperscript": "取消上标",
+      "bulletedList": "无序列表",
+      "numberedList": "有序列表",
+      "checkList": "任务列表",
+      "link": "插入链接",
+      "table": "插入表格",
+      "thematicBreak": "插入分隔线",
+      "blockTypeSelect": {
+        "placeholder": "段落样式",
+        "selectBlockTypeTooltip": "选择段落样式"
+      },
+      "blockTypes": {
+        "paragraph": "正文",
+        "quote": "引用",
+        "heading": "标题 {{level}}"
+      }
+    },
+    "createLink": {
+      "text": "链接文字",
+      "textTooltip": "链接中显示的文字",
+      "title": "链接标题",
+      "titleTooltip": "鼠标悬停时显示的说明",
+      "url": "链接地址",
+      "urlPlaceholder": "输入或粘贴 http(s)、mailto 地址",
+      "saveTooltip": "保存链接",
+      "cancelTooltip": "取消修改"
+    },
+    "dialogControls": {
+      "save": "保存",
+      "cancel": "取消"
+    },
+    "linkPreview": {
+      "copied": "已复制",
+      "copyToClipboard": "复制链接",
+      "edit": "编辑链接",
+      "remove": "移除链接"
+    },
+    "table": {
+      "alignCenter": "居中对齐",
+      "alignLeft": "左对齐",
+      "alignRight": "右对齐",
+      "columnMenu": "列操作",
+      "rowMenu": "行操作",
+      "deleteColumn": "删除此列",
+      "deleteRow": "删除此行",
+      "deleteTable": "删除表格",
+      "insertColumnLeft": "在左侧插入列",
+      "insertColumnRight": "在右侧插入列",
+      "insertRowAbove": "在上方插入行",
+      "insertRowBelow": "在下方插入行",
+      "textAlignment": "文本对齐"
+    }
+  },
   "schedulePublish": "定时发布",
   "scheduledAlready": "已安排发布",
   "scheduledReleases": "定时发布记录",

@@ -4,6 +4,8 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
+import { ListTree, SlidersHorizontal } from "lucide-react";
 import {
   filesList,
   settingsWorkspace,
@@ -33,6 +35,7 @@ import {
   downloadContent,
 } from "./shared";
 import { useConfiguration } from "./runtime";
+import { DictionarySection } from "./dictionaries";
 
 const personalDefinitions: ConfigDefinition[] = [
   ...[
@@ -60,85 +63,119 @@ export function SettingsPage({ personal = false }: { personal?: boolean }) {
   const { t } = useTranslation("governance");
   const session = useSession();
   const runtime = useConfiguration();
+  const [params, setParams] = useSearchParams();
+  const canSettings = session.permissions.includes("settings:read");
+  const canDictionaries = session.permissions.includes("dictionaries:read");
+  const views: ("config" | "fields")[] = [];
+  if (canSettings) views.push("config");
+  if (canDictionaries) views.push("fields");
+  const requested = params.get("tab");
+  const view = views.find((item) => item === requested) ?? views[0];
   const target = { kind: "workspace" as const, id: 0 };
   const task = useGovTask();
   const query = useQuery({
     queryKey: useGovKey("settings", target.kind, target.id),
     queryFn: () =>
       settingsWorkspace({ targetKind: target.kind, targetId: target.id }),
-    enabled: !personal && session.permissions.includes("settings:read"),
+    enabled: !personal && canSettings,
     retry: false,
   });
-  if (!personal && !session.permissions.includes("settings:read"))
-    return <NoAccess />;
+  if (!personal && !views.length) return <NoAccess />;
   const data = query.data?.status === 200 ? query.data.data : undefined;
+  const showConfig = personal || view === "config";
   return (
     <>
       <PageHeading
         title={t(personal ? "preferences" : "settings")}
         subtitle={t(personal ? "preferencesHint" : "settingsHint")}
       >
-        {!personal && session.permissions.includes("settings:export") && (
-          <Button
-            variant="outline"
-            onClick={() =>
-              task.mutate(async () => {
-                const r = await settingsExport({
-                  targetKind: target.kind,
-                  targetId: target.id,
-                });
-                if (r.status === 200)
-                  downloadContent(
-                    "settings.json",
-                    JSON.stringify(r.data, null, 2),
-                    "application/json",
-                  );
-              })
-            }
-          >
-            {t("export")}
-          </Button>
-        )}
+        {!personal &&
+          view === "config" &&
+          session.permissions.includes("settings:export") && (
+            <Button
+              variant="outline"
+              onClick={() =>
+                task.mutate(async () => {
+                  const r = await settingsExport({
+                    targetKind: target.kind,
+                    targetId: target.id,
+                  });
+                  if (r.status === 200)
+                    downloadContent(
+                      "settings.json",
+                      JSON.stringify(r.data, null, 2),
+                      "application/json",
+                    );
+                })
+              }
+            >
+              {t("export")}
+            </Button>
+          )}
       </PageHeading>
-      {!personal && (
-        <div className="gov-toolbar">
-          <span className="muted-text">
-            {t("revision", { version: data?.revision ?? 0 })}
-          </span>
+      {!personal && views.length > 1 && (
+        <div className="admin-page-tabs">
+          <button
+            className={view === "config" ? "active" : ""}
+            onClick={() => setParams({ tab: "config" })}
+          >
+            <SlidersHorizontal size={15} />
+            {t("generalTab")}
+          </button>
+          <button
+            className={view === "fields" ? "active" : ""}
+            onClick={() => setParams({ tab: "fields" })}
+          >
+            <ListTree size={15} />
+            {t("fieldsTab")}
+          </button>
         </div>
       )}
-      {task.error && <ErrorBanner error={task.error} />}{" "}
-      {personal ? (
-        <SettingsForm
-          key={runtime.entries.length ? "ready" : "loading"}
-          definitions={personalDefinitions}
-          entries={runtime.entries}
-          target={{ kind: "account", id: session.account.id }}
-          revision={0}
-          personal
-        />
-      ) : query.isPending ? (
-        <Loading />
-      ) : query.error ? (
-        <ErrorBanner error={query.error} />
+      {!showConfig ? (
+        <DictionarySection />
       ) : (
-        data && (
-          <>
+        <>
+          {!personal && (
+            <div className="gov-toolbar">
+              <span className="muted-text">
+                {t("revision", { version: data?.revision ?? 0 })}
+              </span>
+            </div>
+          )}
+          {task.error && <ErrorBanner error={task.error} />}{" "}
+          {personal ? (
             <SettingsForm
-              key={`${target.kind}:${target.id}:${data.revision}`}
-              definitions={data.definitions}
-              entries={data.entries}
-              target={target}
-              revision={data.revision}
+              key={runtime.entries.length ? "ready" : "loading"}
+              definitions={personalDefinitions}
+              entries={runtime.entries}
+              target={{ kind: "account", id: session.account.id }}
+              revision={0}
+              personal
             />
-            <ChangeHistory
-              drafts={data.drafts}
-              history={data.history}
-              domain="settings"
-              revision={data.revision}
-            />
-          </>
-        )
+          ) : query.isPending ? (
+            <Loading />
+          ) : query.error ? (
+            <ErrorBanner error={query.error} />
+          ) : (
+            data && (
+              <>
+                <SettingsForm
+                  key={`${target.kind}:${target.id}:${data.revision}`}
+                  definitions={data.definitions}
+                  entries={data.entries}
+                  target={target}
+                  revision={data.revision}
+                />
+                <ChangeHistory
+                  drafts={data.drafts}
+                  history={data.history}
+                  domain="settings"
+                  revision={data.revision}
+                />
+              </>
+            )
+          )}
+        </>
       )}
     </>
   );

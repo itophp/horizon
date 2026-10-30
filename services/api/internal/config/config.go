@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -66,6 +67,12 @@ func Load() (Config, error) {
 	}
 	c.Governance.PublicWorkspace = os.Getenv("PUBLIC_WORKSPACE_ID")
 	c.Governance.PublicURL = os.Getenv("PUBLIC_APP_URL")
+	if c.SecureCookies {
+		origin, e := url.Parse(c.Governance.PublicURL)
+		if e != nil || origin.Scheme != "https" || origin.Hostname() == "" || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || (origin.Path != "" && origin.Path != "/") {
+			return c, errors.New("secure deployments require PUBLIC_APP_URL as an HTTPS origin")
+		}
+	}
 	for _, host := range strings.Split(os.Getenv("SMTP_ALLOWED_HOSTS"), ",") {
 		if h := strings.TrimSpace(host); h != "" {
 			c.Governance.SMTPHosts = append(c.Governance.SMTPHosts, h)

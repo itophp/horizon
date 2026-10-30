@@ -1263,6 +1263,63 @@ func (q *Queries) GovInbox(ctx context.Context, arg GovInboxParams) ([]GovInboxR
 	return items, nil
 }
 
+const govInboxPage = `-- name: GovInboxPage :many
+SELECT n.id,n.payload,n.read_at,n.created_at FROM gov_notifications n
+WHERE n.tenant_id=$1 AND n.recipient_id=$2
+AND (n.department_id=$3 OR (n.announcement_id IS NOT NULL AND EXISTS(SELECT 1 FROM gov_notification_members m WHERE m.tenant_id=n.tenant_id AND m.account_id=n.recipient_id AND m.department_id=n.department_id)))
+AND n.payload->>'inApp'='true'
+AND (COALESCE(n.payload->>'event','')<>'requested' OR $4::boolean)
+ORDER BY n.id DESC LIMIT $6::int OFFSET $5::int
+`
+
+type GovInboxPageParams struct {
+	TenantID     string
+	RecipientID  int64
+	DepartmentID int64
+	CanReview    bool
+	PageOffset   int32
+	PageLimit    int32
+}
+
+type GovInboxPageRow struct {
+	ID        int64
+	Payload   []byte
+	ReadAt    pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GovInboxPage(ctx context.Context, arg GovInboxPageParams) ([]GovInboxPageRow, error) {
+	rows, err := q.db.Query(ctx, govInboxPage,
+		arg.TenantID,
+		arg.RecipientID,
+		arg.DepartmentID,
+		arg.CanReview,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GovInboxPageRow{}
+	for rows.Next() {
+		var i GovInboxPageRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Payload,
+			&i.ReadAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const govItemOverrides = `-- name: GovItemOverrides :many
 SELECT item_id,scope_key,spec FROM gov_dictionary_overrides WHERE tenant_id=$1 AND dictionary_id=$2 AND scope_key=ANY($3::text[]) ORDER BY scope_key,item_id
 `

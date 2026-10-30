@@ -41,6 +41,7 @@ export function permissionFunctionLabel(key: string, t: TFunction) {
     dictionaries: t("governance:dictionaries"),
     files: t("governance:files"),
     notifications: t("governance:messages"),
+    mcp: t("mcp:title"),
   };
   return labels[key] ?? key;
 }

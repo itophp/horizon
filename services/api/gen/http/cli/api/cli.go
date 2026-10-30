@@ -8,11 +8,13 @@
 package cli
 
 import (
+	assistantc "baseline/services/api/gen/http/assistant/client"
 	brandingc "baseline/services/api/gen/http/branding/client"
 	democ "baseline/services/api/gen/http/demo/client"
 	dictionariesc "baseline/services/api/gen/http/dictionaries/client"
 	filesc "baseline/services/api/gen/http/files/client"
 	identityc "baseline/services/api/gen/http/identity/client"
+	mcpmanagementc "baseline/services/api/gen/http/mcp_management/client"
 	notificationsc "baseline/services/api/gen/http/notifications/client"
 	settingsc "baseline/services/api/gen/http/settings/client"
 	systemc "baseline/services/api/gen/http/system/client"
@@ -32,11 +34,13 @@ func UsageCommands() []string {
 	return []string{
 		"system (health|echo)",
 		"demo (list|get|update|delete)",
+		"assistant (status|chat)",
 		"settings (workspace|effective|logo|preferences|draft|schedules|schedule|cancel-schedule|publish|rollback|export|reauthenticate)",
 		"dictionaries (list|get|draft|publish|rollback|remove|override|options|import|import-draft|export)",
 		"files (list|drivers|upload|content|remove)",
 		"notifications (audience|preview|send|sent|attachment|message|inbox|read|deliveries|retry|test)",
 		"branding (get|logo)",
+		"mcp-management (create|list|revoke|rotate|capabilities|admin-revoke|audit)",
 		"identity (temporary-access|request-temporary-access|review-temporary-access|cancel-temporary-access|revoke-temporary-access|switch-department|login|me|logout|snapshot|create-account|update-account|delete-account|create-organization|update-organization|delete-organization|create-department|update-department|delete-department|create-role|update-role|delete-role)",
 	}
 }
@@ -45,9 +49,9 @@ func UsageCommands() []string {
 func UsageExamples() string {
 	return os.Args[0] + " " + "system health" + "\n" +
 		os.Args[0] + " " + "demo list --token \"Aliquam fugiat.\"" + "\n" +
+		os.Args[0] + " " + "assistant status --cookie \"Quo ea quis odit aut mollitia quisquam.\"" + "\n" +
 		os.Args[0] + " " + "settings workspace --target-kind \"workspace\" --target-id 0 --cookie \"A consectetur.\"" + "\n" +
 		os.Args[0] + " " + "dictionaries list --target-kind \"workspace\" --target-id 0 --cookie \"Provident et repellendus voluptatem ducimus est sit.\"" + "\n" +
-		os.Args[0] + " " + "files list --cookie \"Non ratione tempore aliquam et sint.\"" + "\n" +
 		""
 }
 
@@ -104,6 +108,15 @@ func ParseEndpoint(
 		demoDeleteFlags     = flag.NewFlagSet("delete", flag.ExitOnError)
 		demoDeleteIDFlag    = new(cliStringFlag)
 		demoDeleteTokenFlag = new(cliStringFlag)
+
+		assistantFlags = flag.NewFlagSet("assistant", flag.ContinueOnError)
+
+		assistantStatusFlags      = flag.NewFlagSet("status", flag.ExitOnError)
+		assistantStatusCookieFlag = new(cliStringFlag)
+
+		assistantChatFlags      = flag.NewFlagSet("chat", flag.ExitOnError)
+		assistantChatBodyFlag   = new(cliStringFlag)
+		assistantChatCookieFlag = new(cliStringFlag)
 
 		settingsFlags = flag.NewFlagSet("settings", flag.ContinueOnError)
 
@@ -284,6 +297,37 @@ func ParseEndpoint(
 
 		brandingLogoFlags = flag.NewFlagSet("logo", flag.ExitOnError)
 
+		mcpManagementFlags = flag.NewFlagSet("mcp-management", flag.ContinueOnError)
+
+		mcpManagementCreateFlags      = flag.NewFlagSet("create", flag.ExitOnError)
+		mcpManagementCreateBodyFlag   = new(cliStringFlag)
+		mcpManagementCreateCookieFlag = new(cliStringFlag)
+
+		mcpManagementListFlags      = flag.NewFlagSet("list", flag.ExitOnError)
+		mcpManagementListCookieFlag = new(cliStringFlag)
+
+		mcpManagementRevokeFlags      = flag.NewFlagSet("revoke", flag.ExitOnError)
+		mcpManagementRevokeBodyFlag   = new(cliStringFlag)
+		mcpManagementRevokeIDFlag     = new(cliStringFlag)
+		mcpManagementRevokeCookieFlag = new(cliStringFlag)
+
+		mcpManagementRotateFlags      = flag.NewFlagSet("rotate", flag.ExitOnError)
+		mcpManagementRotateBodyFlag   = new(cliStringFlag)
+		mcpManagementRotateIDFlag     = new(cliStringFlag)
+		mcpManagementRotateCookieFlag = new(cliStringFlag)
+
+		mcpManagementCapabilitiesFlags            = flag.NewFlagSet("capabilities", flag.ExitOnError)
+		mcpManagementCapabilitiesDepartmentIDFlag = new(cliStringFlag)
+		mcpManagementCapabilitiesCookieFlag       = new(cliStringFlag)
+
+		mcpManagementAdminRevokeFlags      = flag.NewFlagSet("admin-revoke", flag.ExitOnError)
+		mcpManagementAdminRevokeBodyFlag   = new(cliStringFlag)
+		mcpManagementAdminRevokeIDFlag     = new(cliStringFlag)
+		mcpManagementAdminRevokeCookieFlag = new(cliStringFlag)
+
+		mcpManagementAuditFlags      = flag.NewFlagSet("audit", flag.ExitOnError)
+		mcpManagementAuditCookieFlag = new(cliStringFlag)
+
 		identityFlags = flag.NewFlagSet("identity", flag.ContinueOnError)
 
 		identityTemporaryAccessFlags      = flag.NewFlagSet("temporary-access", flag.ExitOnError)
@@ -383,6 +427,9 @@ func ParseEndpoint(
 	demoUpdateFlags.Var(demoUpdateTokenFlag, "token", "")
 	demoDeleteFlags.Var(demoDeleteIDFlag, "id", "")
 	demoDeleteFlags.Var(demoDeleteTokenFlag, "token", "")
+	assistantStatusFlags.Var(assistantStatusCookieFlag, "cookie", "")
+	assistantChatFlags.Var(assistantChatBodyFlag, "body", "")
+	assistantChatFlags.Var(assistantChatCookieFlag, "cookie", "")
 	settingsWorkspaceFlags.Var(settingsWorkspaceCookieFlag, "cookie", "")
 	settingsEffectiveFlags.Var(settingsEffectiveCookieFlag, "cookie", "")
 	settingsLogoFlags.Var(settingsLogoCookieFlag, "cookie", "")
@@ -459,6 +506,21 @@ func ParseEndpoint(
 	notificationsRetryFlags.Var(notificationsRetryCookieFlag, "cookie", "")
 	notificationsTestFlags.Var(notificationsTestBodyFlag, "body", "")
 	notificationsTestFlags.Var(notificationsTestCookieFlag, "cookie", "")
+	mcpManagementCreateFlags.Var(mcpManagementCreateBodyFlag, "body", "")
+	mcpManagementCreateFlags.Var(mcpManagementCreateCookieFlag, "cookie", "")
+	mcpManagementListFlags.Var(mcpManagementListCookieFlag, "cookie", "")
+	mcpManagementRevokeFlags.Var(mcpManagementRevokeBodyFlag, "body", "")
+	mcpManagementRevokeFlags.Var(mcpManagementRevokeIDFlag, "id", "")
+	mcpManagementRevokeFlags.Var(mcpManagementRevokeCookieFlag, "cookie", "")
+	mcpManagementRotateFlags.Var(mcpManagementRotateBodyFlag, "body", "")
+	mcpManagementRotateFlags.Var(mcpManagementRotateIDFlag, "id", "")
+	mcpManagementRotateFlags.Var(mcpManagementRotateCookieFlag, "cookie", "")
+	mcpManagementCapabilitiesFlags.Var(mcpManagementCapabilitiesDepartmentIDFlag, "department-id", "")
+	mcpManagementCapabilitiesFlags.Var(mcpManagementCapabilitiesCookieFlag, "cookie", "")
+	mcpManagementAdminRevokeFlags.Var(mcpManagementAdminRevokeBodyFlag, "body", "")
+	mcpManagementAdminRevokeFlags.Var(mcpManagementAdminRevokeIDFlag, "id", "")
+	mcpManagementAdminRevokeFlags.Var(mcpManagementAdminRevokeCookieFlag, "cookie", "")
+	mcpManagementAuditFlags.Var(mcpManagementAuditCookieFlag, "cookie", "")
 	identityTemporaryAccessFlags.Var(identityTemporaryAccessCookieFlag, "cookie", "")
 	identityRequestTemporaryAccessFlags.Var(identityRequestTemporaryAccessBodyFlag, "body", "")
 	identityRequestTemporaryAccessFlags.Var(identityRequestTemporaryAccessCookieFlag, "cookie", "")
@@ -514,6 +576,10 @@ func ParseEndpoint(
 	demoUpdateFlags.Usage = demoUpdateUsage
 	demoDeleteFlags.Usage = demoDeleteUsage
 
+	assistantFlags.Usage = assistantUsage
+	assistantStatusFlags.Usage = assistantStatusUsage
+	assistantChatFlags.Usage = assistantChatUsage
+
 	settingsFlags.Usage = settingsUsage
 	settingsWorkspaceFlags.Usage = settingsWorkspaceUsage
 	settingsEffectiveFlags.Usage = settingsEffectiveUsage
@@ -565,6 +631,15 @@ func ParseEndpoint(
 	brandingGetFlags.Usage = brandingGetUsage
 	brandingLogoFlags.Usage = brandingLogoUsage
 
+	mcpManagementFlags.Usage = mcpManagementUsage
+	mcpManagementCreateFlags.Usage = mcpManagementCreateUsage
+	mcpManagementListFlags.Usage = mcpManagementListUsage
+	mcpManagementRevokeFlags.Usage = mcpManagementRevokeUsage
+	mcpManagementRotateFlags.Usage = mcpManagementRotateUsage
+	mcpManagementCapabilitiesFlags.Usage = mcpManagementCapabilitiesUsage
+	mcpManagementAdminRevokeFlags.Usage = mcpManagementAdminRevokeUsage
+	mcpManagementAuditFlags.Usage = mcpManagementAuditUsage
+
 	identityFlags.Usage = identityUsage
 	identityTemporaryAccessFlags.Usage = identityTemporaryAccessUsage
 	identityRequestTemporaryAccessFlags.Usage = identityRequestTemporaryAccessUsage
@@ -608,6 +683,8 @@ func ParseEndpoint(
 			svcf = systemFlags
 		case "demo":
 			svcf = demoFlags
+		case "assistant":
+			svcf = assistantFlags
 		case "settings":
 			svcf = settingsFlags
 		case "dictionaries":
@@ -618,6 +695,8 @@ func ParseEndpoint(
 			svcf = notificationsFlags
 		case "branding":
 			svcf = brandingFlags
+		case "mcp-management":
+			svcf = mcpManagementFlags
 		case "identity":
 			svcf = identityFlags
 		default:
@@ -658,6 +737,16 @@ func ParseEndpoint(
 
 			case "delete":
 				epf = demoDeleteFlags
+
+			}
+
+		case "assistant":
+			switch epn {
+			case "status":
+				epf = assistantStatusFlags
+
+			case "chat":
+				epf = assistantChatFlags
 
 			}
 
@@ -804,6 +893,31 @@ func ParseEndpoint(
 
 			}
 
+		case "mcp-management":
+			switch epn {
+			case "create":
+				epf = mcpManagementCreateFlags
+
+			case "list":
+				epf = mcpManagementListFlags
+
+			case "revoke":
+				epf = mcpManagementRevokeFlags
+
+			case "rotate":
+				epf = mcpManagementRotateFlags
+
+			case "capabilities":
+				epf = mcpManagementCapabilitiesFlags
+
+			case "admin-revoke":
+				epf = mcpManagementAdminRevokeFlags
+
+			case "audit":
+				epf = mcpManagementAuditFlags
+
+			}
+
 		case "identity":
 			switch epn {
 			case "temporary-access":
@@ -918,6 +1032,16 @@ func ParseEndpoint(
 			case "delete":
 				endpoint = c.Delete()
 				data, err = democ.BuildDeletePayload(demoDeleteIDFlag.value, demoDeleteTokenFlag.value)
+			}
+		case "assistant":
+			c := assistantc.NewClient(scheme, host, doer, enc, dec, restore)
+			switch epn {
+			case "status":
+				endpoint = c.Status()
+				data, err = assistantc.BuildStatusPayload(assistantStatusCookieFlag.value)
+			case "chat":
+				endpoint = c.Chat()
+				data, err = assistantc.BuildChatPayload(assistantChatBodyFlag.value, assistantChatCookieFlag.value)
 			}
 		case "settings":
 			c := settingsc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -1059,6 +1183,31 @@ func ParseEndpoint(
 				endpoint = c.Get()
 			case "logo":
 				endpoint = c.Logo()
+			}
+		case "mcp-management":
+			c := mcpmanagementc.NewClient(scheme, host, doer, enc, dec, restore)
+			switch epn {
+			case "create":
+				endpoint = c.Create()
+				data, err = mcpmanagementc.BuildCreatePayload(mcpManagementCreateBodyFlag.value, mcpManagementCreateCookieFlag.value)
+			case "list":
+				endpoint = c.List()
+				data, err = mcpmanagementc.BuildListPayload(mcpManagementListCookieFlag.value)
+			case "revoke":
+				endpoint = c.Revoke()
+				data, err = mcpmanagementc.BuildRevokePayload(mcpManagementRevokeBodyFlag.value, mcpManagementRevokeIDFlag.value, mcpManagementRevokeCookieFlag.value)
+			case "rotate":
+				endpoint = c.Rotate()
+				data, err = mcpmanagementc.BuildRotatePayload(mcpManagementRotateBodyFlag.value, mcpManagementRotateIDFlag.value, mcpManagementRotateCookieFlag.value)
+			case "capabilities":
+				endpoint = c.Capabilities()
+				data, err = mcpmanagementc.BuildCapabilitiesPayload(mcpManagementCapabilitiesDepartmentIDFlag.value, mcpManagementCapabilitiesCookieFlag.value)
+			case "admin-revoke":
+				endpoint = c.AdminRevoke()
+				data, err = mcpmanagementc.BuildAdminRevokePayload(mcpManagementAdminRevokeBodyFlag.value, mcpManagementAdminRevokeIDFlag.value, mcpManagementAdminRevokeCookieFlag.value)
+			case "audit":
+				endpoint = c.Audit()
+				data, err = mcpmanagementc.BuildAuditPayload(mcpManagementAuditCookieFlag.value)
 			}
 		case "identity":
 			c := identityc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -1275,6 +1424,56 @@ func demoDeleteUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "demo delete --id 7844361218811283284 --token \"Dolorem illo fugiat.\"")
+}
+
+// assistantUsage displays the usage of the assistant command and its
+// subcommands.
+func assistantUsage() {
+	fmt.Fprintln(os.Stderr, `Embedded assistant gateway. Resolves the deployment model configuration on the server; the browser never receives the credential.`)
+	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] assistant COMMAND [flags]\n\n", os.Args[0])
+	fmt.Fprintln(os.Stderr, "COMMAND:")
+	fmt.Fprintln(os.Stderr, `    status: Report whether the assistant is enabled for this workspace and which model is configured.`)
+	fmt.Fprintln(os.Stderr, `    chat: Send the conversation and the currently registered page tools; returns assistant text plus any requested tool calls.`)
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Additional help:")
+	fmt.Fprintf(os.Stderr, "    %s assistant COMMAND --help\n", os.Args[0])
+}
+func assistantStatusUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] assistant status", os.Args[0])
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Report whether the assistant is enabled for this workspace and which model is configured.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant status --cookie \"Quo ea quis odit aut mollitia quisquam.\"")
+}
+
+func assistantChatUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] assistant chat", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Send the conversation and the currently registered page tools; returns assistant text plus any requested tool calls.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant chat --body '{\n      \"messages\": [\n         {\n            \"content\": \"gbw\",\n            \"role\": \"user\",\n            \"toolCallId\": \"lkf\",\n            \"toolCalls\": [\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               }\n            ]\n         },\n         {\n            \"content\": \"gbw\",\n            \"role\": \"user\",\n            \"toolCallId\": \"lkf\",\n            \"toolCalls\": [\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               }\n            ]\n         },\n         {\n            \"content\": \"gbw\",\n            \"role\": \"user\",\n            \"toolCallId\": \"lkf\",\n            \"toolCalls\": [\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               }\n            ]\n         }\n      ],\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }' --cookie \"Cupiditate sequi suscipit deleniti unde.\"")
 }
 
 // settingsUsage displays the usage of the settings command and its subcommands.
@@ -2193,6 +2392,165 @@ func brandingLogoUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "branding logo")
+}
+
+// mcpManagementUsage displays the usage of the mcp-management command and its
+// subcommands.
+func mcpManagementUsage() {
+	fmt.Fprintln(os.Stderr, `Service is the mcp_management service interface.`)
+	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] mcp-management COMMAND [flags]\n\n", os.Args[0])
+	fmt.Fprintln(os.Stderr, "COMMAND:")
+	fmt.Fprintln(os.Stderr, `    create: Create implements create.`)
+	fmt.Fprintln(os.Stderr, `    list: List implements list.`)
+	fmt.Fprintln(os.Stderr, `    revoke: Revoke implements revoke.`)
+	fmt.Fprintln(os.Stderr, `    rotate: Rotate implements rotate.`)
+	fmt.Fprintln(os.Stderr, `    capabilities: Capabilities implements capabilities.`)
+	fmt.Fprintln(os.Stderr, `    admin-revoke: AdminRevoke implements admin_revoke.`)
+	fmt.Fprintln(os.Stderr, `    audit: Audit implements audit.`)
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Additional help:")
+	fmt.Fprintf(os.Stderr, "    %s mcp-management COMMAND --help\n", os.Args[0])
+}
+func mcpManagementCreateUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management create", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Create implements create.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management create --body '{\n      \"days\": 88,\n      \"departmentId\": 4959054971882152553,\n      \"name\": \"k9i\",\n      \"password\": \"6cs\",\n      \"tools\": [\n         \"Et ipsa.\",\n         \"Sed et in molestiae laboriosam.\"\n      ]\n   }' --cookie \"Expedita error ipsa sed deleniti voluptatem.\"")
+}
+
+func mcpManagementListUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management list", os.Args[0])
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `List implements list.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management list --cookie \"Repellat quisquam eos odit.\"")
+}
+
+func mcpManagementRevokeUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management revoke", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -id INT64")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Revoke implements revoke.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -id INT64: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management revoke --body '{\n      \"password\": \"7\"\n   }' --id 6913699775982178330 --cookie \"Consequatur est eum iure sint aliquam minima.\"")
+}
+
+func mcpManagementRotateUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management rotate", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -id INT64")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Rotate implements rotate.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -id INT64: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management rotate --body '{\n      \"password\": \"3\"\n   }' --id 2059930443494487771 --cookie \"Nam voluptates.\"")
+}
+
+func mcpManagementCapabilitiesUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management capabilities", os.Args[0])
+	fmt.Fprint(os.Stderr, " -department-id INT64")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Capabilities implements capabilities.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -department-id INT64: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management capabilities --department-id 8698749775231865064 --cookie \"Optio velit.\"")
+}
+
+func mcpManagementAdminRevokeUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management admin-revoke", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -id INT64")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `AdminRevoke implements admin_revoke.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -id INT64: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management admin-revoke --body '{\n      \"password\": \"i\"\n   }' --id 2521078975200357226 --cookie \"Occaecati velit quia qui temporibus sequi.\"")
+}
+
+func mcpManagementAuditUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management audit", os.Args[0])
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Audit implements audit.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management audit --cookie \"Accusantium atque dolor quia modi.\"")
 }
 
 // identityUsage displays the usage of the identity command and its subcommands.

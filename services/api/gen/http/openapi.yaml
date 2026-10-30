@@ -1564,6 +1564,68 @@ paths:
                 - http
             security:
                 - browser_session_header_Cookie: []
+    /api/admin/mcp/tokens/{id}:
+        delete:
+            tags:
+                - mcp_management
+            summary: admin_revoke mcp_management
+            operationId: mcp_management#admin_revoke
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  type: integer
+                  minimum: 1
+                - name: admin_revoke_request_body
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/McpManagementAdminRevokeRequestBody'
+                    required:
+                        - password
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
     /api/admin/notifications/audience:
         get:
             tags:
@@ -3478,6 +3540,114 @@ paths:
                 - http
             security:
                 - browser_session_header_Cookie: []
+    /api/assistant/chat:
+        post:
+            tags:
+                - assistant
+            summary: chat assistant
+            description: Send the conversation and the currently registered page tools; returns assistant text plus any requested tool calls.
+            operationId: assistant#chat
+            parameters:
+                - name: ChatRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/AssistantChatRequestBody'
+                    required:
+                        - messages
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/AssistantReply'
+                        required:
+                            - content
+                            - toolCalls
+                            - model
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+    /api/assistant/status:
+        get:
+            tags:
+                - assistant
+            summary: status assistant
+            description: Report whether the assistant is enabled for this workspace and which model is configured.
+            operationId: assistant#status
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/AssistantStatus'
+                        required:
+                            - enabled
+                            - configured
+                            - model
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
     /api/auth/branding/logo:
         get:
             tags:
@@ -3813,6 +3983,365 @@ paths:
                             type: string
                 "401":
                     description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/audit:
+        get:
+            tags:
+                - mcp_management
+            summary: audit mcp_management
+            operationId: mcp_management#audit
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        type: array
+                        items:
+                            $ref: '#/definitions/MCPAudit'
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/capabilities:
+        get:
+            tags:
+                - mcp_management
+            summary: capabilities mcp_management
+            operationId: mcp_management#capabilities
+            parameters:
+                - name: departmentId
+                  in: query
+                  required: false
+                  type: integer
+                  minimum: 1
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        type: array
+                        items:
+                            type: string
+                            example: Facilis debitis.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/tokens:
+        get:
+            tags:
+                - mcp_management
+            summary: list mcp_management
+            operationId: mcp_management#list
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        type: array
+                        items:
+                            $ref: '#/definitions/MCPToken'
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+        post:
+            tags:
+                - mcp_management
+            summary: create mcp_management
+            operationId: mcp_management#create
+            parameters:
+                - name: CreateRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/McpManagementCreateRequestBody'
+                    required:
+                        - password
+                        - name
+                        - departmentId
+                        - tools
+            responses:
+                "201":
+                    description: Created response.
+                    schema:
+                        $ref: '#/definitions/MCPTokenCreated'
+                        required:
+                            - token
+                            - secret
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/tokens/{id}:
+        delete:
+            tags:
+                - mcp_management
+            summary: revoke mcp_management
+            operationId: mcp_management#revoke
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  type: integer
+                  minimum: 1
+                - name: RevokeRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/McpManagementRevokeRequestBody'
+                    required:
+                        - password
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
+    /api/auth/mcp/tokens/{id}/rotate:
+        post:
+            tags:
+                - mcp_management
+            summary: rotate mcp_management
+            operationId: mcp_management#rotate
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  type: integer
+                  minimum: 1
+                - name: RotateRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/McpManagementRotateRequestBody'
+                    required:
+                        - password
+            responses:
+                "201":
+                    description: Created response.
+                    schema:
+                        $ref: '#/definitions/MCPTokenCreated'
+                        required:
+                            - token
+                            - secret
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
                     schema:
                         $ref: '#/definitions/IAMProblem'
                         required:
@@ -5801,6 +6330,291 @@ definitions:
             - roles
             - permissions
             - catalog
+    AssistantChatRequestBody:
+        title: AssistantChatRequestBody
+        type: object
+        properties:
+            messages:
+                type: array
+                items:
+                    $ref: '#/definitions/AssistantMessage'
+                example:
+                    - content: gbw
+                      role: user
+                      toolCallId: lkf
+                      toolCalls:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                    - content: gbw
+                      role: user
+                      toolCallId: lkf
+                      toolCalls:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                    - content: gbw
+                      role: user
+                      toolCallId: lkf
+                      toolCalls:
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                        - arguments: Impedit qui rerum minus non ipsa optio.
+                          id: Eveniet voluptatem.
+                          name: Et qui sit et sint reiciendis.
+                minItems: 1
+                maxItems: 60
+            tools:
+                type: array
+                items:
+                    $ref: '#/definitions/AssistantTool'
+                example:
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                maxItems: 40
+        example:
+            messages:
+                - content: gbw
+                  role: user
+                  toolCallId: lkf
+                  toolCalls:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                - content: gbw
+                  role: user
+                  toolCallId: lkf
+                  toolCalls:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                - content: gbw
+                  role: user
+                  toolCallId: lkf
+                  toolCalls:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+            tools:
+                - description: niq
+                  name: ni
+                  parameters: Voluptatem omnis sapiente eos non.
+                - description: niq
+                  name: ni
+                  parameters: Voluptatem omnis sapiente eos non.
+                - description: niq
+                  name: ni
+                  parameters: Voluptatem omnis sapiente eos non.
+        required:
+            - messages
+    AssistantMessage:
+        title: AssistantMessage
+        type: object
+        properties:
+            content:
+                type: string
+                example: gbw
+                maxLength: 8000
+            role:
+                type: string
+                example: user
+                enum:
+                    - system
+                    - user
+                    - assistant
+                    - tool
+            toolCallId:
+                type: string
+                example: lkf
+                maxLength: 120
+            toolCalls:
+                type: array
+                items:
+                    $ref: '#/definitions/AssistantToolCall'
+                example:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                maxItems: 10
+        description: One turn of the assistant conversation. Tool output is attributed to its call id.
+        example:
+            content: gbw
+            role: user
+            toolCallId: lkf
+            toolCalls:
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+        required:
+            - role
+            - content
+    AssistantReply:
+        title: AssistantReply
+        type: object
+        properties:
+            content:
+                type: string
+                example: Sed libero placeat ipsa quasi voluptas.
+            model:
+                type: string
+                example: Assumenda quia facilis magnam.
+            toolCalls:
+                type: array
+                items:
+                    $ref: '#/definitions/AssistantToolCall'
+                example:
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+                    - arguments: Impedit qui rerum minus non ipsa optio.
+                      id: Eveniet voluptatem.
+                      name: Et qui sit et sint reiciendis.
+        example:
+            content: Sed libero placeat ipsa quasi voluptas.
+            model: Assumenda quia facilis magnam.
+            toolCalls:
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+                - arguments: Impedit qui rerum minus non ipsa optio.
+                  id: Eveniet voluptatem.
+                  name: Et qui sit et sint reiciendis.
+        required:
+            - content
+            - toolCalls
+            - model
+    AssistantStatus:
+        title: AssistantStatus
+        type: object
+        properties:
+            configured:
+                type: boolean
+                example: false
+            enabled:
+                type: boolean
+                example: false
+            model:
+                type: string
+                example: Id eaque distinctio hic quisquam.
+        description: Availability projection for the launcher. Credentials and endpoints are never returned.
+        example:
+            configured: false
+            enabled: false
+            model: Id eaque distinctio hic quisquam.
+        required:
+            - enabled
+            - configured
+            - model
+    AssistantTool:
+        title: AssistantTool
+        type: object
+        properties:
+            description:
+                type: string
+                example: niq
+                maxLength: 2000
+            name:
+                type: string
+                example: ni
+                minLength: 1
+                maxLength: 64
+            parameters:
+                example: Voluptatem omnis sapiente eos non.
+        description: Page tool definition supplied by the browser. The model may request it; the page executes it.
+        example:
+            description: niq
+            name: ni
+            parameters: Voluptatem omnis sapiente eos non.
+        required:
+            - name
+            - description
+            - parameters
+    AssistantToolCall:
+        title: AssistantToolCall
+        type: object
+        properties:
+            arguments:
+                type: string
+                example: Impedit qui rerum minus non ipsa optio.
+            id:
+                type: string
+                example: Eveniet voluptatem.
+            name:
+                type: string
+                example: Et qui sit et sint reiciendis.
+        example:
+            arguments: Impedit qui rerum minus non ipsa optio.
+            id: Eveniet voluptatem.
+            name: Et qui sit et sint reiciendis.
+        required:
+            - id
+            - name
+            - arguments
     ChangeEntry:
         title: ChangeEntry
         type: object
@@ -9851,9 +10665,9 @@ definitions:
         properties:
             code:
                 type: string
-                example: Officia reprehenderit.
+                example: Aut iste architecto voluptatem sapiente aliquam blanditiis.
         example:
-            code: Officia reprehenderit.
+            code: Aut iste architecto voluptatem sapiente aliquam blanditiis.
         required:
             - code
     IdentityCreateAccountRequestBody:
@@ -11145,6 +11959,149 @@ definitions:
                 tenantId: Dolor blanditiis.
         required:
             - profile
+    MCPAudit:
+        title: MCPAudit
+        type: object
+        properties:
+            createdAt:
+                type: string
+                example: Eos doloremque.
+            departmentId:
+                type: integer
+                example: 1998959071932363781
+                format: int64
+            durationMs:
+                type: integer
+                example: 4991499671581515877
+                format: int64
+            id:
+                type: integer
+                example: 2362399049652494097
+                format: int64
+            requestId:
+                type: string
+                example: Voluptas magnam est.
+            resultCode:
+                type: string
+                example: Nihil provident voluptas et officia natus.
+            tokenId:
+                type: integer
+                example: 5568058068105168674
+                format: int64
+            tool:
+                type: string
+                example: Consequatur quos quis consectetur laudantium.
+        example:
+            createdAt: Eos doloremque.
+            departmentId: 1998959071932363781
+            durationMs: 4991499671581515877
+            id: 2362399049652494097
+            requestId: Voluptas magnam est.
+            resultCode: Nihil provident voluptas et officia natus.
+            tokenId: 5568058068105168674
+            tool: Consequatur quos quis consectetur laudantium.
+        required:
+            - id
+            - tokenId
+            - departmentId
+            - tool
+            - resultCode
+            - durationMs
+            - requestId
+            - createdAt
+    MCPToken:
+        title: MCPToken
+        type: object
+        properties:
+            createdAt:
+                type: string
+                example: Repudiandae quo.
+            departmentId:
+                type: integer
+                example: 4801757873491723516
+                format: int64
+            expiresAt:
+                type: string
+                example: Sed est.
+            id:
+                type: integer
+                example: 4220744944196883305
+                format: int64
+            lastUsedAt:
+                type: string
+                example: Doloremque dolores ut a nemo nihil.
+            name:
+                type: string
+                example: Quae commodi.
+            prefix:
+                type: string
+                example: Velit assumenda illo at sunt dolore mollitia.
+            revokedAt:
+                type: string
+                example: Vitae corporis labore nisi libero dolores assumenda.
+            revokedBy:
+                type: integer
+                example: 1455915594800041645
+                format: int64
+            tools:
+                type: array
+                items:
+                    type: string
+                    example: Aut voluptas voluptas reiciendis in et ut.
+                example:
+                    - Aut voluptas voluptas reiciendis in et ut.
+                    - Quod ex rerum error non minima.
+        example:
+            createdAt: Repudiandae quo.
+            departmentId: 4801757873491723516
+            expiresAt: Sed est.
+            id: 4220744944196883305
+            lastUsedAt: Doloremque dolores ut a nemo nihil.
+            name: Quae commodi.
+            prefix: Velit assumenda illo at sunt dolore mollitia.
+            revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+            revokedBy: 1455915594800041645
+            tools:
+                - Aut voluptas voluptas reiciendis in et ut.
+                - Quod ex rerum error non minima.
+        required:
+            - id
+            - departmentId
+            - name
+            - prefix
+            - tools
+            - createdAt
+            - expiresAt
+            - revokedAt
+            - lastUsedAt
+            - revokedBy
+    MCPTokenCreated:
+        title: MCPTokenCreated
+        type: object
+        properties:
+            secret:
+                type: string
+                example: Placeat mollitia omnis sint quis labore optio.
+            token:
+                $ref: '#/definitions/MCPToken'
+        example:
+            secret: Placeat mollitia omnis sint quis labore optio.
+            token:
+                createdAt: Repudiandae quo.
+                departmentId: 4801757873491723516
+                expiresAt: Sed est.
+                id: 4220744944196883305
+                lastUsedAt: Doloremque dolores ut a nemo nihil.
+                name: Quae commodi.
+                prefix: Velit assumenda illo at sunt dolore mollitia.
+                revokedAt: Vitae corporis labore nisi libero dolores assumenda.
+                revokedBy: 1455915594800041645
+                tools:
+                    - Aut voluptas voluptas reiciendis in et ut.
+                    - Quod ex rerum error non minima.
+        required:
+            - token
+            - secret
     ManagedFile:
         title: ManagedFile
         type: object
@@ -11206,6 +12163,94 @@ definitions:
             - departmentId
             - storageVersion
             - link
+    McpManagementAdminRevokeRequestBody:
+        title: McpManagementAdminRevokeRequestBody
+        type: object
+        properties:
+            password:
+                type: string
+                example: i
+                minLength: 1
+                maxLength: 128
+        example:
+            password: i
+        required:
+            - password
+    McpManagementCreateRequestBody:
+        title: McpManagementCreateRequestBody
+        type: object
+        properties:
+            days:
+                type: integer
+                default: 30
+                example: 88
+                format: int64
+                minimum: 1
+                maximum: 90
+            departmentId:
+                type: integer
+                example: 4959054971882152553
+                format: int64
+                minimum: 1
+            name:
+                type: string
+                example: k9i
+                minLength: 1
+                maxLength: 100
+            password:
+                type: string
+                example: 6cs
+                minLength: 1
+                maxLength: 128
+            tools:
+                type: array
+                items:
+                    type: string
+                    example: Et ipsa.
+                example:
+                    - Et ipsa.
+                    - Sed et in molestiae laboriosam.
+                minItems: 1
+                maxItems: 10
+        example:
+            days: 88
+            departmentId: 4959054971882152553
+            name: k9i
+            password: 6cs
+            tools:
+                - Et ipsa.
+                - Sed et in molestiae laboriosam.
+        required:
+            - password
+            - name
+            - departmentId
+            - tools
+    McpManagementRevokeRequestBody:
+        title: McpManagementRevokeRequestBody
+        type: object
+        properties:
+            password:
+                type: string
+                example: "7"
+                minLength: 1
+                maxLength: 128
+        example:
+            password: "7"
+        required:
+            - password
+    McpManagementRotateRequestBody:
+        title: McpManagementRotateRequestBody
+        type: object
+        properties:
+            password:
+                type: string
+                example: "3"
+                minLength: 1
+                maxLength: 128
+        example:
+            password: "3"
+        required:
+            - password
     NotificationAttachment:
         title: NotificationAttachment
         type: object

@@ -52,6 +52,7 @@
 | @fontsource-variable/geist | 5.3.0 | [来源](https://registry.npmjs.org/@fontsource-variable/geist/5.3.0) |
 | cn | 0.5.0 | [来源](https://registry.npmjs.org/cn/0.5.0) |
 | tw-animate-css | 1.4.0 | [来源](https://registry.npmjs.org/tw-animate-css/1.4.0) |
+| @mdxeditor/editor | 4.3.4 | [来源](https://registry.npmjs.org/@mdxeditor/editor/4.3.4) |
 
 PostgreSQL 18.6，官方 release notes 确认为稳定主线 18；容器实际版本另见验收。pnpm 使用当前机器已有的 10.14.0，packageManager 和 CI 均固定一致；Node 使用实际安装且满足所有 engines 的 22.23.2。不是盲目使用每个包的 latest：TypeScript 7 因 ESLint peer 约束固定到 6.0.2，理由见 ADR。
 
@@ -94,3 +95,30 @@ Goa 官方 Skill 完整安装，内容 hash 见 skills-lock.json。当前模块�
 0.4.11 的实际兼容适配：AbortSignal 撤销异步注册；精确来源 CORS 允许 SDK 默认 credentials:include / Stream-Session-Id，但代理删除 Cookie；stdio 适配器按 MCP schema 解包 DOMString 结果，保证 isError 不被文本包装丢失。未修改第三方包或生成物。
 
 2026-10-29 系统设置排期未新增依赖：使用现有 Go time、pgx 事务/savepoint、PostgreSQL 行锁和生成 SDK；时间录入用 HTML datetime-local + Date/Intl，未引入额外日期或任务调度框架。
+
+远程业务 MCP 开发依赖：github.com/modelcontextprotocol/go-sdk v1.8.0，固定于 go.mod/go.sum；使用 Streamable HTTP Stateless 适配器。上游 LICENSE 含 Apache-2.0/MIT 历史贡献声明，发布前须完成客户端协议兼容验收。
+
+远程 MCP 兼容性核对：SDK tag v1.8.0 声明最低 Go 1.25.0，项目 Go 1.27.3 编译/测试通过。以下新增传递依赖的许可证已核对下载模块自带 LICENSE：
+
+| 模块 | 固定版本 | 许可证 |
+|---|---|---|
+| google/jsonschema-go | v0.4.3 | MIT |
+| segmentio/encoding | v0.5.4 | MIT |
+| segmentio/asm | v1.2.1 | MIT-0 |
+| yosida95/uritemplate/v3 | v3.0.2 | BSD-3-Clause |
+| golang.org/x/oauth2 | v0.35.0 | BSD-3-Clause |
+| golang.org/x/time | v0.15.0 | BSD-3-Clause |
+| golang.org/x/sys | v0.49.0 | BSD-3-Clause |
+
+SDK 与 x/time 是应用直接依赖，其余由 SDK 引入；全部由 go.mod/go.sum 固定，无 latest 安装。客户端验收使用本机 Codex CLI 与腾讯 WorkBuddy 5.8.2 随附运行时，具体边界见 MCP 验证记录。
+
+本轮原生 Codex 验收版本为 codex-cli 0.165.0-alpha.1.2；浏览器/stdio 桥继续使用锁定的 @modelcontextprotocol/sdk 1.25.3，没有新增前端 MCP 依赖。
+
+## 2026-10-30 通知正文所见即所得编辑器
+
+固定 `@mdxeditor/editor@4.3.4`（MIT；peerDependencies 为 `react >= 18 || >= 19`，与本项目 React 19.3.1 兼容）。已核对 [npm 版本元数据](https://registry.npmjs.org/@mdxeditor/editor/4.3.4)、[官方 Vite 接入说明](https://mdxeditor.dev/editor/docs/getting-started) 和 4.3.4 产物类型声明（`MDXEditor`、`MDXEditorProps`、`toolbarPlugin`、`Translation`、`suppressHtmlProcessing`、`overlayContainer`）。
+
+- 只以插件形式启用标题（1–3 级）、列表、引用、分隔线、链接与表格，工具栏按需裁剪；不安装 image、code-block、diff-source 插件，因此编辑器内没有“上传并插入文件”和源码/差异/预览浏览入口，编辑区即所见即所得结果。
+- `suppressHtmlProcessing` 关闭原始 HTML 处理，`linkPlugin.validateUrl` 只放行 http(s)/mailto，与 NotificationMarkdown 的 URL 策略一致。
+- 样式按后台 tokens 覆盖（`--base*` / `--accent*` 映射到 `--app-*`），浅暗主题共用；不引入第二套视觉体系，也不改第三方包源码。
+- 传递依赖（lexical 0.48、codemirror 6、radix 原语等）由 pnpm-lock.yaml 固定，未使用 latest 安装，未修改 `services/api/gen` 与 `apps/web/src/api/generated`。

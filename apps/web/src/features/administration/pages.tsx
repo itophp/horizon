@@ -61,6 +61,14 @@ import {
   DepartmentForm,
   RoleForm,
 } from "./forms";
+function withQuery(value: string) {
+  return (old: URLSearchParams) => {
+    const next = new URLSearchParams(old);
+    if (value) next.set("q", value);
+    else next.delete("q");
+    return next;
+  };
+}
 function RowActions({
   actions,
 }: {
@@ -450,7 +458,7 @@ export function AccountsPage() {
     </>
   );
 }
-export function OrganizationsPage() {
+export function OrganizationsSection() {
   const { t } = useTranslation();
   const session = useSession();
   const query = useAdminData();
@@ -486,7 +494,7 @@ export function OrganizationsPage() {
       ({ query: text }) => {
         if (!can("read") || query.isPending || query.isError)
           throw new Error("unavailable");
-        setParams(text ? { q: text } : {});
+        setParams(withQuery(text));
         return { requestedQuery: text };
       },
       {
@@ -579,17 +587,6 @@ export function OrganizationsPage() {
   if (query.isPending) return <Loading />;
   return (
     <>
-      <PageHeading
-        title={t("admin:organizations.title")}
-        subtitle={t("admin:organizations.subtitle")}
-      >
-        {can("create") && (
-          <Button onClick={() => setEditing(null)}>
-            <Plus size={15} />
-            {t("admin:organizations.create")}
-          </Button>
-        )}
-      </PageHeading>
       {query.isError && <ErrorBanner error={query.error} />}
       <div className="management-split">
         <aside className="admin-panel tree-panel">
@@ -677,11 +674,17 @@ export function OrganizationsPage() {
           <div className="table-toolbar">
             <ListSearch
               value={search}
-              onChange={(value) => setParams(value ? { q: value } : {})}
+              onChange={(value) => setParams(withQuery(value))}
             />
             <span className="muted-text">
               {t("admin:organizations.total", { count: rows.length })}
             </span>
+            {can("create") && (
+              <Button onClick={() => setEditing(null)}>
+                <Plus size={15} />
+                {t("admin:organizations.create")}
+              </Button>
+            )}
           </div>
           <DataTable rows={rows} columns={columns} />
         </section>
@@ -724,7 +727,7 @@ export function OrganizationsPage() {
     </>
   );
 }
-export function DepartmentsPage() {
+export function DepartmentsSection() {
   const { t } = useTranslation();
   const session = useSession();
   const query = useAdminData();
@@ -777,7 +780,7 @@ export function DepartmentsPage() {
       ({ query: text }) => {
         if (!can("read") || query.isPending || query.isError)
           throw new Error("unavailable");
-        setParams(text ? { q: text } : {});
+        setParams(withQuery(text));
         return { requestedQuery: text };
       },
       { scope: "page", effect: "interaction", permission: "departments:read" },
@@ -893,17 +896,6 @@ export function DepartmentsPage() {
   if (query.isPending) return <Loading />;
   return (
     <>
-      <PageHeading
-        title={t("admin:departments.title")}
-        subtitle={t("admin:departments.subtitle")}
-      >
-        {can("create") && (
-          <Button onClick={() => setEditing(null)}>
-            <Plus size={15} />
-            {t("admin:departments.create")}
-          </Button>
-        )}
-      </PageHeading>
       {query.isError && <ErrorBanner error={query.error} />}
       <div className="management-split">
         <aside className="admin-panel tree-panel">
@@ -957,8 +949,14 @@ export function DepartmentsPage() {
           <div className="table-toolbar">
             <ListSearch
               value={search}
-              onChange={(value) => setParams(value ? { q: value } : {})}
+              onChange={(value) => setParams(withQuery(value))}
             />
+            {can("create") && (
+              <Button onClick={() => setEditing(null)}>
+                <Plus size={15} />
+                {t("admin:departments.create")}
+              </Button>
+            )}
           </div>
           <DataTable rows={rows} columns={columns} />
         </section>
@@ -996,7 +994,7 @@ export function DepartmentsPage() {
     </>
   );
 }
-export function RolesPage() {
+export function RolesSection() {
   const { t } = useTranslation();
   const session = useSession();
   const query = useAdminData();
@@ -1031,7 +1029,7 @@ export function RolesPage() {
           query.isError
         )
           throw new Error("unavailable");
-        setParams(text ? { q: text } : {});
+        setParams(withQuery(text));
         return { requestedQuery: text };
       },
       { scope: "page", effect: "interaction", permission: "roles:read" },
@@ -1117,22 +1115,11 @@ export function RolesPage() {
   if (query.isPending) return <Loading />;
   return (
     <>
-      <PageHeading
-        title={t("admin:roles.title")}
-        subtitle={t("admin:roles.subtitle")}
-      >
-        {can("create") && (
-          <Button onClick={() => setEditing(null)}>
-            <Plus size={15} />
-            {t("admin:roles.create")}
-          </Button>
-        )}
-      </PageHeading>
       {query.isError && <ErrorBanner error={query.error} />}
       <div className="standalone-toolbar">
         <ListSearch
           value={search}
-          onChange={(value) => setParams(value ? { q: value } : {})}
+          onChange={(value) => setParams(withQuery(value))}
         />
         <div className="toolbar-right">
           <span className="muted-text">
@@ -1154,6 +1141,12 @@ export function RolesPage() {
               <List size={15} />
             </button>
           </div>
+          {can("create") && (
+            <Button onClick={() => setEditing(null)}>
+              <Plus size={15} />
+              {t("admin:roles.create")}
+            </Button>
+          )}
         </div>
       </div>
       {view === "grid" ? (
@@ -1230,25 +1223,75 @@ export function RolesPage() {
     </>
   );
 }
+const organizationViews = ["organizations", "departments"] as const;
+export function OrganizationsPage() {
+  const { t } = useTranslation();
+  const session = useSession();
+  const [params, setParams] = useSearchParams();
+  const allowed = organizationViews.filter((view) =>
+    session.permissions.includes(`${view}:read`),
+  );
+  if (!allowed.length) return <NoAccess />;
+  const requested = params.get("tab");
+  const active = allowed.find((view) => view === requested) ?? allowed[0];
+  return (
+    <>
+      <PageHeading
+        title={t("admin:organizations.title")}
+        subtitle={t("admin:organizations.subtitle")}
+      />
+      {allowed.length > 1 && (
+        <div className="admin-page-tabs">
+          <button
+            className={active === "organizations" ? "active" : ""}
+            onClick={() => setParams({ tab: "organizations" })}
+          >
+            <Building2 size={15} />
+            {t("admin:organizations.tabOrganizations")}
+          </button>
+          <button
+            className={active === "departments" ? "active" : ""}
+            onClick={() => setParams({ tab: "departments" })}
+          >
+            <Network size={15} />
+            {t("admin:organizations.tabDepartments")}
+          </button>
+        </div>
+      )}
+      {active === "organizations" ? (
+        <OrganizationsSection />
+      ) : (
+        <DepartmentsSection />
+      )}
+    </>
+  );
+}
 export function PermissionsPage() {
   const { t } = useTranslation();
   const session = useSession();
   const query = useAdminData();
   const { data } = query;
   const [params, setParams] = useSearchParams();
-  const mode = params.get("type") === "account" ? "account" : "role";
+  const canManageRoles = session.permissions.includes("roles:read");
+  const requested = params.get("type");
+  const mode =
+    requested === "roles" && canManageRoles
+      ? "roles"
+      : requested === "account"
+        ? "account"
+        : "role";
   const [notice, setNotice] = useState("");
   const items =
-    mode === "role"
-      ? data.roles.map((role) => ({
-          id: role.id,
-          name: role.name,
-          code: role.code,
-        }))
-      : data.accounts.map((account) => ({
+    mode === "account"
+      ? data.accounts.map((account) => ({
           id: account.id,
           name: account.fullName,
           code: account.username,
+        }))
+      : data.roles.map((role) => ({
+          id: role.id,
+          name: role.name,
+          code: role.code,
         }));
   const id = Number(params.get("id")) || items[0]?.id || 0;
   const role = data.roles.find((item) => item.id === id);
@@ -1266,7 +1309,7 @@ export function PermissionsPage() {
         subtitle={t("admin:permissions.subtitle")}
       />
       {query.isError && <ErrorBanner error={query.error} />}
-      <div className="permission-page-tabs">
+      <div className="admin-page-tabs">
         <button
           className={mode === "role" ? "active" : ""}
           onClick={() => setParams({ type: "role" })}
@@ -1281,79 +1324,92 @@ export function PermissionsPage() {
           <Users size={15} />
           {t("admin:permissions.accountTab")}
         </button>
+        {canManageRoles && (
+          <button
+            className={mode === "roles" ? "active" : ""}
+            onClick={() => setParams({ type: "roles" })}
+          >
+            <KeyRound size={15} />
+            {t("admin:permissions.rolesTab")}
+          </button>
+        )}
       </div>
-      <div className="management-split permissions-split">
-        <aside className="admin-panel permission-subjects">
-          <div className="tree-title">
-            {mode === "role"
-              ? t("admin:permissions.selectRole")
-              : t("admin:permissions.selectAccount")}
-          </div>
-          {items.map((item) => (
-            <button
-              className={`subject-item ${id === item.id ? "selected" : ""}`}
-              key={item.id}
-              onClick={() => setParams({ type: mode, id: String(item.id) })}
-            >
-              <span className="subject-icon">
-                {mode === "role" ? (
-                  <ShieldCheck size={17} />
-                ) : (
-                  <Users size={17} />
-                )}
-              </span>
-              <span>
-                <strong>{item.name}</strong>
-                <small>{item.code}</small>
-              </span>
-              <ChevronRight size={14} />
-            </button>
-          ))}
-          {!items.length && <EmptyState />}
-        </aside>
-        <section className="admin-panel permission-detail">
-          {mode === "role" && role ? (
-            <>
-              <div className="permission-detail-heading">
-                <div>
-                  <h2>{role.name}</h2>
-                  <p>{role.description || t("admin:roles.description")}</p>
+      {mode === "roles" ? (
+        <RolesSection />
+      ) : (
+        <div className="management-split permissions-split">
+          <aside className="admin-panel permission-subjects">
+            <div className="tree-title">
+              {mode === "role"
+                ? t("admin:permissions.selectRole")
+                : t("admin:permissions.selectAccount")}
+            </div>
+            {items.map((item) => (
+              <button
+                className={`subject-item ${id === item.id ? "selected" : ""}`}
+                key={item.id}
+                onClick={() => setParams({ type: mode, id: String(item.id) })}
+              >
+                <span className="subject-icon">
+                  {mode === "role" ? (
+                    <ShieldCheck size={17} />
+                  ) : (
+                    <Users size={17} />
+                  )}
+                </span>
+                <span>
+                  <strong>{item.name}</strong>
+                  <small>{item.code}</small>
+                </span>
+                <ChevronRight size={14} />
+              </button>
+            ))}
+            {!items.length && <EmptyState />}
+          </aside>
+          <section className="admin-panel permission-detail">
+            {mode === "role" && role ? (
+              <>
+                <div className="permission-detail-heading">
+                  <div>
+                    <h2>{role.name}</h2>
+                    <p>{role.description || t("admin:roles.description")}</p>
+                  </div>
+                  <StatusBadge status={role.status} />
                 </div>
-                <StatusBadge status={role.status} />
-              </div>
-              <RoleForm
-                key={`role-${role.id}`}
-                record={role}
-                permissionsOnly
-                onSaved={() => setNotice(t("admin:feedback.saved"))}
-              />
-            </>
-          ) : mode === "account" && account ? (
-            <>
-              <div className="permission-detail-heading">
-                <div>
-                  <h2>{account.fullName}</h2>
-                  <p>{account.username}</p>
+                <RoleForm
+                  key={`role-${role.id}`}
+                  record={role}
+                  permissionsOnly
+                  onSaved={() => setNotice(t("admin:feedback.saved"))}
+                />
+              </>
+            ) : mode === "account" && account ? (
+              <>
+                <div className="permission-detail-heading">
+                  <div>
+                    <h2>{account.fullName}</h2>
+                    <p>{account.username}</p>
+                  </div>
+                  <StatusBadge status={account.status} />
                 </div>
-                <StatusBadge status={account.status} />
-              </div>
-              <AccountForm
-                key={`account-${account.id}`}
-                record={account}
-                permissionsOnly
-                readOnly={
-                  (account.isAdmin && account.id !== session.account.id) ||
-                  !session.permissions.includes("access:manage") ||
-                  !session.permissions.includes("accounts:update")
-                }
-                onSaved={() => setNotice(t("admin:feedback.saved"))}
-              />
-            </>
-          ) : (
-            <EmptyState />
-          )}
-        </section>
-      </div>
+                <AccountForm
+                  key={`account-${account.id}`}
+                  record={account}
+                  permissionsOnly
+                  readOnly={
+                    (account.isAdmin && account.id !== session.account.id) ||
+                    !session.permissions.includes("access:manage") ||
+                    !session.permissions.includes("accounts:update")
+                  }
+                  onSaved={() => setNotice(t("admin:feedback.saved"))}
+                />
+              </>
+            ) : (
+              <EmptyState />
+            )}
+          </section>
+        </div>
+      )}
       {notice && (
         <SuccessNotice message={notice} onClose={() => setNotice("")} />
       )}

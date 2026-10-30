@@ -1,5 +1,7 @@
 {
   "settings": "System settings",
+  "generalTab": "Configuration",
+  "fieldsTab": "Field management",
   "settingsHint": "Manage shared system settings and published versions.",
   "dictionaries": "Dictionaries",
   "dictionariesHint": "Stable reference data for your workspace.",
@@ -147,7 +149,8 @@
     "notifications": "Notification preferences",
     "templates": "Email templates",
     "storage": "File storage",
-    "files": "Upload restrictions"
+    "files": "Upload restrictions",
+    "assistant": "AI assistant"
   },
   "labels": {
     "branding_name": "Product name",
@@ -208,7 +211,11 @@
     "templates_revoked_en_body": "Revocation · English body",
     "templates_revoked_zh-CN_subject": "Revocation · Chinese subject",
     "templates_revoked_zh-CN_body": "Revocation · Chinese body",
-    "smtp_username": "SMTP username"
+    "smtp_username": "SMTP username",
+    "assistant_enabled": "Enable the assistant",
+    "assistant_baseUrl": "Model endpoint",
+    "assistant_model": "Model",
+    "assistant_token": "API token"
   },
   "choices": {
     "en": "English",
@@ -246,7 +253,8 @@
     "use": "Use options",
     "retry": "Retry delivery",
     "test": "SMTP test",
-    "send": "Send notification"
+    "send": "Send notification",
+    "revoke": "Revoke"
   },
   "noLogo": "Default brand mark",
   "logoHint": "Upload a PNG/JPEG logo from Attachments, then select it here.",
@@ -267,7 +275,7 @@
   "notificationCenter": "Notification center",
   "notificationCenterHint": "Compose messages, manage recipients and track delivery.",
   "composeNotification": "Compose notification",
-  "composeHint": "Send Markdown messages with private files to people and organizations.",
+  "composeHint": "Write a Markdown message in the standalone rich-text editor, then pick the recipients.",
   "notificationTitle": "Notification title",
   "recipients": "Recipients",
   "audienceHint": "Mix multiple people and organizations. Departments include subdepartments. Duplicate accounts receive one message.",
@@ -275,9 +283,11 @@
   "searchRecipients": "Search recipients",
   "selectedTargets": "{{count}} targets selected",
   "recipientCount": "{{count}} recipients",
+  "messageContent": "Message content",
+  "messageContentHint": "The title appears in the notification list; the body is formatted directly in the editor.",
   "markdownBody": "Markdown body",
-  "markdownHint": "Write headings, lists, tables and links. Upload files to insert protected references.",
-  "insertFile": "Upload and insert file",
+  "markdownHint": "Start typing; headings, lists, tables and links render as you write.",
+  "editorLimit": "Up to 50,000 characters. Raw HTML and external images are not supported.",
   "messageFiles": "Notification files",
   "alsoEmail": "Also send by email (requires configured SMTP)",
   "notificationValidation": "Enter a title, body and at least one recipient; select at most 200 targets.",
@@ -289,7 +299,6 @@
   "announcement": "Message notification",
   "notificationTabs": {
     "inbox": "Inbox",
-    "compose": "Compose",
     "sent": "Sent",
     "deliveries": "Delivery records"
   },
@@ -306,7 +315,82 @@
     "smtp": "Email"
   },
   "backToInbox": "Back to inbox",
-  "removeNotificationFile": "Remove {{name}}",
+  "backToCenter": "Back to notification center",
+  "notificationDetail": "Notification details",
+  "notificationDetailHint": "Read the title, time, full message and attachments.",
+  "viewContent": "View content",
+  "notificationEditor": {
+    "contentArea": {
+      "editableMarkdown": "Notification body editor"
+    },
+    "toolbar": {
+      "toggleGroup": "Text formatting",
+      "undo": "Undo {{shortcut}}",
+      "redo": "Redo {{shortcut}}",
+      "bold": "Bold",
+      "removeBold": "Remove bold",
+      "italic": "Italic",
+      "removeItalic": "Remove italic",
+      "underline": "Underline",
+      "removeUnderline": "Remove underline",
+      "strikethrough": "Strikethrough",
+      "removeStrikethrough": "Remove strikethrough",
+      "subscript": "Subscript",
+      "removeSubscript": "Remove subscript",
+      "superscript": "Superscript",
+      "removeSuperscript": "Remove superscript",
+      "bulletedList": "Bulleted list",
+      "numberedList": "Numbered list",
+      "checkList": "Check list",
+      "link": "Insert link",
+      "table": "Insert table",
+      "thematicBreak": "Insert divider",
+      "blockTypeSelect": {
+        "placeholder": "Block style",
+        "selectBlockTypeTooltip": "Select block style"
+      },
+      "blockTypes": {
+        "paragraph": "Paragraph",
+        "quote": "Quote",
+        "heading": "Heading {{level}}"
+      }
+    },
+    "createLink": {
+      "text": "Link text",
+      "textTooltip": "Text shown for the link",
+      "title": "Link title",
+      "titleTooltip": "Shown when hovering the link",
+      "url": "Link URL",
+      "urlPlaceholder": "Paste an http(s) or mailto URL",
+      "saveTooltip": "Save link",
+      "cancelTooltip": "Cancel change"
+    },
+    "dialogControls": {
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "linkPreview": {
+      "copied": "Copied",
+      "copyToClipboard": "Copy link",
+      "edit": "Edit link",
+      "remove": "Remove link"
+    },
+    "table": {
+      "alignCenter": "Align center",
+      "alignLeft": "Align left",
+      "alignRight": "Align right",
+      "columnMenu": "Column menu",
+      "rowMenu": "Row menu",
+      "deleteColumn": "Delete this column",
+      "deleteRow": "Delete this row",
+      "deleteTable": "Delete table",
+      "insertColumnLeft": "Insert column to the left",
+      "insertColumnRight": "Insert column to the right",
+      "insertRowAbove": "Insert row above",
+      "insertRowBelow": "Insert row below",
+      "textAlignment": "Text alignment"
+    }
+  },
   "schedulePublish": "Schedule publication",
   "scheduledAlready": "Scheduled",
   "scheduledReleases": "Scheduled releases",

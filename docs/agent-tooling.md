@@ -6,9 +6,10 @@
 
 | 任务 | 重点框架/工具与职责 | 使用的 Skill | 读取的目录规则 | 必要验证 |
 |---|---|---|---|---|
-| 新建/修改完整功能 | 源契约→服务→持久化→SDK→界面；只走实际涉及的层 | baseline-feature-development，再选以下相关项 | 根到所有目标路径的 AGENTS | 按批次累计待验项；阶段验收 ci-fast，按风险追加 SQL/安全/相关 E2E |
+| 功能对应 MCP 工具设计、开发及变更 | 功能用例映射工具契约、复用业务授权 | baseline-mcp-development；按层路由 | docs/mcp-service-plan.md、目标目录规则 | 分阶段协议/安全/客户端互通；规则批次 check-rules |
+| 新建/修改完整功能 | 源契约→服务→持久化→SDK→界面；只走实际涉及的层 | baseline-feature-development，再选以下相关项 | 根到所有目标路径的 AGENTS | 按批次累计待验项；日常改动先行 test-e2e-changed（纯文档不启动），阶段验收 ci-fast，按风险追加 SQL/安全/相关 E2E |
 | 业务配置、字典选项、附件上传/读取/下载、消息通知 | 复用共享治理服务、注册表、生成 SDK 和受控存储 | baseline-shared-capabilities，再按层加载 web/security/database/Goa | docs/shared-capabilities.md、目标目录规则 | 消费者生效、来源越权、历史引用和文件授权；跨层 ci |
-| 页面、路由、共享布局 | React + React Router；复用 shadcn + Tailwind tokens | baseline-web-development | apps/web | ESLint、TS、相关组件测试、build |
+| 页面、路由、共享布局 | React + React Router；复用 shadcn + Tailwind tokens | baseline-web-development | apps/web | ESLint、TS、相关组件测试、build；跨层交互用 test-e2e-changed |
 | 表单、校验、提交 | React Hook Form + Zod；服务端 Goa 校验；TanStack Query mutation/失效 | baseline-web-development；有新文案加 internationalization | apps/web、涉及 API 时 services/api/design | 无效/有效输入、pending/error/success、相关 HTTP 测试 |
 | 列表、表格、筛选 | TanStack Table 9 管表格；Router 管可分享筛选；Query 管远程数据 | baseline-web-development | apps/web | 相关交互、排序/筛选/分页语义；服务端范围测试 |
 | 请求、缓存、API 消费 | Orval SDK + TanStack Query，统一 client；不裸 fetch，不重复 DTO | baseline-web-development；契约变更再用 Goa | apps/web、services/api/design | 两端类型/构建、HTTP、check-generated |
@@ -56,8 +57,12 @@ OpenAI 官方说明：AGENTS 按根到当前目录组合；从根启动不等于
 
 ## 页面 Agent 接入
 
-按 [ADR 009](decisions/009-webmcp.md) 在 `/webmcp` 配对本机 `pnpm webmcp`（默认 18793），通过客户端按钮显式安装 MCP 与 WebSkills；当前只支持 Codex / WorkBuddy 一键设置，其他客户端使用相同 stdio 适配器。此用户授权入口是上述“不修改全局 Codex 配置”的明确例外，不在启动/浏览页面时自动安装。webskills 中的导航、账号只读与诊断技能是分发给运行时客户端的资源，不替代 `.agents/skills` 中的工程开发规则。开发新工具使用 feature/web/security/i18n/quality Skill，测试 `pnpm webmcp:test`、Vitest 注册表和 Playwright 真实 MCP 链路；新增业务 API 仍回到 Goa 源契约。
+按 [ADR 009](decisions/009-webmcp.md) 在 `/mcp` 的 WebMCP 标签连接本机 `pnpm webmcp`（默认 18793，开发服务器自动把端口与配对密钥预填进表单），通过客户端按钮显式安装 MCP 与 WebSkills；当前只支持 Codex / WorkBuddy 一键设置，其他客户端使用相同 stdio 适配器。此用户授权入口是上述“不修改全局 Codex 配置”的明确例外，不在启动/浏览页面时自动安装。webskills 中的导航、账号只读与诊断技能是分发给运行时客户端的资源，不替代 `.agents/skills` 中的工程开发规则。开发新工具使用 feature/web/security/i18n/quality Skill，测试 `pnpm webmcp:test`、Vitest 注册表和 Playwright 真实 MCP 链路；新增业务 API 仍回到 Goa 源契约。
 
 路由清单随新页面维护；global/module/page 的范围和权限标识不替代服务端授权。`make test-webmcp-e2e` 是生成检查之后、完整浏览器集合之前的确定性专项入口；可选模型评测不能替代该测试或真实用户交互。
 
 系统设置的定时发布也属于公共设置能力：复用 settings 的排期 SDK 与后台 worker，发布、版本锁、存储消费者和审计仍用共享事务；具体边界见 [ADR 010](decisions/010-settings-schedules.md)。输入设备时区、到期重新授权及失败恢复按该决策验证，不引入浏览器定时执行器。
+
+远程业务 MCP 见 [实现方案](mcp-service-plan.md)（待实现），功能批次主动确认暴露范围；个人 Token 不复用页面配对密钥。
+
+账号远程业务 MCP 的实现边界与接入见 [ADR 011](decisions/011-remote-mcp.md) 和 [操作指南](mcp-operations.md)。功能工具在 internal/mcp/registry.go 注册，业务输入映射回 Goa 源类型；工程 Skill 与 webskills/baseline-business 的客户端使用说明分开。验证使用 test-mcp、test-mcp-e2e，按批次执行。

@@ -1,0 +1,96 @@
+.mcp-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.mcp-form .editor-field {
+  min-width: 0;
+}
+.mcp-tools {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.mcp-tools legend {
+  padding: 0 4px;
+  font-size: 13px;
+}
+.mcp-tool-choice {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.mcp-helper-command {
+  display: block;
+}
+.mcp-form .field-error,
+.mcp-tools .field-error {
+  flex-basis: 100%;
+}
+.form-error {
+  padding: 10px 12px;
+  border: 1px solid var(--destructive, currentColor);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.mcp-secret {
+  padding: 16px;
+  background: var(--muted);
+  border-radius: var(--radius);
+}
+.mcp-secret code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+}
+.mcp-token-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 16px;
+}
+.mcp-token-head h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.mcp-token-head p {
+  margin: 0;
+}
+.mcp-token-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.mcp-form > .form-error {
+  grid-column: 1 / -1;
+}
+.mcp-form.mcp-form-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.mcp-dialog-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .mcp-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mcp-dialog-actions {
+    justify-content: stretch;
+  }
+  .mcp-dialog-actions > button {
+    flex: 1;
+  }
+}

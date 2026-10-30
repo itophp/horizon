@@ -363,6 +363,39 @@ type IamTemporaryRequest struct {
 	DepartmentID     int64
 }
 
+type McpCallAudit struct {
+	ID           int64
+	TenantID     string
+	AccountID    int64
+	TokenID      int64
+	DepartmentID int64
+	Tool         string
+	ResultCode   string
+	DurationMs   int64
+	RequestID    string
+	CreatedAt    pgtype.Timestamptz
+}
+
+type McpToken struct {
+	ID           int64
+	TenantID     string
+	AccountID    int64
+	DepartmentID int64
+	Name         string
+	TokenHash    string
+	TokenPrefix  string
+	CreatedAt    pgtype.Timestamptz
+	ExpiresAt    pgtype.Timestamptz
+	RevokedAt    pgtype.Timestamptz
+	LastUsedAt   pgtype.Timestamptz
+	RevokedBy    pgtype.Int8
+}
+
+type McpTokenTool struct {
+	TokenID int64
+	Tool    string
+}
+
 type TechnicalDemoRecord struct {
 	ID             int64
 	TenantID       string
