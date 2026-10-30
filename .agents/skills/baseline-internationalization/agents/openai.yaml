@@ -1,0 +1,3 @@
+interface:
+  display_name: "国际化开发"
+  short_description: "Maintain translations and locale-aware behavior"

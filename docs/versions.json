@@ -1,0 +1,356 @@
+{
+  "react": {
+    "version": "19.3.1",
+    "engines": {
+      "node": ">=0.10.0"
+    },
+    "source": "https://registry.npmjs.org/react/latest",
+    "selectedVersion": "19.3.1"
+  },
+  "react-dom": {
+    "version": "19.3.1",
+    "engines": {},
+    "source": "https://registry.npmjs.org/react-dom/latest",
+    "selectedVersion": "19.3.1"
+  },
+  "vite": {
+    "version": "8.3.5",
+    "engines": {
+      "node": "^20.19.0 || >=22.12.0"
+    },
+    "source": "https://registry.npmjs.org/vite/latest",
+    "selectedVersion": "8.3.5"
+  },
+  "@vitejs/plugin-react": {
+    "version": "6.1.2",
+    "engines": {
+      "node": "^20.19.0 || >=22.12.0"
+    },
+    "source": "https://registry.npmjs.org/@vitejs/plugin-react/latest",
+    "selectedVersion": "6.1.2"
+  },
+  "typescript": {
+    "version": "7.0.2",
+    "engines": {
+      "node": ">=16.20.0"
+    },
+    "source": "https://registry.npmjs.org/typescript/latest",
+    "selectedVersion": "6.0.2"
+  },
+  "tailwindcss": {
+    "version": "4.3.3",
+    "engines": {},
+    "source": "https://registry.npmjs.org/tailwindcss/latest",
+    "selectedVersion": "4.3.3"
+  },
+  "@tailwindcss/vite": {
+    "version": "4.3.3",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@tailwindcss/vite/latest",
+    "selectedVersion": "4.3.3"
+  },
+  "react-router": {
+    "version": "8.5.1",
+    "engines": {
+      "node": ">=22.22.0"
+    },
+    "source": "https://registry.npmjs.org/react-router/latest",
+    "selectedVersion": "8.5.1"
+  },
+  "@tanstack/react-query": {
+    "version": "5.105.0",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@tanstack/react-query/latest",
+    "selectedVersion": "5.105.0"
+  },
+  "@tanstack/react-table": {
+    "version": "9.3.1",
+    "engines": {
+      "node": ">=20"
+    },
+    "source": "https://registry.npmjs.org/@tanstack/react-table/latest",
+    "selectedVersion": "9.3.1"
+  },
+  "react-hook-form": {
+    "version": "7.91.0",
+    "engines": {
+      "node": ">=18.0.0"
+    },
+    "source": "https://registry.npmjs.org/react-hook-form/latest",
+    "selectedVersion": "7.91.0"
+  },
+  "@hookform/resolvers": {
+    "version": "6.0.2",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@hookform/resolvers/latest",
+    "selectedVersion": "6.0.2"
+  },
+  "zod": {
+    "version": "4.6.7",
+    "engines": {},
+    "source": "https://registry.npmjs.org/zod/latest",
+    "selectedVersion": "4.6.7"
+  },
+  "i18next": {
+    "version": "26.5.11",
+    "engines": {},
+    "source": "https://registry.npmjs.org/i18next/latest",
+    "selectedVersion": "26.5.11"
+  },
+  "react-i18next": {
+    "version": "17.1.9",
+    "engines": {},
+    "source": "https://registry.npmjs.org/react-i18next/latest",
+    "selectedVersion": "17.1.9"
+  },
+  "lucide-react": {
+    "version": "1.63.0",
+    "engines": {},
+    "source": "https://registry.npmjs.org/lucide-react/latest",
+    "selectedVersion": "1.63.0"
+  },
+  "vitest": {
+    "version": "5.0.5",
+    "engines": {
+      "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+    },
+    "source": "https://registry.npmjs.org/vitest/latest",
+    "selectedVersion": "5.0.5"
+  },
+  "@playwright/test": {
+    "version": "1.64.1",
+    "engines": {
+      "node": ">=20"
+    },
+    "source": "https://registry.npmjs.org/@playwright/test/latest",
+    "selectedVersion": "1.64.1"
+  },
+  "@testing-library/react": {
+    "version": "16.3.3",
+    "engines": {
+      "node": ">=18"
+    },
+    "source": "https://registry.npmjs.org/@testing-library/react/latest",
+    "selectedVersion": "16.3.3"
+  },
+  "@testing-library/user-event": {
+    "version": "14.6.8",
+    "engines": {
+      "npm": ">=6",
+      "node": ">=12"
+    },
+    "source": "https://registry.npmjs.org/@testing-library/user-event/latest",
+    "selectedVersion": "14.6.8"
+  },
+  "@testing-library/jest-dom": {
+    "version": "7.0.1",
+    "engines": {
+      "npm": ">=6",
+      "node": ">=22",
+      "yarn": ">=1"
+    },
+    "source": "https://registry.npmjs.org/@testing-library/jest-dom/latest",
+    "selectedVersion": "7.0.1"
+  },
+  "jsdom": {
+    "version": "30.1.3",
+    "engines": {
+      "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+    },
+    "source": "https://registry.npmjs.org/jsdom/latest",
+    "selectedVersion": "30.1.3"
+  },
+  "eslint": {
+    "version": "10.13.0",
+    "engines": {
+      "node": "^20.19.0 || ^22.13.0 || >=24"
+    },
+    "source": "https://registry.npmjs.org/eslint/latest",
+    "selectedVersion": "10.13.0"
+  },
+  "@eslint/js": {
+    "version": "10.0.1",
+    "engines": {
+      "node": "^20.19.0 || ^22.13.0 || >=24"
+    },
+    "source": "https://registry.npmjs.org/@eslint/js/latest",
+    "selectedVersion": "10.0.1"
+  },
+  "typescript-eslint": {
+    "version": "8.72.1",
+    "engines": {
+      "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+    },
+    "source": "https://registry.npmjs.org/typescript-eslint/latest",
+    "selectedVersion": "8.72.1"
+  },
+  "eslint-plugin-react-hooks": {
+    "version": "7.1.1",
+    "engines": {
+      "node": ">=18"
+    },
+    "source": "https://registry.npmjs.org/eslint-plugin-react-hooks/latest",
+    "selectedVersion": "7.1.1"
+  },
+  "eslint-plugin-react-refresh": {
+    "version": "0.5.7",
+    "engines": {},
+    "source": "https://registry.npmjs.org/eslint-plugin-react-refresh/latest",
+    "selectedVersion": "0.5.7"
+  },
+  "eslint-plugin-jsx-a11y": {
+    "version": "6.10.2",
+    "engines": {
+      "node": ">=4.0"
+    },
+    "source": "https://registry.npmjs.org/eslint-plugin-jsx-a11y/latest"
+  },
+  "prettier": {
+    "version": "3.9.10",
+    "engines": {
+      "node": ">=14"
+    },
+    "source": "https://registry.npmjs.org/prettier/latest",
+    "selectedVersion": "3.9.10"
+  },
+  "orval": {
+    "version": "8.45.0",
+    "engines": {
+      "node": ">=22.18.0"
+    },
+    "source": "https://registry.npmjs.org/orval/latest",
+    "selectedVersion": "8.45.0"
+  },
+  "shadcn": {
+    "version": "4.23.0",
+    "engines": {
+      "node": ">=20.18.1"
+    },
+    "source": "https://registry.npmjs.org/shadcn/latest",
+    "selectedVersion": "4.23.0"
+  },
+  "clsx": {
+    "version": "2.1.1",
+    "engines": {
+      "node": ">=6"
+    },
+    "source": "https://registry.npmjs.org/clsx/latest",
+    "selectedVersion": "2.1.1"
+  },
+  "tailwind-merge": {
+    "version": "3.7.0",
+    "engines": {},
+    "source": "https://registry.npmjs.org/tailwind-merge/latest",
+    "selectedVersion": "3.7.0"
+  },
+  "class-variance-authority": {
+    "version": "0.7.1",
+    "engines": {},
+    "source": "https://registry.npmjs.org/class-variance-authority/latest",
+    "selectedVersion": "0.7.1"
+  },
+  "@types/node": {
+    "version": "26.6.5",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@types/node/latest",
+    "selectedVersion": "26.6.5"
+  },
+  "@types/react": {
+    "version": "19.3.0",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@types/react/latest",
+    "selectedVersion": "19.3.0"
+  },
+  "@types/react-dom": {
+    "version": "19.3.0",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@types/react-dom/latest",
+    "selectedVersion": "19.3.0"
+  },
+  "globals": {
+    "version": "17.13.0",
+    "engines": {
+      "node": ">=18"
+    },
+    "source": "https://registry.npmjs.org/globals/latest",
+    "selectedVersion": "17.13.0"
+  },
+  "goa.design/goa/v3": {
+    "version": "v3.35.0",
+    "source": "https://proxy.golang.org/goa.design/goa/v3/@latest"
+  },
+  "github.com/jackc/pgx/v5": {
+    "version": "v5.11.0",
+    "source": "https://proxy.golang.org/github.com/jackc/pgx/v5/@latest"
+  },
+  "github.com/sqlc-dev/sqlc": {
+    "version": "v1.31.1",
+    "source": "https://proxy.golang.org/github.com/sqlc-dev/sqlc/@latest"
+  },
+  "github.com/pressly/goose/v3": {
+    "version": "v3.29.0",
+    "source": "https://proxy.golang.org/github.com/pressly/goose/v3/@latest"
+  },
+  "github.com/casbin/casbin/v2": {
+    "version": "v2.135.0",
+    "source": "https://proxy.golang.org/github.com/casbin/casbin/v2/@latest"
+  },
+  "go": {
+    "version": "go1.27.3",
+    "source": "https://go.dev/dl/?mode=json"
+  },
+  "@base-ui/react": {
+    "source": "https://registry.npmjs.org/@base-ui/react/1.9.0",
+    "selectedVersion": "1.9.0"
+  },
+  "@fontsource-variable/geist": {
+    "source": "https://registry.npmjs.org/@fontsource-variable/geist/5.3.0",
+    "selectedVersion": "5.3.0"
+  },
+  "cn": {
+    "source": "https://registry.npmjs.org/cn/0.5.0",
+    "selectedVersion": "0.5.0"
+  },
+  "tw-animate-css": {
+    "source": "https://registry.npmjs.org/tw-animate-css/1.4.0",
+    "selectedVersion": "1.4.0"
+  },
+  "golang.org/x/crypto": {
+    "selectedVersion": "v0.58.0",
+    "source": "https://proxy.golang.org/golang.org/x/crypto/@v/v0.58.0.info"
+  },
+  "@opentiny/next-sdk": {
+    "version": "0.4.11",
+    "selectedVersion": "0.4.11",
+    "engines": {},
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/@opentiny/next-sdk/0.4.11"
+  },
+  "@opentiny/agent": {
+    "version": "0.3.5",
+    "selectedVersion": "0.3.5",
+    "engines": {
+      "node": ">=20.0.0"
+    },
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/@opentiny/agent/0.3.5"
+  },
+  "@modelcontextprotocol/sdk": {
+    "version": "1.25.3",
+    "selectedVersion": "1.25.3",
+    "engines": {
+      "node": ">=18"
+    },
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/@modelcontextprotocol/sdk/1.25.3"
+  },
+  "express": {
+    "version": "5.3.0",
+    "selectedVersion": "5.3.0",
+    "engines": {
+      "node": ">= 18"
+    },
+    "license": "MIT",
+    "source": "https://registry.npmjs.org/express/5.3.0"
+  }
+}

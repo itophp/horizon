@@ -1,0 +1,57 @@
+{
+  "title": "WebMCP 与 WebSkills",
+  "subtitle": "连接开发 Agent 到当前浏览器会话，并安装对应页面技能。",
+  "connection": "页面连接",
+  "layersHint": "工具分为全局、当前模块和当前页面三个层级。",
+  "layerCounts": "已注册定义：全局 {{global}}、模块 {{module}}、页面 {{page}}。调用工具需要先连接。",
+  "coverageHint": "已登录页面提供上下文；账号详情及管理列表筛选提供专用工具。进入公开页面时连接会断开。",
+  "connectionHint": "在本仓库启动本地服务，再输入终端显示的配对密钥。端口须与 WEBMCP_PORT 一致。连接在当前标签页中保持，断开、刷新、退出登录或切换部门时清理。",
+  "startCommand": "pnpm webmcp",
+  "port": "本地 WebMCP 端口",
+  "pairingKey": "本地终端中的配对密钥",
+  "invalidPort": "请输入 1024 至 65535 之间的整数端口。",
+  "invalidKey": "请输入本地服务输出的 64 位配对密钥。",
+  "connect": "连接页面",
+  "disconnect": "断开连接",
+  "status": {
+    "disconnected": "未连接",
+    "connecting": "连接中",
+    "connected": "已连接",
+    "failed": "连接失败"
+  },
+  "toolCount_one": "可用页面工具：{{count}} 个",
+  "toolCount_other": "可用页面工具：{{count}} 个",
+  "connectFailed": "连接失败。请检查本地服务是否启动、端口与配对密钥是否一致，以及页面来源是否在允许列表中。",
+  "disconnectFailed": "传输连接关闭失败，页面工具已禁用。",
+  "clients": "客户端设置",
+  "clientsHint": "连接后，一键在本地服务所在电脑安装 MCP 和三套 WebSkills。已有配置会备份并合并。安装完成后请重启客户端；重新连接或改用其他标签页后，请再次设置。",
+  "client": {
+    "codex": "Codex",
+    "workbuddy": "WorkBuddy"
+  },
+  "clientHint": {
+    "codex": "调用官方 Codex CLI 合并 MCP 配置，技能安装到 ~/.agents/skills。需可运行 Codex CLI，或在启动服务时设置 CODEX_BIN。",
+    "workbuddy": "合并 ~/.workbuddy/mcp.json，技能安装到 ~/.workbuddy/skills，保留其他 MCP 服务。"
+  },
+  "install": "一键设置 MCP + Skills",
+  "installing": "正在安装…",
+  "setupDone": "MCP 和三套 WebSkills 已安装，请重启客户端加载。",
+  "setupFailed": "设置失败。请检查本地服务、客户端 CLI、文件权限和已有配置。配置备份位于原文件旁，技能备份位于客户端的 webmcp-backups 目录。",
+  "otherClients": "其他 MCP 客户端可使用同一 stdio 适配器。请使用 Node 和仓库脚本的绝对路径。",
+  "genericCommand": "node /absolute/path/to/xxh-baseline/scripts/webmcp-stdio.mjs",
+  "skills": "WebSkills",
+  "skillNames": {
+    "navigate": "页面导航",
+    "accounts": "账号页面操作",
+    "diagnose": "页面诊断"
+  },
+  "skillHints": {
+    "navigate": "发现可访问路由、切换页面并读取当前页面上下文。",
+    "accounts": "筛选已授权的账号列表，以只读模式打开已有账号详情；进入账号页面后可用。",
+    "diagnose": "读取请求数量、稳定错误码、弹窗和无效字段数量；深入排查仍配合浏览器 Trace 与截图。"
+  },
+  "safety": "工具只开放白名单页面操作，不执行任意 JavaScript、不读取凭证、不提交业务变更。现有 API 授权和数据范围继续生效。本地服务仅监听回环地址，请妥善保管配对密钥。",
+  "assistant": "内嵌 AI 助手",
+  "reserved": "已预留",
+  "assistantHint": "共享工具注册表提供 list 和 invoke 接口，供未来助手复用。目前不启用模型服务商、API Key 或聊天界面；未来助手仍须显式连接并遵守权限检查。"
+}

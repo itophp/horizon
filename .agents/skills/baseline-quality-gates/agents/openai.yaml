@@ -1,0 +1,3 @@
+interface:
+  display_name: "测试与质量门禁"
+  short_description: "Select checks and report actual verification results"

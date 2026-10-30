@@ -1,0 +1,63 @@
+{
+  "appName": "Foundation",
+  "workspace": "通用应用基础框架",
+  "title": "从可靠的基础开始。",
+  "subtitle": "在同一个工作区验证应用基础设施、API 契约与国际化能力。",
+  "language": "语言",
+  "english": "English",
+  "chinese": "简体中文",
+  "ready": "已就绪",
+  "loading": "正在加载…",
+  "empty": "没有找到数据",
+  "actions": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "retry": "重试"
+  },
+  "api": {
+    "title": "API 连接",
+    "description": "通过生成的 SDK 发起真实请求。",
+    "healthy": "API 运行正常",
+    "failed": "API 暂不可用"
+  },
+  "echo": {
+    "title": "契约验证",
+    "description": "向 Go API 发送姓名，获取类型安全的响应。",
+    "name": "姓名",
+    "placeholder": "输入姓名",
+    "submit": "发送请求",
+    "result": "你好，{{name}}。",
+    "timestamp": "服务端时间"
+  },
+  "formats": {
+    "title": "本地化预览",
+    "description": "相同的原始数值，按所选语言格式化。",
+    "date": "日期 · Asia/Shanghai",
+    "number": "数字",
+    "currency": "货币 · USD",
+    "count_one": "{{count}} 个示例",
+    "count_other": "{{count}} 个示例"
+  },
+  "table": {
+    "title": "基础设施概览",
+    "component": "组件",
+    "purpose": "职责",
+    "frontend": "界面与国际化",
+    "backend": "API 契约与传输",
+    "database": "持久化与范围查询",
+    "react": "React + Vite",
+    "go": "Go + Goa",
+    "postgres": "PostgreSQL + sqlc"
+  },
+  "about": {
+    "title": "工程边界",
+    "description": "这是技术验证示例，不包含行业业务模块。",
+    "contract": "先设计 Goa 契约，再生成 SDK，最后实现应用逻辑。",
+    "auth": "受保护接口要求可信身份、操作授权与 SQL 数据范围。",
+    "generated": "Goa、sqlc 与 Orval 分别管理各自的生成代码。"
+  },
+  "notFound": "页面不存在",
+  "footer": "以明确契约与可重复验证为基础。",
+  "framework": "工程基础框架"
+}

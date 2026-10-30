@@ -1,0 +1,63 @@
+{
+  "appName": "Foundation",
+  "workspace": "Application framework",
+  "title": "A foundation to build on.",
+  "subtitle": "One workspace to verify your application infrastructure, API contracts and localization.",
+  "language": "Language",
+  "english": "English",
+  "chinese": "Simplified Chinese",
+  "ready": "Ready",
+  "loading": "Loading…",
+  "empty": "No data found",
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "retry": "Retry"
+  },
+  "api": {
+    "title": "API connection",
+    "description": "A live request through the generated SDK.",
+    "healthy": "API is healthy",
+    "failed": "API unavailable"
+  },
+  "echo": {
+    "title": "Contract playground",
+    "description": "Send a name to the Go API and receive a typed response.",
+    "name": "Name",
+    "placeholder": "Enter a name",
+    "submit": "Send request",
+    "result": "Hello, {{name}}.",
+    "timestamp": "Server timestamp"
+  },
+  "formats": {
+    "title": "Locale preview",
+    "description": "The same values, formatted for your selected language.",
+    "date": "Date · Asia/Shanghai",
+    "number": "Number",
+    "currency": "Currency · USD",
+    "count_one": "{{count}} example",
+    "count_other": "{{count}} examples"
+  },
+  "table": {
+    "title": "Infrastructure overview",
+    "component": "Component",
+    "purpose": "Purpose",
+    "frontend": "Interface & localization",
+    "backend": "API contracts & transport",
+    "database": "Persistence & scoped queries",
+    "react": "React + Vite",
+    "go": "Go + Goa",
+    "postgres": "PostgreSQL + sqlc"
+  },
+  "about": {
+    "title": "Engineering boundaries",
+    "description": "This is a technical demonstration. No industry modules are included.",
+    "contract": "Design the Goa contract, regenerate the SDK, then implement application logic.",
+    "auth": "Protected APIs require verified identity, operation authorization and SQL data scope.",
+    "generated": "Generated source is owned by Goa, sqlc and Orval."
+  },
+  "notFound": "Page not found",
+  "footer": "Built for explicit contracts and repeatable verification.",
+  "framework": "Engineering foundation"
+}

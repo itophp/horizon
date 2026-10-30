@@ -1,0 +1,3 @@
+interface:
+  display_name: "认证授权与基础安全"
+  short_description: "Apply trusted identity, data scopes and safety rules"

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "goa-service-designer": {
+      "source": "goadesign/goa",
+      "sourceType": "github",
+      "skillPath": "skills/goa-service-designer/SKILL.md",
+      "computedHash": "633660fe22875fdc467ac499335b592596a7d2c063c295f5eac93813c0ba353d"
+    }
+  }
+}

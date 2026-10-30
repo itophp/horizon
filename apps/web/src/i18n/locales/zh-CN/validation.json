@@ -1,0 +1,11 @@
+{
+  "name": "请输入 1 至 80 个字符。",
+  "errors": {
+    "invalid": "请求参数无效。",
+    "unauthenticated": "请先完成身份认证。",
+    "forbidden": "你没有执行此操作的权限。",
+    "not_found": "请求的资源不可用。",
+    "unavailable": "服务暂不可用。",
+    "internal": "请求失败，请重试。"
+  }
+}

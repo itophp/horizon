@@ -1,0 +1,3 @@
+interface:
+  display_name: "前端功能开发"
+  short_description: "Build UI using project components, SDK and state"

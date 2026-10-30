@@ -1,0 +1,19 @@
+name: xxh-baseline
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: baseline
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: baseline
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U baseline -d baseline"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  postgres-data:

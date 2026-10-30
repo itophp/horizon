@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "instructions": [
+    "AGENTS.md",
+    ".agents/skills/AGENTS.md",
+    "apps/web/AGENTS.md",
+    "apps/web/src/components/ui/AGENTS.md",
+    "apps/web/src/i18n/AGENTS.md",
+    "apps/web/e2e/AGENTS.md",
+    "services/api/AGENTS.md",
+    "services/api/design/AGENTS.md",
+    "services/api/db/AGENTS.md",
+    "services/api/internal/AGENTS.md",
+    "services/api/tests/AGENTS.md",
+    "scripts/AGENTS.md",
+    "docs/AGENTS.md"
+  ],
+  "skills": [
+    {
+      "name": "baseline-feature-development",
+      "file": ".agents/skills/baseline-feature-development/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-web-development",
+      "file": ".agents/skills/baseline-web-development/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-database-change",
+      "file": ".agents/skills/baseline-database-change/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-internationalization",
+      "file": ".agents/skills/baseline-internationalization/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-quality-gates",
+      "file": ".agents/skills/baseline-quality-gates/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-security",
+      "file": ".agents/skills/baseline-security/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-shared-capabilities",
+      "file": ".agents/skills/baseline-shared-capabilities/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "goa-service-designer",
+      "file": ".agents/skills/goa-service-designer/SKILL.md",
+      "kind": "upstream"
+    }
+  ],
+  "references": [
+    "README.md",
+    "docs/agent-tooling.md",
+    "docs/agent-workflow.md",
+    "docs/testing.md",
+    "docs/security.md",
+    "docs/architecture.md",
+    "docs/coding-conventions.md",
+    "docs/api-contracts.md",
+    "docs/database-conventions.md",
+    "docs/design-system.md",
+    "docs/internationalization.md",
+    "docs/shared-capabilities.md",
+    "docs/decisions/009-webmcp.md"
+  ],
+  "gates": {
+    "rules": "check-rules",
+    "fast": "ci-fast",
+    "integration": "test-integration",
+    "security": "test-security",
+    "e2e": "test-e2e",
+    "complete": "ci",
+    "generate": "generate",
+    "generated": "check-generated"
+  },
+  "tasks": [
+    {
+      "id": "feature",
+      "skills": ["baseline-feature-development", "baseline-quality-gates"],
+      "instructions": ["AGENTS.md"],
+      "tools": ["Existing feature modules", "Cross-layer contracts"],
+      "gates": ["fast", "complete"]
+    },
+    {
+      "id": "shared-capabilities",
+      "skills": ["baseline-shared-capabilities", "baseline-security"],
+      "instructions": [
+        "AGENTS.md",
+        "apps/web/AGENTS.md",
+        "services/api/internal/AGENTS.md"
+      ],
+      "tools": [
+        "Registered settings",
+        "Dictionary options and references",
+        "Generated file SDK",
+        "Shared governance services"
+      ],
+      "gates": ["fast", "security", "complete"]
+    },
+    {
+      "id": "web",
+      "skills": ["baseline-web-development"],
+      "instructions": [
+        "apps/web/AGENTS.md",
+        "apps/web/src/components/ui/AGENTS.md"
+      ],
+      "tools": [
+        "React Router",
+        "shadcn/ui",
+        "Tailwind CSS",
+        "TanStack Query",
+        "Orval",
+        "React Hook Form",
+        "Zod",
+        "TanStack Table"
+      ],
+      "gates": ["fast", "e2e"]
+    },
+    {
+      "id": "api",
+      "skills": ["goa-service-designer"],
+      "instructions": [
+        "services/api/AGENTS.md",
+        "services/api/design/AGENTS.md"
+      ],
+      "tools": ["Goa", "OpenAPI", "Orval", "httptest"],
+      "gates": ["generate", "generated", "fast"]
+    },
+    {
+      "id": "database",
+      "skills": ["baseline-database-change"],
+      "instructions": [
+        "services/api/db/AGENTS.md",
+        "services/api/internal/AGENTS.md",
+        "services/api/tests/AGENTS.md"
+      ],
+      "tools": ["PostgreSQL", "pgx", "sqlc", "Goose"],
+      "gates": ["generate", "generated", "integration", "fast"]
+    },
+    {
+      "id": "i18n",
+      "skills": ["baseline-internationalization"],
+      "instructions": ["apps/web/src/i18n/AGENTS.md"],
+      "tools": ["i18next", "react-i18next", "Intl"],
+      "gates": ["fast"]
+    },
+    {
+      "id": "security",
+      "skills": ["baseline-security"],
+      "instructions": [
+        "services/api/internal/AGENTS.md",
+        "services/api/tests/AGENTS.md"
+      ],
+      "tools": ["Principal", "Casbin", "DataScope", "Scoped SQL"],
+      "gates": ["security", "fast"]
+    },
+    {
+      "id": "testing",
+      "skills": ["baseline-quality-gates"],
+      "instructions": [
+        "apps/web/e2e/AGENTS.md",
+        "services/api/tests/AGENTS.md"
+      ],
+      "tools": ["Vitest", "React Testing Library", "Go testing", "Playwright"],
+      "gates": ["fast", "integration", "e2e"]
+    },
+    {
+      "id": "rules",
+      "skills": ["baseline-quality-gates"],
+      "instructions": [
+        "docs/AGENTS.md",
+        "scripts/AGENTS.md",
+        ".agents/skills/AGENTS.md"
+      ],
+      "tools": ["Repository rule checker", "Skill Creator author validation"],
+      "gates": ["rules"]
+    }
+  ]
+}

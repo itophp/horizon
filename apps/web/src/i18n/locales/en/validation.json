@@ -1,0 +1,11 @@
+{
+  "name": "Enter between 1 and 80 characters.",
+  "errors": {
+    "invalid": "The request is invalid.",
+    "unauthenticated": "Please authenticate to continue.",
+    "forbidden": "You do not have permission.",
+    "not_found": "The requested resource is unavailable.",
+    "unavailable": "The service is unavailable.",
+    "internal": "The request failed. Try again."
+  }
+}

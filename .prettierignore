@@ -1,0 +1,9 @@
+node_modules
+dist
+src/api/generated
+pnpm-lock.yaml
+playwright-report
+test-results
+coverage
+
+**/.local/**

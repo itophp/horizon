@@ -1,0 +1,79 @@
+.webmcp-stack {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+.webmcp-section {
+  padding: 22px;
+  min-width: 0;
+}
+.webmcp-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.webmcp-section-heading h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.webmcp-section p {
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+.webmcp-code {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 12px 0 18px;
+  overflow-x: auto;
+  font-size: 12px;
+}
+.webmcp-actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.webmcp-client-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.webmcp-client {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.webmcp-client h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.webmcp-skills {
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  list-style: none;
+  margin: 18px 0;
+}
+.webmcp-skills li {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.webmcp-skills span {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+@media (max-width: 640px) {
+  .webmcp-client-grid {
+    grid-template-columns: 1fr;
+  }
+  .webmcp-section {
+    padding: 16px;
+  }
+}

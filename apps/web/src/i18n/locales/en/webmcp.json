@@ -1,0 +1,57 @@
+{
+  "title": "WebMCP & WebSkills",
+  "subtitle": "Connect development agents to this browser session and install their page skills.",
+  "connection": "Page connection",
+  "layersHint": "Tools are organized into global, current module and current page scopes.",
+  "layerCounts": "Registered definitions: global {{global}}, module {{module}}, page {{page}}. A connection is required to invoke them.",
+  "coverageHint": "Authenticated pages expose context; account details and administration list filters have dedicated tools. Public pages disconnect this session.",
+  "connectionHint": "Run the local service from this repository, then enter its pairing key. Match this port to WEBMCP_PORT. The connection follows this tab until disconnected, refreshed, signed out or switched to another department.",
+  "startCommand": "pnpm webmcp",
+  "port": "Local WebMCP port",
+  "pairingKey": "Pairing key from the local terminal",
+  "invalidPort": "Enter an integer port from 1024 to 65535.",
+  "invalidKey": "Enter the 64-character pairing key printed by the local service.",
+  "connect": "Connect page",
+  "disconnect": "Disconnect",
+  "status": {
+    "disconnected": "Disconnected",
+    "connecting": "Connecting",
+    "connected": "Connected",
+    "failed": "Connection failed"
+  },
+  "toolCount_one": "{{count}} page tool available",
+  "toolCount_other": "{{count}} page tools available",
+  "connectFailed": "Could not connect. Check that the service is running, the port and pairing key match, and the page origin is allowed.",
+  "disconnectFailed": "Could not close the transport. Page tools have been disabled.",
+  "clients": "Client setup",
+  "clientsHint": "After connecting, one click installs MCP and all three WebSkills on the machine running the local service. Existing configuration is backed up and merged. Restart the client after setup. Re-run setup after reconnecting or selecting another tab.",
+  "client": {
+    "codex": "Codex",
+    "workbuddy": "WorkBuddy"
+  },
+  "clientHint": {
+    "codex": "Uses the official Codex CLI to merge MCP configuration. Skills go to ~/.agents/skills. The CLI must be available, or set CODEX_BIN when starting the service.",
+    "workbuddy": "Merges ~/.workbuddy/mcp.json and copies skills to ~/.workbuddy/skills. Other MCP servers are preserved."
+  },
+  "install": "Set up MCP + Skills",
+  "installing": "Installing…",
+  "setupDone": "MCP and three WebSkills installed. Restart the client to load them.",
+  "setupFailed": "Setup failed. Check the local service, client CLI, file permissions and existing configuration. Configuration backups are next to the original files; skill backups are in the client’s webmcp-backups directory.",
+  "otherClients": "Other MCP clients can use the same stdio adapter. Use absolute paths for the Node executable and repository script.",
+  "genericCommand": "node /absolute/path/to/xxh-baseline/scripts/webmcp-stdio.mjs",
+  "skills": "WebSkills",
+  "skillNames": {
+    "navigate": "Page navigation",
+    "accounts": "Account page operations",
+    "diagnose": "Page diagnostics"
+  },
+  "skillHints": {
+    "navigate": "Discover permitted routes, navigate and read the current page context.",
+    "accounts": "Filter the authorized account list and open an existing account in read-only details mode. Tools are available on the account page.",
+    "diagnose": "Inspect request counts, stable error codes, open dialogs and invalid field counts. Use browser traces and screenshots for deeper investigation."
+  },
+  "safety": "Tools expose an allowlist of page actions. They do not execute arbitrary JavaScript, read credentials or submit business changes. Existing API authorization and data scopes remain in force. The service listens on loopback only; keep the pairing key private.",
+  "assistant": "Embedded AI assistant",
+  "reserved": "Reserved",
+  "assistantHint": "The shared tool registry provides list and invoke interfaces for a future assistant. No model provider, API key or chat UI is enabled. The future assistant can reuse the same tools with an explicit connection and permission checks."
+}

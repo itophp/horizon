@@ -1,0 +1,3 @@
+interface:
+  display_name: "数据库变更"
+  short_description: "Change migrations and scoped SQL with real DB tests"
