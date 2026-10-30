@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc"><title id="title">Horizon Agent 生态架构</title><desc id="desc">Skills 承载任务知识，MCP 连接客户端，WebMCP 开放页面工具。开发阶段按工程规则与 Skills 修改契约和代码并验证；使用阶段由外部 Agent 经 MCP 桥接调用 WebMCP 页面工具和既有业务接口。两条路径共同围绕现代应用基础展开。</desc><rect width="1200" height="760" rx="24" fill="#f8f9fc"/><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c88a5"/></marker></defs><style>text{font-family:Inter,-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;fill:#202a40}</style>
+<text x="48" y="54" font-size="28" font-weight="650" fill="#202a40">HORIZON / 为 Agent 配齐知识、连接与应用入口</text>
+<text x="48" y="87" font-size="18" font-weight="400" fill="#68748d">开发有方法可循，使用有工具可接。</text>
+<rect x="48" y="120" width="352" height="144" rx="14" fill="#eef0ff" stroke="#dce1ed"/>
+<text x="70" y="159" font-size="26" font-weight="650" fill="#202a40">Skills</text>
+<text x="70" y="195" font-size="19" font-weight="550" fill="#202a40">任务知识与操作指引</text>
+<text x="70" y="233" font-size="16" font-weight="400" fill="#68748d">工程 Skills / 运行时 WebSkills</text>
+<rect x="424" y="120" width="352" height="144" rx="14" fill="#eef0ff" stroke="#dce1ed"/>
+<text x="446" y="159" font-size="26" font-weight="650" fill="#202a40">MCP</text>
+<text x="446" y="195" font-size="19" font-weight="550" fill="#202a40">连接 Agent 与应用工具</text>
+<text x="446" y="233" font-size="16" font-weight="400" fill="#68748d">本机服务 / stdio 适配器</text>
+<rect x="800" y="120" width="352" height="144" rx="14" fill="#eef0ff" stroke="#dce1ed"/>
+<text x="822" y="159" font-size="26" font-weight="650" fill="#202a40">WebMCP</text>
+<text x="822" y="195" font-size="19" font-weight="550" fill="#202a40">页面能力的结构化入口</text>
+<text x="822" y="233" font-size="16" font-weight="400" fill="#68748d">工具注册 / 上下文 / 生命周期</text>
+<text x="48" y="307" font-size="20" font-weight="600" fill="#202a40">在 Horizon 中，两条路径围绕同一个应用展开</text>
+<rect x="48" y="330" width="1104" height="114" rx="14" fill="#fff" stroke="#dce1ed"/>
+<text x="72" y="366" font-size="20" font-weight="650" fill="#5267ce">开发应用</text>
+<text x="72" y="399" font-size="19" font-weight="600" fill="#202a40">编码 Agent + 工程 Skills</text>
+<path d="M 356 395 L 410 395" stroke="#7c88a5" stroke-width="2" marker-end="url(#a)"/>
+<text x="433" y="399" font-size="20" font-weight="500" fill="#202a40">规则 → 源契约与实现 → 生成 → 验证</text>
+<text x="433" y="426" font-size="16" font-weight="400" fill="#68748d">按任务加载知识，以可执行检查核对结果</text>
+<rect x="48" y="466" width="1104" height="114" rx="14" fill="#fff" stroke="#dce1ed"/>
+<text x="72" y="502" font-size="20" font-weight="650" fill="#5267ce">使用应用</text>
+<text x="72" y="535" font-size="19" font-weight="600" fill="#202a40">外部 Agent + WebSkills</text>
+<path d="M 356 531 L 410 531" stroke="#7c88a5" stroke-width="2" marker-end="url(#a)"/>
+<text x="433" y="535" font-size="20" font-weight="500" fill="#202a40">MCP 桥接 → WebMCP 页面工具 → 既有接口</text>
+<text x="433" y="562" font-size="16" font-weight="400" fill="#68748d">主动配对当前页面，工具随页面与连接状态变化</text>
+<path d="M 600 580 L 600 620" stroke="#7c88a5" stroke-width="2" marker-end="url(#a)"/>
+<rect x="48" y="620" width="1104" height="96" rx="14" fill="#eef0ff" stroke="#dce1ed"/>
+<text x="72" y="655" font-size="22" font-weight="650" fill="#202a40">现代化应用基础</text>
+<text x="72" y="688" font-size="19" font-weight="400" fill="#202a40">React / Go / PostgreSQL · 一致的界面 · 公共服务 · 后端授权与数据范围</text>
+<text x="48" y="744" font-size="16" font-weight="400" fill="#68748d">配套职责与现有集成示意；连接协议与 Skills 不替代后端授权，也不保证模型执行结果。</text>
+</svg>
