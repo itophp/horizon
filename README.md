@@ -3,127 +3,111 @@
 </p>
 
 <h1 align="center">Horizon</h1>
-<p align="center"><strong>以业务能力为契约的 AI 原生企业应用框架</strong></p>
-<p align="center">Capability · Gateway · Eino Workflow / Graph / ADK · MCP · Skills</p>
+<p align="center"><strong>让人和 Agent，围绕同一套业务能力协作。</strong></p>
+<p align="center">AI-Native Application Framework</p>
 
-Horizon 将页面、Agent、流程和外部客户端接入同一套业务能力。业务模块定义一次契约，Capability Gateway 统一执行身份、权限、Schema、幂等、风险审批和审计；业务事件再驱动 AI，形成可追踪的工作闭环。
+Horizon 是面向企业应用的 AI 原生框架。它把业务能力、智能决策、流程编排、人工参与和业务事件组织成一个整体，让 Agent 能够在明确的权限与业务边界内理解任务、调用工具、推进工作，并根据真实结果继续行动。
+
+人可以从页面发起工作，Agent 可以从任务开始，流程可以由事件驱动。不同入口共享业务能力，也共享权限、审批和执行记录。
+
+## 什么让应用成为 AI-Native
+
+在 Horizon 中，AI 参与业务的基础由应用本身提供：
+
+- **业务可理解**：对象、动作、输入输出和状态有明确契约，让 Agent 知道能做什么。
+- **能力可发现、可组合**：已有业务能力可以成为页面动作、Agent 工具或流程节点，在多个场景中复用。
+- **决策可协作**：确定性规则、模型判断和人工审核各有职责，共同推进一个任务。
+- **执行可治理**：身份、权限、风险、审批与记录贯穿每一次业务动作。
+- **过程可持续**：任务可以经历多步骤、等待、暂停与恢复，已完成的业务事实得到保留。
+- **结果可反馈**：业务事件成为后续智能行为的输入，让应用持续响应变化。
+
+这些机制共同形成一个工作闭环：
 
 ```text
-Business Capability → Business Event → AI Behavior → Business Capability
+业务能力 → 业务事实与事件 → AI 理解与决策 → 下一次业务能力调用
+                         ↘ 必要时交给人判断 ↗
 ```
 
-采用单仓库、单 Go 服务，优先复用当前能力，不因接入 Agent 而复制业务逻辑或提前拆成微服务。前端使用 React、TypeScript 与 shadcn/ui，后端使用 Go、Goa、PostgreSQL 与 Eino。
+## 概念架构
 
-## 当前架构
+![Horizon AI-Native 概念架构](docs/assets/horizon-capability-architecture.png)
 
-![Horizon 当前能力中心架构与事件闭环](docs/assets/horizon-capability-architecture.png)
+[查看 SVG 原图](docs/assets/horizon-capability-architecture.svg) · [查看概念与运行机制说明](docs/architecture.md)
 
-[分层概念与可编辑 Mermaid 图](docs/architecture.md) · [SVG 原图](docs/assets/horizon-capability-architecture.svg) · [编排协议](docs/orchestration-plan.md)
+从上到下，框架把“谁发起工作”“如何组织任务”“什么动作被允许”“能力如何执行”和“结果如何继续驱动业务”连接起来。
 
-图中 Registry 为 Gateway 提供契约，执行层按能力选择原子动作、同步组合或持久化编排；它们不是每次请求都必须依次经过的流水线。Workflow 节点、Graph 子图及 ADK 业务工具再次调用 Gateway。
-
-| 层 / 概念 | 职责与边界 |
-|---|---|
-| **交互与接入** | React 页面、内置助手、远程 MCP、页面 WebMCP、事件与流程触发；只适配输入输出，不复制业务规则。 |
-| **Capability 契约与 Registry** | 模块 `Entries()` 定义名称、版本、输入输出 Schema、权限、风险、审批、幂等、事件和编排元数据；Registry 校验并提供目录。 |
-| **Capability Gateway** | 唯一业务执行入口，统一身份、操作授权、输入校验、幂等、确定性策略、审批、执行、Outbox 与审计。能力之间也通过它互调。 |
-| **业务能力与领域实现** | 原子能力负责状态、数据范围和业务 SQL；同步组合只调用其他能力。能力边界也是事务边界，不能把多次调用描述成一个原子事务。 |
-| **Eino 编排与 AI** | Workflow 管依赖、持久化和暂停恢复；Graph 管有界循环/只读重试；ADK 管受限工具决策。简单动作无需 Workflow，一次模型分类不等于 ADK。 |
-| **存储与执行记录** | PostgreSQL 保存业务数据、调用/审批/事件、AI 运行和加密流程检查点；知识检索使用 Redis 向量索引。AI 任务与业务调用生命周期独立。 |
-| **事件闭环** | 事务 Outbox → Relay → Event Hub → Trigger 去重与深度限制 → AI/能力；采用至少一次投递，消费者必须去重。 |
-| **工程契约与门禁** | AGENTS / Skills 指导开发；Goa、SQL、能力 Definition、实体声明和流程 spec 各自维护唯一事实源，生成和行为测试检查漂移与边界。 |
-
-## 能力如何组合
-
-| 需求 | 实现方式 |
-|---|---|
-| 一次查询或原子业务写入 | 原子 Capability；新模块写入使用 `TxExecutor`，业务数据与 Outbox 同事务。 |
-| 无跨请求等待的多能力聚合 | Go 编排 Executor，经 Gateway 复用已有能力。 |
-| 跨请求等待、操作审批、重启恢复 | 版本化 Eino Workflow，保存检查点和节点回执。 |
-| 有界轮询、只读瞬态重试 | Eino Graph 子图，显式限制步数与次数。 |
-| 模型选择工具和多步判断 | Eino ADK Runner，业务工具经 Gateway，按权限和允许集合约束。 |
-
-`Layer` 区分原子与编排，`Kind` 描述执行形态；`Reads/Writes` 描述数据依赖，`Effect` 描述副作用，`RetrySafe` 描述安全重试。依赖由显式映射与 `DependsOn` 决定，不能仅凭读写元数据猜业务顺序。
-
-编排入口为 `orchestration.workflow.{list,get,run,cancel}`。完整参考 `example-lifecycle@1.0.0` 串起创建、Graph 就绪检查、ADK 评审与人工确认归档。每一步重新授权，取消不回滚已提交动作。详见 [完整示例](docs/orchestration-example.md)。
-
-## 人与 Agent 使用同一套业务能力
-
-- **页面按钮**：通过 `apps/web/src/lib/capabilities.ts` 调用统一 capability SDK。
-- **内置助手**：Eino ADK 工具适配能力目录，服务端 Gateway 始终执行授权与策略。
-- **远程 MCP**：账号级 Token、固定工具允许集合、当前权限交集；已提供文章草稿/投稿、流程查询/启动/取消等工具，具体范围见 [操作指南](docs/mcp-operations.md)。
-- **页面 WebMCP**：显式配对、受控页面上下文与只读工具，随路由和身份变化撤销；本机桥接与远程账号 MCP 分离。
-- **事件 / 后台任务**：可信身份重建、关联链、去重与深度限制；后续业务动作仍回到 Gateway。
-
-工具目录或模型输出都不授予权限。自动化的 high 风险动作需人工确认；critical 不允许自动化执行。业务人工审核与 Gateway 风险确认有不同语义，必须明确审核人、对象版本和原因，不能用一个确认按钮替代完整审核业务。
-
-## 当前功能与实现边界
-
-已提供身份/组织/部门/角色/临时权限，系统设置与版本治理、字典、文件、通知、AI 工作台与知识库、能力与审批页面、远程 MCP/页面 WebMCP，以及 Eino 持久化编排参考。页面支持中英文与深浅主题。
-
-业务能力中心、实体校验、流程 Schema 生成、审批恢复和参考链路已落地，但不表示每个业务模块都已迁入 Workflow/ADK：
-
-- **文章管理**当前仍是投稿事件 → 普通函数评审 → 直接模型分类 → 状态写入；文章 Workflow/ADK、独立人工任务页面和完整驳回原因链尚需改造。审查还发现审核员读取范围、通用 Agent 暴露、无有效词条处理和详情错误映射问题，尚未在本次文档更新中修复。
-- 既有领域服务自持事务的模块，业务提交后写 Outbox 仍存在 best-effort 窗口；只有实际采用同一事务的路径才可声明原子。
-- 当前支持 Gateway 风险审批的中断恢复，不代表任意业务人工任务、外部信号和条件分支都已支持；ADK answer 文本也不等于结构化业务结论。
-- 流程 Go 定义随代码发布；导出的 JSON 用于查看/检查，不提供任意流程上传或在线发布入口。知识库契约归属、实体声明与部分存量适配仍有待收敛项，见 [Schema 路线](docs/agent-generation-plan.md)。
-
-## 唯一契约源与生成方向
-
-| 对象 | 源 | 生成 / 校验 |
+| 层次 | 核心概念 | 在协作中承担什么职责 |
 |---|---|---|
-| 会话、系统与统一传输信封 | `services/api/design` | Goa → OpenAPI → Orval SDK |
-| 业务能力 | 模块 `Definition` / `Entries()` | Gateway Schema 校验、目录与工具适配；工具暴露须显式选择 |
-| 物理数据库与查询 | `services/api/db/migrations`、`db/query` | Goose、sqlc → `dbgen` |
-| 业务实体语义 | 模块 `entity_*.go` | 对照迁移与能力校验字段、关系及状态转移 |
-| 持久化流程 | `ai/orchestration/spec` 的 Go 定义 | 标准 JSON Schema、示例 JSON、结构/目录/预算检查 |
+| **交互与触发** | 页面、Agent、业务事件、外部 API、流程触发 | 接受人的意图与系统变化，为工作提供入口。 |
+| **任务与编排** | Workflow 主干、Graph 子图、ADK Agent 节点 | 将目标组织为可推进的任务：确定步骤、处理循环、开展受限的自主决策。简单动作可以直接调用能力。 |
+| **能力治理** | Capability Gateway | 对每次能力调用统一检查身份、权限、输入、风险和审批，并记录执行过程。 |
+| **能力体系** | 能力模型、能力注册、能力触发 | 描述业务能做什么，使能力可发现、可复用，并将调用意图关联到明确的业务动作。 |
+| **业务执行** | 领域规则、数据操作、外部集成 | 执行被允许的动作，维护业务状态和数据边界，产生可确认的结果。 |
+| **业务事实与运行记忆** | 业务数据、任务状态、执行记录、恢复上下文 | 保存发生过什么、当前进行到哪里，为查询、追踪和恢复提供依据。 |
+| **事件与反馈** | 业务事件、触发策略、后续行动 | 将已发生的事实送回任务与决策环节，形成下一轮受治理的行动。 |
 
-不手改 `services/api/gen`、`internal/repository/dbgen`、`apps/web/src/api/generated` 或生成的流程 JSON。不声称当前所有业务类型和 MCP 适配器都已自动生成。
+这是职责视图。编排位于 Gateway 上方表示它组织工作；流程启动和每个业务节点仍须经过 Gateway。能力模型与注册支持执行，注册本身不代表已获授权。具体运行时顺序见技术文档。
 
-## 本地启动与测试
+## 一套业务能力，多种协作方式
 
-环境版本以 [版本记录](docs/versions.md)、锁文件及 `services/api/go.mod` 为准。准备 Node / pnpm、项目 Go 工具链及 Docker 后：
+**Capability 是应用对人和 Agent 共同提供的业务语言。** 它表达一个有边界、可执行的动作，例如查询订单、提交文章、确认收货或归档记录。
 
-```sh
-cp .env.example .env
-make install
-make db-up
-make migrate
+一项能力应说明它处理什么对象、接受什么输入、产生什么结果，以及谁可以执行、有什么风险。页面、Agent 和流程复用这份契约，避免为不同入口建立不同的业务规则。
+
+能力之间可以组合成更大的业务任务。开发新功能时，优先发现和复用已有能力，再考虑组合、兼容扩展或新增。
+
+## Workflow、Graph 与 Agent 如何配合
+
+- **Workflow 组织业务主干**：明确步骤与依赖，承载长任务的等待、暂停与恢复。
+- **Graph 处理局部循环**：表达有边界的检查、复核和重试，明确何时继续、何时退出。
+- **ADK Agent 完成受限决策**：结合上下文，从允许的工具中选择行动，完成需要判断与探索的任务。
+
+三者均使用 Eino。任务按需选择组件，简单动作无需强制进入完整流程。模型提出的判断仍需接受业务规则和执行政策的校验。
+
+## 人始终可以参与工作
+
+AI 判断、风险确认与业务人工审核是不同环节。框架将人的决定纳入任务过程：谁可以审核、审核哪一版对象、为什么通过或驳回，都应有清晰边界。
+
+例如，一条内容发布流程可以设计为：
+
+```text
+作者提交发布
+  → Agent 评审
+     ├─ 无问题 → 按业务规则发布
+     └─ 有问题 / 不确定 → 待人工审核
+        ├─ 通过 → 发布
+        └─ 不通过 → 向作者展示原因
 ```
 
-在本地环境设置 `BOOTSTRAP_PASSWORD` 后运行 `make bootstrap` 创建管理员，密码不应进入 Git。两个终端分别运行：
+这是业务设计示例，具体接入进度见架构文档。Agent 不能批准自己的权限，也不能以模型结论替代必要的人工决定。
 
-```sh
-make dev-api
-```
+## 上下文、知识与事件让智能有业务依据
 
-```sh
-make dev
-```
+Agent 的判断需要可信上下文：当前身份、任务目标、业务对象、授权知识和已经发生的事实。知识检索为判断提供材料，能力调用提供真实结果，业务事件提示新的变化。
 
-默认访问 `http://127.0.0.1:5173`，API 位于 `127.0.0.1:8080`。模型与治理秘密通过既有设置管理；持久化流程检查点和敏感配置需要有效 `SETTINGS_ENCRYPTION_KEY`，不要提交密钥。旧角色需显式补充新能力权限，不能假定迁移自动扩权。
+事件携带关联关系，使后续任务可以追溯自己的来源。重复事件、递归触发与失败处理需要明确边界，避免同一业务事实引发无控制的重复行动。
 
-进入「业务能力 → 流程示例测试」（`/capabilities`）：基础测试无需模型；完整测试需启用并配置 Agent 模型；归档需要人工确认。每次点击会创建真实示例记录。
+## 从开发应用，到使用应用
 
-```sh
-make ci-fast
-make test-security
-# 真实 PostgreSQL + Eino，使用可控测试模型，无需浏览器或模型密钥
-make test-orchestration-example
-```
+Horizon 同时为开发阶段和运行阶段准备协作方式：
 
-数据库测试要求 `.env` 中 `TEST_DATABASE_URL` 明确指向本地/CI 测试服务，测试创建并清理独立 schema。`ci-fast` 检查规则、格式、静态分析、单元测试、生成一致性、实体、流程和构建；`test-security` 还包含真实数据库集成测试。
+| 阶段 | 配套 | 作用 |
+|---|---|---|
+| **开发应用** | AGENTS、工程 Skills、Schema、验证门禁 | 帮助编码 Agent 理解架构、复用能力、澄清业务问题，并以行为验证结果。 |
+| **使用应用** | 内置助手、MCP、WebMCP、运行时 Skills | 让 Agent 在明确开放的工具与当前权限内参与业务；账号能力与页面上下文各有适用范围。 |
 
-当前浏览器 E2E 按项目指示暂停，不默认执行 `make ci`、浏览器集合或推送触发远程 CI。本地测试、真实模型效果、原生客户端互通和远程 CI 需要分别报告。
+Skills 保存做事的方法，Schema 描述可交换的结构，Gateway 约束实际执行。三者协同，既支持生成代码，也支持应用中的持续协作。
 
-## 为下一次 Agent 开发保留方法
+## 企业应用基础与工程落地
 
-开发顺序是：检查现状 → 明确角色/状态 → 仅询问未决业务问题 → 发现并复用能力 → 确定事务与引擎 → 修改唯一源并生成 → 贯通入口与页面 → 验证实际行为。
+框架提供身份与权限、组织和账号、配置治理、字典、文件、通知、国际化及统一界面基础，并以 React / TypeScript、Go / Goa、PostgreSQL 和 Eino 承载实现。
 
-优先直接复用已有动作，其次 Gateway 组合，再考虑兼容扩展；确有独立语义缺口才新增。工程决策由 Agent 基于代码完成，不要求用户反复批准已授权工作。
+框架机制与具体业务接入有各自的成熟度；概念图不表示所有场景都已开箱即用。当前支持范围、已知限制与验证记录保留在技术文档中。
 
-- [Agent 开发步骤与提问矩阵](docs/agent-workflow.md)
-- [任务与 Skill 路由](docs/agent-tooling.md)
-- [能力拆分与组合](docs/capability-composition.md)
-- [实体模型](docs/entity-model.md) · [安全边界](docs/security.md)
-- [测试与质量门禁](docs/testing.md) · [决策记录](docs/decisions/)
+- [本地开发与启动](docs/local-development.md)
+- [架构与运行机制](docs/architecture.md) · [Eino 编排方案](docs/orchestration-plan.md)
+- [完整生命周期示例](docs/orchestration-example.md)
+- [Agent 开发步骤、提问与复用策略](docs/agent-workflow.md)
+- [能力拆分与组合](docs/capability-composition.md) · [任务与 Skill 路由](docs/agent-tooling.md)
+- [安全边界](docs/security.md) · [测试与质量门禁](docs/testing.md)
+- [Schema 路线](docs/agent-generation-plan.md) · [工程验收记录](docs/verification.md)

@@ -1,60 +1,97 @@
-# 当前架构与分层概念
+# AI-Native 概念架构与运行机制
 
 以 2026-11-01 工作区代码为依据。Horizon 为单仓库、单 Go 服务的能力中心框架：能力是业务契约，Gateway 是业务执行入口，Eino 提供持久化流程和 Agent 执行，事件将已提交事实与后续 AI 行为连接起来。图展示当前框架结构，不表示所有业务模块已完成同等程度的接入。
 
 ![能力中心架构](assets/horizon-capability-architecture.png)
 
-## 1. 执行与事件闭环
+## 1. 概念职责：任务组织在上，能力执行在下
+
+概念主线与 README 保持一致：**交互与触发 → 任务与编排 → Gateway → 能力体系 → 业务执行 → 业务事实与运行记忆 → 事件反馈**。简单动作可直达 Gateway，不强制经过编排。
+
+- 任务与编排层使用 Eino Workflow、Graph、ADK，分别组织业务主干、局部循环与受限决策。
+- Gateway 是统一执行边界；能力体系在其后展开为模型、注册和触发。模型描述契约，注册使能力可发现并绑定执行者，触发将当前调用关联到已注册动作。
+- 业务执行产生结果，持久化保存业务事实和恢复状态；事件异步驱动后续 Agent 或专用业务路径。
+- 编码 Skills、Schema、知识上下文和验证是横向支撑，不作为每次用户访问必须顺序经过的阶段。
+
+图中编排位于 Gateway 上方是职责组织关系，不是鉴权顺序。流程启动本身是一项能力，仍先经 Gateway 受理；之后 Workflow 节点、Graph 调用和 ADK 业务工具每次再经 Gateway。模型和注册也不是运行时每次重新创建。以下展开实际调用顺序，避免把概念图理解成新的执行入口。
+
+## 2. 从一次访问展开流程
+
+主线为：**访问与触发入口 → Gateway → 能力与契约解析 → 执行分支 → 数据与执行记录 → 返回结果，当前调用结束**。提交后的事件走独立异步分支，再驱动下一轮访问。
+
+能力与契约放在 Gateway 之后，表示访问先进入统一入口，再由 Gateway 使用已注册契约处理和分派。Gateway 并非先完成所有校验再读取契约；源码中先建立身份、检查请求并 Resolve，随后按契约执行权限、Schema、幂等与策略检查。模型声明和启动注册是支撑这次调用的前置工作，不是每次请求都会执行的步骤。
 
 ```mermaid
 flowchart TD
-    UI[React 页面 / 统一 SDK] --> GW[Capability Gateway]
-    MCP[远程 MCP / 显式工具允许集] --> GW
-    PAGE[WebMCP / 页面上下文] --> UI
-    ASSIST[内置助手 / Eino ADK] --> GW
-    REG[模块 Entries / Registry / Schema] -. 契约与元数据 .-> GW
-    IAM[可信 Principal / 权限 / 数据范围] -. 身份与授权 .-> GW
-    GW --> ATOM[原子能力 / 领域规则 / TxExecutor]
-    GW --> COMPOSE[同步组合 / Go Executor]
-    GW --> ORCH[编排入口 / 版本化 Eino Workflow]
-    COMPOSE --> GW
-    ORCH --> GRAPH[Graph / 有界循环与只读重试]
-    ORCH --> AGENT[ADK / 受限工具决策]
-    ORCH --> GW
-    GRAPH --> GW
-    AGENT --> GW
-    ATOM --> DB[(PostgreSQL / 业务数据与运行记录)]
-    ATOM --> OUTBOX[同事务 Outbox / 已实现原子路径]
-    OUTBOX --> HUB[Relay / Event Hub / 至少一次]
-    HUB --> TRIGGER[AI Trigger / 去重 / 深度限制]
-    TRIGGER --> ASSIST
-    TRIGGER --> ROUTE[专用业务触发路径 / 按当前实现]
-    ROUTE --> GW
-    ORCH -. 加密检查点 .-> DB
-    GW -. 调用 / 审批 / 审计 .-> DB
-    ASSIST -. 独立 AI 运行 .-> DB
-    GW --> KNOW[知识检索能力]
-    KNOW --> REDIS[(Redis 向量索引)]
+    ACCESS[访问入口：页面 / 助手工具 / MCP / 事件 / 流程节点] --> GW[进入 Capability Gateway：可信身份与调用上下文]
+    subgraph CONTRACT[能力与契约：Gateway 内部使用的三条子流程]
+        MODEL[能力模型：Definition / Schema / 元数据]
+        REG[能力注册：Entries / 启动校验 / Handler 绑定]
+        RESOLVE[能力触发解析：名称 + 版本 + 输入 + 来源]
+        MODEL -. 代码声明到启动装配 .-> REG
+        REG -. 运行时查找已注册契约 .-> RESOLVE
+    end
+    GW --> RESOLVE
+    RESOLVE --> CHECK[Gateway 按契约准入：权限 / Schema / 幂等 / 风险策略]
+    CHECK -->|拒绝| ERROR[稳定错误 / 不执行业务]
+    CHECK -->|需确认| WAIT[保存待审批 / 返回确认状态]
+    CHECK -->|允许| DISPATCH[按能力分派执行]
+    WAIT -. 人工决定后重建身份与重新授权 .-> GW
+    DISPATCH --> ATOM[原子能力：领域规则 / 数据范围 / 查询或事务写]
+    DISPATCH --> COMPOSE[同步组合：Go Executor]
+    DISPATCH --> ORCH[Eino Workflow：受理 / 依赖 / 暂停恢复]
+    COMPOSE -->|子能力| GW
+    ORCH -->|普通节点| GW
+    ORCH --> GRAPH[Graph：有界循环 / 只读重试]
+    ORCH --> AGENT[ADK：受限工具决策]
+    GRAPH -->|能力调用| GW
+    AGENT -->|业务工具| GW
+    ATOM --> DB[读取或提交业务数据 / 按实际事务保存结果]
+    DB --> RESULT[Gateway 返回：成功 / 失败 / 已受理 / 待审批]
+    ORCH -. 受理返回 runId .-> RESULT
+    ERROR --> END[原接入方接收结果 / 当前请求结束]
+    WAIT --> END
+    RESULT --> END
+    CHECK -. 调用 / 审批 / 审计记录 .-> LOG[(PostgreSQL 执行记录)]
+    ORCH -. ai_runs / 加密检查点 .-> LOG
+    DB -->|仅成功写入的事务路径| OUTBOX[业务事实 Outbox]
+    OUTBOX -. 提交后异步 .-> HUB[Relay / Event Hub：至少一次]
+    HUB --> TRIGGER[AI Trigger：去重 / 深度 / 身份重建]
+    TRIGGER --> NEXT[通用 Agent 或专用业务路径]
+    NEXT --> GW
 ```
 
-这是调用关系图，不是所有请求固定经过所有节点。Registry 是目录，不是远程执行服务；Graph 和 ADK 是按需使用的编排节点。事件可以进入通用 Agent，也可以进入专用业务路径，不能仅凭 Trigger 名称推断使用了 ADK。
+业务数据与 Outbox 只有在实际同一事务路径才保证原子，既有自持事务模块仍有 best-effort 窗口。知识检索、文件和外部系统是具体能力的存储/集成路径，不构成绕过 Gateway 的另一个业务入口。
 
-## 2. 每一层解决什么问题
+## 3. 每一层包含哪些子流程
 
-| 层 | 概念与职责 | 当前代码位置 |
+| 流程层 | 子流程与职责 | 当前代码位置 |
 |---|---|---|
-| 交互与适配 | 页面、助手、MCP、WebMCP、事件将不同入口转换为能力调用。Goa 处理会话/系统/公开投影和统一信封；适配器不复制业务规则。 | `apps/web/src/features`、`services/api/internal/transport`、`internal/modules/mcp` |
-| 能力契约 | Definition 定义输入输出、版本、权限、风险/审批、幂等、事件、日志白名单和编排元数据；Registry 统一校验与发现。能力由所属模块提供。 | `internal/platform/capability/{contracts,registry}`、模块 `Entries()`、`internal/app/capabilities.go` |
-| 执行治理 | Gateway 统一身份、权限、Schema、幂等、策略/审批、执行与审计。范围过滤还必须由业务 SQL 执行；审批不扩大申请人权限。 | `internal/platform/capability/gateway`、`policy`、`approval`、`audit`、`internal/identity` |
-| 业务能力 | 原子动作持有状态约束、SQL、可信范围和业务事件。同步组合 Executor 只通过 Gateway 调能力，不直接查业务库。 | `internal/modules/*`、`internal/identity`、共享 `internal/governance` |
-| 编排与 AI | Workflow 表达依赖、持久化与暂停恢复；Graph 表达有界循环/重试；ADK 表达受限工具决策。普通模型分类可以直接调用 Eino 模型接口。 | `internal/ai/orchestration`、`harness`、`tools`、`workflow` |
-| 存储 | PostgreSQL 保存业务事实、审批、事件及运行；sqlc/pgx 提供类型化访问。Redis 提供知识向量检索，文件服务管理受控存储根目录。 | `db/migrations`、`db/query`、`internal/repository/dbgen`、`internal/ai/knowledge` |
-| 事件与自动化 | 成功业务写入 Outbox；Relay 至少一次发布，Event Hub 分发，Trigger 按策略/事件去重、限制深度并重建身份。 | `internal/platform/{outbox,eventhub}`、`internal/ai/triggers` |
-| 工程约束 | AGENTS/Skills 指导能力复用和选型，Schema/生成检查限制结构漂移，实体检查与真实行为测试验证边界。 | `.agents/skills`、`docs/agent-policy.json`、`scripts`、`Makefile` |
+| 01 访问与触发入口 | 页面/SDK、助手工具、远程 MCP、页面 WebMCP、事件与流程节点将意图转成能力请求；传输层不复制业务逻辑。 | `apps/web/src/features`、`internal/transport`、`internal/modules/mcp` |
+| 02 Gateway 统一入口 | 建立可信身份与调用链；使用契约完成权限、Schema、幂等、风险策略；允许则分派，拒绝则结束，需确认则持久化后返回。 | `internal/platform/capability/gateway`、`internal/identity`、`policy`、`approval` |
+| 03 能力模型 | 声明名称/版本、输入输出、权限/风险、幂等、成功事件和日志白名单；关联实体与编排元数据。属于设计/代码声明过程。 | `contracts`、模块 `Definition`、`entity_*.go` |
+| 03 能力注册 | 模块 `Entries()` 汇总定义与 Handler，经共享装配、启动校验和 Registry 注册，形成可发现目录。属于启动过程。 | 模块 `Entries()`、`internal/app/capabilities.go`、`registry` |
+| 03 能力触发解析 | Gateway 用请求名称/版本定位已注册契约，校验输入和执行政策后取得分派结果；不重新注册，也不直接绕过 Gateway 调 Handler。 | `Gateway.Invoke`、`Registry.Resolve`、工具/事件适配器 |
+| 04 执行分支 | 原子能力执行业务约束与 SQL；同步组合经 Gateway 互调；Eino Workflow 管持久化步骤，Graph/ADK 按需承接循环与工具决策，节点仍回到 Gateway。 | `internal/modules/*`、`internal/identity`、`internal/ai/{orchestration,harness,tools}` |
+| 05 数据与执行记录 | 原子能力读写业务数据；调用治理保存调用/审批/审计；AI/编排保存独立运行和加密恢复状态。不同记录由对应执行者维护，不是组合能力直接访问业务表。 | PostgreSQL、sqlc/pgx、`audit`、`ai_runs`、`orch_checkpoints` |
+| 06 返回与当前调用结束 | 返回稳定错误、业务结果、待审批或 runId；当前请求结束与长期流程完成分别表达，审批/重启后可继续原运行。 | Gateway Result、统一传输信封、SDK / Query / 页面状态 |
+| 07 提交后异步分支 | Outbox → Relay → Event Hub → Trigger；至少一次、去重、深度和身份重建后进入下一轮能力调用。并非所有请求都有事件。 | `internal/platform/{outbox,eventhub}`、`internal/ai/triggers` |
+
+能力“触发解析”指请求进入能力执行过程；事件“AI Trigger”指已提交事实引起的新行为，两者不是同一个阶段。工具发现只读取允许的目录，也不等于触发了业务执行。
+
+常见路径应分别理解：
+
+- **查询/同步写入**：访问 → Gateway / 契约解析与准入 → 原子或同步组合 → 结果返回，当前请求结束。
+- **拒绝**：准入失败 → 稳定错误 → 结束，不执行业务；幂等命中可在执行前返回原结果。
+- **风险确认**：保存待审批并返回 → 人工决定 → 重建申请人身份、重新授权 → 原动作执行或终止。此时原 HTTP 请求已经结束。
+- **持久化流程**：先受理并返回 runId → 工作器运行 Eino → 节点回到 Gateway → 暂停/恢复 → 运行完成或失败/取消。一次查询运行状态不代表重新启动流程。
+- **业务事件**：成功写入后的异步事件 → Trigger → 下一轮调用，与原请求的返回和业务成功状态分开。
+
+工程契约与门禁属于横向支撑：AGENTS/Skills、Goa、SQL、实体和流程 spec 指导并约束上述过程，不作为用户请求必须经过的执行层。Redis 向量检索、文件存储及模型服务也按实际能力需求选择。
 
 `Layer` 与 `Kind` 是不同维度：前者描述原子或编排，后者描述 service/sql/command/external/event 形态。`Reads/Writes` 用于依赖冲突检查，`Effect` 描述副作用，`RetrySafe` 描述重试保证；这些元数据不能替代授权、事务或业务顺序。详见 [ADR 016](decisions/016-capability-taxonomy-and-orchestration.md)。
 
-## 3. 三类执行方式与事务
+## 4. 三类执行方式与事务
 
 1. 单个查询或原子动作直接执行能力。新模块写能力用 TxExecutor，将业务数据与 Outbox 放入同一事务。
 2. 同步聚合用非事务 Executor，经 Gateway 调多个能力。TxExecutor 内不得再调用 Gateway；多个业务事务不会被组合成全局原子事务。
@@ -64,7 +101,7 @@ flowchart TD
 
 Gateway 风险确认与业务人工审核分别设计。前者允许执行一个操作；后者包含审核人、对象版本、任务范围、通过/驳回与原因。当前审批恢复桥接不代表已经支持任意业务任务信号。参见 [开发工作流](agent-workflow.md)。
 
-## 4. 数据、身份与可追踪性
+## 5. 数据、身份与可追踪性
 
 - Principal 来自可信会话或已验证账号凭证；租户、账号、当前部门不能由业务输入指定。Casbin 决定操作权限，SQL 强制实际记录范围，多部门授权不合并为一份身份。
 - `cap_invocations` 是业务调用，`cap_approvals` 是操作确认，`ai_runs` 是独立 AI/编排运行头；correlation/causation/depth 连接因果链。AI 失败不得推翻已提交业务事实。
@@ -72,7 +109,7 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 - `cap_outbox`、`cap_events` 与 Trigger 执行记录实现至少一次交付与去重，不承诺 exactly-once。
 - 审计仅保存允许字段。TransientResult 可防止调用结果持久化/重放，但模型回答、检查点和事件仍需独立检查敏感材料边界。
 
-## 5. 工程契约与复用
+## 6. 工程契约与复用
 
 | 唯一事实源 | 作用 | 生成 / 验证 |
 |---|---|---|
@@ -86,7 +123,7 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 
 前端使用 TanStack Query 管远程状态、React Hook Form + Zod 管表单、TanStack Table 管表格；页面动作使用 capability SDK，文案走 en/zh-CN i18next。共享设置、字典、文件与通知按 [公共能力约定](shared-capabilities.md) 接入。
 
-## 6. 当前能力与待完成项
+## 7. 当前能力与待完成项
 
 框架已提供版本化 Workflow、Graph、ADK、操作审批中断恢复、补偿、流程规格生成和完整生命周期参考；实际装配见 `internal/transport/governance.go` 和共享 `app.CapabilityModules`。支持这些机制不等于所有业务已使用它们。
 
@@ -94,7 +131,7 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 
 当前不提供远程任意流程上传/发布、通用可视化设计器、任意 SQL/命令执行器或 exactly-once 保证。业务人工任务、外部信号、条件分支及结构化 ADK 输出必须逐项验证或扩展，不能仅按目标图宣称支持。
 
-## 7. 验证与运维边界
+## 8. 验证与运维边界
 
 `make ci-fast` 为非浏览器门禁；SQL/权限改动加真实隔离 PostgreSQL 验证，`make test-security` 包含数据库集成集合。浏览器 E2E 依现行指示暂停；推送会触发远程 CI 的浏览器阶段，因此本地提交不等于推送授权。
 
