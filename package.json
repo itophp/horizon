@@ -1,6 +1,7 @@
 {
   "name": "xxh-baseline",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "pnpm --filter @baseline/web dev",

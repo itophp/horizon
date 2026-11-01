@@ -169,3 +169,7 @@ Skills 保存做事的方法，Schema 描述可交换的结构，Gateway 约束�
 - [能力拆分与组合](docs/capability-composition.md) · [任务与 Skill 路由](docs/agent-tooling.md)
 - [安全边界](docs/security.md) · [测试与质量门禁](docs/testing.md)
 - [Schema 路线](docs/agent-generation-plan.md) · [工程验收记录](docs/verification.md)
+
+## 开源协议
+
+本项目采用 [MIT License](LICENSE)。第三方依赖及随附的第三方内容保留各自的许可证与版权声明。
