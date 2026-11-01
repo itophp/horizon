@@ -1,5 +1,7 @@
 import { beforeEach, it, expect, vi } from "vitest";
 import { render, screen, within, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
 import { changeLanguage } from "@/i18n";
 import type {
@@ -20,14 +22,17 @@ vi.mock("./shared", async (importOriginal) => ({
   useAdminData: mocks.data,
   useRefreshAdmin: () => mocks.refresh,
 }));
-vi.mock("@/api/generated/baseline", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/api/generated/baseline")>()),
-  useIdentityCreateAccount: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  useIdentityUpdateAccount: () => ({
-    isPending: false,
-    mutateAsync: mocks.update,
-  }),
+vi.mock("@/lib/capabilities", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/capabilities")>()),
+  identityCreateAccount: vi.fn(),
+  identityUpdateAccount: (id: number, data: unknown) =>
+    mocks.update({ id, data }),
 }));
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+});
+const renderForm = (ui: ReactElement) =>
+  render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 const account: AccountRecord = {
   id: 1,
   username: "root-admin",
@@ -131,7 +136,7 @@ beforeEach(async () => {
 it("lets the built-in administrator configure an additional child department without unlocking primary permissions", async () => {
   const user = userEvent.setup();
   const saved = vi.fn();
-  render(<AccountForm record={account} onSaved={saved} />);
+  renderForm(<AccountForm record={account} onSaved={saved} />);
   await user.click(
     screen.getByRole("button", {
       name: "Departments & permissions",
@@ -205,7 +210,7 @@ it.each(["other-owner", "no-permission", "read-only"])(
       account: mode === "other-owner" ? { ...account, id: 2 } : account,
       permissions: mode === "no-permission" ? [] : session.permissions,
     });
-    render(
+    renderForm(
       <AccountForm
         record={account}
         readOnly={mode === "read-only"}

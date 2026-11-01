@@ -46,7 +46,9 @@ func run() error {
 		return err
 	}
 	query := parsed.Query()
-	query.Set("search_path", schema)
+	// Tables stay in the disposable schema; public keeps shared extension objects
+	// (pg_trgm operators used by knowledge retrieval) resolvable.
+	query.Set("search_path", schema+",public")
 	parsed.RawQuery = query.Encode()
 	dsn := parsed.String()
 	if err = identity.Migrate(ctx, dsn); err != nil {

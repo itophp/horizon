@@ -8,6 +8,184 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AiConversation struct {
+	ID         int64
+	TenantID   string
+	AccountID  int64
+	SessionID  string
+	Title      string
+	ArchivedAt pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+}
+
+type AiRun struct {
+	ID                 int64
+	TenantID           string
+	AccountID          int64
+	DepartmentID       int64
+	SessionID          string
+	Agent              string
+	Model              string
+	InstructionVersion string
+	Question           string
+	Answer             string
+	Status             string
+	ErrorCode          string
+	ToolCalls          int32
+	PromptTokens       int32
+	CompletionTokens   int32
+	DurationMs         int32
+	TraceID            string
+	Context            []byte
+	CreatedAt          pgtype.Timestamptz
+	FinishedAt         pgtype.Timestamptz
+	Origin             string
+	CorrelationID      string
+	CausationID        string
+	TriggerDepth       int32
+	TriggerPolicy      string
+	EventID            string
+}
+
+type AiTriggerExecution struct {
+	ID            int64
+	TenantID      string
+	PolicyID      string
+	PolicyVersion int32
+	EventID       string
+	RunID         pgtype.Int8
+	Status        string
+	ErrorCode     string
+	CreatedAt     pgtype.Timestamptz
+	StartedAt     pgtype.Timestamptz
+	FinishedAt    pgtype.Timestamptz
+}
+
+type AiTriggerPolicy struct {
+	ID          int64
+	TenantID    string
+	PolicyID    string
+	Version     int32
+	Enabled     bool
+	EventType   string
+	Agent       string
+	Mode        string
+	Instruction string
+	MaxDepth    int32
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type Article struct {
+	ID         int64
+	TenantID   string
+	CreatedBy  int64
+	Title      string
+	Body       string
+	Status     string
+	Revision   int64
+	ReviewCode string
+	ReviewedBy int64
+	CreatedAt  pgtype.Timestamptz
+	UpdatedAt  pgtype.Timestamptz
+}
+
+type CapApproval struct {
+	ID                int64
+	TenantID          string
+	AccountID         int64
+	DepartmentID      int64
+	Capability        string
+	CapabilityVersion string
+	InvocationID      string
+	Risk              string
+	Approval          string
+	Arguments         []byte
+	ArgumentsDigest   string
+	Status            string
+	RequestedAt       pgtype.Timestamptz
+	ExpiresAt         pgtype.Timestamptz
+	DecidedBy         pgtype.Int8
+	DecidedAt         pgtype.Timestamptz
+	DecisionNote      string
+	ExecutionCode     string
+	ActionKey         string
+}
+
+type CapEvent struct {
+	ID            int64
+	TenantID      string
+	EventID       string
+	EventType     string
+	AggregateType string
+	AggregateID   string
+	Payload       []byte
+	InvocationID  string
+	AccountID     int64
+	DepartmentID  int64
+	CorrelationID string
+	CausationID   string
+	TriggerDepth  int32
+	CreatedAt     pgtype.Timestamptz
+}
+
+type CapInvocation struct {
+	ID                int64
+	TenantID          string
+	AccountID         int64
+	DepartmentID      int64
+	InvocationID      string
+	Capability        string
+	CapabilityVersion string
+	Origin            string
+	IdempotencyKey    string
+	Status            string
+	Input             []byte
+	InputDigest       string
+	Result            []byte
+	ErrorCode         string
+	ApprovalID        int64
+	CorrelationID     string
+	CausationID       string
+	TriggerDepth      int32
+	DurationMs        int32
+	TraceID           string
+	CreatedAt         pgtype.Timestamptz
+	FinishedAt        pgtype.Timestamptz
+}
+
+type CapOutbox struct {
+	ID            int64
+	TenantID      string
+	EventID       string
+	EventType     string
+	AggregateType string
+	AggregateID   string
+	Payload       []byte
+	InvocationID  string
+	AccountID     int64
+	DepartmentID  int64
+	CorrelationID string
+	CausationID   string
+	TriggerDepth  int32
+	Status        string
+	Attempts      int32
+	AvailableAt   pgtype.Timestamptz
+	PublishedAt   pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+}
+
+type ExampleRecord struct {
+	ID        int64
+	TenantID  string
+	Title     string
+	Status    string
+	CreatedBy int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
 type GovAnnouncement struct {
 	ID             int64
 	TenantID       string
@@ -363,6 +541,25 @@ type IamTemporaryRequest struct {
 	DepartmentID     int64
 }
 
+type KbChunk struct {
+	ID         int64
+	TenantID   string
+	DocumentID int64
+	Ordinal    int32
+	Content    string
+}
+
+type KbDocument struct {
+	ID        int64
+	TenantID  string
+	Title     string
+	Source    string
+	CreatedBy int64
+	CreatedAt pgtype.Timestamptz
+	Chunks    int32
+	Content   string
+}
+
 type McpCallAudit struct {
 	ID           int64
 	TenantID     string
@@ -394,6 +591,16 @@ type McpToken struct {
 type McpTokenTool struct {
 	TokenID int64
 	Tool    string
+}
+
+type OrchCheckpoint struct {
+	TenantID      string
+	RunID         int64
+	CheckpointKey string
+	Payload       string
+	LeaseUntil    pgtype.Timestamptz
+	LeaseToken    string
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type TechnicalDemoRecord struct {

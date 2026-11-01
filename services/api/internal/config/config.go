@@ -13,13 +13,13 @@ import (
 )
 
 type Config struct {
-	Address, DatabaseURL, DemoToken string
-	SecureCookies                   bool
-	Governance                      governance.Options
+	Address, DatabaseURL string
+	SecureCookies        bool
+	Governance           governance.Options
 }
 
 func Load() (Config, error) {
-	c := Config{Address: os.Getenv("API_ADDR"), DatabaseURL: os.Getenv("DATABASE_URL"), DemoToken: os.Getenv("DEMO_AUTH_TOKEN")}
+	c := Config{Address: os.Getenv("API_ADDR"), DatabaseURL: os.Getenv("DATABASE_URL")}
 	if c.Address == "" {
 		c.Address = "127.0.0.1:8080"
 	}
@@ -35,9 +35,6 @@ func Load() (Config, error) {
 		return c, err
 	}
 	ip := net.ParseIP(host)
-	if c.DemoToken != "" && (ip == nil || !ip.IsLoopback()) {
-		return c, errors.New("development auth requires a literal loopback listener")
-	}
 	if (ip == nil || !ip.IsLoopback()) && !c.SecureCookies {
 		return c, errors.New("non-loopback deployments require COOKIE_SECURE=true and HTTPS")
 	}

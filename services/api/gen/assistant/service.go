@@ -22,6 +22,16 @@ type Service interface {
 	// Send the conversation and the currently registered page tools; returns
 	// assistant text plus any requested tool calls.
 	Chat(context.Context, *ChatPayload) (res *AssistantReply, err error)
+	// Run the Eino agent for one question. The agent decides whether to search the
+	// knowledge base.
+	Agent(context.Context, *AgentPayload) (res *AssistantAgentReply, err error)
+	// Run the retrieval workflow: retrieve, ground the prompt, then answer. Always
+	// grounded.
+	Workflow(context.Context, *WorkflowPayload) (res *AssistantAgentReply, err error)
+	// List indexed knowledge documents for the current tenant.
+	Knowledge(context.Context, *KnowledgePayload) (res []*KnowledgeDocument, err error)
+	// Index one knowledge document. Requires settings:update and is tenant scoped.
+	Ingest(context.Context, *IngestPayload) (res *KnowledgeIngested, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -44,7 +54,21 @@ const ServiceName = "assistant"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"status", "chat"}
+var MethodNames = [6]string{"status", "chat", "agent", "workflow", "knowledge", "ingest"}
+
+// AgentPayload is the payload type of the assistant service agent method.
+type AgentPayload struct {
+	Cookie   string
+	Question string
+}
+
+// AssistantAgentReply is the result type of the assistant service agent method.
+type AssistantAgentReply struct {
+	Content string
+	Tools   []string
+	Model   string
+	Mode    string
+}
 
 // One turn of the assistant conversation. Tool output is attributed to its
 // call id.
@@ -64,9 +88,10 @@ type AssistantReply struct {
 
 // AssistantStatus is the result type of the assistant service status method.
 type AssistantStatus struct {
-	Enabled    bool
-	Configured bool
-	Model      string
+	Enabled      bool
+	Configured   bool
+	AgentEnabled bool
+	Model        string
 }
 
 // Page tool definition supplied by the browser. The model may request it; the
@@ -94,9 +119,41 @@ type IAMProblem struct {
 	Code string
 }
 
+// IngestPayload is the payload type of the assistant service ingest method.
+type IngestPayload struct {
+	Cookie  string
+	Title   string
+	Content string
+}
+
+type KnowledgeDocument struct {
+	ID        int64
+	Title     string
+	Source    string
+	Chunks    int64
+	CreatedAt string
+}
+
+// KnowledgeIngested is the result type of the assistant service ingest method.
+type KnowledgeIngested struct {
+	ID int64
+}
+
+// KnowledgePayload is the payload type of the assistant service knowledge
+// method.
+type KnowledgePayload struct {
+	Cookie string
+}
+
 // StatusPayload is the payload type of the assistant service status method.
 type StatusPayload struct {
 	Cookie string
+}
+
+// WorkflowPayload is the payload type of the assistant service workflow method.
+type WorkflowPayload struct {
+	Cookie   string
+	Question string
 }
 
 // Error returns an error description.

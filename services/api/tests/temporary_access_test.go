@@ -20,10 +20,26 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 	grant := func(permission, scope string, ids ...int64) *genidentity.PermissionGrant {
 		return &genidentity.PermissionGrant{Permission: permission, Effect: "allow", Scope: scope, DepartmentIds: append([]int64{}, ids...)}
 	}
+	grantRows := func(grants []*genidentity.PermissionGrant) []map[string]any {
+		rows := make([]map[string]any, 0, len(grants))
+		for _, grant := range grants {
+			rows = append(rows, map[string]any{"permission": grant.Permission, "effect": grant.Effect, "scope": grant.Scope, "departmentIds": grant.DepartmentIds})
+		}
+		return rows
+	}
 	account := func(username string, dept int64, overrides ...*genidentity.PermissionGrant) *genidentity.AccountRecord {
-		response := root.request(t, "POST", "/api/admin/accounts", &genidentity.CreateAccountPayload{Username: username, FullName: username, OrganizationID: company, DepartmentID: dept, Status: "active", RoleIds: []int64{}, Overrides: append([]*genidentity.PermissionGrant{}, overrides...), Password: "TestOnly!2026Secure"}, true)
-		checkStatus(t, response, 201)
-		return decodeBody[*genidentity.AccountRecord](t, response)
+		rows := make([]map[string]any, 0, len(overrides))
+		for _, override := range overrides {
+			rows = append(rows, map[string]any{"permission": override.Permission, "effect": override.Effect, "scope": override.Scope, "departmentIds": override.DepartmentIds})
+		}
+		response := root.invoke(t, "identity.account.create", map[string]any{
+			"username": username, "fullName": username, "email": "", "organizationId": company,
+			"departmentId": dept, "status": "active", "roleIds": []int64{},
+			"overrides": rows, "password": "TestOnly!2026Secure",
+		}, true)
+		checkStatus(t, response, 200)
+		created := decodeData[genidentity.AccountRecord](t, response)
+		return &created
 	}
 	applicant := account("temporary-applicant", engineering)
 	peer := account("temporary-peer", engineering)
@@ -47,7 +63,15 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 		return decodeBody[*genidentity.AdminSnapshot](t, response)
 	}
 	updateApplicant := func(dept int64, overrides []*genidentity.PermissionGrant) {
-		response := root.request(t, "PUT", fmt.Sprintf("/api/admin/accounts/%d", applicant.ID), &genidentity.UpdateAccountPayload{ID: applicant.ID, Username: applicant.Username, FullName: applicant.FullName, Status: "active", OrganizationID: company, DepartmentID: dept, RoleIds: []int64{}, Overrides: overrides}, true)
+		rows := make([]map[string]any, 0, len(overrides))
+		for _, override := range overrides {
+			rows = append(rows, map[string]any{"permission": override.Permission, "effect": override.Effect, "scope": override.Scope, "departmentIds": override.DepartmentIds})
+		}
+		response := root.invoke(t, "identity.account.update", map[string]any{
+			"id": applicant.ID, "username": applicant.Username, "fullName": applicant.FullName,
+			"email": "", "status": "active", "organizationId": company, "departmentId": dept,
+			"roleIds": []int64{}, "overrides": rows,
+		}, true)
 		checkStatus(t, response, 200)
 	}
 	if len(snapshot(applicantClient).Accounts) != 0 {
@@ -57,7 +81,7 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 		response := applicantClient.request(t, "GET", "/api/admin/temporary-access", nil, false)
 		checkStatus(t, response, 200)
 		workspace := decodeBody[genidentity.TemporaryAccessWorkspace](t, response)
-		if workspace.CanReview || len(workspace.Catalog) != 42 || len(workspace.Departments) != 2 {
+		if workspace.CanReview || len(workspace.Catalog) != 56 || len(workspace.Departments) != 2 {
 			t.Fatal("request directory or independent approval permission incorrect")
 		}
 		response = manager.request(t, "GET", "/api/admin/temporary-access", nil, false)
@@ -198,28 +222,36 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 	t.Run("temporary writes cannot leave permanent identity or role escalation", func(t *testing.T) {
 		lease := create(manager, grant("accounts:update", "ALL"))
 		checkStatus(t, root.request(t, "POST", reviewPath(lease.ID), reviewPayload(30, grant("accounts:update", "ALL")), true), 200)
-		payload := &genidentity.UpdateAccountPayload{ID: managerAccount.ID, Username: managerAccount.Username, FullName: "Updated display name", Email: managerAccount.Email, Status: "active", OrganizationID: company, DepartmentID: engineering, RoleIds: []int64{}, Overrides: managerAccount.Overrides}
-		checkStatus(t, manager.request(t, "PUT", fmt.Sprintf("/api/admin/accounts/%d", managerAccount.ID), payload, true), 200)
-		payload.RoleIds = []int64{initial.Roles[0].ID}
-		checkStatus(t, manager.request(t, "PUT", fmt.Sprintf("/api/admin/accounts/%d", managerAccount.ID), payload, true), 403)
-		payload.RoleIds = []int64{}
-		payload.DepartmentID = adminAccount.DepartmentID
-		checkStatus(t, manager.request(t, "PUT", fmt.Sprintf("/api/admin/accounts/%d", managerAccount.ID), payload, true), 403)
-		payload.ID = reviewerAccount.ID
-		payload.Username = reviewerAccount.Username
-		payload.FullName = reviewerAccount.FullName
-		payload.DepartmentID = engineering
-		payload.Overrides = reviewerAccount.Overrides
-		payload.Password = "A-ResetPassword!2026"
-		checkStatus(t, manager.request(t, "PUT", fmt.Sprintf("/api/admin/accounts/%d", reviewerAccount.ID), payload, true), 403)
+		payload := map[string]any{
+			"id": managerAccount.ID, "username": managerAccount.Username, "fullName": "Updated display name",
+			"email": managerAccount.Email, "status": "active", "organizationId": company,
+			"departmentId": engineering, "roleIds": []int64{}, "overrides": grantRows(managerAccount.Overrides),
+		}
+		checkStatus(t, manager.invoke(t, "identity.account.update", payload, true), 200)
+		payload["roleIds"] = []int64{initial.Roles[0].ID}
+		checkStatus(t, manager.invoke(t, "identity.account.update", payload, true), 403)
+		payload["roleIds"] = []int64{}
+		payload["departmentId"] = adminAccount.DepartmentID
+		checkStatus(t, manager.invoke(t, "identity.account.update", payload, true), 403)
+		payload["id"] = reviewerAccount.ID
+		payload["username"] = reviewerAccount.Username
+		payload["fullName"] = reviewerAccount.FullName
+		payload["departmentId"] = engineering
+		payload["overrides"] = grantRows(reviewerAccount.Overrides)
+		payload["password"] = "A-ResetPassword!2026"
+		checkStatus(t, manager.invoke(t, "identity.account.update", payload, true), 403)
 	})
 	t.Run("temporary creation cannot issue permanently privileged identities", func(t *testing.T) {
 		lease := create(manager, grant("accounts:create", "ALL"))
 		checkStatus(t, root.request(t, "POST", reviewPath(lease.ID), reviewPayload(30, grant("accounts:create", "ALL")), true), 200)
-		payload := &genidentity.CreateAccountPayload{Username: "lease-created-account", FullName: "Lease created account", Status: "active", OrganizationID: company, DepartmentID: engineering, RoleIds: []int64{initial.Roles[0].ID}, Overrides: []*genidentity.PermissionGrant{}, Password: "TestOnly!2026Secure"}
-		checkStatus(t, manager.request(t, "POST", "/api/admin/accounts", payload, true), 403)
-		payload.RoleIds = []int64{}
-		checkStatus(t, manager.request(t, "POST", "/api/admin/accounts", payload, true), 201)
+		payload := map[string]any{
+			"username": "lease-created-account", "fullName": "Lease created account", "email": "",
+			"status": "active", "organizationId": company, "departmentId": engineering,
+			"roleIds": []int64{initial.Roles[0].ID}, "overrides": []map[string]any{}, "password": "TestOnly!2026Secure",
+		}
+		checkStatus(t, manager.invoke(t, "identity.account.create", payload, true), 403)
+		payload["roleIds"] = []int64{}
+		checkStatus(t, manager.invoke(t, "identity.account.create", payload, true), 200)
 	})
 	t.Run("temporary hierarchy changes cannot expand permanent department trees", func(t *testing.T) {
 		actor := account("tree-actor", engineering, grant("accounts:read", "DEPARTMENT_TREE"))
@@ -227,8 +259,12 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 		lease := create(actorClient, grant("departments:update", "ALL"))
 		checkStatus(t, root.request(t, "POST", reviewPath(lease.ID), reviewPayload(30, grant("departments:update", "ALL")), true), 200)
 		department := initial.Departments[0]
-		payload := &genidentity.UpdateDepartmentPayload{ID: department.ID, Name: department.Name, Code: department.Code, OrganizationID: company, ParentID: engineering, Manager: department.Manager, Status: "active", Description: department.Description}
-		checkStatus(t, actorClient.request(t, "PUT", fmt.Sprintf("/api/admin/departments/%d", department.ID), payload, true), 403)
+		payload := map[string]any{
+			"id": department.ID, "name": department.Name, "code": department.Code,
+			"organizationId": company, "parentId": engineering, "manager": department.Manager,
+			"status": "active", "description": department.Description,
+		}
+		checkStatus(t, actorClient.invoke(t, "identity.department.update", payload, true), 403)
 		for _, row := range snapshot(actorClient).Accounts {
 			if row.ID == adminAccount.ID {
 				t.Fatal("hierarchy mutation created lasting scope escalation")

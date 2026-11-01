@@ -4,7 +4,7 @@
   "console": "系统管理中心",
   "nav": {
     "workspace": "工作空间",
-    "overview": "工作台",
+    "statistics": "数据统计",
     "management": "系统管理",
     "accounts": "账号管理",
     "organizations": "组织管理",
@@ -71,8 +71,8 @@
     "shortcut": "K"
   },
   "overview": {
-    "eyebrow": "工作空间，一目了然",
-    "title": "工作空间总览",
+    "eyebrow": "运营数据一览",
+    "title": "数据统计",
     "subtitle": "掌握账号、组织与权限，让日常管理更清晰。",
     "welcome": "欢迎回来，{{name}}。",
     "tabOverview": "概览",

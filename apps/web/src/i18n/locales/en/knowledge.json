@@ -1,0 +1,42 @@
+{
+  "nav": "Knowledge base",
+  "title": "Knowledge base",
+  "subtitle": "Documents the agent may cite. Answers stay inside this material and name the fragment they used.",
+  "count": "{{count}} documents",
+  "create": {
+    "title": "Add a document",
+    "name": "Title",
+    "namePlaceholder": "Remote access policy",
+    "content": "Content",
+    "contentPlaceholder": "Paste the policy text. It is split into overlapping fragments so a sentence on a boundary stays retrievable.",
+    "submit": "Index document",
+    "busy": "Indexing…",
+    "hint": "Text is chunked into ~600 characters with 80 characters of overlap. Existing documents are not replaced."
+  },
+  "list": {
+    "title": "Indexed documents",
+    "empty": "No documents yet. Add the first one so answers can cite it.",
+    "chunks": "{{count}} fragments",
+    "source": {
+      "manual": "Pasted",
+      "file": "Uploaded"
+    },
+    "created": "Indexed {{time}}",
+    "loading": "Loading documents…",
+    "meta": "{{chunks}} · {{source}} · {{created}}"
+  },
+  "delete": {
+    "label": "Delete",
+    "confirm": "Delete “{{title}}” and all of its fragments? Answers will stop citing it."
+  },
+  "errors": {
+    "forbidden": "You do not have permission to manage the knowledge base.",
+    "failed": "The knowledge base did not accept that change."
+  },
+  "reindex": {
+    "label": "Rebuild vectors",
+    "busy": "Rebuilding…",
+    "done": "Rebuilt {{count}} documents"
+  },
+  "notConfigured": "The embedding endpoint is not configured yet, so documents cannot be indexed or searched. An administrator can add it under System settings → knowledge."
+}

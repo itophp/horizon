@@ -38,7 +38,7 @@ func (s *Service) validatePlacement(ctx context.Context, p *Principal, scope Sco
 	}
 	return nil
 }
-func (s *Service) validateAccount(ctx context.Context, p *Principal, scope Scope, id int64, payload *genidentity.CreateAccountPayload) error {
+func (s *Service) validateAccount(ctx context.Context, p *Principal, scope Scope, id int64, payload *AccountInput) error {
 	if err := s.validatePlacement(ctx, p, scope, payload.OrganizationID, payload.DepartmentID, id); err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (s *Service) permanentStructureAuthority(ctx context.Context, p *Principal,
 	}
 	return nil
 }
-func (s *Service) CreateAccount(ctx context.Context, payload *genidentity.CreateAccountPayload) (*genidentity.AccountRecord, error) {
+func (s *Service) CreateAccount(ctx context.Context, payload *AccountInput) (*genidentity.AccountRecord, error) {
 	p, scope, err := s.authorized(ctx, "accounts:create")
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (s *Service) CreateAccount(ctx context.Context, payload *genidentity.Create
 	record, err := s.repo.writeAccount(ctx, scope, 0, payload, hash)
 	return record, safe(err)
 }
-func (s *Service) UpdateAccount(ctx context.Context, payload *genidentity.UpdateAccountPayload) (*genidentity.AccountRecord, error) {
+func (s *Service) UpdateAccount(ctx context.Context, payload *AccountInput) (*genidentity.AccountRecord, error) {
 	p, scope, err := s.authorized(ctx, "accounts:update")
 	if err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func (s *Service) UpdateAccount(ctx context.Context, payload *genidentity.Update
 	if !scope.All && !contains(scope.OrgIDs, payload.OrganizationID) && !contains(scope.DeptIDs, payload.DepartmentID) && (old.OrganizationID != payload.OrganizationID || old.DepartmentID != payload.DepartmentID) {
 		return nil, problem("forbidden")
 	}
-	write := &genidentity.CreateAccountPayload{Username: strings.ToLower(strings.TrimSpace(payload.Username)), FullName: payload.FullName, Email: payload.Email, Status: payload.Status, OrganizationID: payload.OrganizationID, DepartmentID: payload.DepartmentID, RoleIds: payload.RoleIds, Overrides: payload.Overrides, Password: payload.Password, DepartmentAccess: payload.DepartmentAccess}
+	write := &AccountInput{Username: strings.ToLower(strings.TrimSpace(payload.Username)), FullName: payload.FullName, Email: payload.Email, Status: payload.Status, OrganizationID: payload.OrganizationID, DepartmentID: payload.DepartmentID, RoleIds: payload.RoleIds, Overrides: payload.Overrides, Password: payload.Password, DepartmentAccess: payload.DepartmentAccess}
 	if err = s.validateMembershipChange(ctx, p, scope, payload.ID, write, old); err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (s *Service) UpdateAccount(ctx context.Context, payload *genidentity.Update
 	record, err := s.repo.writeAccount(ctx, scope, payload.ID, write, hash)
 	return record, safe(err)
 }
-func (s *Service) DeleteAccount(ctx context.Context, payload *genidentity.DeleteAccountPayload) error {
+func (s *Service) DeleteAccount(ctx context.Context, payload *DeleteInput) error {
 	p, scope, err := s.authorized(ctx, "accounts:delete")
 	if err != nil {
 		return err
@@ -248,7 +248,7 @@ func (s *Service) validateOrg(ctx context.Context, p *Principal, id int64, kind,
 	}
 	return nil
 }
-func (s *Service) CreateOrganization(ctx context.Context, payload *genidentity.CreateOrganizationPayload) (*genidentity.OrganizationRecord, error) {
+func (s *Service) CreateOrganization(ctx context.Context, payload *OrganizationInput) (*genidentity.OrganizationRecord, error) {
 	p, scope, err := s.authorized(ctx, "organizations:create")
 	if err != nil {
 		return nil, err
@@ -262,7 +262,7 @@ func (s *Service) CreateOrganization(ctx context.Context, payload *genidentity.C
 	record, err := s.repo.createOrganization(ctx, scope, payload)
 	return record, safe(err)
 }
-func (s *Service) UpdateOrganization(ctx context.Context, payload *genidentity.UpdateOrganizationPayload) (*genidentity.OrganizationRecord, error) {
+func (s *Service) UpdateOrganization(ctx context.Context, payload *OrganizationInput) (*genidentity.OrganizationRecord, error) {
 	p, scope, err := s.authorized(ctx, "organizations:update")
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func (s *Service) UpdateOrganization(ctx context.Context, payload *genidentity.U
 	record, err := s.repo.updateOrganization(ctx, scope, payload.ID, payload)
 	return record, safe(err)
 }
-func (s *Service) DeleteOrganization(ctx context.Context, payload *genidentity.DeleteOrganizationPayload) error {
+func (s *Service) DeleteOrganization(ctx context.Context, payload *DeleteInput) error {
 	_, scope, err := s.authorized(ctx, "organizations:delete")
 	if err != nil {
 		return err
@@ -328,7 +328,7 @@ func (s *Service) validateDepartment(ctx context.Context, p *Principal, id, org,
 	}
 	return nil
 }
-func (s *Service) CreateDepartment(ctx context.Context, payload *genidentity.CreateDepartmentPayload) (*genidentity.DepartmentRecord, error) {
+func (s *Service) CreateDepartment(ctx context.Context, payload *DepartmentInput) (*genidentity.DepartmentRecord, error) {
 	p, scope, err := s.authorized(ctx, "departments:create")
 	if err != nil {
 		return nil, err
@@ -342,7 +342,7 @@ func (s *Service) CreateDepartment(ctx context.Context, payload *genidentity.Cre
 	record, err := s.repo.createDepartment(ctx, scope, payload)
 	return record, safe(err)
 }
-func (s *Service) UpdateDepartment(ctx context.Context, payload *genidentity.UpdateDepartmentPayload) (*genidentity.DepartmentRecord, error) {
+func (s *Service) UpdateDepartment(ctx context.Context, payload *DepartmentInput) (*genidentity.DepartmentRecord, error) {
 	p, scope, err := s.authorized(ctx, "departments:update")
 	if err != nil {
 		return nil, err
@@ -368,7 +368,7 @@ func (s *Service) UpdateDepartment(ctx context.Context, payload *genidentity.Upd
 	record, err := s.repo.updateDepartment(ctx, scope, payload.ID, payload)
 	return record, safe(err)
 }
-func (s *Service) DeleteDepartment(ctx context.Context, payload *genidentity.DeleteDepartmentPayload) error {
+func (s *Service) DeleteDepartment(ctx context.Context, payload *DeleteInput) error {
 	_, scope, err := s.authorized(ctx, "departments:delete")
 	if err != nil {
 		return err
@@ -385,7 +385,7 @@ func (s *Service) roleAuthority(ctx context.Context, permission string) (*Princi
 	}
 	return p, nil
 }
-func (s *Service) CreateRole(ctx context.Context, payload *genidentity.CreateRolePayload) (*genidentity.RoleRecord, error) {
+func (s *Service) CreateRole(ctx context.Context, payload *RoleInput) (*genidentity.RoleRecord, error) {
 	p, err := s.roleAuthority(ctx, "roles:create")
 	if err != nil {
 		return nil, err
@@ -396,7 +396,7 @@ func (s *Service) CreateRole(ctx context.Context, payload *genidentity.CreateRol
 	record, err := s.repo.createRole(ctx, tenantScope(p), payload)
 	return record, safe(err)
 }
-func (s *Service) UpdateRole(ctx context.Context, payload *genidentity.UpdateRolePayload) (*genidentity.RoleRecord, error) {
+func (s *Service) UpdateRole(ctx context.Context, payload *RoleInput) (*genidentity.RoleRecord, error) {
 	p, err := s.roleAuthority(ctx, "roles:update")
 	if err != nil {
 		return nil, err
@@ -407,7 +407,7 @@ func (s *Service) UpdateRole(ctx context.Context, payload *genidentity.UpdateRol
 	record, err := s.repo.updateRole(ctx, tenantScope(p), payload.ID, payload)
 	return record, safe(err)
 }
-func (s *Service) DeleteRole(ctx context.Context, payload *genidentity.DeleteRolePayload) error {
+func (s *Service) DeleteRole(ctx context.Context, payload *DeleteInput) error {
 	p, err := s.roleAuthority(ctx, "roles:delete")
 	if err != nil {
 		return err

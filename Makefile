@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 -include .env
 export
-.PHONY: install tools dev dev-api db-up db-down migrate generate check-generated format format-check lint typecheck test build test-integration test-e2e test-e2e-smoke test-e2e-changed test-e2e-parallel test-webmcp-e2e check-rules ci-fast test-security bootstrap ci
+.PHONY: install tools dev dev-api db-up db-down migrate generate check-generated check-entities check-workflows generate-workflows test-orchestration-example format format-check lint typecheck test build test-integration test-e2e test-e2e-smoke test-e2e-changed test-e2e-parallel test-webmcp-e2e check-rules ci-fast test-security bootstrap ci
 install:
 	pnpm install --frozen-lockfile
 
@@ -27,13 +27,30 @@ migrate:
 	./scripts/go.sh run ./cmd/migrate
 
 generate:
+	$(MAKE) generate-workflows
 	./scripts/go.sh run goa.design/goa/v3/cmd/goa gen baseline/services/api/design
 	cd services/api && ../../.tools/bin/sqlc generate
 	pnpm --filter @baseline/web generate
 	pnpm --filter @baseline/web exec prettier --write src/api/generated
 
+generate-workflows:
+	./scripts/go.sh run ./cmd/workflowspec -out ../../docs/generated/workflows
+
+check-workflows:
+	./scripts/go.sh test ./internal/ai/orchestration ./cmd/workflowspec ./cmd/workflowcheck
+	./scripts/go.sh run ./cmd/workflowcheck -file ../../docs/generated/workflows/example-lifecycle.workflow.json
+
+# No browser or live model: real Eino engines and isolated PostgreSQL.
+test-orchestration-example:
+	./scripts/go.sh test -tags=integration -count=1 -run TestExampleLifecycle -v ./tests
+
 check-generated:
 	node scripts/check-generated.mjs
+
+# Declared business entities must match the schema produced by db/migrations.
+# Static: migrations are embedded, no database is started.
+check-entities:
+	./scripts/go.sh run ./cmd/entitycheck
 
 format:
 	pnpm format
@@ -85,10 +102,10 @@ check-rules:
 	pnpm rules:check
 
 ci-fast:
-	$(MAKE) check-rules format-check lint typecheck test check-generated build
+	$(MAKE) check-rules format-check lint typecheck test check-generated check-entities check-workflows build
 
 test-security:
-	./scripts/go.sh test ./internal/auth ./internal/authorization ./internal/config ./internal/dataaccess ./internal/identity ./internal/mcp ./internal/transport
+	./scripts/go.sh test ./internal/config ./internal/identity ./internal/platform/capability/... ./internal/platform/policy ./internal/modules/mcp ./internal/transport
 	$(MAKE) test-integration
 
 ci:
@@ -98,7 +115,7 @@ ci:
 # Remote business MCP: protocol/database security and isolated browser chain.
 test-mcp:
 	pnpm mcp:test
-	./scripts/go.sh test ./internal/mcp
+	./scripts/go.sh test ./internal/modules/mcp
 	./scripts/go.sh test -tags=integration -count=1 -run MCP ./tests/...
 
 test-mcp-e2e:

@@ -40,11 +40,12 @@ test("reports backend paths that have no browser route instead of guessing", () 
 
 test("routes backend modules to the feature they back", () => {
   assert.deepEqual(
-    selectSpecs(["services/api/internal/notifications/service.go"]).specs,
+    selectSpecs(["services/api/internal/modules/notifications/service.go"])
+      .specs,
     ["notifications"],
   );
   assert.deepEqual(
-    selectSpecs(["services/api/internal/mcp/registry.go"]).specs,
+    selectSpecs(["services/api/internal/modules/mcp/registry.go"]).specs,
     ["mcp"],
   );
   assert.deepEqual(selectSpecs(["services/api/db/query/mcp.sql"]).specs, [

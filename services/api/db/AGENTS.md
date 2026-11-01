@@ -6,7 +6,11 @@
 
 查询必须考虑 list/detail/update/delete/aggregate/export/batch/joins 的同等隔离与字段投影；不要 SELECT * 暴露后续敏感新增列。多步操作用同一事务 Queries。
 
-变更运行 make generate、make check-generated 和真实 PostgreSQL test-integration，覆盖迁移、约束、越权及实际受影响的事务/并发行为。测试环境不可用时明确失败，不跳过或替换内存实现。RLS 仅在实际角色/连接池上下文验证后按需启用。
+变更运行 make generate、make check-generated、make check-entities 和真实 PostgreSQL test-integration，覆盖迁移、约束、越权及实际受影响的事务/并发行为。
+
+加表或加列必须同步实体声明：新表写 `entity_<name>.go`，新列在对应实体加 `Attribute`（`Kind` 区分可写/系统注入/状态/引用），改枚举同步 `Attribute.Enum`，改外键同步 `Relation`。`make check-entities` 会拦住漏声明的 NOT NULL 列和与 `CHECK` 不一致的枚举；不要为了让检查通过而删声明或放宽规则。实体语义与新 i18n label 见 [baseline-entity-model](../../../.agents/skills/baseline-entity-model/SKILL.md)。
+
+测试环境不可用时明确失败，不跳过或替换内存实现。RLS 仅在实际角色/连接池上下文验证后按需启用。
 
 
 多部门模型见 [ADR 004](../../../docs/decisions/004-department-memberships.md)。账号记录范围必须考虑主/附加归属；角色成员去重，账号与所有部门角色写入共用事务。复合外键保持租户与公司部门一致性，临时授权按部门绑定且移除归属立即失效。
@@ -20,3 +24,7 @@
 定时发布 gov_settings_schedules 使用 pending 部分唯一索引、SKIP LOCKED 行锁与 savepoint；配置/版本/审计/任务完成在同一外层事务，崩溃后 pending 可恢复。取消与领取通过同一行锁串行化，版本冲突终止而不自动重新基线。见 ADR 010。
 
 账号远程 MCP 按 [ADR 011](../../../docs/decisions/011-remote-mcp.md)：工具复用原授权用例，凭证绑定本人/部门和固化集合；敏感管理操作重新认证，身份变更撤销与延迟归属检查、客户端配对/备份及协议专项测试同步维护。禁止将安装状态当连接成功。
+
+## 能力、事件与触发
+
+`cap_invocations` 是业务调用审计：租户+账号条件、`(tenant_id, capability, idempotency_key)` 部分唯一索引保证幂等；`input` 只存脱敏投影。`cap_outbox` 与业务数据同事务写入，`cap_events` 由 Relay 至少一次发布，消费端按 `(tenant_id, event_id)` 去重。`cap_approvals` 绑定 invocation 与完整评审载荷，API 只投影白名单字段；决策必须条件更新。`ai_trigger_policies` 版本化，`ai_trigger_executions` 以 `(tenant_id, policy_id, event_id)` 唯一去重，并记录独立 AI 任务状态。`ai_runs` 只存任务轨迹，不复制业务调用步骤。修改这些表必须补跨租户、并发决策、重复事件与深度限制测试。

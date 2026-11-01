@@ -122,3 +122,21 @@ SDK 与 x/time 是应用直接依赖，其余由 SDK 引入；全部由 go.mod/g
 - `suppressHtmlProcessing` 关闭原始 HTML 处理，`linkPlugin.validateUrl` 只放行 http(s)/mailto，与 NotificationMarkdown 的 URL 策略一致。
 - 样式按后台 tokens 覆盖（`--base*` / `--accent*` 映射到 `--app-*`），浅暗主题共用；不引入第二套视觉体系，也不改第三方包源码。
 - 传递依赖（lexical 0.48、codemirror 6、radix 原语等）由 pnpm-lock.yaml 固定，未使用 latest 安装，未修改 `services/api/gen` 与 `apps/web/src/api/generated`。
+
+## 2026-10-31 Eino 智能体运行时
+
+固定 `github.com/cloudwego/eino@v0.9.22`（Apache-2.0）与 `github.com/cloudwego/eino-ext/components/model/openai@v0.1.13`（Apache-2.0），经 `go get` 写入 go.mod/go.sum，未使用 latest 直接安装。
+
+- 选型依据：Eino 提供 `ChatModel`、`Retriever`、`Tool` 组件抽象、Graph/Workflow 编排与 ADK（`ChatModelAgent`、Runner、中断恢复），Apache-2.0，Go 1.18+；本项目 Go 1.27.3 可直接编译。
+- 协议差异：eino-ext 的 openai 组件只实现 OpenAI Chat Completion（`BaseURL + /chat/completions`），不覆盖 Response 协议；因此页面内助手继续用手写的 `/responses` 网关，服务端智能体改用独立设置 `agent.baseUrl`（默认 GLM Coding Plan 的 `https://open.bigmodel.cn/api/coding/paas/v4`），模型与 Token 复用 `assistant.model` / `assistant.token`。
+- 依赖影响：`go get` 期间把已存在的传递依赖 `github.com/bmatcuk/doublestar/v4` 从 v4.6.1 提升到 v4.10.0（由模块解析要求引起），其余由 go.sum 固定。未新增前端依赖。
+- 知识库不引入向量库：当前 Postgres 只提供 `pg_trgm`（无 pgvector / zhparser），检索使用三元组相似度 + Go 侧窗口切分，接口仍按 Eino `retriever.Retriever` 实现，后续可平移到向量组件。
+
+## 2026-10-31 Capability-Centric 重构
+
+无新增外部依赖版本。`github.com/eino-contrib/jsonschema@v1.0.3`（MIT，随 Eino 引入）由 `go mod tidy` 从间接依赖提升为直接依赖：能力契约在编译期转成 `jsonschema.Schema` 供 Eino Tool 声明使用，仍锁定在该版本。`go mod tidy` 同时移除了不再直接引用的 go-cmp / protobuf 间接声明，`go.sum` 由模块解析固定；未安装 latest。
+
+
+## 2026-11-01 流程规格生成
+
+复用已在锁文件中的 github.com/google/jsonschema-go v0.4.3（MIT），仅提升为直接依赖，没有升级版本。已核对该版本本地 ForType/Resolve/Validate API、递归类型限制及许可证；工作流字段由实际 Go 类型反射，递归能力 Schema 使用本地 $defs，预算常量与运行时共享。遵循 [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12)，不扩展 contracts.Schema 未实现的输入关键字，也不把结构验证替代运行时授权。

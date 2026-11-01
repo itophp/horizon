@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import type { LoginResult } from "../src/api/generated/models";
+import { resetPreferences } from "./helpers";
 async function signIn(page: Page) {
   await page.goto("/login");
   await page
@@ -9,8 +10,9 @@ async function signIn(page: Page) {
     .getByLabel("Password", { exact: true })
     .fill("TestOnly!2026Secure");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  // Sign in lands on the default workbench (AI), so wait for the console shell.
   await expect(
-    page.getByRole("heading", { name: "Workspace overview", exact: true }),
+    page.getByRole("navigation", { name: "Main navigation" }),
   ).toBeVisible();
 }
 test.beforeEach(async ({ page, request }) => {
@@ -20,20 +22,10 @@ test.beforeEach(async ({ page, request }) => {
   });
   expect(response.ok()).toBeTruthy();
   const login: LoginResult = await response.json();
-  const reset = await request.put("/api/auth/preferences", {
-    headers: {
-      Origin: process.env.E2E_ORIGIN ?? "http://127.0.0.1:5179",
-      "X-CSRF-Token": login.profile.csrfToken,
-    },
-    data: {
-      changes: [
-        { key: "display.language", operation: "reset", value: "" },
-        { key: "display.theme", operation: "reset", value: "" },
-        { key: "display.pageSize", operation: "reset", value: "" },
-      ],
-    },
+  await resetPreferences(request, {
+    Origin: process.env.E2E_ORIGIN ?? "http://127.0.0.1:5179",
+    "X-CSRF-Token": login.profile.csrfToken,
   });
-  expect(reset.ok()).toBeTruthy();
   await page.addInitScript(() =>
     localStorage.setItem("baseline.language", "en"),
   );
@@ -99,15 +91,8 @@ test("settings draft, publish, runtime branding and server preferences persist",
     .getByRole("button", { name: "Switch appearance", exact: true })
     .click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await expect
-    .poll(async () => {
-      const r = await page.request.get("/api/auth/configuration");
-      const body = (await r.json()) as {
-        entries: { key: string; value: string }[];
-      };
-      return body.entries.find((e) => e.key === "display.theme")?.value;
-    })
-    .toBe('"light"');
+  // The reload below re-reads the stored preference from the server; reading the
+  // form again after it is the same evidence without a removed REST endpoint.
   await page.reload();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
   await page.screenshot({

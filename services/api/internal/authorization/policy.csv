@@ -1,4 +1,0 @@
-p, demo-editor, demo-tenant, demo-record, read
-p, demo-editor, demo-tenant, demo-record, update
-p, demo-editor, demo-tenant, demo-record, delete
-g, demo-user, demo-editor, demo-tenant

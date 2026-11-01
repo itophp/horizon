@@ -1,0 +1,91 @@
+{
+  "account": {
+    "label": "Account"
+  },
+  "session": {
+    "label": "Session"
+  },
+  "organization": {
+    "label": "Organization"
+  },
+  "department": {
+    "label": "Department"
+  },
+  "role": {
+    "label": "Role"
+  },
+  "example_record": {
+    "label": "Example record",
+    "states": {
+      "draft": "Draft",
+      "active": "Active",
+      "archived": "Archived"
+    }
+  },
+  "announcement": {
+    "label": "Announcement"
+  },
+  "notification": {
+    "label": "Notification"
+  },
+  "notification_delivery": {
+    "label": "Notification delivery",
+    "states": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "sent": "Sent",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    }
+  },
+  "file": {
+    "label": "File"
+  },
+  "dictionary": {
+    "label": "Dictionary"
+  },
+  "dictionary_item": {
+    "label": "Dictionary item"
+  },
+  "settings": {
+    "label": "Setting"
+  },
+  "settings_draft": {
+    "label": "Settings draft",
+    "states": {
+      "draft": "Draft",
+      "published": "Published"
+    }
+  },
+  "settings_schedule": {
+    "label": "Settings schedule",
+    "states": {
+      "pending": "Pending",
+      "published": "Published",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
+    }
+  },
+  "settings_version": {
+    "label": "Settings version"
+  },
+  "mcp_token": {
+    "label": "MCP token"
+  },
+  "mcp_audit": {
+    "label": "MCP audit"
+  },
+  "orchestration_checkpoint": {
+    "label": "Workflow runtime state"
+  },
+  "article": {
+    "label": "Article",
+    "states": {
+      "draft": "Draft",
+      "pending_ai": "AI review pending",
+      "pending_review": "Human review pending",
+      "published": "Published",
+      "rejected": "Rejected"
+    }
+  }
+}

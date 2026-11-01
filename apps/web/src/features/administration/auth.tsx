@@ -5,12 +5,12 @@ import {
   useEffect,
   type PropsWithChildren,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  useIdentityMe,
   identityLogin,
   identityLogout,
   identitySwitchDepartment,
+  identityMe,
   getIdentityMeQueryKey,
   type identityMeResponse,
 } from "@/api/generated/baseline";
@@ -28,13 +28,19 @@ interface AuthValue {
 const AuthContext = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: PropsWithChildren) {
   const client = useQueryClient();
-  const query = useIdentityMe({
-    query: {
-      retry: false,
-      staleTime: 60000,
-      refetchOnWindowFocus: true,
-      refetchInterval: 30000,
+  // The token is stored here, before the profile is published: every capability
+  // call is a POST and needs the nonce, and a reload must not race it.
+  const query = useQuery({
+    queryKey: getIdentityMeQueryKey(),
+    queryFn: async () => {
+      const response = await identityMe();
+      if (response.status === 200) setCSRFToken(response.data.csrfToken);
+      return response as identityMeResponse;
     },
+    retry: false,
+    staleTime: 60000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   });
   const profile =
     query.data?.status === 200 &&

@@ -10,7 +10,7 @@
 - 复用样式 tokens，保留可访问 label/role、键盘和焦点；不自建每页视觉体系。修改公共组件需读取其局部规则并检查调用方。
 - 文本、占位、空/错/载入状态、通知、表头及辅助名称全部走资源。i18n:check + lint 自动检查只是部分保障，仍需评估动态文案与 API 错误映射。
 - 认证状态/按钮显示只改善体验；真正授权在服务端。不要持久化演示 token，切租户/用户时隔离或清理 query 缓存。
-- pnpm 在仓库根可执行 lint/typecheck/test/build/i18n:check；单模块 Vitest 使用 pnpm --filter @baseline/web exec vitest run <路径>。交互覆盖 RTL + user-event；关键真实流程用 e2e。
+- pnpm 在仓库根可执行 lint/typecheck/test/build/i18n:check；单模块 Vitest 使用 pnpm --filter @baseline/web exec vitest run <路径>。交互覆盖 RTL + user-event；真实流程按 E2E 暂停规则执行（见根 AGENTS.md，只跑映射命中的单个 spec，全量需授权）。
 
 ## 界面风格一致性
 
@@ -24,11 +24,16 @@
 
 ## 信息架构与菜单
 
-侧栏只保留一级入口：工作台、账号管理、组织管理、权限管理、通知中心、Agent 协作、系统设置；个人偏好从顶栏进入。部门、角色、字段（字典）不再是独立菜单项，分别并入组织管理、权限管理、系统设置的标签内；附件管理只保留路由，不占菜单位置。
+侧栏只保留一级入口：AI 工作台、数据统计、业务能力、知识库、账号管理、组织管理、权限管理、Agent 协作、系统设置；个人偏好与通知中心从顶栏进入。部门、角色、字段（字典）不再是独立菜单项，分别并入组织管理、权限管理、系统设置的标签内；附件管理只保留路由，不占菜单位置。
+
+- `/` 是默认入口，解析到 AI 工作台（`/ai`）；没有 `assistant:use` 的账号落到数据统计（`/analytics`），不进入无权访问的页面。数据统计沿用原工作台看板，路由固定为 `/analytics`。
 
 - 合并页面用页内标签承载各自职责：组织管理 = 组织架构 / 部门，权限管理 = 角色授权 / 账号独立授权 / 角色管理，系统设置 = 系统配置 / 字段管理，Agent 协作 = MCP Server / WebMCP / WebSkills 三个标签。新增能力按归属追加标签，不要再起平行菜单项。
 - 标签可见性与默认标签由正式读取权限决定（organizations:read 或 departments:read、access:manage 或 roles:read、settings:read 或 dictionaries:read），前端隐藏只是体验，服务端授权不变。搜索等页内状态更新保留 URL 其他参数，避免切换标签丢失。
-- 旧路由 `/departments`、`/roles`、`/dictionaries`、`/webmcp`、`/mcp-settings` 只做重定向，不恢复页面组件；新增或调整入口时同步 WebMCP 路由清单与 E2E。
+- 旧路由 `/departments`、`/roles`、`/dictionaries`、`/webmcp`、`/mcp-settings` 只做重定向，不恢复页面组件；新增或调整入口时同步 WebMCP 路由清单与对应 E2E spec（只在授权范围内执行）。
+- 业务能力页 `/capabilities` 是页面按钮接入能力的基准：按钮通过 `@/lib/capabilities` 调用 Gateway，必须带稳定的 `idempotencyKey`；页面不得直接调用业务接口或自行判断审批。列表、事件与调用轨迹读服务端返回值，事件上的 AI 状态只展示不猜测。
+- 业务模块（设置、字典、文件、通知、MCP、账号）的按钮只调用 `apps/web/src/lib/capabilities.ts`；禁止直接 `fetch` 旧 REST 路径，也禁止按模块另写调用层。业务类型在 `apps/web/src/api/types.ts`，会话/能力类型仍在生成的 models 中。
+- AI 工作台是单一页面 `/ai`，用 `?tab=chat|runs` 承载对话与执行记录；入口按 `assistant:use` 显示。审批队列属于 capability 服务，AI 页只展示与决策，不复制审批逻辑。风险等级、审批状态、执行轨迹必须读服务端返回值；审批卡片只展示服务端投影的参数，不得回传或渲染审批载荷正文。详见 [ADR 015](../../docs/decisions/015-capability-centric-platform.md)。
 - 顶栏「申请临时访问」为纯图标按钮，必须保留 aria-label/title；顶栏不再显示“系统管理中心”之类的装饰文字。
 
 权限界面使用后端 PermissionDefinition 目录的一/二级层次，一级模块用真实 rowSpan 合并；不得硬编码另一套权限代码。临时申请入口对已认证账号可见，审批入口按服务端 canReview 显示。申请与最终批准分别展示，支持审批修订权限、时效和范围；前端计时/隐藏按钮不能代替服务端授权、审批上限和到期判断，语义见 [ADR 003](../../docs/decisions/003-temporary-access.md)。

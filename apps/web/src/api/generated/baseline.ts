@@ -22,79 +22,45 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
-  AccessError,
-  AccountRecord,
+  AIConversation,
+  AIRun,
+  AIStatus,
   AdminSnapshot,
+  AgentRequestBody,
+  AiConversationsParams,
+  AiRunsParams,
+  AssistantAgentReply,
   AssistantReply,
   AssistantStatus,
-  ChangeEntry,
-  ChangeRecord,
+  CapabilityApproval,
+  CapabilityContract,
+  CapabilityEvent,
+  CapabilityEventsParams,
+  CapabilityInvocation,
+  CapabilityInvocationsParams,
+  CapabilityResult,
   ChatRequestBody,
-  CreateAccountRequestBody,
-  CreateDepartmentRequestBody,
-  CreateOrganizationRequestBody,
-  CreateRequestBody,
-  CreateRoleRequestBody,
-  DeliveryRecord,
-  DepartmentRecord,
-  DictionariesExportParams,
-  DictionariesGetParams,
-  DictionariesListParams,
-  DictionariesOptionsParams,
-  DictionaryDetail,
-  DictionaryOption,
-  DictionaryWorkspace,
-  DraftRequestBody,
-  DraftRequestBody2,
+  DecideRequestBody,
   EchoResponseBody,
   EffectiveConfiguration,
-  Error,
-  ExportResponseBody,
   FileContent,
+  HealthResponseBody,
   IAMProblem,
-  ImportDraftRequestBody,
-  ImportPreview,
-  ImportRequestBody,
-  InboxMessage,
+  IngestRequestBody,
+  InvokeRequestBody,
+  KnowledgeDocument,
+  KnowledgeIngested,
   LoginRequestBody,
   LoginResult,
-  MCPAudit,
-  MCPToken,
-  MCPTokenCreated,
-  ManagedFile,
-  McpManagementCapabilitiesParams,
-  NotificationAudience,
-  OrganizationRecord,
-  OverrideRequestBody,
-  PreferencesRequestBody,
-  PreviewRequestBody,
-  PreviewResponseBody,
-  PublishRequestBody,
-  ReauthProof,
-  ReauthenticateRequestBody,
   RequestTemporaryAccessRequestBody,
   ReviewTemporaryAccessRequestBody,
-  RevokeRequestBody,
-  RoleRecord,
-  RollbackRequestBody,
-  ScheduleRequestBody,
-  SendRequestBody,
-  SentNotification,
+  RunRequestBody,
   SessionProfile,
-  SettingSchedule,
-  SettingsExportParams,
-  SettingsWorkspace,
-  SettingsWorkspaceParams,
-  StorageDriver,
   SwitchDepartmentRequestBody,
   SystemEchoParams,
-  TechnicalRecord,
   TemporaryAccessRecord,
   TemporaryAccessWorkspace,
-  TestRequestBody,
-  TestResponseBody,
-  UpdateRequestBody,
-  UploadRequestBody,
+  UpdateConversationRequestBody,
 } from "./models";
 
 import { request } from "../client/request";
@@ -116,7957 +82,6 @@ const withQueryKey = <T extends object, K>(
     });
   }
   return result;
-};
-
-export type identityCreateAccountResponse201 = {
-  data: AccountRecord;
-  status: 201;
-};
-
-export type identityCreateAccountResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityCreateAccountResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityCreateAccountResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityCreateAccountResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityCreateAccountResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityCreateAccountResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityCreateAccountResponseSuccess =
-  identityCreateAccountResponse201 & {
-    headers: Headers;
-  };
-export type identityCreateAccountResponseError = (
-  | identityCreateAccountResponse400
-  | identityCreateAccountResponse401
-  | identityCreateAccountResponse403
-  | identityCreateAccountResponse409
-  | identityCreateAccountResponse500
-  | identityCreateAccountResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityCreateAccountResponse =
-  identityCreateAccountResponseSuccess | identityCreateAccountResponseError;
-
-export const getIdentityCreateAccountUrl = () => {
-  return `/api/admin/accounts`;
-};
-
-/**
- * @summary create_account identity
- */
-export const identityCreateAccount = async (
-  createAccountRequestBody: CreateAccountRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityCreateAccountResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityCreateAccountResponse>(getIdentityCreateAccountUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(createAccountRequestBody),
-  });
-};
-
-export const getIdentityCreateAccountMutationKey = () =>
-  ["identityCreateAccount"] as const;
-
-export const getIdentityCreateAccountMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityCreateAccount>>,
-    TError,
-    IdentityCreateAccountMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityCreateAccount>>,
-  TError,
-  IdentityCreateAccountMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityCreateAccountMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityCreateAccount>>,
-    IdentityCreateAccountMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return identityCreateAccount(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityCreateAccountMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityCreateAccount>>
->;
-export type IdentityCreateAccountMutationBody = CreateAccountRequestBody;
-export type IdentityCreateAccountMutationError = IAMProblem;
-export type IdentityCreateAccountMutationVariables = {
-  data: CreateAccountRequestBody;
-};
-
-/**
- * @summary create_account identity
- */
-export const useIdentityCreateAccount = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityCreateAccount>>,
-      TError,
-      IdentityCreateAccountMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityCreateAccount>>,
-  TError,
-  IdentityCreateAccountMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityCreateAccountMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityDeleteAccountResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type identityDeleteAccountResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityDeleteAccountResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityDeleteAccountResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityDeleteAccountResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityDeleteAccountResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityDeleteAccountResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityDeleteAccountResponseSuccess =
-  identityDeleteAccountResponse204 & {
-    headers: Headers;
-  };
-export type identityDeleteAccountResponseError = (
-  | identityDeleteAccountResponse401
-  | identityDeleteAccountResponse403
-  | identityDeleteAccountResponse404
-  | identityDeleteAccountResponse409
-  | identityDeleteAccountResponse500
-  | identityDeleteAccountResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityDeleteAccountResponse =
-  identityDeleteAccountResponseSuccess | identityDeleteAccountResponseError;
-
-export const getIdentityDeleteAccountUrl = (id: number) => {
-  return `/api/admin/accounts/${id}`;
-};
-
-/**
- * @summary delete_account identity
- */
-export const identityDeleteAccount = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<identityDeleteAccountResponse> => {
-  return request<identityDeleteAccountResponse>(
-    getIdentityDeleteAccountUrl(id),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
-
-export const getIdentityDeleteAccountMutationKey = () =>
-  ["identityDeleteAccount"] as const;
-
-export const getIdentityDeleteAccountMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityDeleteAccount>>,
-    TError,
-    IdentityDeleteAccountMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityDeleteAccount>>,
-  TError,
-  IdentityDeleteAccountMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityDeleteAccountMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityDeleteAccount>>,
-    IdentityDeleteAccountMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return identityDeleteAccount(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityDeleteAccountMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityDeleteAccount>>
->;
-
-export type IdentityDeleteAccountMutationError = IAMProblem;
-export type IdentityDeleteAccountMutationVariables = { id: number };
-
-/**
- * @summary delete_account identity
- */
-export const useIdentityDeleteAccount = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityDeleteAccount>>,
-      TError,
-      IdentityDeleteAccountMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityDeleteAccount>>,
-  TError,
-  IdentityDeleteAccountMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityDeleteAccountMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityUpdateAccountResponse200 = {
-  data: AccountRecord;
-  status: 200;
-};
-
-export type identityUpdateAccountResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityUpdateAccountResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityUpdateAccountResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityUpdateAccountResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityUpdateAccountResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityUpdateAccountResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityUpdateAccountResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityUpdateAccountResponseSuccess =
-  identityUpdateAccountResponse200 & {
-    headers: Headers;
-  };
-export type identityUpdateAccountResponseError = (
-  | identityUpdateAccountResponse400
-  | identityUpdateAccountResponse401
-  | identityUpdateAccountResponse403
-  | identityUpdateAccountResponse404
-  | identityUpdateAccountResponse409
-  | identityUpdateAccountResponse500
-  | identityUpdateAccountResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityUpdateAccountResponse =
-  identityUpdateAccountResponseSuccess | identityUpdateAccountResponseError;
-
-export const getIdentityUpdateAccountUrl = (id: number) => {
-  return `/api/admin/accounts/${id}`;
-};
-
-/**
- * @summary update_account identity
- */
-export const identityUpdateAccount = async (
-  id: number,
-  createAccountRequestBody: CreateAccountRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityUpdateAccountResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityUpdateAccountResponse>(
-    getIdentityUpdateAccountUrl(id),
-    {
-      ...options,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(createAccountRequestBody),
-    },
-  );
-};
-
-export const getIdentityUpdateAccountMutationKey = () =>
-  ["identityUpdateAccount"] as const;
-
-export const getIdentityUpdateAccountMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityUpdateAccount>>,
-    TError,
-    IdentityUpdateAccountMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityUpdateAccount>>,
-  TError,
-  IdentityUpdateAccountMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityUpdateAccountMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityUpdateAccount>>,
-    IdentityUpdateAccountMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return identityUpdateAccount(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityUpdateAccountMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityUpdateAccount>>
->;
-export type IdentityUpdateAccountMutationBody = CreateAccountRequestBody;
-export type IdentityUpdateAccountMutationError = IAMProblem;
-export type IdentityUpdateAccountMutationVariables = {
-  id: number;
-  data: CreateAccountRequestBody;
-};
-
-/**
- * @summary update_account identity
- */
-export const useIdentityUpdateAccount = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityUpdateAccount>>,
-      TError,
-      IdentityUpdateAccountMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityUpdateAccount>>,
-  TError,
-  IdentityUpdateAccountMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityUpdateAccountMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityCreateDepartmentResponse201 = {
-  data: DepartmentRecord;
-  status: 201;
-};
-
-export type identityCreateDepartmentResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityCreateDepartmentResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityCreateDepartmentResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityCreateDepartmentResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityCreateDepartmentResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityCreateDepartmentResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityCreateDepartmentResponseSuccess =
-  identityCreateDepartmentResponse201 & {
-    headers: Headers;
-  };
-export type identityCreateDepartmentResponseError = (
-  | identityCreateDepartmentResponse400
-  | identityCreateDepartmentResponse401
-  | identityCreateDepartmentResponse403
-  | identityCreateDepartmentResponse409
-  | identityCreateDepartmentResponse500
-  | identityCreateDepartmentResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityCreateDepartmentResponse =
-  | identityCreateDepartmentResponseSuccess
-  | identityCreateDepartmentResponseError;
-
-export const getIdentityCreateDepartmentUrl = () => {
-  return `/api/admin/departments`;
-};
-
-/**
- * @summary create_department identity
- */
-export const identityCreateDepartment = async (
-  createDepartmentRequestBody: CreateDepartmentRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityCreateDepartmentResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityCreateDepartmentResponse>(
-    getIdentityCreateDepartmentUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(createDepartmentRequestBody),
-    },
-  );
-};
-
-export const getIdentityCreateDepartmentMutationKey = () =>
-  ["identityCreateDepartment"] as const;
-
-export const getIdentityCreateDepartmentMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityCreateDepartment>>,
-    TError,
-    IdentityCreateDepartmentMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityCreateDepartment>>,
-  TError,
-  IdentityCreateDepartmentMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityCreateDepartmentMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityCreateDepartment>>,
-    IdentityCreateDepartmentMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return identityCreateDepartment(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityCreateDepartmentMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityCreateDepartment>>
->;
-export type IdentityCreateDepartmentMutationBody = CreateDepartmentRequestBody;
-export type IdentityCreateDepartmentMutationError = IAMProblem;
-export type IdentityCreateDepartmentMutationVariables = {
-  data: CreateDepartmentRequestBody;
-};
-
-/**
- * @summary create_department identity
- */
-export const useIdentityCreateDepartment = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityCreateDepartment>>,
-      TError,
-      IdentityCreateDepartmentMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityCreateDepartment>>,
-  TError,
-  IdentityCreateDepartmentMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityCreateDepartmentMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityDeleteDepartmentResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type identityDeleteDepartmentResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityDeleteDepartmentResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityDeleteDepartmentResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityDeleteDepartmentResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityDeleteDepartmentResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityDeleteDepartmentResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityDeleteDepartmentResponseSuccess =
-  identityDeleteDepartmentResponse204 & {
-    headers: Headers;
-  };
-export type identityDeleteDepartmentResponseError = (
-  | identityDeleteDepartmentResponse401
-  | identityDeleteDepartmentResponse403
-  | identityDeleteDepartmentResponse404
-  | identityDeleteDepartmentResponse409
-  | identityDeleteDepartmentResponse500
-  | identityDeleteDepartmentResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityDeleteDepartmentResponse =
-  | identityDeleteDepartmentResponseSuccess
-  | identityDeleteDepartmentResponseError;
-
-export const getIdentityDeleteDepartmentUrl = (id: number) => {
-  return `/api/admin/departments/${id}`;
-};
-
-/**
- * @summary delete_department identity
- */
-export const identityDeleteDepartment = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<identityDeleteDepartmentResponse> => {
-  return request<identityDeleteDepartmentResponse>(
-    getIdentityDeleteDepartmentUrl(id),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
-
-export const getIdentityDeleteDepartmentMutationKey = () =>
-  ["identityDeleteDepartment"] as const;
-
-export const getIdentityDeleteDepartmentMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityDeleteDepartment>>,
-    TError,
-    IdentityDeleteDepartmentMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityDeleteDepartment>>,
-  TError,
-  IdentityDeleteDepartmentMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityDeleteDepartmentMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityDeleteDepartment>>,
-    IdentityDeleteDepartmentMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return identityDeleteDepartment(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityDeleteDepartmentMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityDeleteDepartment>>
->;
-
-export type IdentityDeleteDepartmentMutationError = IAMProblem;
-export type IdentityDeleteDepartmentMutationVariables = { id: number };
-
-/**
- * @summary delete_department identity
- */
-export const useIdentityDeleteDepartment = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityDeleteDepartment>>,
-      TError,
-      IdentityDeleteDepartmentMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityDeleteDepartment>>,
-  TError,
-  IdentityDeleteDepartmentMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityDeleteDepartmentMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityUpdateDepartmentResponse200 = {
-  data: DepartmentRecord;
-  status: 200;
-};
-
-export type identityUpdateDepartmentResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityUpdateDepartmentResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityUpdateDepartmentResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityUpdateDepartmentResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityUpdateDepartmentResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityUpdateDepartmentResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityUpdateDepartmentResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityUpdateDepartmentResponseSuccess =
-  identityUpdateDepartmentResponse200 & {
-    headers: Headers;
-  };
-export type identityUpdateDepartmentResponseError = (
-  | identityUpdateDepartmentResponse400
-  | identityUpdateDepartmentResponse401
-  | identityUpdateDepartmentResponse403
-  | identityUpdateDepartmentResponse404
-  | identityUpdateDepartmentResponse409
-  | identityUpdateDepartmentResponse500
-  | identityUpdateDepartmentResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityUpdateDepartmentResponse =
-  | identityUpdateDepartmentResponseSuccess
-  | identityUpdateDepartmentResponseError;
-
-export const getIdentityUpdateDepartmentUrl = (id: number) => {
-  return `/api/admin/departments/${id}`;
-};
-
-/**
- * @summary update_department identity
- */
-export const identityUpdateDepartment = async (
-  id: number,
-  createDepartmentRequestBody: CreateDepartmentRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityUpdateDepartmentResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityUpdateDepartmentResponse>(
-    getIdentityUpdateDepartmentUrl(id),
-    {
-      ...options,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(createDepartmentRequestBody),
-    },
-  );
-};
-
-export const getIdentityUpdateDepartmentMutationKey = () =>
-  ["identityUpdateDepartment"] as const;
-
-export const getIdentityUpdateDepartmentMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityUpdateDepartment>>,
-    TError,
-    IdentityUpdateDepartmentMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityUpdateDepartment>>,
-  TError,
-  IdentityUpdateDepartmentMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityUpdateDepartmentMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityUpdateDepartment>>,
-    IdentityUpdateDepartmentMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return identityUpdateDepartment(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityUpdateDepartmentMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityUpdateDepartment>>
->;
-export type IdentityUpdateDepartmentMutationBody = CreateDepartmentRequestBody;
-export type IdentityUpdateDepartmentMutationError = IAMProblem;
-export type IdentityUpdateDepartmentMutationVariables = {
-  id: number;
-  data: CreateDepartmentRequestBody;
-};
-
-/**
- * @summary update_department identity
- */
-export const useIdentityUpdateDepartment = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityUpdateDepartment>>,
-      TError,
-      IdentityUpdateDepartmentMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityUpdateDepartment>>,
-  TError,
-  IdentityUpdateDepartmentMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityUpdateDepartmentMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type dictionariesListResponse200 = {
-  data: DictionaryWorkspace;
-  status: 200;
-};
-
-export type dictionariesListResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesListResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesListResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesListResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesListResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesListResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesListResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesListResponseSuccess = dictionariesListResponse200 & {
-  headers: Headers;
-};
-export type dictionariesListResponseError = (
-  | dictionariesListResponse400
-  | dictionariesListResponse401
-  | dictionariesListResponse403
-  | dictionariesListResponse404
-  | dictionariesListResponse409
-  | dictionariesListResponse500
-  | dictionariesListResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesListResponse =
-  dictionariesListResponseSuccess | dictionariesListResponseError;
-
-export const getDictionariesListUrl = (params?: DictionariesListParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/admin/dictionaries?${stringifiedParams}`
-    : `/api/admin/dictionaries`;
-};
-
-/**
- * @summary list dictionaries
- */
-export const dictionariesList = async (
-  params?: DictionariesListParams,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesListResponse> => {
-  return request<dictionariesListResponse>(getDictionariesListUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getDictionariesListQueryKey = (
-  params?: DictionariesListParams,
-) => {
-  return [`/api/admin/dictionaries`, ...(params ? [params] : [])] as const;
-};
-
-export const getDictionariesListQueryOptions = <
-  TData = Awaited<ReturnType<typeof dictionariesList>>,
-  TError = IAMProblem,
->(
-  params?: DictionariesListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getDictionariesListQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof dictionariesList>>
-  > = ({ signal }) => dictionariesList(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof dictionariesList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type DictionariesListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesList>>
->;
-export type DictionariesListQueryError = IAMProblem;
-
-export function useDictionariesList<
-  TData = Awaited<ReturnType<typeof dictionariesList>>,
-  TError = IAMProblem,
->(
-  params: undefined | DictionariesListParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesList>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesList<
-  TData = Awaited<ReturnType<typeof dictionariesList>>,
-  TError = IAMProblem,
->(
-  params?: DictionariesListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesList>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesList<
-  TData = Awaited<ReturnType<typeof dictionariesList>>,
-  TError = IAMProblem,
->(
-  params?: DictionariesListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary list dictionaries
- */
-
-export function useDictionariesList<
-  TData = Awaited<ReturnType<typeof dictionariesList>>,
-  TError = IAMProblem,
->(
-  params?: DictionariesListParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDictionariesListQueryOptions(params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type dictionariesDraftResponse201 = {
-  data: ChangeRecord;
-  status: 201;
-};
-
-export type dictionariesDraftResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesDraftResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesDraftResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesDraftResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesDraftResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesDraftResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesDraftResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesDraftResponseSuccess = dictionariesDraftResponse201 & {
-  headers: Headers;
-};
-export type dictionariesDraftResponseError = (
-  | dictionariesDraftResponse400
-  | dictionariesDraftResponse401
-  | dictionariesDraftResponse403
-  | dictionariesDraftResponse404
-  | dictionariesDraftResponse409
-  | dictionariesDraftResponse500
-  | dictionariesDraftResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesDraftResponse =
-  dictionariesDraftResponseSuccess | dictionariesDraftResponseError;
-
-export const getDictionariesDraftUrl = () => {
-  return `/api/admin/dictionaries/drafts`;
-};
-
-/**
- * @summary draft dictionaries
- */
-export const dictionariesDraft = async (
-  draftRequestBody2: DraftRequestBody2,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesDraftResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<dictionariesDraftResponse>(getDictionariesDraftUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(draftRequestBody2),
-  });
-};
-
-export const getDictionariesDraftMutationKey = () =>
-  ["dictionariesDraft"] as const;
-
-export const getDictionariesDraftMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesDraft>>,
-    TError,
-    DictionariesDraftMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesDraft>>,
-  TError,
-  DictionariesDraftMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesDraftMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesDraft>>,
-    DictionariesDraftMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return dictionariesDraft(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesDraftMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesDraft>>
->;
-export type DictionariesDraftMutationBody = DraftRequestBody2;
-export type DictionariesDraftMutationError = IAMProblem;
-export type DictionariesDraftMutationVariables = { data: DraftRequestBody2 };
-
-/**
- * @summary draft dictionaries
- */
-export const useDictionariesDraft = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesDraft>>,
-      TError,
-      DictionariesDraftMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesDraft>>,
-  TError,
-  DictionariesDraftMutationVariables,
-  TContext
-> => {
-  return useMutation(getDictionariesDraftMutationOptions(options), queryClient);
-};
-
-export type dictionariesPublishResponse200 = {
-  data: ChangeRecord;
-  status: 200;
-};
-
-export type dictionariesPublishResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesPublishResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesPublishResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesPublishResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesPublishResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesPublishResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesPublishResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesPublishResponseSuccess =
-  dictionariesPublishResponse200 & {
-    headers: Headers;
-  };
-export type dictionariesPublishResponseError = (
-  | dictionariesPublishResponse400
-  | dictionariesPublishResponse401
-  | dictionariesPublishResponse403
-  | dictionariesPublishResponse404
-  | dictionariesPublishResponse409
-  | dictionariesPublishResponse500
-  | dictionariesPublishResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesPublishResponse =
-  dictionariesPublishResponseSuccess | dictionariesPublishResponseError;
-
-export const getDictionariesPublishUrl = (id: number) => {
-  return `/api/admin/dictionaries/drafts/${id}/publish`;
-};
-
-/**
- * @summary publish dictionaries
- */
-export const dictionariesPublish = async (
-  id: number,
-  publishRequestBody: PublishRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesPublishResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<dictionariesPublishResponse>(getDictionariesPublishUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(publishRequestBody),
-  });
-};
-
-export const getDictionariesPublishMutationKey = () =>
-  ["dictionariesPublish"] as const;
-
-export const getDictionariesPublishMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesPublish>>,
-    TError,
-    DictionariesPublishMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesPublish>>,
-  TError,
-  DictionariesPublishMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesPublishMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesPublish>>,
-    DictionariesPublishMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return dictionariesPublish(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesPublishMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesPublish>>
->;
-export type DictionariesPublishMutationBody = PublishRequestBody;
-export type DictionariesPublishMutationError = IAMProblem;
-export type DictionariesPublishMutationVariables = {
-  id: number;
-  data: PublishRequestBody;
-};
-
-/**
- * @summary publish dictionaries
- */
-export const useDictionariesPublish = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesPublish>>,
-      TError,
-      DictionariesPublishMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesPublish>>,
-  TError,
-  DictionariesPublishMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getDictionariesPublishMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type dictionariesRollbackResponse200 = {
-  data: ChangeRecord;
-  status: 200;
-};
-
-export type dictionariesRollbackResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesRollbackResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesRollbackResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesRollbackResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesRollbackResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesRollbackResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesRollbackResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesRollbackResponseSuccess =
-  dictionariesRollbackResponse200 & {
-    headers: Headers;
-  };
-export type dictionariesRollbackResponseError = (
-  | dictionariesRollbackResponse400
-  | dictionariesRollbackResponse401
-  | dictionariesRollbackResponse403
-  | dictionariesRollbackResponse404
-  | dictionariesRollbackResponse409
-  | dictionariesRollbackResponse500
-  | dictionariesRollbackResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesRollbackResponse =
-  dictionariesRollbackResponseSuccess | dictionariesRollbackResponseError;
-
-export const getDictionariesRollbackUrl = (id: number) => {
-  return `/api/admin/dictionaries/history/${id}/rollback`;
-};
-
-/**
- * @summary rollback dictionaries
- */
-export const dictionariesRollback = async (
-  id: number,
-  rollbackRequestBody: RollbackRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesRollbackResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<dictionariesRollbackResponse>(getDictionariesRollbackUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(rollbackRequestBody),
-  });
-};
-
-export const getDictionariesRollbackMutationKey = () =>
-  ["dictionariesRollback"] as const;
-
-export const getDictionariesRollbackMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesRollback>>,
-    TError,
-    DictionariesRollbackMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesRollback>>,
-  TError,
-  DictionariesRollbackMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesRollbackMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesRollback>>,
-    DictionariesRollbackMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return dictionariesRollback(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesRollbackMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesRollback>>
->;
-export type DictionariesRollbackMutationBody = RollbackRequestBody;
-export type DictionariesRollbackMutationError = IAMProblem;
-export type DictionariesRollbackMutationVariables = {
-  id: number;
-  data: RollbackRequestBody;
-};
-
-/**
- * @summary rollback dictionaries
- */
-export const useDictionariesRollback = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesRollback>>,
-      TError,
-      DictionariesRollbackMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesRollback>>,
-  TError,
-  DictionariesRollbackMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getDictionariesRollbackMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type dictionariesRemoveResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type dictionariesRemoveResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesRemoveResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesRemoveResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesRemoveResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesRemoveResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesRemoveResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesRemoveResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesRemoveResponseSuccess =
-  dictionariesRemoveResponse204 & {
-    headers: Headers;
-  };
-export type dictionariesRemoveResponseError = (
-  | dictionariesRemoveResponse400
-  | dictionariesRemoveResponse401
-  | dictionariesRemoveResponse403
-  | dictionariesRemoveResponse404
-  | dictionariesRemoveResponse409
-  | dictionariesRemoveResponse500
-  | dictionariesRemoveResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesRemoveResponse =
-  dictionariesRemoveResponseSuccess | dictionariesRemoveResponseError;
-
-export const getDictionariesRemoveUrl = (id: number) => {
-  return `/api/admin/dictionaries/${id}`;
-};
-
-/**
- * @summary remove dictionaries
- */
-export const dictionariesRemove = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesRemoveResponse> => {
-  return request<dictionariesRemoveResponse>(getDictionariesRemoveUrl(id), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getDictionariesRemoveMutationKey = () =>
-  ["dictionariesRemove"] as const;
-
-export const getDictionariesRemoveMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesRemove>>,
-    TError,
-    DictionariesRemoveMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesRemove>>,
-  TError,
-  DictionariesRemoveMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesRemoveMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesRemove>>,
-    DictionariesRemoveMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return dictionariesRemove(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesRemoveMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesRemove>>
->;
-
-export type DictionariesRemoveMutationError = IAMProblem;
-export type DictionariesRemoveMutationVariables = { id: number };
-
-/**
- * @summary remove dictionaries
- */
-export const useDictionariesRemove = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesRemove>>,
-      TError,
-      DictionariesRemoveMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesRemove>>,
-  TError,
-  DictionariesRemoveMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getDictionariesRemoveMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type dictionariesGetResponse200 = {
-  data: DictionaryDetail;
-  status: 200;
-};
-
-export type dictionariesGetResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesGetResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesGetResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesGetResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesGetResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesGetResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesGetResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesGetResponseSuccess = dictionariesGetResponse200 & {
-  headers: Headers;
-};
-export type dictionariesGetResponseError = (
-  | dictionariesGetResponse400
-  | dictionariesGetResponse401
-  | dictionariesGetResponse403
-  | dictionariesGetResponse404
-  | dictionariesGetResponse409
-  | dictionariesGetResponse500
-  | dictionariesGetResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesGetResponse =
-  dictionariesGetResponseSuccess | dictionariesGetResponseError;
-
-export const getDictionariesGetUrl = (
-  id: number,
-  params?: DictionariesGetParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/admin/dictionaries/${id}?${stringifiedParams}`
-    : `/api/admin/dictionaries/${id}`;
-};
-
-/**
- * @summary get dictionaries
- */
-export const dictionariesGet = async (
-  id: number,
-  params?: DictionariesGetParams,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesGetResponse> => {
-  return request<dictionariesGetResponse>(getDictionariesGetUrl(id, params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getDictionariesGetQueryKey = (
-  id: number,
-  params?: DictionariesGetParams,
-) => {
-  return [
-    `/api/admin/dictionaries/${id}`,
-    ...(params ? [params] : []),
-  ] as const;
-};
-
-export const getDictionariesGetQueryOptions = <
-  TData = Awaited<ReturnType<typeof dictionariesGet>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesGet>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getDictionariesGetQueryKey(id, params);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof dictionariesGet>>> = ({
-    signal,
-  }) => dictionariesGet(id, params, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: id !== null && id !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof dictionariesGet>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type DictionariesGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesGet>>
->;
-export type DictionariesGetQueryError = IAMProblem;
-
-export function useDictionariesGet<
-  TData = Awaited<ReturnType<typeof dictionariesGet>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params: undefined | DictionariesGetParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesGet>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesGet>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesGet>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesGet<
-  TData = Awaited<ReturnType<typeof dictionariesGet>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesGet>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesGet>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesGet>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesGet<
-  TData = Awaited<ReturnType<typeof dictionariesGet>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesGet>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary get dictionaries
- */
-
-export function useDictionariesGet<
-  TData = Awaited<ReturnType<typeof dictionariesGet>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesGetParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesGet>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDictionariesGetQueryOptions(id, params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type dictionariesExportResponse200 = {
-  data: ExportResponseBody;
-  status: 200;
-};
-
-export type dictionariesExportResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesExportResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesExportResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesExportResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesExportResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesExportResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesExportResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesExportResponseSuccess =
-  dictionariesExportResponse200 & {
-    headers: Headers;
-  };
-export type dictionariesExportResponseError = (
-  | dictionariesExportResponse400
-  | dictionariesExportResponse401
-  | dictionariesExportResponse403
-  | dictionariesExportResponse404
-  | dictionariesExportResponse409
-  | dictionariesExportResponse500
-  | dictionariesExportResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesExportResponse =
-  dictionariesExportResponseSuccess | dictionariesExportResponseError;
-
-export const getDictionariesExportUrl = (
-  id: number,
-  params?: DictionariesExportParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/admin/dictionaries/${id}/export?${stringifiedParams}`
-    : `/api/admin/dictionaries/${id}/export`;
-};
-
-/**
- * @summary export dictionaries
- */
-export const dictionariesExport = async (
-  id: number,
-  params?: DictionariesExportParams,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesExportResponse> => {
-  return request<dictionariesExportResponse>(
-    getDictionariesExportUrl(id, params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getDictionariesExportQueryKey = (
-  id: number,
-  params?: DictionariesExportParams,
-) => {
-  return [
-    `/api/admin/dictionaries/${id}/export`,
-    ...(params ? [params] : []),
-  ] as const;
-};
-
-export const getDictionariesExportQueryOptions = <
-  TData = Awaited<ReturnType<typeof dictionariesExport>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesExport>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getDictionariesExportQueryKey(id, params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof dictionariesExport>>
-  > = ({ signal }) =>
-    dictionariesExport(id, params, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: id !== null && id !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof dictionariesExport>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type DictionariesExportQueryResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesExport>>
->;
-export type DictionariesExportQueryError = IAMProblem;
-
-export function useDictionariesExport<
-  TData = Awaited<ReturnType<typeof dictionariesExport>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params: undefined | DictionariesExportParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesExport>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesExport>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesExport>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesExport<
-  TData = Awaited<ReturnType<typeof dictionariesExport>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesExport>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesExport>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesExport>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesExport<
-  TData = Awaited<ReturnType<typeof dictionariesExport>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesExport>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary export dictionaries
- */
-
-export function useDictionariesExport<
-  TData = Awaited<ReturnType<typeof dictionariesExport>>,
-  TError = IAMProblem,
->(
-  id: number,
-  params?: DictionariesExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesExport>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDictionariesExportQueryOptions(id, params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type dictionariesImportDraftResponse201 = {
-  data: ChangeRecord;
-  status: 201;
-};
-
-export type dictionariesImportDraftResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesImportDraftResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesImportDraftResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesImportDraftResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesImportDraftResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesImportDraftResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesImportDraftResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesImportDraftResponseSuccess =
-  dictionariesImportDraftResponse201 & {
-    headers: Headers;
-  };
-export type dictionariesImportDraftResponseError = (
-  | dictionariesImportDraftResponse400
-  | dictionariesImportDraftResponse401
-  | dictionariesImportDraftResponse403
-  | dictionariesImportDraftResponse404
-  | dictionariesImportDraftResponse409
-  | dictionariesImportDraftResponse500
-  | dictionariesImportDraftResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesImportDraftResponse =
-  dictionariesImportDraftResponseSuccess | dictionariesImportDraftResponseError;
-
-export const getDictionariesImportDraftUrl = (id: number) => {
-  return `/api/admin/dictionaries/${id}/import-draft`;
-};
-
-/**
- * @summary import_draft dictionaries
- */
-export const dictionariesImportDraft = async (
-  id: number,
-  importDraftRequestBody: ImportDraftRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesImportDraftResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<dictionariesImportDraftResponse>(
-    getDictionariesImportDraftUrl(id),
-    {
-      ...options,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(importDraftRequestBody),
-    },
-  );
-};
-
-export const getDictionariesImportDraftMutationKey = () =>
-  ["dictionariesImportDraft"] as const;
-
-export const getDictionariesImportDraftMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesImportDraft>>,
-    TError,
-    DictionariesImportDraftMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesImportDraft>>,
-  TError,
-  DictionariesImportDraftMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesImportDraftMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesImportDraft>>,
-    DictionariesImportDraftMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return dictionariesImportDraft(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesImportDraftMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesImportDraft>>
->;
-export type DictionariesImportDraftMutationBody = ImportDraftRequestBody;
-export type DictionariesImportDraftMutationError = IAMProblem;
-export type DictionariesImportDraftMutationVariables = {
-  id: number;
-  data: ImportDraftRequestBody;
-};
-
-/**
- * @summary import_draft dictionaries
- */
-export const useDictionariesImportDraft = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesImportDraft>>,
-      TError,
-      DictionariesImportDraftMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesImportDraft>>,
-  TError,
-  DictionariesImportDraftMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getDictionariesImportDraftMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type dictionariesImportResponse200 = {
-  data: ImportPreview;
-  status: 200;
-};
-
-export type dictionariesImportResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesImportResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesImportResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesImportResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesImportResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesImportResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesImportResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesImportResponseSuccess =
-  dictionariesImportResponse200 & {
-    headers: Headers;
-  };
-export type dictionariesImportResponseError = (
-  | dictionariesImportResponse400
-  | dictionariesImportResponse401
-  | dictionariesImportResponse403
-  | dictionariesImportResponse404
-  | dictionariesImportResponse409
-  | dictionariesImportResponse500
-  | dictionariesImportResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesImportResponse =
-  dictionariesImportResponseSuccess | dictionariesImportResponseError;
-
-export const getDictionariesImportUrl = (id: number) => {
-  return `/api/admin/dictionaries/${id}/import-preview`;
-};
-
-/**
- * @summary import dictionaries
- */
-export const dictionariesImport = async (
-  id: number,
-  importRequestBody: ImportRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesImportResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<dictionariesImportResponse>(getDictionariesImportUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(importRequestBody),
-  });
-};
-
-export const getDictionariesImportMutationKey = () =>
-  ["dictionariesImport"] as const;
-
-export const getDictionariesImportMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesImport>>,
-    TError,
-    DictionariesImportMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesImport>>,
-  TError,
-  DictionariesImportMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesImportMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesImport>>,
-    DictionariesImportMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return dictionariesImport(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesImportMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesImport>>
->;
-export type DictionariesImportMutationBody = ImportRequestBody;
-export type DictionariesImportMutationError = IAMProblem;
-export type DictionariesImportMutationVariables = {
-  id: number;
-  data: ImportRequestBody;
-};
-
-/**
- * @summary import dictionaries
- */
-export const useDictionariesImport = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesImport>>,
-      TError,
-      DictionariesImportMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesImport>>,
-  TError,
-  DictionariesImportMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getDictionariesImportMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type dictionariesOverrideResponse201 = {
-  data: ChangeRecord;
-  status: 201;
-};
-
-export type dictionariesOverrideResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesOverrideResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesOverrideResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesOverrideResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesOverrideResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesOverrideResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesOverrideResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesOverrideResponseSuccess =
-  dictionariesOverrideResponse201 & {
-    headers: Headers;
-  };
-export type dictionariesOverrideResponseError = (
-  | dictionariesOverrideResponse400
-  | dictionariesOverrideResponse401
-  | dictionariesOverrideResponse403
-  | dictionariesOverrideResponse404
-  | dictionariesOverrideResponse409
-  | dictionariesOverrideResponse500
-  | dictionariesOverrideResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesOverrideResponse =
-  dictionariesOverrideResponseSuccess | dictionariesOverrideResponseError;
-
-export const getDictionariesOverrideUrl = (id: number) => {
-  return `/api/admin/dictionaries/${id}/overrides`;
-};
-
-/**
- * @summary override dictionaries
- */
-export const dictionariesOverride = async (
-  id: number,
-  overrideRequestBody: OverrideRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesOverrideResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<dictionariesOverrideResponse>(getDictionariesOverrideUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(overrideRequestBody),
-  });
-};
-
-export const getDictionariesOverrideMutationKey = () =>
-  ["dictionariesOverride"] as const;
-
-export const getDictionariesOverrideMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof dictionariesOverride>>,
-    TError,
-    DictionariesOverrideMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof dictionariesOverride>>,
-  TError,
-  DictionariesOverrideMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDictionariesOverrideMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof dictionariesOverride>>,
-    DictionariesOverrideMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return dictionariesOverride(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DictionariesOverrideMutationResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesOverride>>
->;
-export type DictionariesOverrideMutationBody = OverrideRequestBody;
-export type DictionariesOverrideMutationError = IAMProblem;
-export type DictionariesOverrideMutationVariables = {
-  id: number;
-  data: OverrideRequestBody;
-};
-
-/**
- * @summary override dictionaries
- */
-export const useDictionariesOverride = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof dictionariesOverride>>,
-      TError,
-      DictionariesOverrideMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof dictionariesOverride>>,
-  TError,
-  DictionariesOverrideMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getDictionariesOverrideMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type filesListResponse200 = {
-  data: ManagedFile[];
-  status: 200;
-};
-
-export type filesListResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type filesListResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type filesListResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type filesListResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type filesListResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type filesListResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type filesListResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type filesListResponseSuccess = filesListResponse200 & {
-  headers: Headers;
-};
-export type filesListResponseError = (
-  | filesListResponse400
-  | filesListResponse401
-  | filesListResponse403
-  | filesListResponse404
-  | filesListResponse409
-  | filesListResponse500
-  | filesListResponse503
-) & {
-  headers: Headers;
-};
-
-export type filesListResponse =
-  filesListResponseSuccess | filesListResponseError;
-
-export const getFilesListUrl = () => {
-  return `/api/admin/files`;
-};
-
-/**
- * @summary list files
- */
-export const filesList = async (
-  options?: Parameters<typeof request>[1],
-): Promise<filesListResponse> => {
-  return request<filesListResponse>(getFilesListUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getFilesListQueryKey = () => {
-  return [`/api/admin/files`] as const;
-};
-
-export const getFilesListQueryOptions = <
-  TData = Awaited<ReturnType<typeof filesList>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof filesList>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFilesListQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof filesList>>> = ({
-    signal,
-  }) => filesList({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof filesList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FilesListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof filesList>>
->;
-export type FilesListQueryError = IAMProblem;
-
-export function useFilesList<
-  TData = Awaited<ReturnType<typeof filesList>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesList>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof filesList>>,
-          TError,
-          Awaited<ReturnType<typeof filesList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useFilesList<
-  TData = Awaited<ReturnType<typeof filesList>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesList>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof filesList>>,
-          TError,
-          Awaited<ReturnType<typeof filesList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useFilesList<
-  TData = Awaited<ReturnType<typeof filesList>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesList>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary list files
- */
-
-export function useFilesList<
-  TData = Awaited<ReturnType<typeof filesList>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesList>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getFilesListQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type filesUploadResponse201 = {
-  data: ManagedFile;
-  status: 201;
-};
-
-export type filesUploadResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type filesUploadResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type filesUploadResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type filesUploadResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type filesUploadResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type filesUploadResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type filesUploadResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type filesUploadResponseSuccess = filesUploadResponse201 & {
-  headers: Headers;
-};
-export type filesUploadResponseError = (
-  | filesUploadResponse400
-  | filesUploadResponse401
-  | filesUploadResponse403
-  | filesUploadResponse404
-  | filesUploadResponse409
-  | filesUploadResponse500
-  | filesUploadResponse503
-) & {
-  headers: Headers;
-};
-
-export type filesUploadResponse =
-  filesUploadResponseSuccess | filesUploadResponseError;
-
-export const getFilesUploadUrl = () => {
-  return `/api/admin/files`;
-};
-
-/**
- * @summary upload files
- */
-export const filesUpload = async (
-  uploadRequestBody: UploadRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<filesUploadResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<filesUploadResponse>(getFilesUploadUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(uploadRequestBody),
-  });
-};
-
-export const getFilesUploadMutationKey = () => ["filesUpload"] as const;
-
-export const getFilesUploadMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof filesUpload>>,
-    TError,
-    FilesUploadMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof filesUpload>>,
-  TError,
-  FilesUploadMutationVariables,
-  TContext
-> => {
-  const mutationKey = getFilesUploadMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof filesUpload>>,
-    FilesUploadMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return filesUpload(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FilesUploadMutationResult = NonNullable<
-  Awaited<ReturnType<typeof filesUpload>>
->;
-export type FilesUploadMutationBody = UploadRequestBody;
-export type FilesUploadMutationError = IAMProblem;
-export type FilesUploadMutationVariables = { data: UploadRequestBody };
-
-/**
- * @summary upload files
- */
-export const useFilesUpload = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof filesUpload>>,
-      TError,
-      FilesUploadMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof filesUpload>>,
-  TError,
-  FilesUploadMutationVariables,
-  TContext
-> => {
-  return useMutation(getFilesUploadMutationOptions(options), queryClient);
-};
-
-export type filesDriversResponse200 = {
-  data: StorageDriver[];
-  status: 200;
-};
-
-export type filesDriversResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type filesDriversResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type filesDriversResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type filesDriversResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type filesDriversResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type filesDriversResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type filesDriversResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type filesDriversResponseSuccess = filesDriversResponse200 & {
-  headers: Headers;
-};
-export type filesDriversResponseError = (
-  | filesDriversResponse400
-  | filesDriversResponse401
-  | filesDriversResponse403
-  | filesDriversResponse404
-  | filesDriversResponse409
-  | filesDriversResponse500
-  | filesDriversResponse503
-) & {
-  headers: Headers;
-};
-
-export type filesDriversResponse =
-  filesDriversResponseSuccess | filesDriversResponseError;
-
-export const getFilesDriversUrl = () => {
-  return `/api/admin/files/drivers`;
-};
-
-/**
- * @summary drivers files
- */
-export const filesDrivers = async (
-  options?: Parameters<typeof request>[1],
-): Promise<filesDriversResponse> => {
-  return request<filesDriversResponse>(getFilesDriversUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getFilesDriversQueryKey = () => {
-  return [`/api/admin/files/drivers`] as const;
-};
-
-export const getFilesDriversQueryOptions = <
-  TData = Awaited<ReturnType<typeof filesDrivers>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof filesDrivers>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFilesDriversQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof filesDrivers>>> = ({
-    signal,
-  }) => filesDrivers({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof filesDrivers>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FilesDriversQueryResult = NonNullable<
-  Awaited<ReturnType<typeof filesDrivers>>
->;
-export type FilesDriversQueryError = IAMProblem;
-
-export function useFilesDrivers<
-  TData = Awaited<ReturnType<typeof filesDrivers>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesDrivers>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof filesDrivers>>,
-          TError,
-          Awaited<ReturnType<typeof filesDrivers>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useFilesDrivers<
-  TData = Awaited<ReturnType<typeof filesDrivers>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesDrivers>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof filesDrivers>>,
-          TError,
-          Awaited<ReturnType<typeof filesDrivers>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useFilesDrivers<
-  TData = Awaited<ReturnType<typeof filesDrivers>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesDrivers>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary drivers files
- */
-
-export function useFilesDrivers<
-  TData = Awaited<ReturnType<typeof filesDrivers>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesDrivers>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getFilesDriversQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type filesRemoveResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type filesRemoveResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type filesRemoveResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type filesRemoveResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type filesRemoveResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type filesRemoveResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type filesRemoveResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type filesRemoveResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type filesRemoveResponseSuccess = filesRemoveResponse204 & {
-  headers: Headers;
-};
-export type filesRemoveResponseError = (
-  | filesRemoveResponse400
-  | filesRemoveResponse401
-  | filesRemoveResponse403
-  | filesRemoveResponse404
-  | filesRemoveResponse409
-  | filesRemoveResponse500
-  | filesRemoveResponse503
-) & {
-  headers: Headers;
-};
-
-export type filesRemoveResponse =
-  filesRemoveResponseSuccess | filesRemoveResponseError;
-
-export const getFilesRemoveUrl = (id: number) => {
-  return `/api/admin/files/${id}`;
-};
-
-/**
- * @summary remove files
- */
-export const filesRemove = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<filesRemoveResponse> => {
-  return request<filesRemoveResponse>(getFilesRemoveUrl(id), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getFilesRemoveMutationKey = () => ["filesRemove"] as const;
-
-export const getFilesRemoveMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof filesRemove>>,
-    TError,
-    FilesRemoveMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof filesRemove>>,
-  TError,
-  FilesRemoveMutationVariables,
-  TContext
-> => {
-  const mutationKey = getFilesRemoveMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof filesRemove>>,
-    FilesRemoveMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return filesRemove(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type FilesRemoveMutationResult = NonNullable<
-  Awaited<ReturnType<typeof filesRemove>>
->;
-
-export type FilesRemoveMutationError = IAMProblem;
-export type FilesRemoveMutationVariables = { id: number };
-
-/**
- * @summary remove files
- */
-export const useFilesRemove = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof filesRemove>>,
-      TError,
-      FilesRemoveMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof filesRemove>>,
-  TError,
-  FilesRemoveMutationVariables,
-  TContext
-> => {
-  return useMutation(getFilesRemoveMutationOptions(options), queryClient);
-};
-
-export type filesContentResponse200 = {
-  data: FileContent;
-  status: 200;
-};
-
-export type filesContentResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type filesContentResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type filesContentResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type filesContentResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type filesContentResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type filesContentResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type filesContentResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type filesContentResponseSuccess = filesContentResponse200 & {
-  headers: Headers;
-};
-export type filesContentResponseError = (
-  | filesContentResponse400
-  | filesContentResponse401
-  | filesContentResponse403
-  | filesContentResponse404
-  | filesContentResponse409
-  | filesContentResponse500
-  | filesContentResponse503
-) & {
-  headers: Headers;
-};
-
-export type filesContentResponse =
-  filesContentResponseSuccess | filesContentResponseError;
-
-export const getFilesContentUrl = (id: number) => {
-  return `/api/admin/files/${id}/content`;
-};
-
-/**
- * @summary content files
- */
-export const filesContent = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<filesContentResponse> => {
-  return request<filesContentResponse>(getFilesContentUrl(id), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getFilesContentQueryKey = (id: number) => {
-  return [`/api/admin/files/${id}/content`] as const;
-};
-
-export const getFilesContentQueryOptions = <
-  TData = Awaited<ReturnType<typeof filesContent>>,
-  TError = IAMProblem,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesContent>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getFilesContentQueryKey(id);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof filesContent>>> = ({
-    signal,
-  }) => filesContent(id, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: id !== null && id !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof filesContent>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type FilesContentQueryResult = NonNullable<
-  Awaited<ReturnType<typeof filesContent>>
->;
-export type FilesContentQueryError = IAMProblem;
-
-export function useFilesContent<
-  TData = Awaited<ReturnType<typeof filesContent>>,
-  TError = IAMProblem,
->(
-  id: number,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesContent>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof filesContent>>,
-          TError,
-          Awaited<ReturnType<typeof filesContent>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useFilesContent<
-  TData = Awaited<ReturnType<typeof filesContent>>,
-  TError = IAMProblem,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesContent>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof filesContent>>,
-          TError,
-          Awaited<ReturnType<typeof filesContent>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useFilesContent<
-  TData = Awaited<ReturnType<typeof filesContent>>,
-  TError = IAMProblem,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesContent>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary content files
- */
-
-export function useFilesContent<
-  TData = Awaited<ReturnType<typeof filesContent>>,
-  TError = IAMProblem,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof filesContent>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getFilesContentQueryOptions(id, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type mcpManagementAdminRevokeResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type mcpManagementAdminRevokeResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementAdminRevokeResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementAdminRevokeResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementAdminRevokeResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementAdminRevokeResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementAdminRevokeResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementAdminRevokeResponseSuccess =
-  mcpManagementAdminRevokeResponse204 & {
-    headers: Headers;
-  };
-export type mcpManagementAdminRevokeResponseError = (
-  | mcpManagementAdminRevokeResponse400
-  | mcpManagementAdminRevokeResponse401
-  | mcpManagementAdminRevokeResponse403
-  | mcpManagementAdminRevokeResponse404
-  | mcpManagementAdminRevokeResponse500
-  | mcpManagementAdminRevokeResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementAdminRevokeResponse =
-  | mcpManagementAdminRevokeResponseSuccess
-  | mcpManagementAdminRevokeResponseError;
-
-export const getMcpManagementAdminRevokeUrl = (id: number) => {
-  return `/api/admin/mcp/tokens/${id}`;
-};
-
-/**
- * @summary admin_revoke mcp_management
- */
-export const mcpManagementAdminRevoke = async (
-  id: number,
-  revokeRequestBody: RevokeRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementAdminRevokeResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<mcpManagementAdminRevokeResponse>(
-    getMcpManagementAdminRevokeUrl(id),
-    {
-      ...options,
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(revokeRequestBody),
-    },
-  );
-};
-
-export const getMcpManagementAdminRevokeMutationKey = () =>
-  ["mcpManagementAdminRevoke"] as const;
-
-export const getMcpManagementAdminRevokeMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
-    TError,
-    McpManagementAdminRevokeMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
-  TError,
-  McpManagementAdminRevokeMutationVariables,
-  TContext
-> => {
-  const mutationKey = getMcpManagementAdminRevokeMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
-    McpManagementAdminRevokeMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return mcpManagementAdminRevoke(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type McpManagementAdminRevokeMutationResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementAdminRevoke>>
->;
-export type McpManagementAdminRevokeMutationBody = RevokeRequestBody;
-export type McpManagementAdminRevokeMutationError = IAMProblem;
-export type McpManagementAdminRevokeMutationVariables = {
-  id: number;
-  data: RevokeRequestBody;
-};
-
-/**
- * @summary admin_revoke mcp_management
- */
-export const useMcpManagementAdminRevoke = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
-      TError,
-      McpManagementAdminRevokeMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof mcpManagementAdminRevoke>>,
-  TError,
-  McpManagementAdminRevokeMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getMcpManagementAdminRevokeMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type notificationsAudienceResponse200 = {
-  data: NotificationAudience[];
-  status: 200;
-};
-
-export type notificationsAudienceResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsAudienceResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsAudienceResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsAudienceResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsAudienceResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsAudienceResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsAudienceResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsAudienceResponseSuccess =
-  notificationsAudienceResponse200 & {
-    headers: Headers;
-  };
-export type notificationsAudienceResponseError = (
-  | notificationsAudienceResponse400
-  | notificationsAudienceResponse401
-  | notificationsAudienceResponse403
-  | notificationsAudienceResponse404
-  | notificationsAudienceResponse409
-  | notificationsAudienceResponse500
-  | notificationsAudienceResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsAudienceResponse =
-  notificationsAudienceResponseSuccess | notificationsAudienceResponseError;
-
-export const getNotificationsAudienceUrl = () => {
-  return `/api/admin/notifications/audience`;
-};
-
-/**
- * @summary audience notifications
- */
-export const notificationsAudience = async (
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsAudienceResponse> => {
-  return request<notificationsAudienceResponse>(getNotificationsAudienceUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getNotificationsAudienceQueryKey = () => {
-  return [`/api/admin/notifications/audience`] as const;
-};
-
-export const getNotificationsAudienceQueryOptions = <
-  TData = Awaited<ReturnType<typeof notificationsAudience>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof notificationsAudience>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getNotificationsAudienceQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof notificationsAudience>>
-  > = ({ signal }) => notificationsAudience({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof notificationsAudience>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type NotificationsAudienceQueryResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsAudience>>
->;
-export type NotificationsAudienceQueryError = IAMProblem;
-
-export function useNotificationsAudience<
-  TData = Awaited<ReturnType<typeof notificationsAudience>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAudience>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsAudience>>,
-          TError,
-          Awaited<ReturnType<typeof notificationsAudience>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useNotificationsAudience<
-  TData = Awaited<ReturnType<typeof notificationsAudience>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAudience>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsAudience>>,
-          TError,
-          Awaited<ReturnType<typeof notificationsAudience>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useNotificationsAudience<
-  TData = Awaited<ReturnType<typeof notificationsAudience>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAudience>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary audience notifications
- */
-
-export function useNotificationsAudience<
-  TData = Awaited<ReturnType<typeof notificationsAudience>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAudience>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getNotificationsAudienceQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type notificationsDeliveriesResponse200 = {
-  data: DeliveryRecord[];
-  status: 200;
-};
-
-export type notificationsDeliveriesResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsDeliveriesResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsDeliveriesResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsDeliveriesResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsDeliveriesResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsDeliveriesResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsDeliveriesResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsDeliveriesResponseSuccess =
-  notificationsDeliveriesResponse200 & {
-    headers: Headers;
-  };
-export type notificationsDeliveriesResponseError = (
-  | notificationsDeliveriesResponse400
-  | notificationsDeliveriesResponse401
-  | notificationsDeliveriesResponse403
-  | notificationsDeliveriesResponse404
-  | notificationsDeliveriesResponse409
-  | notificationsDeliveriesResponse500
-  | notificationsDeliveriesResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsDeliveriesResponse =
-  notificationsDeliveriesResponseSuccess | notificationsDeliveriesResponseError;
-
-export const getNotificationsDeliveriesUrl = () => {
-  return `/api/admin/notifications/deliveries`;
-};
-
-/**
- * @summary deliveries notifications
- */
-export const notificationsDeliveries = async (
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsDeliveriesResponse> => {
-  return request<notificationsDeliveriesResponse>(
-    getNotificationsDeliveriesUrl(),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getNotificationsDeliveriesQueryKey = () => {
-  return [`/api/admin/notifications/deliveries`] as const;
-};
-
-export const getNotificationsDeliveriesQueryOptions = <
-  TData = Awaited<ReturnType<typeof notificationsDeliveries>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof notificationsDeliveries>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getNotificationsDeliveriesQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof notificationsDeliveries>>
-  > = ({ signal }) => notificationsDeliveries({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof notificationsDeliveries>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type NotificationsDeliveriesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsDeliveries>>
->;
-export type NotificationsDeliveriesQueryError = IAMProblem;
-
-export function useNotificationsDeliveries<
-  TData = Awaited<ReturnType<typeof notificationsDeliveries>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsDeliveries>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsDeliveries>>,
-          TError,
-          Awaited<ReturnType<typeof notificationsDeliveries>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useNotificationsDeliveries<
-  TData = Awaited<ReturnType<typeof notificationsDeliveries>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsDeliveries>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsDeliveries>>,
-          TError,
-          Awaited<ReturnType<typeof notificationsDeliveries>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useNotificationsDeliveries<
-  TData = Awaited<ReturnType<typeof notificationsDeliveries>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsDeliveries>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary deliveries notifications
- */
-
-export function useNotificationsDeliveries<
-  TData = Awaited<ReturnType<typeof notificationsDeliveries>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsDeliveries>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getNotificationsDeliveriesQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type notificationsRetryResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type notificationsRetryResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsRetryResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsRetryResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsRetryResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsRetryResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsRetryResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsRetryResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsRetryResponseSuccess =
-  notificationsRetryResponse204 & {
-    headers: Headers;
-  };
-export type notificationsRetryResponseError = (
-  | notificationsRetryResponse400
-  | notificationsRetryResponse401
-  | notificationsRetryResponse403
-  | notificationsRetryResponse404
-  | notificationsRetryResponse409
-  | notificationsRetryResponse500
-  | notificationsRetryResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsRetryResponse =
-  notificationsRetryResponseSuccess | notificationsRetryResponseError;
-
-export const getNotificationsRetryUrl = (id: number) => {
-  return `/api/admin/notifications/deliveries/${id}/retry`;
-};
-
-/**
- * @summary retry notifications
- */
-export const notificationsRetry = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsRetryResponse> => {
-  return request<notificationsRetryResponse>(getNotificationsRetryUrl(id), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getNotificationsRetryMutationKey = () =>
-  ["notificationsRetry"] as const;
-
-export const getNotificationsRetryMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof notificationsRetry>>,
-    TError,
-    NotificationsRetryMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof notificationsRetry>>,
-  TError,
-  NotificationsRetryMutationVariables,
-  TContext
-> => {
-  const mutationKey = getNotificationsRetryMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof notificationsRetry>>,
-    NotificationsRetryMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return notificationsRetry(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type NotificationsRetryMutationResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsRetry>>
->;
-
-export type NotificationsRetryMutationError = IAMProblem;
-export type NotificationsRetryMutationVariables = { id: number };
-
-/**
- * @summary retry notifications
- */
-export const useNotificationsRetry = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof notificationsRetry>>,
-      TError,
-      NotificationsRetryMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof notificationsRetry>>,
-  TError,
-  NotificationsRetryMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getNotificationsRetryMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type notificationsPreviewResponse200 = {
-  data: PreviewResponseBody;
-  status: 200;
-};
-
-export type notificationsPreviewResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsPreviewResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsPreviewResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsPreviewResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsPreviewResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsPreviewResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsPreviewResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsPreviewResponseSuccess =
-  notificationsPreviewResponse200 & {
-    headers: Headers;
-  };
-export type notificationsPreviewResponseError = (
-  | notificationsPreviewResponse400
-  | notificationsPreviewResponse401
-  | notificationsPreviewResponse403
-  | notificationsPreviewResponse404
-  | notificationsPreviewResponse409
-  | notificationsPreviewResponse500
-  | notificationsPreviewResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsPreviewResponse =
-  notificationsPreviewResponseSuccess | notificationsPreviewResponseError;
-
-export const getNotificationsPreviewUrl = () => {
-  return `/api/admin/notifications/preview`;
-};
-
-/**
- * @summary preview notifications
- */
-export const notificationsPreview = async (
-  previewRequestBody: PreviewRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsPreviewResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<notificationsPreviewResponse>(getNotificationsPreviewUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(previewRequestBody),
-  });
-};
-
-export const getNotificationsPreviewMutationKey = () =>
-  ["notificationsPreview"] as const;
-
-export const getNotificationsPreviewMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof notificationsPreview>>,
-    TError,
-    NotificationsPreviewMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof notificationsPreview>>,
-  TError,
-  NotificationsPreviewMutationVariables,
-  TContext
-> => {
-  const mutationKey = getNotificationsPreviewMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof notificationsPreview>>,
-    NotificationsPreviewMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return notificationsPreview(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type NotificationsPreviewMutationResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsPreview>>
->;
-export type NotificationsPreviewMutationBody = PreviewRequestBody;
-export type NotificationsPreviewMutationError = IAMProblem;
-export type NotificationsPreviewMutationVariables = {
-  data: PreviewRequestBody;
-};
-
-/**
- * @summary preview notifications
- */
-export const useNotificationsPreview = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof notificationsPreview>>,
-      TError,
-      NotificationsPreviewMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof notificationsPreview>>,
-  TError,
-  NotificationsPreviewMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getNotificationsPreviewMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type notificationsSendResponse201 = {
-  data: SentNotification;
-  status: 201;
-};
-
-export type notificationsSendResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsSendResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsSendResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsSendResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsSendResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsSendResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsSendResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsSendResponseSuccess = notificationsSendResponse201 & {
-  headers: Headers;
-};
-export type notificationsSendResponseError = (
-  | notificationsSendResponse400
-  | notificationsSendResponse401
-  | notificationsSendResponse403
-  | notificationsSendResponse404
-  | notificationsSendResponse409
-  | notificationsSendResponse500
-  | notificationsSendResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsSendResponse =
-  notificationsSendResponseSuccess | notificationsSendResponseError;
-
-export const getNotificationsSendUrl = () => {
-  return `/api/admin/notifications/send`;
-};
-
-/**
- * @summary send notifications
- */
-export const notificationsSend = async (
-  sendRequestBody: SendRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsSendResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<notificationsSendResponse>(getNotificationsSendUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(sendRequestBody),
-  });
-};
-
-export const getNotificationsSendMutationKey = () =>
-  ["notificationsSend"] as const;
-
-export const getNotificationsSendMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof notificationsSend>>,
-    TError,
-    NotificationsSendMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof notificationsSend>>,
-  TError,
-  NotificationsSendMutationVariables,
-  TContext
-> => {
-  const mutationKey = getNotificationsSendMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof notificationsSend>>,
-    NotificationsSendMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return notificationsSend(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type NotificationsSendMutationResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsSend>>
->;
-export type NotificationsSendMutationBody = SendRequestBody;
-export type NotificationsSendMutationError = IAMProblem;
-export type NotificationsSendMutationVariables = { data: SendRequestBody };
-
-/**
- * @summary send notifications
- */
-export const useNotificationsSend = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof notificationsSend>>,
-      TError,
-      NotificationsSendMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof notificationsSend>>,
-  TError,
-  NotificationsSendMutationVariables,
-  TContext
-> => {
-  return useMutation(getNotificationsSendMutationOptions(options), queryClient);
-};
-
-export type notificationsSentResponse200 = {
-  data: SentNotification[];
-  status: 200;
-};
-
-export type notificationsSentResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsSentResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsSentResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsSentResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsSentResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsSentResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsSentResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsSentResponseSuccess = notificationsSentResponse200 & {
-  headers: Headers;
-};
-export type notificationsSentResponseError = (
-  | notificationsSentResponse400
-  | notificationsSentResponse401
-  | notificationsSentResponse403
-  | notificationsSentResponse404
-  | notificationsSentResponse409
-  | notificationsSentResponse500
-  | notificationsSentResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsSentResponse =
-  notificationsSentResponseSuccess | notificationsSentResponseError;
-
-export const getNotificationsSentUrl = () => {
-  return `/api/admin/notifications/sent`;
-};
-
-/**
- * @summary sent notifications
- */
-export const notificationsSent = async (
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsSentResponse> => {
-  return request<notificationsSentResponse>(getNotificationsSentUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getNotificationsSentQueryKey = () => {
-  return [`/api/admin/notifications/sent`] as const;
-};
-
-export const getNotificationsSentQueryOptions = <
-  TData = Awaited<ReturnType<typeof notificationsSent>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof notificationsSent>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getNotificationsSentQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof notificationsSent>>
-  > = ({ signal }) => notificationsSent({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof notificationsSent>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type NotificationsSentQueryResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsSent>>
->;
-export type NotificationsSentQueryError = IAMProblem;
-
-export function useNotificationsSent<
-  TData = Awaited<ReturnType<typeof notificationsSent>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsSent>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsSent>>,
-          TError,
-          Awaited<ReturnType<typeof notificationsSent>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useNotificationsSent<
-  TData = Awaited<ReturnType<typeof notificationsSent>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsSent>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsSent>>,
-          TError,
-          Awaited<ReturnType<typeof notificationsSent>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useNotificationsSent<
-  TData = Awaited<ReturnType<typeof notificationsSent>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsSent>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary sent notifications
- */
-
-export function useNotificationsSent<
-  TData = Awaited<ReturnType<typeof notificationsSent>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsSent>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getNotificationsSentQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type notificationsTestResponse200 = {
-  data: TestResponseBody;
-  status: 200;
-};
-
-export type notificationsTestResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type notificationsTestResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type notificationsTestResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type notificationsTestResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type notificationsTestResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type notificationsTestResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type notificationsTestResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type notificationsTestResponseSuccess = notificationsTestResponse200 & {
-  headers: Headers;
-};
-export type notificationsTestResponseError = (
-  | notificationsTestResponse400
-  | notificationsTestResponse401
-  | notificationsTestResponse403
-  | notificationsTestResponse404
-  | notificationsTestResponse409
-  | notificationsTestResponse500
-  | notificationsTestResponse503
-) & {
-  headers: Headers;
-};
-
-export type notificationsTestResponse =
-  notificationsTestResponseSuccess | notificationsTestResponseError;
-
-export const getNotificationsTestUrl = () => {
-  return `/api/admin/notifications/test`;
-};
-
-/**
- * @summary test notifications
- */
-export const notificationsTest = async (
-  testRequestBody: TestRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<notificationsTestResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<notificationsTestResponse>(getNotificationsTestUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(testRequestBody),
-  });
-};
-
-export const getNotificationsTestMutationKey = () =>
-  ["notificationsTest"] as const;
-
-export const getNotificationsTestMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof notificationsTest>>,
-    TError,
-    NotificationsTestMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof notificationsTest>>,
-  TError,
-  NotificationsTestMutationVariables,
-  TContext
-> => {
-  const mutationKey = getNotificationsTestMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof notificationsTest>>,
-    NotificationsTestMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return notificationsTest(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type NotificationsTestMutationResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsTest>>
->;
-export type NotificationsTestMutationBody = TestRequestBody;
-export type NotificationsTestMutationError = IAMProblem;
-export type NotificationsTestMutationVariables = { data: TestRequestBody };
-
-/**
- * @summary test notifications
- */
-export const useNotificationsTest = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof notificationsTest>>,
-      TError,
-      NotificationsTestMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof notificationsTest>>,
-  TError,
-  NotificationsTestMutationVariables,
-  TContext
-> => {
-  return useMutation(getNotificationsTestMutationOptions(options), queryClient);
-};
-
-export type identityCreateOrganizationResponse201 = {
-  data: OrganizationRecord;
-  status: 201;
-};
-
-export type identityCreateOrganizationResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityCreateOrganizationResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityCreateOrganizationResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityCreateOrganizationResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityCreateOrganizationResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityCreateOrganizationResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityCreateOrganizationResponseSuccess =
-  identityCreateOrganizationResponse201 & {
-    headers: Headers;
-  };
-export type identityCreateOrganizationResponseError = (
-  | identityCreateOrganizationResponse400
-  | identityCreateOrganizationResponse401
-  | identityCreateOrganizationResponse403
-  | identityCreateOrganizationResponse409
-  | identityCreateOrganizationResponse500
-  | identityCreateOrganizationResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityCreateOrganizationResponse =
-  | identityCreateOrganizationResponseSuccess
-  | identityCreateOrganizationResponseError;
-
-export const getIdentityCreateOrganizationUrl = () => {
-  return `/api/admin/organizations`;
-};
-
-/**
- * @summary create_organization identity
- */
-export const identityCreateOrganization = async (
-  createOrganizationRequestBody: CreateOrganizationRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityCreateOrganizationResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityCreateOrganizationResponse>(
-    getIdentityCreateOrganizationUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(createOrganizationRequestBody),
-    },
-  );
-};
-
-export const getIdentityCreateOrganizationMutationKey = () =>
-  ["identityCreateOrganization"] as const;
-
-export const getIdentityCreateOrganizationMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityCreateOrganization>>,
-    TError,
-    IdentityCreateOrganizationMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityCreateOrganization>>,
-  TError,
-  IdentityCreateOrganizationMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityCreateOrganizationMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityCreateOrganization>>,
-    IdentityCreateOrganizationMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return identityCreateOrganization(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityCreateOrganizationMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityCreateOrganization>>
->;
-export type IdentityCreateOrganizationMutationBody =
-  CreateOrganizationRequestBody;
-export type IdentityCreateOrganizationMutationError = IAMProblem;
-export type IdentityCreateOrganizationMutationVariables = {
-  data: CreateOrganizationRequestBody;
-};
-
-/**
- * @summary create_organization identity
- */
-export const useIdentityCreateOrganization = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityCreateOrganization>>,
-      TError,
-      IdentityCreateOrganizationMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityCreateOrganization>>,
-  TError,
-  IdentityCreateOrganizationMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityCreateOrganizationMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityDeleteOrganizationResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type identityDeleteOrganizationResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityDeleteOrganizationResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityDeleteOrganizationResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityDeleteOrganizationResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityDeleteOrganizationResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityDeleteOrganizationResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityDeleteOrganizationResponseSuccess =
-  identityDeleteOrganizationResponse204 & {
-    headers: Headers;
-  };
-export type identityDeleteOrganizationResponseError = (
-  | identityDeleteOrganizationResponse401
-  | identityDeleteOrganizationResponse403
-  | identityDeleteOrganizationResponse404
-  | identityDeleteOrganizationResponse409
-  | identityDeleteOrganizationResponse500
-  | identityDeleteOrganizationResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityDeleteOrganizationResponse =
-  | identityDeleteOrganizationResponseSuccess
-  | identityDeleteOrganizationResponseError;
-
-export const getIdentityDeleteOrganizationUrl = (id: number) => {
-  return `/api/admin/organizations/${id}`;
-};
-
-/**
- * @summary delete_organization identity
- */
-export const identityDeleteOrganization = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<identityDeleteOrganizationResponse> => {
-  return request<identityDeleteOrganizationResponse>(
-    getIdentityDeleteOrganizationUrl(id),
-    {
-      ...options,
-      method: "DELETE",
-    },
-  );
-};
-
-export const getIdentityDeleteOrganizationMutationKey = () =>
-  ["identityDeleteOrganization"] as const;
-
-export const getIdentityDeleteOrganizationMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityDeleteOrganization>>,
-    TError,
-    IdentityDeleteOrganizationMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityDeleteOrganization>>,
-  TError,
-  IdentityDeleteOrganizationMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityDeleteOrganizationMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityDeleteOrganization>>,
-    IdentityDeleteOrganizationMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return identityDeleteOrganization(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityDeleteOrganizationMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityDeleteOrganization>>
->;
-
-export type IdentityDeleteOrganizationMutationError = IAMProblem;
-export type IdentityDeleteOrganizationMutationVariables = { id: number };
-
-/**
- * @summary delete_organization identity
- */
-export const useIdentityDeleteOrganization = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityDeleteOrganization>>,
-      TError,
-      IdentityDeleteOrganizationMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityDeleteOrganization>>,
-  TError,
-  IdentityDeleteOrganizationMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityDeleteOrganizationMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityUpdateOrganizationResponse200 = {
-  data: OrganizationRecord;
-  status: 200;
-};
-
-export type identityUpdateOrganizationResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityUpdateOrganizationResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityUpdateOrganizationResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityUpdateOrganizationResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityUpdateOrganizationResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityUpdateOrganizationResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityUpdateOrganizationResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityUpdateOrganizationResponseSuccess =
-  identityUpdateOrganizationResponse200 & {
-    headers: Headers;
-  };
-export type identityUpdateOrganizationResponseError = (
-  | identityUpdateOrganizationResponse400
-  | identityUpdateOrganizationResponse401
-  | identityUpdateOrganizationResponse403
-  | identityUpdateOrganizationResponse404
-  | identityUpdateOrganizationResponse409
-  | identityUpdateOrganizationResponse500
-  | identityUpdateOrganizationResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityUpdateOrganizationResponse =
-  | identityUpdateOrganizationResponseSuccess
-  | identityUpdateOrganizationResponseError;
-
-export const getIdentityUpdateOrganizationUrl = (id: number) => {
-  return `/api/admin/organizations/${id}`;
-};
-
-/**
- * @summary update_organization identity
- */
-export const identityUpdateOrganization = async (
-  id: number,
-  createOrganizationRequestBody: CreateOrganizationRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityUpdateOrganizationResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityUpdateOrganizationResponse>(
-    getIdentityUpdateOrganizationUrl(id),
-    {
-      ...options,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(createOrganizationRequestBody),
-    },
-  );
-};
-
-export const getIdentityUpdateOrganizationMutationKey = () =>
-  ["identityUpdateOrganization"] as const;
-
-export const getIdentityUpdateOrganizationMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityUpdateOrganization>>,
-    TError,
-    IdentityUpdateOrganizationMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityUpdateOrganization>>,
-  TError,
-  IdentityUpdateOrganizationMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityUpdateOrganizationMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityUpdateOrganization>>,
-    IdentityUpdateOrganizationMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return identityUpdateOrganization(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityUpdateOrganizationMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityUpdateOrganization>>
->;
-export type IdentityUpdateOrganizationMutationBody =
-  CreateOrganizationRequestBody;
-export type IdentityUpdateOrganizationMutationError = IAMProblem;
-export type IdentityUpdateOrganizationMutationVariables = {
-  id: number;
-  data: CreateOrganizationRequestBody;
-};
-
-/**
- * @summary update_organization identity
- */
-export const useIdentityUpdateOrganization = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityUpdateOrganization>>,
-      TError,
-      IdentityUpdateOrganizationMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityUpdateOrganization>>,
-  TError,
-  IdentityUpdateOrganizationMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityUpdateOrganizationMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityCreateRoleResponse201 = {
-  data: RoleRecord;
-  status: 201;
-};
-
-export type identityCreateRoleResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityCreateRoleResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityCreateRoleResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityCreateRoleResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityCreateRoleResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityCreateRoleResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityCreateRoleResponseSuccess =
-  identityCreateRoleResponse201 & {
-    headers: Headers;
-  };
-export type identityCreateRoleResponseError = (
-  | identityCreateRoleResponse400
-  | identityCreateRoleResponse401
-  | identityCreateRoleResponse403
-  | identityCreateRoleResponse409
-  | identityCreateRoleResponse500
-  | identityCreateRoleResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityCreateRoleResponse =
-  identityCreateRoleResponseSuccess | identityCreateRoleResponseError;
-
-export const getIdentityCreateRoleUrl = () => {
-  return `/api/admin/roles`;
-};
-
-/**
- * @summary create_role identity
- */
-export const identityCreateRole = async (
-  createRoleRequestBody: CreateRoleRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityCreateRoleResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityCreateRoleResponse>(getIdentityCreateRoleUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(createRoleRequestBody),
-  });
-};
-
-export const getIdentityCreateRoleMutationKey = () =>
-  ["identityCreateRole"] as const;
-
-export const getIdentityCreateRoleMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityCreateRole>>,
-    TError,
-    IdentityCreateRoleMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityCreateRole>>,
-  TError,
-  IdentityCreateRoleMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityCreateRoleMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityCreateRole>>,
-    IdentityCreateRoleMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return identityCreateRole(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityCreateRoleMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityCreateRole>>
->;
-export type IdentityCreateRoleMutationBody = CreateRoleRequestBody;
-export type IdentityCreateRoleMutationError = IAMProblem;
-export type IdentityCreateRoleMutationVariables = {
-  data: CreateRoleRequestBody;
-};
-
-/**
- * @summary create_role identity
- */
-export const useIdentityCreateRole = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityCreateRole>>,
-      TError,
-      IdentityCreateRoleMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityCreateRole>>,
-  TError,
-  IdentityCreateRoleMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityCreateRoleMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityDeleteRoleResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type identityDeleteRoleResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityDeleteRoleResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityDeleteRoleResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityDeleteRoleResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityDeleteRoleResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityDeleteRoleResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityDeleteRoleResponseSuccess =
-  identityDeleteRoleResponse204 & {
-    headers: Headers;
-  };
-export type identityDeleteRoleResponseError = (
-  | identityDeleteRoleResponse401
-  | identityDeleteRoleResponse403
-  | identityDeleteRoleResponse404
-  | identityDeleteRoleResponse409
-  | identityDeleteRoleResponse500
-  | identityDeleteRoleResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityDeleteRoleResponse =
-  identityDeleteRoleResponseSuccess | identityDeleteRoleResponseError;
-
-export const getIdentityDeleteRoleUrl = (id: number) => {
-  return `/api/admin/roles/${id}`;
-};
-
-/**
- * @summary delete_role identity
- */
-export const identityDeleteRole = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<identityDeleteRoleResponse> => {
-  return request<identityDeleteRoleResponse>(getIdentityDeleteRoleUrl(id), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getIdentityDeleteRoleMutationKey = () =>
-  ["identityDeleteRole"] as const;
-
-export const getIdentityDeleteRoleMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityDeleteRole>>,
-    TError,
-    IdentityDeleteRoleMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityDeleteRole>>,
-  TError,
-  IdentityDeleteRoleMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityDeleteRoleMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityDeleteRole>>,
-    IdentityDeleteRoleMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return identityDeleteRole(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityDeleteRoleMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityDeleteRole>>
->;
-
-export type IdentityDeleteRoleMutationError = IAMProblem;
-export type IdentityDeleteRoleMutationVariables = { id: number };
-
-/**
- * @summary delete_role identity
- */
-export const useIdentityDeleteRole = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityDeleteRole>>,
-      TError,
-      IdentityDeleteRoleMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityDeleteRole>>,
-  TError,
-  IdentityDeleteRoleMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityDeleteRoleMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type identityUpdateRoleResponse200 = {
-  data: RoleRecord;
-  status: 200;
-};
-
-export type identityUpdateRoleResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type identityUpdateRoleResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type identityUpdateRoleResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type identityUpdateRoleResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type identityUpdateRoleResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type identityUpdateRoleResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type identityUpdateRoleResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type identityUpdateRoleResponseSuccess =
-  identityUpdateRoleResponse200 & {
-    headers: Headers;
-  };
-export type identityUpdateRoleResponseError = (
-  | identityUpdateRoleResponse400
-  | identityUpdateRoleResponse401
-  | identityUpdateRoleResponse403
-  | identityUpdateRoleResponse404
-  | identityUpdateRoleResponse409
-  | identityUpdateRoleResponse500
-  | identityUpdateRoleResponse503
-) & {
-  headers: Headers;
-};
-
-export type identityUpdateRoleResponse =
-  identityUpdateRoleResponseSuccess | identityUpdateRoleResponseError;
-
-export const getIdentityUpdateRoleUrl = (id: number) => {
-  return `/api/admin/roles/${id}`;
-};
-
-/**
- * @summary update_role identity
- */
-export const identityUpdateRole = async (
-  id: number,
-  createRoleRequestBody: CreateRoleRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<identityUpdateRoleResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<identityUpdateRoleResponse>(getIdentityUpdateRoleUrl(id), {
-    ...options,
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(createRoleRequestBody),
-  });
-};
-
-export const getIdentityUpdateRoleMutationKey = () =>
-  ["identityUpdateRole"] as const;
-
-export const getIdentityUpdateRoleMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof identityUpdateRole>>,
-    TError,
-    IdentityUpdateRoleMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof identityUpdateRole>>,
-  TError,
-  IdentityUpdateRoleMutationVariables,
-  TContext
-> => {
-  const mutationKey = getIdentityUpdateRoleMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof identityUpdateRole>>,
-    IdentityUpdateRoleMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return identityUpdateRole(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type IdentityUpdateRoleMutationResult = NonNullable<
-  Awaited<ReturnType<typeof identityUpdateRole>>
->;
-export type IdentityUpdateRoleMutationBody = CreateRoleRequestBody;
-export type IdentityUpdateRoleMutationError = IAMProblem;
-export type IdentityUpdateRoleMutationVariables = {
-  id: number;
-  data: CreateRoleRequestBody;
-};
-
-/**
- * @summary update_role identity
- */
-export const useIdentityUpdateRole = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof identityUpdateRole>>,
-      TError,
-      IdentityUpdateRoleMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof identityUpdateRole>>,
-  TError,
-  IdentityUpdateRoleMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getIdentityUpdateRoleMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type settingsWorkspaceResponse200 = {
-  data: SettingsWorkspace;
-  status: 200;
-};
-
-export type settingsWorkspaceResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsWorkspaceResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsWorkspaceResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsWorkspaceResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsWorkspaceResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsWorkspaceResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsWorkspaceResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsWorkspaceResponseSuccess = settingsWorkspaceResponse200 & {
-  headers: Headers;
-};
-export type settingsWorkspaceResponseError = (
-  | settingsWorkspaceResponse400
-  | settingsWorkspaceResponse401
-  | settingsWorkspaceResponse403
-  | settingsWorkspaceResponse404
-  | settingsWorkspaceResponse409
-  | settingsWorkspaceResponse500
-  | settingsWorkspaceResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsWorkspaceResponse =
-  settingsWorkspaceResponseSuccess | settingsWorkspaceResponseError;
-
-export const getSettingsWorkspaceUrl = (params?: SettingsWorkspaceParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/admin/settings?${stringifiedParams}`
-    : `/api/admin/settings`;
-};
-
-/**
- * @summary workspace settings
- */
-export const settingsWorkspace = async (
-  params?: SettingsWorkspaceParams,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsWorkspaceResponse> => {
-  return request<settingsWorkspaceResponse>(getSettingsWorkspaceUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getSettingsWorkspaceQueryKey = (
-  params?: SettingsWorkspaceParams,
-) => {
-  return [`/api/admin/settings`, ...(params ? [params] : [])] as const;
-};
-
-export const getSettingsWorkspaceQueryOptions = <
-  TData = Awaited<ReturnType<typeof settingsWorkspace>>,
-  TError = IAMProblem,
->(
-  params?: SettingsWorkspaceParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsWorkspace>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getSettingsWorkspaceQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof settingsWorkspace>>
-  > = ({ signal }) => settingsWorkspace(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof settingsWorkspace>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type SettingsWorkspaceQueryResult = NonNullable<
-  Awaited<ReturnType<typeof settingsWorkspace>>
->;
-export type SettingsWorkspaceQueryError = IAMProblem;
-
-export function useSettingsWorkspace<
-  TData = Awaited<ReturnType<typeof settingsWorkspace>>,
-  TError = IAMProblem,
->(
-  params: undefined | SettingsWorkspaceParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsWorkspace>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsWorkspace>>,
-          TError,
-          Awaited<ReturnType<typeof settingsWorkspace>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsWorkspace<
-  TData = Awaited<ReturnType<typeof settingsWorkspace>>,
-  TError = IAMProblem,
->(
-  params?: SettingsWorkspaceParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsWorkspace>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsWorkspace>>,
-          TError,
-          Awaited<ReturnType<typeof settingsWorkspace>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsWorkspace<
-  TData = Awaited<ReturnType<typeof settingsWorkspace>>,
-  TError = IAMProblem,
->(
-  params?: SettingsWorkspaceParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsWorkspace>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary workspace settings
- */
-
-export function useSettingsWorkspace<
-  TData = Awaited<ReturnType<typeof settingsWorkspace>>,
-  TError = IAMProblem,
->(
-  params?: SettingsWorkspaceParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsWorkspace>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getSettingsWorkspaceQueryOptions(params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type settingsDraftResponse201 = {
-  data: ChangeRecord;
-  status: 201;
-};
-
-export type settingsDraftResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsDraftResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsDraftResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsDraftResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsDraftResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsDraftResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsDraftResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsDraftResponseSuccess = settingsDraftResponse201 & {
-  headers: Headers;
-};
-export type settingsDraftResponseError = (
-  | settingsDraftResponse400
-  | settingsDraftResponse401
-  | settingsDraftResponse403
-  | settingsDraftResponse404
-  | settingsDraftResponse409
-  | settingsDraftResponse500
-  | settingsDraftResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsDraftResponse =
-  settingsDraftResponseSuccess | settingsDraftResponseError;
-
-export const getSettingsDraftUrl = () => {
-  return `/api/admin/settings/drafts`;
-};
-
-/**
- * @summary draft settings
- */
-export const settingsDraft = async (
-  draftRequestBody: DraftRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsDraftResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<settingsDraftResponse>(getSettingsDraftUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(draftRequestBody),
-  });
-};
-
-export const getSettingsDraftMutationKey = () => ["settingsDraft"] as const;
-
-export const getSettingsDraftMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsDraft>>,
-    TError,
-    SettingsDraftMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsDraft>>,
-  TError,
-  SettingsDraftMutationVariables,
-  TContext
-> => {
-  const mutationKey = getSettingsDraftMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsDraft>>,
-    SettingsDraftMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return settingsDraft(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SettingsDraftMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsDraft>>
->;
-export type SettingsDraftMutationBody = DraftRequestBody;
-export type SettingsDraftMutationError = IAMProblem;
-export type SettingsDraftMutationVariables = { data: DraftRequestBody };
-
-/**
- * @summary draft settings
- */
-export const useSettingsDraft = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsDraft>>,
-      TError,
-      SettingsDraftMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof settingsDraft>>,
-  TError,
-  SettingsDraftMutationVariables,
-  TContext
-> => {
-  return useMutation(getSettingsDraftMutationOptions(options), queryClient);
-};
-
-export type settingsPublishResponse200 = {
-  data: ChangeRecord;
-  status: 200;
-};
-
-export type settingsPublishResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsPublishResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsPublishResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsPublishResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsPublishResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsPublishResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsPublishResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsPublishResponseSuccess = settingsPublishResponse200 & {
-  headers: Headers;
-};
-export type settingsPublishResponseError = (
-  | settingsPublishResponse400
-  | settingsPublishResponse401
-  | settingsPublishResponse403
-  | settingsPublishResponse404
-  | settingsPublishResponse409
-  | settingsPublishResponse500
-  | settingsPublishResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsPublishResponse =
-  settingsPublishResponseSuccess | settingsPublishResponseError;
-
-export const getSettingsPublishUrl = (id: number) => {
-  return `/api/admin/settings/drafts/${id}/publish`;
-};
-
-/**
- * @summary publish settings
- */
-export const settingsPublish = async (
-  id: number,
-  publishRequestBody: PublishRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsPublishResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<settingsPublishResponse>(getSettingsPublishUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(publishRequestBody),
-  });
-};
-
-export const getSettingsPublishMutationKey = () => ["settingsPublish"] as const;
-
-export const getSettingsPublishMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsPublish>>,
-    TError,
-    SettingsPublishMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsPublish>>,
-  TError,
-  SettingsPublishMutationVariables,
-  TContext
-> => {
-  const mutationKey = getSettingsPublishMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsPublish>>,
-    SettingsPublishMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return settingsPublish(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SettingsPublishMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsPublish>>
->;
-export type SettingsPublishMutationBody = PublishRequestBody;
-export type SettingsPublishMutationError = IAMProblem;
-export type SettingsPublishMutationVariables = {
-  id: number;
-  data: PublishRequestBody;
-};
-
-/**
- * @summary publish settings
- */
-export const useSettingsPublish = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsPublish>>,
-      TError,
-      SettingsPublishMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof settingsPublish>>,
-  TError,
-  SettingsPublishMutationVariables,
-  TContext
-> => {
-  return useMutation(getSettingsPublishMutationOptions(options), queryClient);
-};
-
-export type settingsScheduleResponse201 = {
-  data: SettingSchedule;
-  status: 201;
-};
-
-export type settingsScheduleResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsScheduleResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsScheduleResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsScheduleResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsScheduleResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsScheduleResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsScheduleResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsScheduleResponseSuccess = settingsScheduleResponse201 & {
-  headers: Headers;
-};
-export type settingsScheduleResponseError = (
-  | settingsScheduleResponse400
-  | settingsScheduleResponse401
-  | settingsScheduleResponse403
-  | settingsScheduleResponse404
-  | settingsScheduleResponse409
-  | settingsScheduleResponse500
-  | settingsScheduleResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsScheduleResponse =
-  settingsScheduleResponseSuccess | settingsScheduleResponseError;
-
-export const getSettingsScheduleUrl = (id: number) => {
-  return `/api/admin/settings/drafts/${id}/schedule`;
-};
-
-/**
- * @summary schedule settings
- */
-export const settingsSchedule = async (
-  id: number,
-  scheduleRequestBody: ScheduleRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsScheduleResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<settingsScheduleResponse>(getSettingsScheduleUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(scheduleRequestBody),
-  });
-};
-
-export const getSettingsScheduleMutationKey = () =>
-  ["settingsSchedule"] as const;
-
-export const getSettingsScheduleMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsSchedule>>,
-    TError,
-    SettingsScheduleMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsSchedule>>,
-  TError,
-  SettingsScheduleMutationVariables,
-  TContext
-> => {
-  const mutationKey = getSettingsScheduleMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsSchedule>>,
-    SettingsScheduleMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return settingsSchedule(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SettingsScheduleMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsSchedule>>
->;
-export type SettingsScheduleMutationBody = ScheduleRequestBody;
-export type SettingsScheduleMutationError = IAMProblem;
-export type SettingsScheduleMutationVariables = {
-  id: number;
-  data: ScheduleRequestBody;
-};
-
-/**
- * @summary schedule settings
- */
-export const useSettingsSchedule = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsSchedule>>,
-      TError,
-      SettingsScheduleMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof settingsSchedule>>,
-  TError,
-  SettingsScheduleMutationVariables,
-  TContext
-> => {
-  return useMutation(getSettingsScheduleMutationOptions(options), queryClient);
-};
-
-export type settingsExportResponse200 = {
-  data: ChangeEntry[];
-  status: 200;
-};
-
-export type settingsExportResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsExportResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsExportResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsExportResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsExportResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsExportResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsExportResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsExportResponseSuccess = settingsExportResponse200 & {
-  headers: Headers;
-};
-export type settingsExportResponseError = (
-  | settingsExportResponse400
-  | settingsExportResponse401
-  | settingsExportResponse403
-  | settingsExportResponse404
-  | settingsExportResponse409
-  | settingsExportResponse500
-  | settingsExportResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsExportResponse =
-  settingsExportResponseSuccess | settingsExportResponseError;
-
-export const getSettingsExportUrl = (params?: SettingsExportParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/admin/settings/export?${stringifiedParams}`
-    : `/api/admin/settings/export`;
-};
-
-/**
- * @summary export settings
- */
-export const settingsExport = async (
-  params?: SettingsExportParams,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsExportResponse> => {
-  return request<settingsExportResponse>(getSettingsExportUrl(params), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getSettingsExportQueryKey = (params?: SettingsExportParams) => {
-  return [`/api/admin/settings/export`, ...(params ? [params] : [])] as const;
-};
-
-export const getSettingsExportQueryOptions = <
-  TData = Awaited<ReturnType<typeof settingsExport>>,
-  TError = IAMProblem,
->(
-  params?: SettingsExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsExport>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getSettingsExportQueryKey(params);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof settingsExport>>> = ({
-    signal,
-  }) => settingsExport(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof settingsExport>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type SettingsExportQueryResult = NonNullable<
-  Awaited<ReturnType<typeof settingsExport>>
->;
-export type SettingsExportQueryError = IAMProblem;
-
-export function useSettingsExport<
-  TData = Awaited<ReturnType<typeof settingsExport>>,
-  TError = IAMProblem,
->(
-  params: undefined | SettingsExportParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsExport>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsExport>>,
-          TError,
-          Awaited<ReturnType<typeof settingsExport>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsExport<
-  TData = Awaited<ReturnType<typeof settingsExport>>,
-  TError = IAMProblem,
->(
-  params?: SettingsExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsExport>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsExport>>,
-          TError,
-          Awaited<ReturnType<typeof settingsExport>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsExport<
-  TData = Awaited<ReturnType<typeof settingsExport>>,
-  TError = IAMProblem,
->(
-  params?: SettingsExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsExport>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary export settings
- */
-
-export function useSettingsExport<
-  TData = Awaited<ReturnType<typeof settingsExport>>,
-  TError = IAMProblem,
->(
-  params?: SettingsExportParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsExport>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getSettingsExportQueryOptions(params, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type settingsRollbackResponse200 = {
-  data: ChangeRecord;
-  status: 200;
-};
-
-export type settingsRollbackResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsRollbackResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsRollbackResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsRollbackResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsRollbackResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsRollbackResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsRollbackResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsRollbackResponseSuccess = settingsRollbackResponse200 & {
-  headers: Headers;
-};
-export type settingsRollbackResponseError = (
-  | settingsRollbackResponse400
-  | settingsRollbackResponse401
-  | settingsRollbackResponse403
-  | settingsRollbackResponse404
-  | settingsRollbackResponse409
-  | settingsRollbackResponse500
-  | settingsRollbackResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsRollbackResponse =
-  settingsRollbackResponseSuccess | settingsRollbackResponseError;
-
-export const getSettingsRollbackUrl = (id: number) => {
-  return `/api/admin/settings/history/${id}/rollback`;
-};
-
-/**
- * @summary rollback settings
- */
-export const settingsRollback = async (
-  id: number,
-  rollbackRequestBody: RollbackRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsRollbackResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<settingsRollbackResponse>(getSettingsRollbackUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(rollbackRequestBody),
-  });
-};
-
-export const getSettingsRollbackMutationKey = () =>
-  ["settingsRollback"] as const;
-
-export const getSettingsRollbackMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsRollback>>,
-    TError,
-    SettingsRollbackMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsRollback>>,
-  TError,
-  SettingsRollbackMutationVariables,
-  TContext
-> => {
-  const mutationKey = getSettingsRollbackMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsRollback>>,
-    SettingsRollbackMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return settingsRollback(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SettingsRollbackMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsRollback>>
->;
-export type SettingsRollbackMutationBody = RollbackRequestBody;
-export type SettingsRollbackMutationError = IAMProblem;
-export type SettingsRollbackMutationVariables = {
-  id: number;
-  data: RollbackRequestBody;
-};
-
-/**
- * @summary rollback settings
- */
-export const useSettingsRollback = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsRollback>>,
-      TError,
-      SettingsRollbackMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof settingsRollback>>,
-  TError,
-  SettingsRollbackMutationVariables,
-  TContext
-> => {
-  return useMutation(getSettingsRollbackMutationOptions(options), queryClient);
-};
-
-export type settingsSchedulesResponse200 = {
-  data: SettingSchedule[];
-  status: 200;
-};
-
-export type settingsSchedulesResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsSchedulesResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsSchedulesResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsSchedulesResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsSchedulesResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsSchedulesResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsSchedulesResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsSchedulesResponseSuccess = settingsSchedulesResponse200 & {
-  headers: Headers;
-};
-export type settingsSchedulesResponseError = (
-  | settingsSchedulesResponse400
-  | settingsSchedulesResponse401
-  | settingsSchedulesResponse403
-  | settingsSchedulesResponse404
-  | settingsSchedulesResponse409
-  | settingsSchedulesResponse500
-  | settingsSchedulesResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsSchedulesResponse =
-  settingsSchedulesResponseSuccess | settingsSchedulesResponseError;
-
-export const getSettingsSchedulesUrl = () => {
-  return `/api/admin/settings/schedules`;
-};
-
-/**
- * @summary schedules settings
- */
-export const settingsSchedules = async (
-  options?: Parameters<typeof request>[1],
-): Promise<settingsSchedulesResponse> => {
-  return request<settingsSchedulesResponse>(getSettingsSchedulesUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getSettingsSchedulesQueryKey = () => {
-  return [`/api/admin/settings/schedules`] as const;
-};
-
-export const getSettingsSchedulesQueryOptions = <
-  TData = Awaited<ReturnType<typeof settingsSchedules>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof settingsSchedules>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getSettingsSchedulesQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof settingsSchedules>>
-  > = ({ signal }) => settingsSchedules({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof settingsSchedules>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type SettingsSchedulesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof settingsSchedules>>
->;
-export type SettingsSchedulesQueryError = IAMProblem;
-
-export function useSettingsSchedules<
-  TData = Awaited<ReturnType<typeof settingsSchedules>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsSchedules>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsSchedules>>,
-          TError,
-          Awaited<ReturnType<typeof settingsSchedules>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsSchedules<
-  TData = Awaited<ReturnType<typeof settingsSchedules>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsSchedules>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsSchedules>>,
-          TError,
-          Awaited<ReturnType<typeof settingsSchedules>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsSchedules<
-  TData = Awaited<ReturnType<typeof settingsSchedules>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsSchedules>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary schedules settings
- */
-
-export function useSettingsSchedules<
-  TData = Awaited<ReturnType<typeof settingsSchedules>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsSchedules>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getSettingsSchedulesQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type settingsCancelScheduleResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type settingsCancelScheduleResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsCancelScheduleResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsCancelScheduleResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsCancelScheduleResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsCancelScheduleResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsCancelScheduleResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsCancelScheduleResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsCancelScheduleResponseSuccess =
-  settingsCancelScheduleResponse204 & {
-    headers: Headers;
-  };
-export type settingsCancelScheduleResponseError = (
-  | settingsCancelScheduleResponse400
-  | settingsCancelScheduleResponse401
-  | settingsCancelScheduleResponse403
-  | settingsCancelScheduleResponse404
-  | settingsCancelScheduleResponse409
-  | settingsCancelScheduleResponse500
-  | settingsCancelScheduleResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsCancelScheduleResponse =
-  settingsCancelScheduleResponseSuccess | settingsCancelScheduleResponseError;
-
-export const getSettingsCancelScheduleUrl = (id: number) => {
-  return `/api/admin/settings/schedules/${id}/cancel`;
-};
-
-/**
- * @summary cancel_schedule settings
- */
-export const settingsCancelSchedule = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsCancelScheduleResponse> => {
-  return request<settingsCancelScheduleResponse>(
-    getSettingsCancelScheduleUrl(id),
-    {
-      ...options,
-      method: "POST",
-    },
-  );
-};
-
-export const getSettingsCancelScheduleMutationKey = () =>
-  ["settingsCancelSchedule"] as const;
-
-export const getSettingsCancelScheduleMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsCancelSchedule>>,
-    TError,
-    SettingsCancelScheduleMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsCancelSchedule>>,
-  TError,
-  SettingsCancelScheduleMutationVariables,
-  TContext
-> => {
-  const mutationKey = getSettingsCancelScheduleMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsCancelSchedule>>,
-    SettingsCancelScheduleMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return settingsCancelSchedule(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SettingsCancelScheduleMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsCancelSchedule>>
->;
-
-export type SettingsCancelScheduleMutationError = IAMProblem;
-export type SettingsCancelScheduleMutationVariables = { id: number };
-
-/**
- * @summary cancel_schedule settings
- */
-export const useSettingsCancelSchedule = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsCancelSchedule>>,
-      TError,
-      SettingsCancelScheduleMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof settingsCancelSchedule>>,
-  TError,
-  SettingsCancelScheduleMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getSettingsCancelScheduleMutationOptions(options),
-    queryClient,
-  );
 };
 
 export type identitySnapshotResponse200 = {
@@ -9160,6 +1175,1333 @@ export const useIdentityRevokeTemporaryAccess = <
   );
 };
 
+export type aiConversationsResponse200 = {
+  data: AIConversation[];
+  status: 200;
+};
+
+export type aiConversationsResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiConversationsResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiConversationsResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiConversationsResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiConversationsResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiConversationsResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiConversationsResponseSuccess = aiConversationsResponse200 & {
+  headers: Headers;
+};
+export type aiConversationsResponseError = (
+  | aiConversationsResponse400
+  | aiConversationsResponse401
+  | aiConversationsResponse403
+  | aiConversationsResponse404
+  | aiConversationsResponse500
+  | aiConversationsResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiConversationsResponse =
+  aiConversationsResponseSuccess | aiConversationsResponseError;
+
+export const getAiConversationsUrl = (params?: AiConversationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ai/conversations?${stringifiedParams}`
+    : `/api/ai/conversations`;
+};
+
+/**
+ * List the caller's conversations, newest first. The workbench uses it as its task list.
+ * @summary conversations ai
+ */
+export const aiConversations = async (
+  params?: AiConversationsParams,
+  options?: Parameters<typeof request>[1],
+): Promise<aiConversationsResponse> => {
+  return request<aiConversationsResponse>(getAiConversationsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAiConversationsQueryKey = (params?: AiConversationsParams) => {
+  return [`/api/ai/conversations`, ...(params ? [params] : [])] as const;
+};
+
+export const getAiConversationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof aiConversations>>,
+  TError = IAMProblem,
+>(
+  params?: AiConversationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof aiConversations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAiConversationsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof aiConversations>>> = ({
+    signal,
+  }) => aiConversations(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof aiConversations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AiConversationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof aiConversations>>
+>;
+export type AiConversationsQueryError = IAMProblem;
+
+export function useAiConversations<
+  TData = Awaited<ReturnType<typeof aiConversations>>,
+  TError = IAMProblem,
+>(
+  params: undefined | AiConversationsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof aiConversations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiConversations>>,
+          TError,
+          Awaited<ReturnType<typeof aiConversations>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiConversations<
+  TData = Awaited<ReturnType<typeof aiConversations>>,
+  TError = IAMProblem,
+>(
+  params?: AiConversationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof aiConversations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiConversations>>,
+          TError,
+          Awaited<ReturnType<typeof aiConversations>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiConversations<
+  TData = Awaited<ReturnType<typeof aiConversations>>,
+  TError = IAMProblem,
+>(
+  params?: AiConversationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof aiConversations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary conversations ai
+ */
+
+export function useAiConversations<
+  TData = Awaited<ReturnType<typeof aiConversations>>,
+  TError = IAMProblem,
+>(
+  params?: AiConversationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof aiConversations>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAiConversationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type aiUpdateConversationResponse200 = {
+  data: AIConversation;
+  status: 200;
+};
+
+export type aiUpdateConversationResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiUpdateConversationResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiUpdateConversationResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiUpdateConversationResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiUpdateConversationResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiUpdateConversationResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiUpdateConversationResponseSuccess =
+  aiUpdateConversationResponse200 & {
+    headers: Headers;
+  };
+export type aiUpdateConversationResponseError = (
+  | aiUpdateConversationResponse400
+  | aiUpdateConversationResponse401
+  | aiUpdateConversationResponse403
+  | aiUpdateConversationResponse404
+  | aiUpdateConversationResponse500
+  | aiUpdateConversationResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiUpdateConversationResponse =
+  aiUpdateConversationResponseSuccess | aiUpdateConversationResponseError;
+
+export const getAiUpdateConversationUrl = (sessionId: string) => {
+  return `/api/ai/conversations/${sessionId}`;
+};
+
+/**
+ * Rename or archive one conversation of the caller. A renamed title replaces the derived first question; an archived conversation stays readable and is restored with archived=false.
+ * @summary updateConversation ai
+ */
+export const aiUpdateConversation = async (
+  sessionId: string,
+  updateConversationRequestBody: UpdateConversationRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<aiUpdateConversationResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<aiUpdateConversationResponse>(
+    getAiUpdateConversationUrl(sessionId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(updateConversationRequestBody),
+    },
+  );
+};
+
+export const getAiUpdateConversationMutationKey = () =>
+  ["aiUpdateConversation"] as const;
+
+export const getAiUpdateConversationMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiUpdateConversation>>,
+    TError,
+    AiUpdateConversationMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiUpdateConversation>>,
+  TError,
+  AiUpdateConversationMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAiUpdateConversationMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiUpdateConversation>>,
+    AiUpdateConversationMutationVariables
+  > = (props) => {
+    const { sessionId, data } = props ?? {};
+
+    return aiUpdateConversation(sessionId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiUpdateConversationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiUpdateConversation>>
+>;
+export type AiUpdateConversationMutationBody = UpdateConversationRequestBody;
+export type AiUpdateConversationMutationError = IAMProblem;
+export type AiUpdateConversationMutationVariables = {
+  sessionId: string;
+  data: UpdateConversationRequestBody;
+};
+
+/**
+ * @summary updateConversation ai
+ */
+export const useAiUpdateConversation = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof aiUpdateConversation>>,
+      TError,
+      AiUpdateConversationMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof aiUpdateConversation>>,
+  TError,
+  AiUpdateConversationMutationVariables,
+  TContext
+> => {
+  return useMutation(
+    getAiUpdateConversationMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type aiRunsResponse200 = {
+  data: AIRun[];
+  status: 200;
+};
+
+export type aiRunsResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiRunsResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiRunsResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiRunsResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiRunsResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiRunsResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiRunsResponseSuccess = aiRunsResponse200 & {
+  headers: Headers;
+};
+export type aiRunsResponseError = (
+  | aiRunsResponse400
+  | aiRunsResponse401
+  | aiRunsResponse403
+  | aiRunsResponse404
+  | aiRunsResponse500
+  | aiRunsResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiRunsResponse = aiRunsResponseSuccess | aiRunsResponseError;
+
+export const getAiRunsUrl = (params?: AiRunsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ai/runs?${stringifiedParams}`
+    : `/api/ai/runs`;
+};
+
+/**
+ * List the caller's own tasks, newest first. A session id narrows it to one conversation.
+ * @summary runs ai
+ */
+export const aiRuns = async (
+  params?: AiRunsParams,
+  options?: Parameters<typeof request>[1],
+): Promise<aiRunsResponse> => {
+  return request<aiRunsResponse>(getAiRunsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAiRunsQueryKey = (params?: AiRunsParams) => {
+  return [`/api/ai/runs`, ...(params ? [params] : [])] as const;
+};
+
+export const getAiRunsQueryOptions = <
+  TData = Awaited<ReturnType<typeof aiRuns>>,
+  TError = IAMProblem,
+>(
+  params?: AiRunsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRuns>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAiRunsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof aiRuns>>> = ({
+    signal,
+  }) => aiRuns(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof aiRuns>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AiRunsQueryResult = NonNullable<Awaited<ReturnType<typeof aiRuns>>>;
+export type AiRunsQueryError = IAMProblem;
+
+export function useAiRuns<
+  TData = Awaited<ReturnType<typeof aiRuns>>,
+  TError = IAMProblem,
+>(
+  params: undefined | AiRunsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRuns>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiRuns>>,
+          TError,
+          Awaited<ReturnType<typeof aiRuns>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiRuns<
+  TData = Awaited<ReturnType<typeof aiRuns>>,
+  TError = IAMProblem,
+>(
+  params?: AiRunsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRuns>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiRuns>>,
+          TError,
+          Awaited<ReturnType<typeof aiRuns>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiRuns<
+  TData = Awaited<ReturnType<typeof aiRuns>>,
+  TError = IAMProblem,
+>(
+  params?: AiRunsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRuns>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary runs ai
+ */
+
+export function useAiRuns<
+  TData = Awaited<ReturnType<typeof aiRuns>>,
+  TError = IAMProblem,
+>(
+  params?: AiRunsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRuns>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAiRunsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type aiRunResponse201 = {
+  data: AIRun;
+  status: 201;
+};
+
+export type aiRunResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiRunResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiRunResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiRunResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiRunResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiRunResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiRunResponseSuccess = aiRunResponse201 & {
+  headers: Headers;
+};
+export type aiRunResponseError = (
+  | aiRunResponse400
+  | aiRunResponse401
+  | aiRunResponse403
+  | aiRunResponse404
+  | aiRunResponse500
+  | aiRunResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiRunResponse = aiRunResponseSuccess | aiRunResponseError;
+
+export const getAiRunUrl = () => {
+  return `/api/ai/runs`;
+};
+
+/**
+ * Execute one agent task. Business actions inside it go through the capability gateway.
+ * @summary run ai
+ */
+export const aiRun = async (
+  runRequestBody: RunRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<aiRunResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<aiRunResponse>(getAiRunUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(runRequestBody),
+  });
+};
+
+export const getAiRunMutationKey = () => ["aiRun"] as const;
+
+export const getAiRunMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiRun>>,
+    TError,
+    AiRunMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiRun>>,
+  TError,
+  AiRunMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAiRunMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiRun>>,
+    AiRunMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return aiRun(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiRun>>
+>;
+export type AiRunMutationBody = RunRequestBody;
+export type AiRunMutationError = IAMProblem;
+export type AiRunMutationVariables = { data: RunRequestBody };
+
+/**
+ * @summary run ai
+ */
+export const useAiRun = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof aiRun>>,
+      TError,
+      AiRunMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof aiRun>>,
+  TError,
+  AiRunMutationVariables,
+  TContext
+> => {
+  return useMutation(getAiRunMutationOptions(options), queryClient);
+};
+
+export type aiRunDetailResponse200 = {
+  data: AIRun;
+  status: 200;
+};
+
+export type aiRunDetailResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiRunDetailResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiRunDetailResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiRunDetailResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiRunDetailResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiRunDetailResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiRunDetailResponseSuccess = aiRunDetailResponse200 & {
+  headers: Headers;
+};
+export type aiRunDetailResponseError = (
+  | aiRunDetailResponse400
+  | aiRunDetailResponse401
+  | aiRunDetailResponse403
+  | aiRunDetailResponse404
+  | aiRunDetailResponse500
+  | aiRunDetailResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiRunDetailResponse =
+  aiRunDetailResponseSuccess | aiRunDetailResponseError;
+
+export const getAiRunDetailUrl = (id: number) => {
+  return `/api/ai/runs/${id}`;
+};
+
+/**
+ * Read one task with the capability calls it caused.
+ * @summary runDetail ai
+ */
+export const aiRunDetail = async (
+  id: number,
+  options?: Parameters<typeof request>[1],
+): Promise<aiRunDetailResponse> => {
+  return request<aiRunDetailResponse>(getAiRunDetailUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAiRunDetailQueryKey = (id: number) => {
+  return [`/api/ai/runs/${id}`] as const;
+};
+
+export const getAiRunDetailQueryOptions = <
+  TData = Awaited<ReturnType<typeof aiRunDetail>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunDetail>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAiRunDetailQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof aiRunDetail>>> = ({
+    signal,
+  }) => aiRunDetail(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof aiRunDetail>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AiRunDetailQueryResult = NonNullable<
+  Awaited<ReturnType<typeof aiRunDetail>>
+>;
+export type AiRunDetailQueryError = IAMProblem;
+
+export function useAiRunDetail<
+  TData = Awaited<ReturnType<typeof aiRunDetail>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunDetail>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiRunDetail>>,
+          TError,
+          Awaited<ReturnType<typeof aiRunDetail>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiRunDetail<
+  TData = Awaited<ReturnType<typeof aiRunDetail>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunDetail>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiRunDetail>>,
+          TError,
+          Awaited<ReturnType<typeof aiRunDetail>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiRunDetail<
+  TData = Awaited<ReturnType<typeof aiRunDetail>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunDetail>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary runDetail ai
+ */
+
+export function useAiRunDetail<
+  TData = Awaited<ReturnType<typeof aiRunDetail>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunDetail>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAiRunDetailQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type aiStatusResponse200 = {
+  data: AIStatus;
+  status: 200;
+};
+
+export type aiStatusResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiStatusResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiStatusResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiStatusResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiStatusResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiStatusResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiStatusResponseSuccess = aiStatusResponse200 & {
+  headers: Headers;
+};
+export type aiStatusResponseError = (
+  | aiStatusResponse400
+  | aiStatusResponse401
+  | aiStatusResponse403
+  | aiStatusResponse404
+  | aiStatusResponse500
+  | aiStatusResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiStatusResponse = aiStatusResponseSuccess | aiStatusResponseError;
+
+export const getAiStatusUrl = () => {
+  return `/api/ai/status`;
+};
+
+/**
+ * Report whether the agent is enabled, the catalog size and the tenant quality snapshot.
+ * @summary status ai
+ */
+export const aiStatus = async (
+  options?: Parameters<typeof request>[1],
+): Promise<aiStatusResponse> => {
+  return request<aiStatusResponse>(getAiStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAiStatusQueryKey = () => {
+  return [`/api/ai/status`] as const;
+};
+
+export const getAiStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof aiStatus>>,
+  TError = IAMProblem,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof aiStatus>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof request>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAiStatusQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof aiStatus>>> = ({
+    signal,
+  }) => aiStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof aiStatus>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AiStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof aiStatus>>
+>;
+export type AiStatusQueryError = IAMProblem;
+
+export function useAiStatus<
+  TData = Awaited<ReturnType<typeof aiStatus>>,
+  TError = IAMProblem,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiStatus>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiStatus>>,
+          TError,
+          Awaited<ReturnType<typeof aiStatus>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiStatus<
+  TData = Awaited<ReturnType<typeof aiStatus>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiStatus>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiStatus>>,
+          TError,
+          Awaited<ReturnType<typeof aiStatus>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiStatus<
+  TData = Awaited<ReturnType<typeof aiStatus>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiStatus>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary status ai
+ */
+
+export function useAiStatus<
+  TData = Awaited<ReturnType<typeof aiStatus>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiStatus>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAiStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type assistantAgentResponse200 = {
+  data: AssistantAgentReply;
+  status: 200;
+};
+
+export type assistantAgentResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type assistantAgentResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type assistantAgentResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type assistantAgentResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type assistantAgentResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type assistantAgentResponseSuccess = assistantAgentResponse200 & {
+  headers: Headers;
+};
+export type assistantAgentResponseError = (
+  | assistantAgentResponse400
+  | assistantAgentResponse401
+  | assistantAgentResponse403
+  | assistantAgentResponse500
+  | assistantAgentResponse503
+) & {
+  headers: Headers;
+};
+
+export type assistantAgentResponse =
+  assistantAgentResponseSuccess | assistantAgentResponseError;
+
+export const getAssistantAgentUrl = () => {
+  return `/api/assistant/agent`;
+};
+
+/**
+ * Run the Eino agent for one question. The agent decides whether to search the knowledge base.
+ * @summary agent assistant
+ */
+export const assistantAgent = async (
+  agentRequestBody: AgentRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<assistantAgentResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<assistantAgentResponse>(getAssistantAgentUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(agentRequestBody),
+  });
+};
+
+export const getAssistantAgentMutationKey = () => ["assistantAgent"] as const;
+
+export const getAssistantAgentMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assistantAgent>>,
+    TError,
+    AssistantAgentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assistantAgent>>,
+  TError,
+  AssistantAgentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAssistantAgentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assistantAgent>>,
+    AssistantAgentMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return assistantAgent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AssistantAgentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assistantAgent>>
+>;
+export type AssistantAgentMutationBody = AgentRequestBody;
+export type AssistantAgentMutationError = IAMProblem;
+export type AssistantAgentMutationVariables = { data: AgentRequestBody };
+
+/**
+ * @summary agent assistant
+ */
+export const useAssistantAgent = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof assistantAgent>>,
+      TError,
+      AssistantAgentMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof assistantAgent>>,
+  TError,
+  AssistantAgentMutationVariables,
+  TContext
+> => {
+  return useMutation(getAssistantAgentMutationOptions(options), queryClient);
+};
+
 export type assistantChatResponse200 = {
   data: AssistantReply;
   status: 200;
@@ -9318,6 +2660,369 @@ export const useAssistantChat = <TError = IAMProblem, TContext = unknown>(
   TContext
 > => {
   return useMutation(getAssistantChatMutationOptions(options), queryClient);
+};
+
+export type assistantKnowledgeResponse200 = {
+  data: KnowledgeDocument[];
+  status: 200;
+};
+
+export type assistantKnowledgeResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type assistantKnowledgeResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type assistantKnowledgeResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type assistantKnowledgeResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type assistantKnowledgeResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type assistantKnowledgeResponseSuccess =
+  assistantKnowledgeResponse200 & {
+    headers: Headers;
+  };
+export type assistantKnowledgeResponseError = (
+  | assistantKnowledgeResponse400
+  | assistantKnowledgeResponse401
+  | assistantKnowledgeResponse403
+  | assistantKnowledgeResponse500
+  | assistantKnowledgeResponse503
+) & {
+  headers: Headers;
+};
+
+export type assistantKnowledgeResponse =
+  assistantKnowledgeResponseSuccess | assistantKnowledgeResponseError;
+
+export const getAssistantKnowledgeUrl = () => {
+  return `/api/assistant/knowledge`;
+};
+
+/**
+ * List indexed knowledge documents for the current tenant.
+ * @summary knowledge assistant
+ */
+export const assistantKnowledge = async (
+  options?: Parameters<typeof request>[1],
+): Promise<assistantKnowledgeResponse> => {
+  return request<assistantKnowledgeResponse>(getAssistantKnowledgeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAssistantKnowledgeQueryKey = () => {
+  return [`/api/assistant/knowledge`] as const;
+};
+
+export const getAssistantKnowledgeQueryOptions = <
+  TData = Awaited<ReturnType<typeof assistantKnowledge>>,
+  TError = IAMProblem,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof assistantKnowledge>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof request>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAssistantKnowledgeQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof assistantKnowledge>>
+  > = ({ signal }) => assistantKnowledge({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof assistantKnowledge>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AssistantKnowledgeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof assistantKnowledge>>
+>;
+export type AssistantKnowledgeQueryError = IAMProblem;
+
+export function useAssistantKnowledge<
+  TData = Awaited<ReturnType<typeof assistantKnowledge>>,
+  TError = IAMProblem,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantKnowledge>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof assistantKnowledge>>,
+          TError,
+          Awaited<ReturnType<typeof assistantKnowledge>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAssistantKnowledge<
+  TData = Awaited<ReturnType<typeof assistantKnowledge>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantKnowledge>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof assistantKnowledge>>,
+          TError,
+          Awaited<ReturnType<typeof assistantKnowledge>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAssistantKnowledge<
+  TData = Awaited<ReturnType<typeof assistantKnowledge>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantKnowledge>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary knowledge assistant
+ */
+
+export function useAssistantKnowledge<
+  TData = Awaited<ReturnType<typeof assistantKnowledge>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof assistantKnowledge>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAssistantKnowledgeQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type assistantIngestResponse201 = {
+  data: KnowledgeIngested;
+  status: 201;
+};
+
+export type assistantIngestResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type assistantIngestResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type assistantIngestResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type assistantIngestResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type assistantIngestResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type assistantIngestResponseSuccess = assistantIngestResponse201 & {
+  headers: Headers;
+};
+export type assistantIngestResponseError = (
+  | assistantIngestResponse400
+  | assistantIngestResponse401
+  | assistantIngestResponse403
+  | assistantIngestResponse500
+  | assistantIngestResponse503
+) & {
+  headers: Headers;
+};
+
+export type assistantIngestResponse =
+  assistantIngestResponseSuccess | assistantIngestResponseError;
+
+export const getAssistantIngestUrl = () => {
+  return `/api/assistant/knowledge`;
+};
+
+/**
+ * Index one knowledge document. Requires settings:update and is tenant scoped.
+ * @summary ingest assistant
+ */
+export const assistantIngest = async (
+  ingestRequestBody: IngestRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<assistantIngestResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<assistantIngestResponse>(getAssistantIngestUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(ingestRequestBody),
+  });
+};
+
+export const getAssistantIngestMutationKey = () => ["assistantIngest"] as const;
+
+export const getAssistantIngestMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assistantIngest>>,
+    TError,
+    AssistantIngestMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assistantIngest>>,
+  TError,
+  AssistantIngestMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAssistantIngestMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assistantIngest>>,
+    AssistantIngestMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return assistantIngest(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AssistantIngestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assistantIngest>>
+>;
+export type AssistantIngestMutationBody = IngestRequestBody;
+export type AssistantIngestMutationError = IAMProblem;
+export type AssistantIngestMutationVariables = { data: IngestRequestBody };
+
+/**
+ * @summary ingest assistant
+ */
+export const useAssistantIngest = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof assistantIngest>>,
+      TError,
+      AssistantIngestMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof assistantIngest>>,
+  TError,
+  AssistantIngestMutationVariables,
+  TContext
+> => {
+  return useMutation(getAssistantIngestMutationOptions(options), queryClient);
 };
 
 export type assistantStatusResponse200 = {
@@ -9518,411 +3223,166 @@ export function useAssistantStatus<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type settingsLogoResponse200 = {
-  data: FileContent;
+export type assistantWorkflowResponse200 = {
+  data: AssistantAgentReply;
   status: 200;
 };
 
-export type settingsLogoResponse400 = {
+export type assistantWorkflowResponse400 = {
   data: IAMProblem;
   status: 400;
 };
 
-export type settingsLogoResponse401 = {
+export type assistantWorkflowResponse401 = {
   data: IAMProblem;
   status: 401;
 };
 
-export type settingsLogoResponse403 = {
+export type assistantWorkflowResponse403 = {
   data: IAMProblem;
   status: 403;
 };
 
-export type settingsLogoResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsLogoResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsLogoResponse500 = {
+export type assistantWorkflowResponse500 = {
   data: IAMProblem;
   status: 500;
 };
 
-export type settingsLogoResponse503 = {
+export type assistantWorkflowResponse503 = {
   data: IAMProblem;
   status: 503;
 };
 
-export type settingsLogoResponseSuccess = settingsLogoResponse200 & {
+export type assistantWorkflowResponseSuccess = assistantWorkflowResponse200 & {
   headers: Headers;
 };
-export type settingsLogoResponseError = (
-  | settingsLogoResponse400
-  | settingsLogoResponse401
-  | settingsLogoResponse403
-  | settingsLogoResponse404
-  | settingsLogoResponse409
-  | settingsLogoResponse500
-  | settingsLogoResponse503
+export type assistantWorkflowResponseError = (
+  | assistantWorkflowResponse400
+  | assistantWorkflowResponse401
+  | assistantWorkflowResponse403
+  | assistantWorkflowResponse500
+  | assistantWorkflowResponse503
 ) & {
   headers: Headers;
 };
 
-export type settingsLogoResponse =
-  settingsLogoResponseSuccess | settingsLogoResponseError;
+export type assistantWorkflowResponse =
+  assistantWorkflowResponseSuccess | assistantWorkflowResponseError;
 
-export const getSettingsLogoUrl = () => {
-  return `/api/auth/branding/logo`;
+export const getAssistantWorkflowUrl = () => {
+  return `/api/assistant/workflow`;
 };
 
 /**
- * @summary logo settings
+ * Run the retrieval workflow: retrieve, ground the prompt, then answer. Always grounded.
+ * @summary workflow assistant
  */
-export const settingsLogo = async (
+export const assistantWorkflow = async (
+  agentRequestBody: AgentRequestBody,
   options?: Parameters<typeof request>[1],
-): Promise<settingsLogoResponse> => {
-  return request<settingsLogoResponse>(getSettingsLogoUrl(), {
+): Promise<assistantWorkflowResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<assistantWorkflowResponse>(getAssistantWorkflowUrl(), {
     ...options,
-    method: "GET",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(agentRequestBody),
   });
 };
 
-export const getSettingsLogoQueryKey = () => {
-  return [`/api/auth/branding/logo`] as const;
-};
+export const getAssistantWorkflowMutationKey = () =>
+  ["assistantWorkflow"] as const;
 
-export const getSettingsLogoQueryOptions = <
-  TData = Awaited<ReturnType<typeof settingsLogo>>,
+export const getAssistantWorkflowMutationOptions = <
   TError = IAMProblem,
+  TContext = unknown,
 >(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof settingsLogo>>, TError, TData>
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assistantWorkflow>>,
+    TError,
+    AssistantWorkflowMutationVariables,
+    TContext
   >;
   request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assistantWorkflow>>,
+  TError,
+  AssistantWorkflowMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAssistantWorkflowMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
-  const queryKey = queryOptions?.queryKey ?? getSettingsLogoQueryKey();
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assistantWorkflow>>,
+    AssistantWorkflowMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof settingsLogo>>> = ({
-    signal,
-  }) => settingsLogo({ signal, ...requestOptions });
+    return assistantWorkflow(data, requestOptions);
+  };
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof settingsLogo>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  return { mutationFn, ...mutationOptions };
 };
 
-export type SettingsLogoQueryResult = NonNullable<
-  Awaited<ReturnType<typeof settingsLogo>>
+export type AssistantWorkflowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assistantWorkflow>>
 >;
-export type SettingsLogoQueryError = IAMProblem;
-
-export function useSettingsLogo<
-  TData = Awaited<ReturnType<typeof settingsLogo>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsLogo>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsLogo>>,
-          TError,
-          Awaited<ReturnType<typeof settingsLogo>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsLogo<
-  TData = Awaited<ReturnType<typeof settingsLogo>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsLogo>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsLogo>>,
-          TError,
-          Awaited<ReturnType<typeof settingsLogo>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsLogo<
-  TData = Awaited<ReturnType<typeof settingsLogo>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsLogo>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary logo settings
- */
-
-export function useSettingsLogo<
-  TData = Awaited<ReturnType<typeof settingsLogo>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof settingsLogo>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getSettingsLogoQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type settingsEffectiveResponse200 = {
-  data: EffectiveConfiguration;
-  status: 200;
-};
-
-export type settingsEffectiveResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsEffectiveResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsEffectiveResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsEffectiveResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsEffectiveResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsEffectiveResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsEffectiveResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsEffectiveResponseSuccess = settingsEffectiveResponse200 & {
-  headers: Headers;
-};
-export type settingsEffectiveResponseError = (
-  | settingsEffectiveResponse400
-  | settingsEffectiveResponse401
-  | settingsEffectiveResponse403
-  | settingsEffectiveResponse404
-  | settingsEffectiveResponse409
-  | settingsEffectiveResponse500
-  | settingsEffectiveResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsEffectiveResponse =
-  settingsEffectiveResponseSuccess | settingsEffectiveResponseError;
-
-export const getSettingsEffectiveUrl = () => {
-  return `/api/auth/configuration`;
-};
+export type AssistantWorkflowMutationBody = AgentRequestBody;
+export type AssistantWorkflowMutationError = IAMProblem;
+export type AssistantWorkflowMutationVariables = { data: AgentRequestBody };
 
 /**
- * @summary effective settings
+ * @summary workflow assistant
  */
-export const settingsEffective = async (
-  options?: Parameters<typeof request>[1],
-): Promise<settingsEffectiveResponse> => {
-  return request<settingsEffectiveResponse>(getSettingsEffectiveUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getSettingsEffectiveQueryKey = () => {
-  return [`/api/auth/configuration`] as const;
-};
-
-export const getSettingsEffectiveQueryOptions = <
-  TData = Awaited<ReturnType<typeof settingsEffective>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof settingsEffective>>,
+export const useAssistantWorkflow = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof assistantWorkflow>>,
       TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getSettingsEffectiveQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof settingsEffective>>
-  > = ({ signal }) => settingsEffective({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof settingsEffective>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type SettingsEffectiveQueryResult = NonNullable<
-  Awaited<ReturnType<typeof settingsEffective>>
->;
-export type SettingsEffectiveQueryError = IAMProblem;
-
-export function useSettingsEffective<
-  TData = Awaited<ReturnType<typeof settingsEffective>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsEffective>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsEffective>>,
-          TError,
-          Awaited<ReturnType<typeof settingsEffective>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsEffective<
-  TData = Awaited<ReturnType<typeof settingsEffective>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsEffective>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof settingsEffective>>,
-          TError,
-          Awaited<ReturnType<typeof settingsEffective>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useSettingsEffective<
-  TData = Awaited<ReturnType<typeof settingsEffective>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsEffective>>,
-        TError,
-        TData
-      >
+      AssistantWorkflowMutationVariables,
+      TContext
     >;
     request?: SecondParameter<typeof request>;
   },
   queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
+): UseMutationResult<
+  Awaited<ReturnType<typeof assistantWorkflow>>,
+  TError,
+  AssistantWorkflowMutationVariables,
+  TContext
+> => {
+  return useMutation(getAssistantWorkflowMutationOptions(options), queryClient);
 };
-/**
- * @summary effective settings
- */
-
-export function useSettingsEffective<
-  TData = Awaited<ReturnType<typeof settingsEffective>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof settingsEffective>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getSettingsEffectiveQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
 
 export type identitySwitchDepartmentResponse200 = {
   data: SessionProfile;
@@ -10090,278 +3550,6 @@ export const useIdentitySwitchDepartment = <
     queryClient,
   );
 };
-
-export type dictionariesOptionsResponse200 = {
-  data: DictionaryOption[];
-  status: 200;
-};
-
-export type dictionariesOptionsResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type dictionariesOptionsResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type dictionariesOptionsResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type dictionariesOptionsResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type dictionariesOptionsResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type dictionariesOptionsResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type dictionariesOptionsResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type dictionariesOptionsResponseSuccess =
-  dictionariesOptionsResponse200 & {
-    headers: Headers;
-  };
-export type dictionariesOptionsResponseError = (
-  | dictionariesOptionsResponse400
-  | dictionariesOptionsResponse401
-  | dictionariesOptionsResponse403
-  | dictionariesOptionsResponse404
-  | dictionariesOptionsResponse409
-  | dictionariesOptionsResponse500
-  | dictionariesOptionsResponse503
-) & {
-  headers: Headers;
-};
-
-export type dictionariesOptionsResponse =
-  dictionariesOptionsResponseSuccess | dictionariesOptionsResponseError;
-
-export const getDictionariesOptionsUrl = (
-  code: string,
-  params?: DictionariesOptionsParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    const explodeParameters = ["ids"];
-
-    if (Array.isArray(value) && explodeParameters.includes(key)) {
-      value.forEach((v) => {
-        normalizedParams.append(key, v === null ? "null" : String(v));
-      });
-      return;
-    }
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/auth/dictionary-options/${code}?${stringifiedParams}`
-    : `/api/auth/dictionary-options/${code}`;
-};
-
-/**
- * @summary options dictionaries
- */
-export const dictionariesOptions = async (
-  code: string,
-  params?: DictionariesOptionsParams,
-  options?: Parameters<typeof request>[1],
-): Promise<dictionariesOptionsResponse> => {
-  return request<dictionariesOptionsResponse>(
-    getDictionariesOptionsUrl(code, params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getDictionariesOptionsQueryKey = (
-  code: string,
-  params?: DictionariesOptionsParams,
-) => {
-  return [
-    `/api/auth/dictionary-options/${code}`,
-    ...(params ? [params] : []),
-  ] as const;
-};
-
-export const getDictionariesOptionsQueryOptions = <
-  TData = Awaited<ReturnType<typeof dictionariesOptions>>,
-  TError = IAMProblem,
->(
-  code: string,
-  params?: DictionariesOptionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesOptions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getDictionariesOptionsQueryKey(code, params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof dictionariesOptions>>
-  > = ({ signal }) =>
-    dictionariesOptions(code, params, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: code !== null && code !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof dictionariesOptions>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type DictionariesOptionsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof dictionariesOptions>>
->;
-export type DictionariesOptionsQueryError = IAMProblem;
-
-export function useDictionariesOptions<
-  TData = Awaited<ReturnType<typeof dictionariesOptions>>,
-  TError = IAMProblem,
->(
-  code: string,
-  params: undefined | DictionariesOptionsParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesOptions>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesOptions>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesOptions>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesOptions<
-  TData = Awaited<ReturnType<typeof dictionariesOptions>>,
-  TError = IAMProblem,
->(
-  code: string,
-  params?: DictionariesOptionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesOptions>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof dictionariesOptions>>,
-          TError,
-          Awaited<ReturnType<typeof dictionariesOptions>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDictionariesOptions<
-  TData = Awaited<ReturnType<typeof dictionariesOptions>>,
-  TError = IAMProblem,
->(
-  code: string,
-  params?: DictionariesOptionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesOptions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary options dictionaries
- */
-
-export function useDictionariesOptions<
-  TData = Awaited<ReturnType<typeof dictionariesOptions>>,
-  TError = IAMProblem,
->(
-  code: string,
-  params?: DictionariesOptionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof dictionariesOptions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDictionariesOptionsQueryOptions(
-    code,
-    params,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
 
 export type identityLoginResponse200 = {
   data: LoginResult;
@@ -10639,1180 +3827,6 @@ export const useIdentityLogout = <TError = IAMProblem, TContext = unknown>(
   return useMutation(getIdentityLogoutMutationOptions(options), queryClient);
 };
 
-export type mcpManagementAuditResponse200 = {
-  data: MCPAudit[];
-  status: 200;
-};
-
-export type mcpManagementAuditResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementAuditResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementAuditResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementAuditResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementAuditResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementAuditResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementAuditResponseSuccess =
-  mcpManagementAuditResponse200 & {
-    headers: Headers;
-  };
-export type mcpManagementAuditResponseError = (
-  | mcpManagementAuditResponse400
-  | mcpManagementAuditResponse401
-  | mcpManagementAuditResponse403
-  | mcpManagementAuditResponse404
-  | mcpManagementAuditResponse500
-  | mcpManagementAuditResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementAuditResponse =
-  mcpManagementAuditResponseSuccess | mcpManagementAuditResponseError;
-
-export const getMcpManagementAuditUrl = () => {
-  return `/api/auth/mcp/audit`;
-};
-
-/**
- * @summary audit mcp_management
- */
-export const mcpManagementAudit = async (
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementAuditResponse> => {
-  return request<mcpManagementAuditResponse>(getMcpManagementAuditUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getMcpManagementAuditQueryKey = () => {
-  return [`/api/auth/mcp/audit`] as const;
-};
-
-export const getMcpManagementAuditQueryOptions = <
-  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof mcpManagementAudit>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getMcpManagementAuditQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof mcpManagementAudit>>
-  > = ({ signal }) => mcpManagementAudit({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof mcpManagementAudit>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type McpManagementAuditQueryResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementAudit>>
->;
-export type McpManagementAuditQueryError = IAMProblem;
-
-export function useMcpManagementAudit<
-  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementAudit>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof mcpManagementAudit>>,
-          TError,
-          Awaited<ReturnType<typeof mcpManagementAudit>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useMcpManagementAudit<
-  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementAudit>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof mcpManagementAudit>>,
-          TError,
-          Awaited<ReturnType<typeof mcpManagementAudit>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useMcpManagementAudit<
-  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementAudit>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary audit mcp_management
- */
-
-export function useMcpManagementAudit<
-  TData = Awaited<ReturnType<typeof mcpManagementAudit>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementAudit>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getMcpManagementAuditQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type mcpManagementCapabilitiesResponse200 = {
-  data: string[];
-  status: 200;
-};
-
-export type mcpManagementCapabilitiesResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementCapabilitiesResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementCapabilitiesResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementCapabilitiesResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementCapabilitiesResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementCapabilitiesResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementCapabilitiesResponseSuccess =
-  mcpManagementCapabilitiesResponse200 & {
-    headers: Headers;
-  };
-export type mcpManagementCapabilitiesResponseError = (
-  | mcpManagementCapabilitiesResponse400
-  | mcpManagementCapabilitiesResponse401
-  | mcpManagementCapabilitiesResponse403
-  | mcpManagementCapabilitiesResponse404
-  | mcpManagementCapabilitiesResponse500
-  | mcpManagementCapabilitiesResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementCapabilitiesResponse =
-  | mcpManagementCapabilitiesResponseSuccess
-  | mcpManagementCapabilitiesResponseError;
-
-export const getMcpManagementCapabilitiesUrl = (
-  params?: McpManagementCapabilitiesParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/auth/mcp/capabilities?${stringifiedParams}`
-    : `/api/auth/mcp/capabilities`;
-};
-
-/**
- * @summary capabilities mcp_management
- */
-export const mcpManagementCapabilities = async (
-  params?: McpManagementCapabilitiesParams,
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementCapabilitiesResponse> => {
-  return request<mcpManagementCapabilitiesResponse>(
-    getMcpManagementCapabilitiesUrl(params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getMcpManagementCapabilitiesQueryKey = (
-  params?: McpManagementCapabilitiesParams,
-) => {
-  return [`/api/auth/mcp/capabilities`, ...(params ? [params] : [])] as const;
-};
-
-export const getMcpManagementCapabilitiesQueryOptions = <
-  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-  TError = IAMProblem,
->(
-  params?: McpManagementCapabilitiesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getMcpManagementCapabilitiesQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof mcpManagementCapabilities>>
-  > = ({ signal }) =>
-    mcpManagementCapabilities(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type McpManagementCapabilitiesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementCapabilities>>
->;
-export type McpManagementCapabilitiesQueryError = IAMProblem;
-
-export function useMcpManagementCapabilities<
-  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-  TError = IAMProblem,
->(
-  params: undefined | McpManagementCapabilitiesParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-          TError,
-          Awaited<ReturnType<typeof mcpManagementCapabilities>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useMcpManagementCapabilities<
-  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-  TError = IAMProblem,
->(
-  params?: McpManagementCapabilitiesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-          TError,
-          Awaited<ReturnType<typeof mcpManagementCapabilities>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useMcpManagementCapabilities<
-  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-  TError = IAMProblem,
->(
-  params?: McpManagementCapabilitiesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary capabilities mcp_management
- */
-
-export function useMcpManagementCapabilities<
-  TData = Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-  TError = IAMProblem,
->(
-  params?: McpManagementCapabilitiesParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementCapabilities>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getMcpManagementCapabilitiesQueryOptions(
-    params,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type mcpManagementListResponse200 = {
-  data: MCPToken[];
-  status: 200;
-};
-
-export type mcpManagementListResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementListResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementListResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementListResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementListResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementListResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementListResponseSuccess = mcpManagementListResponse200 & {
-  headers: Headers;
-};
-export type mcpManagementListResponseError = (
-  | mcpManagementListResponse400
-  | mcpManagementListResponse401
-  | mcpManagementListResponse403
-  | mcpManagementListResponse404
-  | mcpManagementListResponse500
-  | mcpManagementListResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementListResponse =
-  mcpManagementListResponseSuccess | mcpManagementListResponseError;
-
-export const getMcpManagementListUrl = () => {
-  return `/api/auth/mcp/tokens`;
-};
-
-/**
- * @summary list mcp_management
- */
-export const mcpManagementList = async (
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementListResponse> => {
-  return request<mcpManagementListResponse>(getMcpManagementListUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getMcpManagementListQueryKey = () => {
-  return [`/api/auth/mcp/tokens`] as const;
-};
-
-export const getMcpManagementListQueryOptions = <
-  TData = Awaited<ReturnType<typeof mcpManagementList>>,
-  TError = IAMProblem,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof mcpManagementList>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getMcpManagementListQueryKey();
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof mcpManagementList>>
-  > = ({ signal }) => mcpManagementList({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof mcpManagementList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type McpManagementListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementList>>
->;
-export type McpManagementListQueryError = IAMProblem;
-
-export function useMcpManagementList<
-  TData = Awaited<ReturnType<typeof mcpManagementList>>,
-  TError = IAMProblem,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof mcpManagementList>>,
-          TError,
-          Awaited<ReturnType<typeof mcpManagementList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useMcpManagementList<
-  TData = Awaited<ReturnType<typeof mcpManagementList>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementList>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof mcpManagementList>>,
-          TError,
-          Awaited<ReturnType<typeof mcpManagementList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useMcpManagementList<
-  TData = Awaited<ReturnType<typeof mcpManagementList>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary list mcp_management
- */
-
-export function useMcpManagementList<
-  TData = Awaited<ReturnType<typeof mcpManagementList>>,
-  TError = IAMProblem,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof mcpManagementList>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getMcpManagementListQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type mcpManagementCreateResponse201 = {
-  data: MCPTokenCreated;
-  status: 201;
-};
-
-export type mcpManagementCreateResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementCreateResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementCreateResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementCreateResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementCreateResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementCreateResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementCreateResponseSuccess =
-  mcpManagementCreateResponse201 & {
-    headers: Headers;
-  };
-export type mcpManagementCreateResponseError = (
-  | mcpManagementCreateResponse400
-  | mcpManagementCreateResponse401
-  | mcpManagementCreateResponse403
-  | mcpManagementCreateResponse404
-  | mcpManagementCreateResponse500
-  | mcpManagementCreateResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementCreateResponse =
-  mcpManagementCreateResponseSuccess | mcpManagementCreateResponseError;
-
-export const getMcpManagementCreateUrl = () => {
-  return `/api/auth/mcp/tokens`;
-};
-
-/**
- * @summary create mcp_management
- */
-export const mcpManagementCreate = async (
-  createRequestBody: CreateRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementCreateResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<mcpManagementCreateResponse>(getMcpManagementCreateUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(createRequestBody),
-  });
-};
-
-export const getMcpManagementCreateMutationKey = () =>
-  ["mcpManagementCreate"] as const;
-
-export const getMcpManagementCreateMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof mcpManagementCreate>>,
-    TError,
-    McpManagementCreateMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof mcpManagementCreate>>,
-  TError,
-  McpManagementCreateMutationVariables,
-  TContext
-> => {
-  const mutationKey = getMcpManagementCreateMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof mcpManagementCreate>>,
-    McpManagementCreateMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return mcpManagementCreate(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type McpManagementCreateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementCreate>>
->;
-export type McpManagementCreateMutationBody = CreateRequestBody;
-export type McpManagementCreateMutationError = IAMProblem;
-export type McpManagementCreateMutationVariables = { data: CreateRequestBody };
-
-/**
- * @summary create mcp_management
- */
-export const useMcpManagementCreate = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof mcpManagementCreate>>,
-      TError,
-      McpManagementCreateMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof mcpManagementCreate>>,
-  TError,
-  McpManagementCreateMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getMcpManagementCreateMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type mcpManagementRevokeResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type mcpManagementRevokeResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementRevokeResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementRevokeResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementRevokeResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementRevokeResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementRevokeResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementRevokeResponseSuccess =
-  mcpManagementRevokeResponse204 & {
-    headers: Headers;
-  };
-export type mcpManagementRevokeResponseError = (
-  | mcpManagementRevokeResponse400
-  | mcpManagementRevokeResponse401
-  | mcpManagementRevokeResponse403
-  | mcpManagementRevokeResponse404
-  | mcpManagementRevokeResponse500
-  | mcpManagementRevokeResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementRevokeResponse =
-  mcpManagementRevokeResponseSuccess | mcpManagementRevokeResponseError;
-
-export const getMcpManagementRevokeUrl = (id: number) => {
-  return `/api/auth/mcp/tokens/${id}`;
-};
-
-/**
- * @summary revoke mcp_management
- */
-export const mcpManagementRevoke = async (
-  id: number,
-  revokeRequestBody: RevokeRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementRevokeResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<mcpManagementRevokeResponse>(getMcpManagementRevokeUrl(id), {
-    ...options,
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(revokeRequestBody),
-  });
-};
-
-export const getMcpManagementRevokeMutationKey = () =>
-  ["mcpManagementRevoke"] as const;
-
-export const getMcpManagementRevokeMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof mcpManagementRevoke>>,
-    TError,
-    McpManagementRevokeMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof mcpManagementRevoke>>,
-  TError,
-  McpManagementRevokeMutationVariables,
-  TContext
-> => {
-  const mutationKey = getMcpManagementRevokeMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof mcpManagementRevoke>>,
-    McpManagementRevokeMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return mcpManagementRevoke(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type McpManagementRevokeMutationResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementRevoke>>
->;
-export type McpManagementRevokeMutationBody = RevokeRequestBody;
-export type McpManagementRevokeMutationError = IAMProblem;
-export type McpManagementRevokeMutationVariables = {
-  id: number;
-  data: RevokeRequestBody;
-};
-
-/**
- * @summary revoke mcp_management
- */
-export const useMcpManagementRevoke = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof mcpManagementRevoke>>,
-      TError,
-      McpManagementRevokeMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof mcpManagementRevoke>>,
-  TError,
-  McpManagementRevokeMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getMcpManagementRevokeMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type mcpManagementRotateResponse201 = {
-  data: MCPTokenCreated;
-  status: 201;
-};
-
-export type mcpManagementRotateResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type mcpManagementRotateResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type mcpManagementRotateResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type mcpManagementRotateResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type mcpManagementRotateResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type mcpManagementRotateResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type mcpManagementRotateResponseSuccess =
-  mcpManagementRotateResponse201 & {
-    headers: Headers;
-  };
-export type mcpManagementRotateResponseError = (
-  | mcpManagementRotateResponse400
-  | mcpManagementRotateResponse401
-  | mcpManagementRotateResponse403
-  | mcpManagementRotateResponse404
-  | mcpManagementRotateResponse500
-  | mcpManagementRotateResponse503
-) & {
-  headers: Headers;
-};
-
-export type mcpManagementRotateResponse =
-  mcpManagementRotateResponseSuccess | mcpManagementRotateResponseError;
-
-export const getMcpManagementRotateUrl = (id: number) => {
-  return `/api/auth/mcp/tokens/${id}/rotate`;
-};
-
-/**
- * @summary rotate mcp_management
- */
-export const mcpManagementRotate = async (
-  id: number,
-  revokeRequestBody: RevokeRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<mcpManagementRotateResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<mcpManagementRotateResponse>(getMcpManagementRotateUrl(id), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(revokeRequestBody),
-  });
-};
-
-export const getMcpManagementRotateMutationKey = () =>
-  ["mcpManagementRotate"] as const;
-
-export const getMcpManagementRotateMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof mcpManagementRotate>>,
-    TError,
-    McpManagementRotateMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof mcpManagementRotate>>,
-  TError,
-  McpManagementRotateMutationVariables,
-  TContext
-> => {
-  const mutationKey = getMcpManagementRotateMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof mcpManagementRotate>>,
-    McpManagementRotateMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return mcpManagementRotate(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type McpManagementRotateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof mcpManagementRotate>>
->;
-export type McpManagementRotateMutationBody = RevokeRequestBody;
-export type McpManagementRotateMutationError = IAMProblem;
-export type McpManagementRotateMutationVariables = {
-  id: number;
-  data: RevokeRequestBody;
-};
-
-/**
- * @summary rotate mcp_management
- */
-export const useMcpManagementRotate = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof mcpManagementRotate>>,
-      TError,
-      McpManagementRotateMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof mcpManagementRotate>>,
-  TError,
-  McpManagementRotateMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getMcpManagementRotateMutationOptions(options),
-    queryClient,
-  );
-};
-
 export type identityMeResponse200 = {
   data: SessionProfile;
   status: 200;
@@ -11980,92 +3994,93 @@ export function useIdentityMe<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type notificationsInboxResponse200 = {
-  data: InboxMessage[];
+export type capabilityDefinitionsResponse200 = {
+  data: CapabilityContract[];
   status: 200;
 };
 
-export type notificationsInboxResponse400 = {
+export type capabilityDefinitionsResponse400 = {
   data: IAMProblem;
   status: 400;
 };
 
-export type notificationsInboxResponse401 = {
+export type capabilityDefinitionsResponse401 = {
   data: IAMProblem;
   status: 401;
 };
 
-export type notificationsInboxResponse403 = {
+export type capabilityDefinitionsResponse403 = {
   data: IAMProblem;
   status: 403;
 };
 
-export type notificationsInboxResponse404 = {
+export type capabilityDefinitionsResponse404 = {
   data: IAMProblem;
   status: 404;
 };
 
-export type notificationsInboxResponse409 = {
+export type capabilityDefinitionsResponse409 = {
   data: IAMProblem;
   status: 409;
 };
 
-export type notificationsInboxResponse500 = {
+export type capabilityDefinitionsResponse500 = {
   data: IAMProblem;
   status: 500;
 };
 
-export type notificationsInboxResponse503 = {
+export type capabilityDefinitionsResponse503 = {
   data: IAMProblem;
   status: 503;
 };
 
-export type notificationsInboxResponseSuccess =
-  notificationsInboxResponse200 & {
+export type capabilityDefinitionsResponseSuccess =
+  capabilityDefinitionsResponse200 & {
     headers: Headers;
   };
-export type notificationsInboxResponseError = (
-  | notificationsInboxResponse400
-  | notificationsInboxResponse401
-  | notificationsInboxResponse403
-  | notificationsInboxResponse404
-  | notificationsInboxResponse409
-  | notificationsInboxResponse500
-  | notificationsInboxResponse503
+export type capabilityDefinitionsResponseError = (
+  | capabilityDefinitionsResponse400
+  | capabilityDefinitionsResponse401
+  | capabilityDefinitionsResponse403
+  | capabilityDefinitionsResponse404
+  | capabilityDefinitionsResponse409
+  | capabilityDefinitionsResponse500
+  | capabilityDefinitionsResponse503
 ) & {
   headers: Headers;
 };
 
-export type notificationsInboxResponse =
-  notificationsInboxResponseSuccess | notificationsInboxResponseError;
+export type capabilityDefinitionsResponse =
+  capabilityDefinitionsResponseSuccess | capabilityDefinitionsResponseError;
 
-export const getNotificationsInboxUrl = () => {
-  return `/api/auth/notifications`;
+export const getCapabilityDefinitionsUrl = () => {
+  return `/api/capabilities`;
 };
 
 /**
- * @summary inbox notifications
+ * List the capabilities the caller may use, with their policy and contracts.
+ * @summary definitions capability
  */
-export const notificationsInbox = async (
+export const capabilityDefinitions = async (
   options?: Parameters<typeof request>[1],
-): Promise<notificationsInboxResponse> => {
-  return request<notificationsInboxResponse>(getNotificationsInboxUrl(), {
+): Promise<capabilityDefinitionsResponse> => {
+  return request<capabilityDefinitionsResponse>(getCapabilityDefinitionsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getNotificationsInboxQueryKey = () => {
-  return [`/api/auth/notifications`] as const;
+export const getCapabilityDefinitionsQueryKey = () => {
+  return [`/api/capabilities`] as const;
 };
 
-export const getNotificationsInboxQueryOptions = <
-  TData = Awaited<ReturnType<typeof notificationsInbox>>,
+export const getCapabilityDefinitionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof capabilityDefinitions>>,
   TError = IAMProblem,
 >(options?: {
   query?: Partial<
     UseQueryOptions<
-      Awaited<ReturnType<typeof notificationsInbox>>,
+      Awaited<ReturnType<typeof capabilityDefinitions>>,
       TError,
       TData
     >
@@ -12074,41 +4089,41 @@ export const getNotificationsInboxQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getNotificationsInboxQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getCapabilityDefinitionsQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof notificationsInbox>>
-  > = ({ signal }) => notificationsInbox({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof capabilityDefinitions>>
+  > = ({ signal }) => capabilityDefinitions({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof notificationsInbox>>,
+    Awaited<ReturnType<typeof capabilityDefinitions>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type NotificationsInboxQueryResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsInbox>>
+export type CapabilityDefinitionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityDefinitions>>
 >;
-export type NotificationsInboxQueryError = IAMProblem;
+export type CapabilityDefinitionsQueryError = IAMProblem;
 
-export function useNotificationsInbox<
-  TData = Awaited<ReturnType<typeof notificationsInbox>>,
+export function useCapabilityDefinitions<
+  TData = Awaited<ReturnType<typeof capabilityDefinitions>>,
   TError = IAMProblem,
 >(
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsInbox>>,
+        Awaited<ReturnType<typeof capabilityDefinitions>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsInbox>>,
+          Awaited<ReturnType<typeof capabilityDefinitions>>,
           TError,
-          Awaited<ReturnType<typeof notificationsInbox>>
+          Awaited<ReturnType<typeof capabilityDefinitions>>
         >,
         "initialData"
       >;
@@ -12118,23 +4133,23 @@ export function useNotificationsInbox<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useNotificationsInbox<
-  TData = Awaited<ReturnType<typeof notificationsInbox>>,
+export function useCapabilityDefinitions<
+  TData = Awaited<ReturnType<typeof capabilityDefinitions>>,
   TError = IAMProblem,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsInbox>>,
+        Awaited<ReturnType<typeof capabilityDefinitions>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsInbox>>,
+          Awaited<ReturnType<typeof capabilityDefinitions>>,
           TError,
-          Awaited<ReturnType<typeof notificationsInbox>>
+          Awaited<ReturnType<typeof capabilityDefinitions>>
         >,
         "initialData"
       >;
@@ -12144,14 +4159,14 @@ export function useNotificationsInbox<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useNotificationsInbox<
-  TData = Awaited<ReturnType<typeof notificationsInbox>>,
+export function useCapabilityDefinitions<
+  TData = Awaited<ReturnType<typeof capabilityDefinitions>>,
   TError = IAMProblem,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsInbox>>,
+        Awaited<ReturnType<typeof capabilityDefinitions>>,
         TError,
         TData
       >
@@ -12163,17 +4178,17 @@ export function useNotificationsInbox<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 /**
- * @summary inbox notifications
+ * @summary definitions capability
  */
 
-export function useNotificationsInbox<
-  TData = Awaited<ReturnType<typeof notificationsInbox>>,
+export function useCapabilityDefinitions<
+  TData = Awaited<ReturnType<typeof capabilityDefinitions>>,
   TError = IAMProblem,
 >(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsInbox>>,
+        Awaited<ReturnType<typeof capabilityDefinitions>>,
         TError,
         TData
       >
@@ -12184,7 +4199,7 @@ export function useNotificationsInbox<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getNotificationsInboxQueryOptions(options);
+  const queryOptions = getCapabilityDefinitionsQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -12194,95 +4209,501 @@ export function useNotificationsInbox<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type notificationsMessageResponse200 = {
-  data: InboxMessage;
+export type capabilityApprovalsResponse200 = {
+  data: CapabilityApproval[];
   status: 200;
 };
 
-export type notificationsMessageResponse400 = {
+export type capabilityApprovalsResponse400 = {
   data: IAMProblem;
   status: 400;
 };
 
-export type notificationsMessageResponse401 = {
+export type capabilityApprovalsResponse401 = {
   data: IAMProblem;
   status: 401;
 };
 
-export type notificationsMessageResponse403 = {
+export type capabilityApprovalsResponse403 = {
   data: IAMProblem;
   status: 403;
 };
 
-export type notificationsMessageResponse404 = {
+export type capabilityApprovalsResponse404 = {
   data: IAMProblem;
   status: 404;
 };
 
-export type notificationsMessageResponse409 = {
+export type capabilityApprovalsResponse409 = {
   data: IAMProblem;
   status: 409;
 };
 
-export type notificationsMessageResponse500 = {
+export type capabilityApprovalsResponse500 = {
   data: IAMProblem;
   status: 500;
 };
 
-export type notificationsMessageResponse503 = {
+export type capabilityApprovalsResponse503 = {
   data: IAMProblem;
   status: 503;
 };
 
-export type notificationsMessageResponseSuccess =
-  notificationsMessageResponse200 & {
+export type capabilityApprovalsResponseSuccess =
+  capabilityApprovalsResponse200 & {
     headers: Headers;
   };
-export type notificationsMessageResponseError = (
-  | notificationsMessageResponse400
-  | notificationsMessageResponse401
-  | notificationsMessageResponse403
-  | notificationsMessageResponse404
-  | notificationsMessageResponse409
-  | notificationsMessageResponse500
-  | notificationsMessageResponse503
+export type capabilityApprovalsResponseError = (
+  | capabilityApprovalsResponse400
+  | capabilityApprovalsResponse401
+  | capabilityApprovalsResponse403
+  | capabilityApprovalsResponse404
+  | capabilityApprovalsResponse409
+  | capabilityApprovalsResponse500
+  | capabilityApprovalsResponse503
 ) & {
   headers: Headers;
 };
 
-export type notificationsMessageResponse =
-  notificationsMessageResponseSuccess | notificationsMessageResponseError;
+export type capabilityApprovalsResponse =
+  capabilityApprovalsResponseSuccess | capabilityApprovalsResponseError;
 
-export const getNotificationsMessageUrl = (id: number) => {
-  return `/api/auth/notifications/${id}`;
+export const getCapabilityApprovalsUrl = () => {
+  return `/api/capabilities/approvals`;
 };
 
 /**
- * @summary message notifications
+ * List pending confirmations for the caller, or every pending card for a reviewer.
+ * @summary approvals capability
  */
-export const notificationsMessage = async (
-  id: number,
+export const capabilityApprovals = async (
   options?: Parameters<typeof request>[1],
-): Promise<notificationsMessageResponse> => {
-  return request<notificationsMessageResponse>(getNotificationsMessageUrl(id), {
+): Promise<capabilityApprovalsResponse> => {
+  return request<capabilityApprovalsResponse>(getCapabilityApprovalsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getNotificationsMessageQueryKey = (id: number) => {
-  return [`/api/auth/notifications/${id}`] as const;
+export const getCapabilityApprovalsQueryKey = () => {
+  return [`/api/capabilities/approvals`] as const;
 };
 
-export const getNotificationsMessageQueryOptions = <
-  TData = Awaited<ReturnType<typeof notificationsMessage>>,
+export const getCapabilityApprovalsQueryOptions = <
+  TData = Awaited<ReturnType<typeof capabilityApprovals>>,
+  TError = IAMProblem,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof capabilityApprovals>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof request>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCapabilityApprovalsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof capabilityApprovals>>
+  > = ({ signal }) => capabilityApprovals({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof capabilityApprovals>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type CapabilityApprovalsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityApprovals>>
+>;
+export type CapabilityApprovalsQueryError = IAMProblem;
+
+export function useCapabilityApprovals<
+  TData = Awaited<ReturnType<typeof capabilityApprovals>>,
   TError = IAMProblem,
 >(
-  id: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityApprovals>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof capabilityApprovals>>,
+          TError,
+          Awaited<ReturnType<typeof capabilityApprovals>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useCapabilityApprovals<
+  TData = Awaited<ReturnType<typeof capabilityApprovals>>,
+  TError = IAMProblem,
+>(
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsMessage>>,
+        Awaited<ReturnType<typeof capabilityApprovals>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof capabilityApprovals>>,
+          TError,
+          Awaited<ReturnType<typeof capabilityApprovals>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useCapabilityApprovals<
+  TData = Awaited<ReturnType<typeof capabilityApprovals>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityApprovals>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary approvals capability
+ */
+
+export function useCapabilityApprovals<
+  TData = Awaited<ReturnType<typeof capabilityApprovals>>,
+  TError = IAMProblem,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityApprovals>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCapabilityApprovalsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type capabilityDecideResponse200 = {
+  data: CapabilityResult;
+  status: 200;
+};
+
+export type capabilityDecideResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type capabilityDecideResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type capabilityDecideResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type capabilityDecideResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type capabilityDecideResponse409 = {
+  data: IAMProblem;
+  status: 409;
+};
+
+export type capabilityDecideResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type capabilityDecideResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type capabilityDecideResponseSuccess = capabilityDecideResponse200 & {
+  headers: Headers;
+};
+export type capabilityDecideResponseError = (
+  | capabilityDecideResponse400
+  | capabilityDecideResponse401
+  | capabilityDecideResponse403
+  | capabilityDecideResponse404
+  | capabilityDecideResponse409
+  | capabilityDecideResponse500
+  | capabilityDecideResponse503
+) & {
+  headers: Headers;
+};
+
+export type capabilityDecideResponse =
+  capabilityDecideResponseSuccess | capabilityDecideResponseError;
+
+export const getCapabilityDecideUrl = (id: number) => {
+  return `/api/capabilities/approvals/${id}/decisions`;
+};
+
+/**
+ * Approve or reject a pending confirmation. Approval re-resolves the requester's authority.
+ * @summary decide capability
+ */
+export const capabilityDecide = async (
+  id: number,
+  decideRequestBody: DecideRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<capabilityDecideResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<capabilityDecideResponse>(getCapabilityDecideUrl(id), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(decideRequestBody),
+  });
+};
+
+export const getCapabilityDecideMutationKey = () =>
+  ["capabilityDecide"] as const;
+
+export const getCapabilityDecideMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof capabilityDecide>>,
+    TError,
+    CapabilityDecideMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof capabilityDecide>>,
+  TError,
+  CapabilityDecideMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCapabilityDecideMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof capabilityDecide>>,
+    CapabilityDecideMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return capabilityDecide(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CapabilityDecideMutationResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityDecide>>
+>;
+export type CapabilityDecideMutationBody = DecideRequestBody;
+export type CapabilityDecideMutationError = IAMProblem;
+export type CapabilityDecideMutationVariables = {
+  id: number;
+  data: DecideRequestBody;
+};
+
+/**
+ * @summary decide capability
+ */
+export const useCapabilityDecide = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof capabilityDecide>>,
+      TError,
+      CapabilityDecideMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof capabilityDecide>>,
+  TError,
+  CapabilityDecideMutationVariables,
+  TContext
+> => {
+  return useMutation(getCapabilityDecideMutationOptions(options), queryClient);
+};
+
+export type capabilityEventsResponse200 = {
+  data: CapabilityEvent[];
+  status: 200;
+};
+
+export type capabilityEventsResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type capabilityEventsResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type capabilityEventsResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type capabilityEventsResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type capabilityEventsResponse409 = {
+  data: IAMProblem;
+  status: 409;
+};
+
+export type capabilityEventsResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type capabilityEventsResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type capabilityEventsResponseSuccess = capabilityEventsResponse200 & {
+  headers: Headers;
+};
+export type capabilityEventsResponseError = (
+  | capabilityEventsResponse400
+  | capabilityEventsResponse401
+  | capabilityEventsResponse403
+  | capabilityEventsResponse404
+  | capabilityEventsResponse409
+  | capabilityEventsResponse500
+  | capabilityEventsResponse503
+) & {
+  headers: Headers;
+};
+
+export type capabilityEventsResponse =
+  capabilityEventsResponseSuccess | capabilityEventsResponseError;
+
+export const getCapabilityEventsUrl = (params?: CapabilityEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/capabilities/events?${stringifiedParams}`
+    : `/api/capabilities/events`;
+};
+
+/**
+ * List business events the caller may see, with their AI trigger status.
+ * @summary events capability
+ */
+export const capabilityEvents = async (
+  params?: CapabilityEventsParams,
+  options?: Parameters<typeof request>[1],
+): Promise<capabilityEventsResponse> => {
+  return request<capabilityEventsResponse>(getCapabilityEventsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getCapabilityEventsQueryKey = (
+  params?: CapabilityEventsParams,
+) => {
+  return [`/api/capabilities/events`, ...(params ? [params] : [])] as const;
+};
+
+export const getCapabilityEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof capabilityEvents>>,
+  TError = IAMProblem,
+>(
+  params?: CapabilityEventsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityEvents>>,
         TError,
         TData
       >
@@ -12293,47 +4714,42 @@ export const getNotificationsMessageQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getNotificationsMessageQueryKey(id);
+    queryOptions?.queryKey ?? getCapabilityEventsQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof notificationsMessage>>
-  > = ({ signal }) => notificationsMessage(id, { signal, ...requestOptions });
+    Awaited<ReturnType<typeof capabilityEvents>>
+  > = ({ signal }) => capabilityEvents(params, { signal, ...requestOptions });
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: id !== null && id !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof notificationsMessage>>,
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof capabilityEvents>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type NotificationsMessageQueryResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsMessage>>
+export type CapabilityEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityEvents>>
 >;
-export type NotificationsMessageQueryError = IAMProblem;
+export type CapabilityEventsQueryError = IAMProblem;
 
-export function useNotificationsMessage<
-  TData = Awaited<ReturnType<typeof notificationsMessage>>,
+export function useCapabilityEvents<
+  TData = Awaited<ReturnType<typeof capabilityEvents>>,
   TError = IAMProblem,
 >(
-  id: number,
+  params: undefined | CapabilityEventsParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsMessage>>,
+        Awaited<ReturnType<typeof capabilityEvents>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsMessage>>,
+          Awaited<ReturnType<typeof capabilityEvents>>,
           TError,
-          Awaited<ReturnType<typeof notificationsMessage>>
+          Awaited<ReturnType<typeof capabilityEvents>>
         >,
         "initialData"
       >;
@@ -12343,24 +4759,24 @@ export function useNotificationsMessage<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useNotificationsMessage<
-  TData = Awaited<ReturnType<typeof notificationsMessage>>,
+export function useCapabilityEvents<
+  TData = Awaited<ReturnType<typeof capabilityEvents>>,
   TError = IAMProblem,
 >(
-  id: number,
+  params?: CapabilityEventsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsMessage>>,
+        Awaited<ReturnType<typeof capabilityEvents>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsMessage>>,
+          Awaited<ReturnType<typeof capabilityEvents>>,
           TError,
-          Awaited<ReturnType<typeof notificationsMessage>>
+          Awaited<ReturnType<typeof capabilityEvents>>
         >,
         "initialData"
       >;
@@ -12370,15 +4786,15 @@ export function useNotificationsMessage<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useNotificationsMessage<
-  TData = Awaited<ReturnType<typeof notificationsMessage>>,
+export function useCapabilityEvents<
+  TData = Awaited<ReturnType<typeof capabilityEvents>>,
   TError = IAMProblem,
 >(
-  id: number,
+  params?: CapabilityEventsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsMessage>>,
+        Awaited<ReturnType<typeof capabilityEvents>>,
         TError,
         TData
       >
@@ -12390,18 +4806,18 @@ export function useNotificationsMessage<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 /**
- * @summary message notifications
+ * @summary events capability
  */
 
-export function useNotificationsMessage<
-  TData = Awaited<ReturnType<typeof notificationsMessage>>,
+export function useCapabilityEvents<
+  TData = Awaited<ReturnType<typeof capabilityEvents>>,
   TError = IAMProblem,
 >(
-  id: number,
+  params?: CapabilityEventsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsMessage>>,
+        Awaited<ReturnType<typeof capabilityEvents>>,
         TError,
         TData
       >
@@ -12412,7 +4828,7 @@ export function useNotificationsMessage<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getNotificationsMessageQueryOptions(id, options);
+  const queryOptions = getCapabilityEventsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -12422,79 +4838,93 @@ export function useNotificationsMessage<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type notificationsAttachmentResponse200 = {
-  data: FileContent;
+export type capabilityInvocationsResponse200 = {
+  data: CapabilityInvocation[];
   status: 200;
 };
 
-export type notificationsAttachmentResponse400 = {
+export type capabilityInvocationsResponse400 = {
   data: IAMProblem;
   status: 400;
 };
 
-export type notificationsAttachmentResponse401 = {
+export type capabilityInvocationsResponse401 = {
   data: IAMProblem;
   status: 401;
 };
 
-export type notificationsAttachmentResponse403 = {
+export type capabilityInvocationsResponse403 = {
   data: IAMProblem;
   status: 403;
 };
 
-export type notificationsAttachmentResponse404 = {
+export type capabilityInvocationsResponse404 = {
   data: IAMProblem;
   status: 404;
 };
 
-export type notificationsAttachmentResponse409 = {
+export type capabilityInvocationsResponse409 = {
   data: IAMProblem;
   status: 409;
 };
 
-export type notificationsAttachmentResponse500 = {
+export type capabilityInvocationsResponse500 = {
   data: IAMProblem;
   status: 500;
 };
 
-export type notificationsAttachmentResponse503 = {
+export type capabilityInvocationsResponse503 = {
   data: IAMProblem;
   status: 503;
 };
 
-export type notificationsAttachmentResponseSuccess =
-  notificationsAttachmentResponse200 & {
+export type capabilityInvocationsResponseSuccess =
+  capabilityInvocationsResponse200 & {
     headers: Headers;
   };
-export type notificationsAttachmentResponseError = (
-  | notificationsAttachmentResponse400
-  | notificationsAttachmentResponse401
-  | notificationsAttachmentResponse403
-  | notificationsAttachmentResponse404
-  | notificationsAttachmentResponse409
-  | notificationsAttachmentResponse500
-  | notificationsAttachmentResponse503
+export type capabilityInvocationsResponseError = (
+  | capabilityInvocationsResponse400
+  | capabilityInvocationsResponse401
+  | capabilityInvocationsResponse403
+  | capabilityInvocationsResponse404
+  | capabilityInvocationsResponse409
+  | capabilityInvocationsResponse500
+  | capabilityInvocationsResponse503
 ) & {
   headers: Headers;
 };
 
-export type notificationsAttachmentResponse =
-  notificationsAttachmentResponseSuccess | notificationsAttachmentResponseError;
+export type capabilityInvocationsResponse =
+  capabilityInvocationsResponseSuccess | capabilityInvocationsResponseError;
 
-export const getNotificationsAttachmentUrl = (id: number, fileId: number) => {
-  return `/api/auth/notifications/${id}/files/${fileId}`;
+export const getCapabilityInvocationsUrl = (
+  params?: CapabilityInvocationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/capabilities/invocations?${stringifiedParams}`
+    : `/api/capabilities/invocations`;
 };
 
 /**
- * @summary attachment notifications
+ * List the caller's own capability invocations, newest first.
+ * @summary invocations capability
  */
-export const notificationsAttachment = async (
-  id: number,
-  fileId: number,
+export const capabilityInvocations = async (
+  params?: CapabilityInvocationsParams,
   options?: Parameters<typeof request>[1],
-): Promise<notificationsAttachmentResponse> => {
-  return request<notificationsAttachmentResponse>(
-    getNotificationsAttachmentUrl(id, fileId),
+): Promise<capabilityInvocationsResponse> => {
+  return request<capabilityInvocationsResponse>(
+    getCapabilityInvocationsUrl(params),
     {
       ...options,
       method: "GET",
@@ -12502,23 +4932,24 @@ export const notificationsAttachment = async (
   );
 };
 
-export const getNotificationsAttachmentQueryKey = (
-  id: number,
-  fileId: number,
+export const getCapabilityInvocationsQueryKey = (
+  params?: CapabilityInvocationsParams,
 ) => {
-  return [`/api/auth/notifications/${id}/files/${fileId}`] as const;
+  return [
+    `/api/capabilities/invocations`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
-export const getNotificationsAttachmentQueryOptions = <
-  TData = Awaited<ReturnType<typeof notificationsAttachment>>,
+export const getCapabilityInvocationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof capabilityInvocations>>,
   TError = IAMProblem,
 >(
-  id: number,
-  fileId: number,
+  params?: CapabilityInvocationsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAttachment>>,
+        Awaited<ReturnType<typeof capabilityInvocations>>,
         TError,
         TData
       >
@@ -12529,53 +4960,43 @@ export const getNotificationsAttachmentQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getNotificationsAttachmentQueryKey(id, fileId);
+    queryOptions?.queryKey ?? getCapabilityInvocationsQueryKey(params);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof notificationsAttachment>>
+    Awaited<ReturnType<typeof capabilityInvocations>>
   > = ({ signal }) =>
-    notificationsAttachment(id, fileId, { signal, ...requestOptions });
+    capabilityInvocations(params, { signal, ...requestOptions });
 
-  return {
-    queryKey,
-    queryFn,
-    enabled:
-      id !== null &&
-      id !== undefined &&
-      fileId !== null &&
-      fileId !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof notificationsAttachment>>,
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof capabilityInvocations>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type NotificationsAttachmentQueryResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsAttachment>>
+export type CapabilityInvocationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityInvocations>>
 >;
-export type NotificationsAttachmentQueryError = IAMProblem;
+export type CapabilityInvocationsQueryError = IAMProblem;
 
-export function useNotificationsAttachment<
-  TData = Awaited<ReturnType<typeof notificationsAttachment>>,
+export function useCapabilityInvocations<
+  TData = Awaited<ReturnType<typeof capabilityInvocations>>,
   TError = IAMProblem,
 >(
-  id: number,
-  fileId: number,
+  params: undefined | CapabilityInvocationsParams,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAttachment>>,
+        Awaited<ReturnType<typeof capabilityInvocations>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsAttachment>>,
+          Awaited<ReturnType<typeof capabilityInvocations>>,
           TError,
-          Awaited<ReturnType<typeof notificationsAttachment>>
+          Awaited<ReturnType<typeof capabilityInvocations>>
         >,
         "initialData"
       >;
@@ -12585,25 +5006,24 @@ export function useNotificationsAttachment<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useNotificationsAttachment<
-  TData = Awaited<ReturnType<typeof notificationsAttachment>>,
+export function useCapabilityInvocations<
+  TData = Awaited<ReturnType<typeof capabilityInvocations>>,
   TError = IAMProblem,
 >(
-  id: number,
-  fileId: number,
+  params?: CapabilityInvocationsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAttachment>>,
+        Awaited<ReturnType<typeof capabilityInvocations>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof notificationsAttachment>>,
+          Awaited<ReturnType<typeof capabilityInvocations>>,
           TError,
-          Awaited<ReturnType<typeof notificationsAttachment>>
+          Awaited<ReturnType<typeof capabilityInvocations>>
         >,
         "initialData"
       >;
@@ -12613,16 +5033,15 @@ export function useNotificationsAttachment<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useNotificationsAttachment<
-  TData = Awaited<ReturnType<typeof notificationsAttachment>>,
+export function useCapabilityInvocations<
+  TData = Awaited<ReturnType<typeof capabilityInvocations>>,
   TError = IAMProblem,
 >(
-  id: number,
-  fileId: number,
+  params?: CapabilityInvocationsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAttachment>>,
+        Awaited<ReturnType<typeof capabilityInvocations>>,
         TError,
         TData
       >
@@ -12634,19 +5053,18 @@ export function useNotificationsAttachment<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 /**
- * @summary attachment notifications
+ * @summary invocations capability
  */
 
-export function useNotificationsAttachment<
-  TData = Awaited<ReturnType<typeof notificationsAttachment>>,
+export function useCapabilityInvocations<
+  TData = Awaited<ReturnType<typeof capabilityInvocations>>,
   TError = IAMProblem,
 >(
-  id: number,
-  fileId: number,
+  params?: CapabilityInvocationsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof notificationsAttachment>>,
+        Awaited<ReturnType<typeof capabilityInvocations>>,
         TError,
         TData
       >
@@ -12657,9 +5075,241 @@ export function useNotificationsAttachment<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getNotificationsAttachmentQueryOptions(
-    id,
-    fileId,
+  const queryOptions = getCapabilityInvocationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type capabilityInvocationResponse200 = {
+  data: CapabilityInvocation;
+  status: 200;
+};
+
+export type capabilityInvocationResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type capabilityInvocationResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type capabilityInvocationResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type capabilityInvocationResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type capabilityInvocationResponse409 = {
+  data: IAMProblem;
+  status: 409;
+};
+
+export type capabilityInvocationResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type capabilityInvocationResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type capabilityInvocationResponseSuccess =
+  capabilityInvocationResponse200 & {
+    headers: Headers;
+  };
+export type capabilityInvocationResponseError = (
+  | capabilityInvocationResponse400
+  | capabilityInvocationResponse401
+  | capabilityInvocationResponse403
+  | capabilityInvocationResponse404
+  | capabilityInvocationResponse409
+  | capabilityInvocationResponse500
+  | capabilityInvocationResponse503
+) & {
+  headers: Headers;
+};
+
+export type capabilityInvocationResponse =
+  capabilityInvocationResponseSuccess | capabilityInvocationResponseError;
+
+export const getCapabilityInvocationUrl = (invocationId: string) => {
+  return `/api/capabilities/invocations/${invocationId}`;
+};
+
+/**
+ * Read one invocation owned by the caller.
+ * @summary invocation capability
+ */
+export const capabilityInvocation = async (
+  invocationId: string,
+  options?: Parameters<typeof request>[1],
+): Promise<capabilityInvocationResponse> => {
+  return request<capabilityInvocationResponse>(
+    getCapabilityInvocationUrl(invocationId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getCapabilityInvocationQueryKey = (invocationId: string) => {
+  return [`/api/capabilities/invocations/${invocationId}`] as const;
+};
+
+export const getCapabilityInvocationQueryOptions = <
+  TData = Awaited<ReturnType<typeof capabilityInvocation>>,
+  TError = IAMProblem,
+>(
+  invocationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityInvocation>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getCapabilityInvocationQueryKey(invocationId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof capabilityInvocation>>
+  > = ({ signal }) =>
+    capabilityInvocation(invocationId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: invocationId !== null && invocationId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof capabilityInvocation>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type CapabilityInvocationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityInvocation>>
+>;
+export type CapabilityInvocationQueryError = IAMProblem;
+
+export function useCapabilityInvocation<
+  TData = Awaited<ReturnType<typeof capabilityInvocation>>,
+  TError = IAMProblem,
+>(
+  invocationId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityInvocation>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof capabilityInvocation>>,
+          TError,
+          Awaited<ReturnType<typeof capabilityInvocation>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useCapabilityInvocation<
+  TData = Awaited<ReturnType<typeof capabilityInvocation>>,
+  TError = IAMProblem,
+>(
+  invocationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityInvocation>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof capabilityInvocation>>,
+          TError,
+          Awaited<ReturnType<typeof capabilityInvocation>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useCapabilityInvocation<
+  TData = Awaited<ReturnType<typeof capabilityInvocation>>,
+  TError = IAMProblem,
+>(
+  invocationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityInvocation>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary invocation capability
+ */
+
+export function useCapabilityInvocation<
+  TData = Awaited<ReturnType<typeof capabilityInvocation>>,
+  TError = IAMProblem,
+>(
+  invocationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof capabilityInvocation>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getCapabilityInvocationQueryOptions(
+    invocationId,
     options,
   );
 
@@ -12671,275 +5321,130 @@ export function useNotificationsAttachment<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type notificationsReadResponse204 = {
-  data: void;
-  status: 204;
+export type capabilityInvokeResponse200 = {
+  data: CapabilityResult;
+  status: 200;
 };
 
-export type notificationsReadResponse400 = {
+export type capabilityInvokeResponse400 = {
   data: IAMProblem;
   status: 400;
 };
 
-export type notificationsReadResponse401 = {
+export type capabilityInvokeResponse401 = {
   data: IAMProblem;
   status: 401;
 };
 
-export type notificationsReadResponse403 = {
+export type capabilityInvokeResponse403 = {
   data: IAMProblem;
   status: 403;
 };
 
-export type notificationsReadResponse404 = {
+export type capabilityInvokeResponse404 = {
   data: IAMProblem;
   status: 404;
 };
 
-export type notificationsReadResponse409 = {
+export type capabilityInvokeResponse409 = {
   data: IAMProblem;
   status: 409;
 };
 
-export type notificationsReadResponse500 = {
+export type capabilityInvokeResponse500 = {
   data: IAMProblem;
   status: 500;
 };
 
-export type notificationsReadResponse503 = {
+export type capabilityInvokeResponse503 = {
   data: IAMProblem;
   status: 503;
 };
 
-export type notificationsReadResponseSuccess = notificationsReadResponse204 & {
+export type capabilityInvokeResponseSuccess = capabilityInvokeResponse200 & {
   headers: Headers;
 };
-export type notificationsReadResponseError = (
-  | notificationsReadResponse400
-  | notificationsReadResponse401
-  | notificationsReadResponse403
-  | notificationsReadResponse404
-  | notificationsReadResponse409
-  | notificationsReadResponse500
-  | notificationsReadResponse503
+export type capabilityInvokeResponseError = (
+  | capabilityInvokeResponse400
+  | capabilityInvokeResponse401
+  | capabilityInvokeResponse403
+  | capabilityInvokeResponse404
+  | capabilityInvokeResponse409
+  | capabilityInvokeResponse500
+  | capabilityInvokeResponse503
 ) & {
   headers: Headers;
 };
 
-export type notificationsReadResponse =
-  notificationsReadResponseSuccess | notificationsReadResponseError;
+export type capabilityInvokeResponse =
+  capabilityInvokeResponseSuccess | capabilityInvokeResponseError;
 
-export const getNotificationsReadUrl = (id: number) => {
-  return `/api/auth/notifications/${id}/read`;
+export const getCapabilityInvokeUrl = (name: string) => {
+  return `/api/capabilities/${name}/invocations`;
 };
 
 /**
- * @summary read notifications
+ * Invoke one capability through the full gateway pipeline.
+ * @summary invoke capability
  */
-export const notificationsRead = async (
-  id: number,
+export const capabilityInvoke = async (
+  name: string,
+  invokeRequestBody: InvokeRequestBody,
   options?: Parameters<typeof request>[1],
-): Promise<notificationsReadResponse> => {
-  return request<notificationsReadResponse>(getNotificationsReadUrl(id), {
+): Promise<capabilityInvokeResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<capabilityInvokeResponse>(getCapabilityInvokeUrl(name), {
     ...options,
     method: "POST",
-  });
-};
-
-export const getNotificationsReadMutationKey = () =>
-  ["notificationsRead"] as const;
-
-export const getNotificationsReadMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof notificationsRead>>,
-    TError,
-    NotificationsReadMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof notificationsRead>>,
-  TError,
-  NotificationsReadMutationVariables,
-  TContext
-> => {
-  const mutationKey = getNotificationsReadMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof notificationsRead>>,
-    NotificationsReadMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return notificationsRead(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type NotificationsReadMutationResult = NonNullable<
-  Awaited<ReturnType<typeof notificationsRead>>
->;
-
-export type NotificationsReadMutationError = IAMProblem;
-export type NotificationsReadMutationVariables = { id: number };
-
-/**
- * @summary read notifications
- */
-export const useNotificationsRead = <TError = IAMProblem, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof notificationsRead>>,
-      TError,
-      NotificationsReadMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof notificationsRead>>,
-  TError,
-  NotificationsReadMutationVariables,
-  TContext
-> => {
-  return useMutation(getNotificationsReadMutationOptions(options), queryClient);
-};
-
-export type settingsPreferencesResponse200 = {
-  data: EffectiveConfiguration;
-  status: 200;
-};
-
-export type settingsPreferencesResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsPreferencesResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsPreferencesResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsPreferencesResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsPreferencesResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsPreferencesResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsPreferencesResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsPreferencesResponseSuccess =
-  settingsPreferencesResponse200 & {
-    headers: Headers;
-  };
-export type settingsPreferencesResponseError = (
-  | settingsPreferencesResponse400
-  | settingsPreferencesResponse401
-  | settingsPreferencesResponse403
-  | settingsPreferencesResponse404
-  | settingsPreferencesResponse409
-  | settingsPreferencesResponse500
-  | settingsPreferencesResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsPreferencesResponse =
-  settingsPreferencesResponseSuccess | settingsPreferencesResponseError;
-
-export const getSettingsPreferencesUrl = () => {
-  return `/api/auth/preferences`;
-};
-
-/**
- * @summary preferences settings
- */
-export const settingsPreferences = async (
-  preferencesRequestBody: PreferencesRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsPreferencesResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<settingsPreferencesResponse>(getSettingsPreferencesUrl(), {
-    ...options,
-    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(preferencesRequestBody),
+    body: JSON.stringify(invokeRequestBody),
   });
 };
 
-export const getSettingsPreferencesMutationKey = () =>
-  ["settingsPreferences"] as const;
+export const getCapabilityInvokeMutationKey = () =>
+  ["capabilityInvoke"] as const;
 
-export const getSettingsPreferencesMutationOptions = <
+export const getCapabilityInvokeMutationOptions = <
   TError = IAMProblem,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsPreferences>>,
+    Awaited<ReturnType<typeof capabilityInvoke>>,
     TError,
-    SettingsPreferencesMutationVariables,
+    CapabilityInvokeMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof request>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsPreferences>>,
+  Awaited<ReturnType<typeof capabilityInvoke>>,
   TError,
-  SettingsPreferencesMutationVariables,
+  CapabilityInvokeMutationVariables,
   TContext
 > => {
-  const mutationKey = getSettingsPreferencesMutationKey();
+  const mutationKey = getCapabilityInvokeMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -12949,895 +5454,48 @@ export const getSettingsPreferencesMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsPreferences>>,
-    SettingsPreferencesMutationVariables
+    Awaited<ReturnType<typeof capabilityInvoke>>,
+    CapabilityInvokeMutationVariables
   > = (props) => {
-    const { data } = props ?? {};
+    const { name, data } = props ?? {};
 
-    return settingsPreferences(data, requestOptions);
+    return capabilityInvoke(name, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type SettingsPreferencesMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsPreferences>>
+export type CapabilityInvokeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof capabilityInvoke>>
 >;
-export type SettingsPreferencesMutationBody = PreferencesRequestBody;
-export type SettingsPreferencesMutationError = IAMProblem;
-export type SettingsPreferencesMutationVariables = {
-  data: PreferencesRequestBody;
+export type CapabilityInvokeMutationBody = InvokeRequestBody;
+export type CapabilityInvokeMutationError = IAMProblem;
+export type CapabilityInvokeMutationVariables = {
+  name: string;
+  data: InvokeRequestBody;
 };
 
 /**
- * @summary preferences settings
+ * @summary invoke capability
  */
-export const useSettingsPreferences = <TError = IAMProblem, TContext = unknown>(
+export const useCapabilityInvoke = <TError = IAMProblem, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsPreferences>>,
+      Awaited<ReturnType<typeof capabilityInvoke>>,
       TError,
-      SettingsPreferencesMutationVariables,
+      CapabilityInvokeMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof request>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof settingsPreferences>>,
+  Awaited<ReturnType<typeof capabilityInvoke>>,
   TError,
-  SettingsPreferencesMutationVariables,
+  CapabilityInvokeMutationVariables,
   TContext
 > => {
-  return useMutation(
-    getSettingsPreferencesMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type settingsReauthenticateResponse200 = {
-  data: ReauthProof;
-  status: 200;
-};
-
-export type settingsReauthenticateResponse400 = {
-  data: IAMProblem;
-  status: 400;
-};
-
-export type settingsReauthenticateResponse401 = {
-  data: IAMProblem;
-  status: 401;
-};
-
-export type settingsReauthenticateResponse403 = {
-  data: IAMProblem;
-  status: 403;
-};
-
-export type settingsReauthenticateResponse404 = {
-  data: IAMProblem;
-  status: 404;
-};
-
-export type settingsReauthenticateResponse409 = {
-  data: IAMProblem;
-  status: 409;
-};
-
-export type settingsReauthenticateResponse500 = {
-  data: IAMProblem;
-  status: 500;
-};
-
-export type settingsReauthenticateResponse503 = {
-  data: IAMProblem;
-  status: 503;
-};
-
-export type settingsReauthenticateResponseSuccess =
-  settingsReauthenticateResponse200 & {
-    headers: Headers;
-  };
-export type settingsReauthenticateResponseError = (
-  | settingsReauthenticateResponse400
-  | settingsReauthenticateResponse401
-  | settingsReauthenticateResponse403
-  | settingsReauthenticateResponse404
-  | settingsReauthenticateResponse409
-  | settingsReauthenticateResponse500
-  | settingsReauthenticateResponse503
-) & {
-  headers: Headers;
-};
-
-export type settingsReauthenticateResponse =
-  settingsReauthenticateResponseSuccess | settingsReauthenticateResponseError;
-
-export const getSettingsReauthenticateUrl = () => {
-  return `/api/auth/reauthenticate`;
-};
-
-/**
- * @summary reauthenticate settings
- */
-export const settingsReauthenticate = async (
-  reauthenticateRequestBody: ReauthenticateRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<settingsReauthenticateResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<settingsReauthenticateResponse>(
-    getSettingsReauthenticateUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getHeaders(options?.headers),
-      },
-      body: JSON.stringify(reauthenticateRequestBody),
-    },
-  );
-};
-
-export const getSettingsReauthenticateMutationKey = () =>
-  ["settingsReauthenticate"] as const;
-
-export const getSettingsReauthenticateMutationOptions = <
-  TError = IAMProblem,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof settingsReauthenticate>>,
-    TError,
-    SettingsReauthenticateMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof settingsReauthenticate>>,
-  TError,
-  SettingsReauthenticateMutationVariables,
-  TContext
-> => {
-  const mutationKey = getSettingsReauthenticateMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof settingsReauthenticate>>,
-    SettingsReauthenticateMutationVariables
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return settingsReauthenticate(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SettingsReauthenticateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof settingsReauthenticate>>
->;
-export type SettingsReauthenticateMutationBody = ReauthenticateRequestBody;
-export type SettingsReauthenticateMutationError = IAMProblem;
-export type SettingsReauthenticateMutationVariables = {
-  data: ReauthenticateRequestBody;
-};
-
-/**
- * @summary reauthenticate settings
- */
-export const useSettingsReauthenticate = <
-  TError = IAMProblem,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof settingsReauthenticate>>,
-      TError,
-      SettingsReauthenticateMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof settingsReauthenticate>>,
-  TError,
-  SettingsReauthenticateMutationVariables,
-  TContext
-> => {
-  return useMutation(
-    getSettingsReauthenticateMutationOptions(options),
-    queryClient,
-  );
-};
-
-export type demoListResponse200 = {
-  data: TechnicalRecord[];
-  status: 200;
-};
-
-export type demoListResponse401 = {
-  data: AccessError;
-  status: 401;
-};
-
-export type demoListResponse403 = {
-  data: AccessError;
-  status: 403;
-};
-
-export type demoListResponse500 = {
-  data: Error;
-  status: 500;
-};
-
-export type demoListResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type demoListResponseSuccess = demoListResponse200 & {
-  headers: Headers;
-};
-export type demoListResponseError = (
-  | demoListResponse401
-  | demoListResponse403
-  | demoListResponse500
-  | demoListResponse503
-) & {
-  headers: Headers;
-};
-
-export type demoListResponse = demoListResponseSuccess | demoListResponseError;
-
-export const getDemoListUrl = () => {
-  return `/api/demo/records`;
-};
-
-/**
- * @summary list demo
- */
-export const demoList = async (
-  options?: Parameters<typeof request>[1],
-): Promise<demoListResponse> => {
-  return request<demoListResponse>(getDemoListUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getDemoListQueryKey = () => {
-  return [`/api/demo/records`] as const;
-};
-
-export const getDemoListQueryOptions = <
-  TData = Awaited<ReturnType<typeof demoList>>,
-  TError = AccessError | Error,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof demoList>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof request>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getDemoListQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof demoList>>> = ({
-    signal,
-  }) => demoList({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof demoList>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type DemoListQueryResult = NonNullable<
-  Awaited<ReturnType<typeof demoList>>
->;
-export type DemoListQueryError = AccessError | Error;
-
-export function useDemoList<
-  TData = Awaited<ReturnType<typeof demoList>>,
-  TError = AccessError | Error,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoList>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof demoList>>,
-          TError,
-          Awaited<ReturnType<typeof demoList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDemoList<
-  TData = Awaited<ReturnType<typeof demoList>>,
-  TError = AccessError | Error,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoList>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof demoList>>,
-          TError,
-          Awaited<ReturnType<typeof demoList>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDemoList<
-  TData = Awaited<ReturnType<typeof demoList>>,
-  TError = AccessError | Error,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoList>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary list demo
- */
-
-export function useDemoList<
-  TData = Awaited<ReturnType<typeof demoList>>,
-  TError = AccessError | Error,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoList>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDemoListQueryOptions(options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type demoDeleteResponse204 = {
-  data: void;
-  status: 204;
-};
-
-export type demoDeleteResponse401 = {
-  data: AccessError;
-  status: 401;
-};
-
-export type demoDeleteResponse403 = {
-  data: AccessError;
-  status: 403;
-};
-
-export type demoDeleteResponse404 = {
-  data: Error;
-  status: 404;
-};
-
-export type demoDeleteResponse500 = {
-  data: Error;
-  status: 500;
-};
-
-export type demoDeleteResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type demoDeleteResponseSuccess = demoDeleteResponse204 & {
-  headers: Headers;
-};
-export type demoDeleteResponseError = (
-  | demoDeleteResponse401
-  | demoDeleteResponse403
-  | demoDeleteResponse404
-  | demoDeleteResponse500
-  | demoDeleteResponse503
-) & {
-  headers: Headers;
-};
-
-export type demoDeleteResponse =
-  demoDeleteResponseSuccess | demoDeleteResponseError;
-
-export const getDemoDeleteUrl = (id: number) => {
-  return `/api/demo/records/${id}`;
-};
-
-/**
- * @summary delete demo
- */
-export const demoDelete = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<demoDeleteResponse> => {
-  return request<demoDeleteResponse>(getDemoDeleteUrl(id), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getDemoDeleteMutationKey = () => ["demoDelete"] as const;
-
-export const getDemoDeleteMutationOptions = <
-  TError = AccessError | Error,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof demoDelete>>,
-    TError,
-    DemoDeleteMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof demoDelete>>,
-  TError,
-  DemoDeleteMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDemoDeleteMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof demoDelete>>,
-    DemoDeleteMutationVariables
-  > = (props) => {
-    const { id } = props ?? {};
-
-    return demoDelete(id, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DemoDeleteMutationResult = NonNullable<
-  Awaited<ReturnType<typeof demoDelete>>
->;
-
-export type DemoDeleteMutationError = AccessError | Error;
-export type DemoDeleteMutationVariables = { id: number };
-
-/**
- * @summary delete demo
- */
-export const useDemoDelete = <TError = AccessError | Error, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof demoDelete>>,
-      TError,
-      DemoDeleteMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof demoDelete>>,
-  TError,
-  DemoDeleteMutationVariables,
-  TContext
-> => {
-  return useMutation(getDemoDeleteMutationOptions(options), queryClient);
-};
-
-export type demoGetResponse200 = {
-  data: TechnicalRecord;
-  status: 200;
-};
-
-export type demoGetResponse401 = {
-  data: AccessError;
-  status: 401;
-};
-
-export type demoGetResponse403 = {
-  data: AccessError;
-  status: 403;
-};
-
-export type demoGetResponse404 = {
-  data: Error;
-  status: 404;
-};
-
-export type demoGetResponse500 = {
-  data: Error;
-  status: 500;
-};
-
-export type demoGetResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type demoGetResponseSuccess = demoGetResponse200 & {
-  headers: Headers;
-};
-export type demoGetResponseError = (
-  | demoGetResponse401
-  | demoGetResponse403
-  | demoGetResponse404
-  | demoGetResponse500
-  | demoGetResponse503
-) & {
-  headers: Headers;
-};
-
-export type demoGetResponse = demoGetResponseSuccess | demoGetResponseError;
-
-export const getDemoGetUrl = (id: number) => {
-  return `/api/demo/records/${id}`;
-};
-
-/**
- * @summary get demo
- */
-export const demoGet = async (
-  id: number,
-  options?: Parameters<typeof request>[1],
-): Promise<demoGetResponse> => {
-  return request<demoGetResponse>(getDemoGetUrl(id), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getDemoGetQueryKey = (id: number) => {
-  return [`/api/demo/records/${id}`] as const;
-};
-
-export const getDemoGetQueryOptions = <
-  TData = Awaited<ReturnType<typeof demoGet>>,
-  TError = AccessError | Error,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoGet>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getDemoGetQueryKey(id);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof demoGet>>> = ({
-    signal,
-  }) => demoGet(id, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: id !== null && id !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof demoGet>>, TError, TData> & {
-    queryKey: DataTag<QueryKey, TData, TError>;
-  };
-};
-
-export type DemoGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof demoGet>>
->;
-export type DemoGetQueryError = AccessError | Error;
-
-export function useDemoGet<
-  TData = Awaited<ReturnType<typeof demoGet>>,
-  TError = AccessError | Error,
->(
-  id: number,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoGet>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof demoGet>>,
-          TError,
-          Awaited<ReturnType<typeof demoGet>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDemoGet<
-  TData = Awaited<ReturnType<typeof demoGet>>,
-  TError = AccessError | Error,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoGet>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof demoGet>>,
-          TError,
-          Awaited<ReturnType<typeof demoGet>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDemoGet<
-  TData = Awaited<ReturnType<typeof demoGet>>,
-  TError = AccessError | Error,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoGet>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary get demo
- */
-
-export function useDemoGet<
-  TData = Awaited<ReturnType<typeof demoGet>>,
-  TError = AccessError | Error,
->(
-  id: number,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof demoGet>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDemoGetQueryOptions(id, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-export type demoUpdateResponse200 = {
-  data: TechnicalRecord;
-  status: 200;
-};
-
-export type demoUpdateResponse401 = {
-  data: AccessError;
-  status: 401;
-};
-
-export type demoUpdateResponse403 = {
-  data: AccessError;
-  status: 403;
-};
-
-export type demoUpdateResponse404 = {
-  data: Error;
-  status: 404;
-};
-
-export type demoUpdateResponse500 = {
-  data: Error;
-  status: 500;
-};
-
-export type demoUpdateResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type demoUpdateResponseSuccess = demoUpdateResponse200 & {
-  headers: Headers;
-};
-export type demoUpdateResponseError = (
-  | demoUpdateResponse401
-  | demoUpdateResponse403
-  | demoUpdateResponse404
-  | demoUpdateResponse500
-  | demoUpdateResponse503
-) & {
-  headers: Headers;
-};
-
-export type demoUpdateResponse =
-  demoUpdateResponseSuccess | demoUpdateResponseError;
-
-export const getDemoUpdateUrl = (id: number) => {
-  return `/api/demo/records/${id}`;
-};
-
-/**
- * @summary update demo
- */
-export const demoUpdate = async (
-  id: number,
-  updateRequestBody: UpdateRequestBody,
-  options?: Parameters<typeof request>[1],
-): Promise<demoUpdateResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  return request<demoUpdateResponse>(getDemoUpdateUrl(id), {
-    ...options,
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(updateRequestBody),
-  });
-};
-
-export const getDemoUpdateMutationKey = () => ["demoUpdate"] as const;
-
-export const getDemoUpdateMutationOptions = <
-  TError = AccessError | Error,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof demoUpdate>>,
-    TError,
-    DemoUpdateMutationVariables,
-    TContext
-  >;
-  request?: SecondParameter<typeof request>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof demoUpdate>>,
-  TError,
-  DemoUpdateMutationVariables,
-  TContext
-> => {
-  const mutationKey = getDemoUpdateMutationKey();
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof demoUpdate>>,
-    DemoUpdateMutationVariables
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return demoUpdate(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DemoUpdateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof demoUpdate>>
->;
-export type DemoUpdateMutationBody = UpdateRequestBody;
-export type DemoUpdateMutationError = AccessError | Error;
-export type DemoUpdateMutationVariables = {
-  id: number;
-  data: UpdateRequestBody;
-};
-
-/**
- * @summary update demo
- */
-export const useDemoUpdate = <TError = AccessError | Error, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof demoUpdate>>,
-      TError,
-      DemoUpdateMutationVariables,
-      TContext
-    >;
-    request?: SecondParameter<typeof request>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof demoUpdate>>,
-  TError,
-  DemoUpdateMutationVariables,
-  TContext
-> => {
-  return useMutation(getDemoUpdateMutationOptions(options), queryClient);
+  return useMutation(getCapabilityInvokeMutationOptions(options), queryClient);
 };
 
 export type systemEchoResponse200 = {
@@ -14006,7 +5664,7 @@ export function useSystemEcho<
 }
 
 export type systemHealthResponse200 = {
-  data: TestResponseBody;
+  data: HealthResponseBody;
   status: 200;
 };
 

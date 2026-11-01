@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 const roots = [
+  "docs/generated/workflows",
   "services/api/gen",
   "services/api/internal/repository/dbgen",
   "apps/web/src/api/generated",
@@ -32,4 +33,6 @@ if (changed.length) {
   console.error("Generated output drift:\n" + changed.join("\n"));
   process.exit(1);
 }
-console.log("Goa, sqlc and Orval generation is reproducible.");
+console.log(
+  "Workflow schemas/examples, Goa, sqlc and Orval generation is reproducible.",
+);

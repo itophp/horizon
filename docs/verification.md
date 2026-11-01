@@ -207,7 +207,7 @@ Playwright 1.64.1 配套 Chromium 下载缓慢，已中止；本地使用已安�
 
 正文使用固定 react-markdown/remark-gfm 的 GFM 预览，原始 HTML/MDX、危险 URL 和外部图片不执行/自动加载。上传复用已有文件服务，插入受控 file:ID 引用并与正文表格分隔，可移除附件和对应引用。服务端验证文件属于发送者、同租户、attachment 用途及引用白名单；绑定和删除共享事务锁。收件人按本人、有效归属及通知文件绑定鉴权，无需全局 files:read，不能访问他人消息/未绑定文件。邮件仍为纯文本 MIME，保留 Markdown，文件引用和入口指向鉴权通知详情；关闭站内偏好仍可读取本人邮件详情。
 
-契约源在 services/api/design/governance.go，SQL 源为追加 00008 与 announcements/governance 查询；使用 Goa/sqlc/Orval 生成产物，不手改 SDK/dbgen。收件目标数组用 ArrayOfRequired，在 HTTP 边界拒绝 null 项。新增 announcements 服务实现，保留既有临时权限事件和持久化 SMTP 重试。权限相关 Skill（公共能力、安全、前端、质量）和 web/internal/db AGENTS、安全/架构/方案/工具约定同步维护；版本/许可证及官方来源在 versions.md。
+设置与通知的契约源是能力定义（`internal/modules/{settings,notifications}/capability.go`），SQL 源为 announcements/governance 查询；使用 Goa/sqlc/Orval 生成产物，不手改 SDK/dbgen。收件目标数组用 ArrayOfRequired，在 HTTP 边界拒绝 null 项。新增 announcements 服务实现，保留既有临时权限事件和持久化 SMTP 重试。权限相关 Skill（公共能力、安全、前端、质量）和 web/internal/db AGENTS、安全/架构/方案/工具约定同步维护；版本/许可证及官方来源在 versions.md。
 
 实际本地验证：
 
@@ -275,3 +275,14 @@ Playwright 1.64.1 配套 Chromium 下载缓慢，已中止；本地使用已安�
 - `make check-rules`：退出码 0。
 
 未执行：`make ci-fast`、完整 E2E 集合、远程 CI。发送页编辑器（第三方 Lexical/MDXEditor）的浏览器交互仍无自动化覆盖，写入校验/幂等由 Go 集成测试与组件测试承担；本轮未改动后端与生成物。
+
+
+## 2026-11-01：能力中心平台当前代码提交检查
+
+本批次更新 README、当前架构 SVG/PNG 与分层概念，保留此前能力中心迁移、Eino 编排、AI/MCP、文章管理及开发 Skills 的工作区变更。架构图按实际代码标明通用引擎与业务接入的区别；文章 Workflow/ADK、业务人工审核及已发现的安全边界缺口仍未在本批次修复，不能把门禁通过解释为这些问题已解决。
+
+- `make ci-fast`：退出 0；24 个前端测试文件、85 项测试通过，规则/格式/lint/vet/typecheck、Go 测试、i18n、生成一致性、实体/流程检查与两端构建完成。
+- `make test-security`：退出 0；包含真实本机 PostgreSQL 的独立 schema 集成集合。`TestMCPNativeClients` 按其专项目标约定跳过，本批次未执行原生客户端验收。
+- `git diff --check`：通过。架构 SVG 使用 macOS Quick Look 渲染并人工检查，PNG 为同图导出；没有通过浏览器验收图或应用。
+- 构建仍有大于 500 kB 的前端 chunk 提示；sonic 在当前 Go 环境回退标准 JSON。两者均未导致本地门禁失败。
+- E2E 未执行（按当前指示暂停）；真实模型质量、远程 CI 与部署未验收。本次仅创建本地提交，不推送。

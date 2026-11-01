@@ -6,8 +6,8 @@
 
 | 控制点 | 本项目实施位置 | 开发时必须考虑 | 验证 |
 |---|---|---|---|
-| 身份可信 | internal/auth，Principal，transport | 凭证/会话验证、默认拒绝、身份上下文，不能信任客户端 tenant/owner | auth 与 HTTP 拒绝用例 |
-| 操作授权 | internal/authorization，Casbin model/policy | 资源/操作、租户域、失败拒绝、撤销/缓存/跨实例失效语义 | RBAC 允许/拒绝、即时撤销 |
+| 身份可信 | internal/identity，Principal，transport | 凭证/会话验证、默认拒绝、身份上下文，不能信任客户端 tenant/owner | 会话与 HTTP 拒绝用例 |
+| 操作授权 | internal/identity（Casbin model/policy） | 资源/操作、租户域、失败拒绝、撤销/缓存/跨实例失效语义 | RBAC 允许/拒绝、即时撤销 |
 | 数据范围 | dataaccess + repository + 参数化 SQL | 所有访问入口一致，租户条件永远保留，单记录写入原子约束 | 隔离 PostgreSQL 的五类 scope 与越权 ID |
 | 字段保护 | Goa Result/Payload + SQL 投影 | 读写白名单、敏感新增字段、导出与日志；不能只靠 UI 隐藏 | 响应投影和敏感字段负向用例 |
 | 输入和资源限制 | Goa 验证、应用不变量、DB 约束、HTTP 超时/体积 | 公开接口理由、未知字段/文件/路径等新外部输入、事务边界 | 无效输入、约束与配置测试；新增入口补特定用例 |
@@ -73,3 +73,14 @@ SMTP 主机由部署白名单约束、证书验证不关闭，测试发送仅本
 当前远程 MCP 的精确边界、重新认证、失效触发器、配额/限流与保留期见 [ADR 011](decisions/011-remote-mcp.md)；本机安装仅显式用户确认，短时单次配对证明绑定平台和账号/部门，服务地址固定于助手启动配置。
 
 内嵌助手按 [ADR 012](decisions/012-embedded-assistant.md)：使用能力是正式 `assistant:use`，未授权默认拒绝且不进入旧 viewer 种子；模型/端点/Token 由服务工作空间设置解析，`assistant.token` 密封存储、发布需敏感项重新认证，状态与聊天响应不返回端点、凭证或密文。模型调用只在服务端发起，baseUrl 仅允许 TLS（回环 HTTP 仅本地联调），拒绝 userinfo/查询串/片段；上游错误体不转发，统一映射为稳定错误码。页面工具仍在浏览器执行并沿用注册期权限过滤与撤销语义，模型只提出调用；助手会话仅存内存，退出/401 随 Provider 卸载清理。
+
+
+## 持久化流程安全
+
+编排使用 Eino Workflow/Graph/ADK，业务节点仍经 Gateway。嵌套来源强制 OriginCapability，继承父调用/深度，事务内互调拒绝。恢复及节点前重建原账号/部门身份；Agent 工具固定版本白名单与当前权限取交集，禁止递归编排。run/read/cancel 权限独立，查询/取消强制 tenant+account；MCP Token 不自动获得新工具。检查点加密绑定 tenant/run/key，不进入明文审计或运行摘要。取消撤销尚未执行的流程审批，已在执行/已提交动作不回滚；审批恢复读取原 invocation，独立动作不因载荷相同共用审批。详情见 docs/orchestration-plan.md（从仓库根解析）。
+
+## 文章评审
+
+文章通过 article.* 能力管理。articles:read/write 仅访问本人文章，articles:review 可读取本租户待审核内容并决定发布；审核仅限直接人类页面调用，禁止作者自审。发布后内容不可变，草稿/驳回修改递增 revision；所有评审落库按 revision 与原状态条件更新。article.apply 只接受 article.assess 注入的进程内可信判定，外部无法传 verdict。AI 没有工具，正文仅作为不可信分类数据。正文不进入事件、调用输入审计、调用结果或 AI 轨迹。敏感读取使用 TransientResult，禁用幂等结果重放并省略持久化数据。
+
+articles.blockedWords 为工作空间安全设置，以换行或逗号分词，复用设置草稿/发布/审计；空词库、配置失败、模型失败或无效输出全部转人工。评审使用投稿时的当前正文版本及评审时已发布词库，不追溯已发布文章。投稿事务写 Outbox，article-moderation Trigger 去重并限制深度；事件身份重新授权。待 AI 状态可由作者重试评审。AI 运行独立记录，失败不会回滚投稿。远程 MCP 显式开放文章列表、详情、创建草稿与投稿；Token 固化工具集合与当前 articles 权限取交集，不开放人工审核和内部结果写入。页面 Agent 工具未开放。

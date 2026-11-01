@@ -69,7 +69,7 @@ test("personal token, protocol diagnostic, client installation and independent r
     expect(login.status()).toBe(200);
     await page.goto("/mcp-settings");
     await expect(
-      page.getByRole("heading", { name: "MCP & WebSkills", exact: true }),
+      page.getByRole("heading", { name: "Agent collaboration", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("tab", { name: "Remote MCP", exact: true }),
@@ -234,7 +234,7 @@ test("personal token, protocol diagnostic, client installation and independent r
       "Connection or installation failed. Check the helper, Token and service. Installation may have updated local files; restore the .backup files if needed.",
     );
     await page
-      .getByRole("heading", { name: "MCP & WebSkills", exact: true })
+      .getByRole("heading", { name: "Agent collaboration", exact: true })
       .scrollIntoViewIfNeeded();
     await page.screenshot({
       path: testInfo.outputPath("mcp-settings-theme-one.png"),
@@ -243,7 +243,7 @@ test("personal token, protocol diagnostic, client installation and independent r
       .getByRole("button", { name: "Switch appearance", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "MCP & WebSkills", exact: true }),
+      page.getByRole("heading", { name: "Agent collaboration", exact: true }),
     ).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath("mcp-settings-theme-two.png"),

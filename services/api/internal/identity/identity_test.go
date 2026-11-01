@@ -89,7 +89,17 @@ func TestGovernanceCatalogDoesNotMakeManagementTemporary(t *testing.T) {
 			}
 		}
 	}
-	if len(seen) != 43 {
+	for _, code := range []string{"orchestration:read", "orchestration:run", "orchestration:cancel", "articles:read", "articles:write", "articles:review"} {
+		d := permissionDefinition(code)
+		if d == nil || d.TemporaryEligible || d.ScopeConfigurable {
+			t.Fatalf("unsafe orchestration permission: %s", code)
+		}
+	}
+
+	// 56 covers the four identity resources, access/temporary/mcp management, the
+	// capability approval gate, the three example module permissions and the
+	// three knowledge base management grants, three orchestration permissions and three article grants.
+	if len(seen) != 56 {
 		t.Fatal("unexpected catalog", len(seen))
 	}
 }

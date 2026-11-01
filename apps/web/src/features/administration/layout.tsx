@@ -34,6 +34,8 @@ import {
   X,
   Command,
   Settings2,
+  Sparkles,
+  Boxes,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -78,6 +80,9 @@ export function RequireSession() {
         replace
       />
     );
+  // The floating helper and the AI workbench drive the same backend agent, so
+  // the helper stays out of the way while the workbench itself is open.
+  const onAgentPage = /^\/ai(\/|$)/.test(location.pathname);
   return (
     <RuntimeProvider>
       <WebMcpProvider
@@ -85,7 +90,7 @@ export function RequireSession() {
       >
         <AssistantProvider>
           <Outlet />
-          <AssistantLauncher />
+          {!onAgentPage && <AssistantLauncher />}
         </AssistantProvider>
       </WebMcpProvider>
     </RuntimeProvider>
@@ -98,7 +103,6 @@ export function AdminLayout() {
   const session = useSession();
   const auth = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { theme, toggle } = useTheme();
   const { data } = useAdminData();
   const [collapsed, setCollapsed] = useState(false);
@@ -120,10 +124,34 @@ export function AdminLayout() {
   }, []);
   const links = [
     {
-      to: "/",
-      label: t("admin:nav.overview"),
+      to: "/articles",
+      label: t("articles:heading"),
+      icon: BookOpen,
+      permissions: ["articles:read"],
+    },
+    {
+      to: "/ai",
+      label: t("ai:nav"),
+      icon: Sparkles,
+      permissions: ["assistant:use"],
+    },
+    {
+      to: "/analytics",
+      label: t("admin:nav.statistics"),
       icon: LayoutDashboard,
       permissions: [],
+    },
+    {
+      to: "/capabilities",
+      label: t("capability:nav"),
+      icon: Boxes,
+      permissions: ["example:read"],
+    },
+    {
+      to: "/knowledge",
+      label: t("knowledge:nav"),
+      icon: BookOpen,
+      permissions: ["knowledge:read"],
     },
     {
       to: "/accounts",
@@ -156,16 +184,14 @@ export function AdminLayout() {
       permissions: ["settings:read", "dictionaries:read"],
     },
   ];
-  const current =
-    location.pathname === "/preferences"
-      ? { label: t("governance:preferences") }
-      : location.pathname === "/notifications"
-        ? { label: t("governance:notificationCenter") }
-        : location.pathname === "/notifications/compose"
-          ? { label: t("governance:composeNotification") }
-          : location.pathname === "/temporary-access"
-            ? { label: t("admin:temporary.title") }
-            : (links.find((link) => link.to === location.pathname) ?? links[0]);
+  const permitted = (items: typeof links) =>
+    items.filter(
+      (link) =>
+        !link.permissions.length ||
+        link.permissions.some((permission) =>
+          session.permissions.includes(permission),
+        ),
+    );
   const matched = search.trim().toLowerCase();
   const results = matched
     ? [
@@ -266,7 +292,7 @@ export function AdminLayout() {
           </div>
           <nav className="console-nav" aria-label={t("navigation:main")}>
             <div className="nav-section-label">{t("admin:nav.workspace")}</div>
-            {links.slice(0, 1).map((link) => (
+            {permitted(links.slice(0, 3)).map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
@@ -281,29 +307,20 @@ export function AdminLayout() {
             <div className="nav-section-label second-label">
               {t("admin:nav.management")}
             </div>
-            {links
-              .slice(1)
-              .filter(
-                (link) =>
-                  !link.permissions.length ||
-                  link.permissions.some((permission) =>
-                    session.permissions.includes(permission),
-                  ),
-              )
-              .map((link) => (
-                <NavLink
-                  to={link.to}
-                  aria-label={link.label}
-                  key={link.to}
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <link.icon size={17} />
-                  <span>{link.label}</span>
-                  {link.to === "/accounts" && (
-                    <small>{data.accounts.length}</small>
-                  )}
-                </NavLink>
-              ))}
+            {permitted(links.slice(3)).map((link) => (
+              <NavLink
+                to={link.to}
+                aria-label={link.label}
+                key={link.to}
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
+                <link.icon size={17} />
+                <span>{link.label}</span>
+                {link.to === "/accounts" && (
+                  <small>{data.accounts.length}</small>
+                )}
+              </NavLink>
+            ))}
           </nav>
           <div className="sidebar-bottom">
             <button
@@ -461,11 +478,6 @@ export function AdminLayout() {
             </div>
           </header>
           <main className="console-content" id="admin-content">
-            <div className="console-breadcrumb">
-              <span>{t("admin:console")}</span>
-              <ChevronDown size={11} />
-              <span>{current.label}</span>
-            </div>
             {!!logoutError && <ErrorBanner error={logoutError} />}
             <Outlet />
           </main>

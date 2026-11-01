@@ -1,0 +1,41 @@
+{
+  "name": "example-create-archive",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "title"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "create",
+      "capability": "example.record.create",
+      "version": "1.0.0",
+      "input": {
+        "title": {
+          "from": "input",
+          "field": "title"
+        }
+      }
+    },
+    {
+      "id": "archive",
+      "capability": "example.record.archive",
+      "version": "1.0.0",
+      "input": {
+        "id": {
+          "from": "create",
+          "field": "id"
+        }
+      }
+    }
+  ]
+}

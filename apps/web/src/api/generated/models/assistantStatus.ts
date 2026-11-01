@@ -10,6 +10,7 @@
  * Availability projection for the launcher. Credentials and endpoints are never returned.
  */
 export interface AssistantStatus {
+  agentEnabled: boolean;
   configured: boolean;
   enabled: boolean;
   model: string;

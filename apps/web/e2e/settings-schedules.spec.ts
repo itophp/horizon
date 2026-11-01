@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { LoginResult } from "../src/api/generated/models";
+import { resetPreferences } from "./helpers";
 
 test("system settings schedules and cancels a saved draft without changing live branding", async ({
   page,
@@ -13,16 +14,10 @@ test("system settings schedules and cancels a saved draft without changing live 
   });
   expect(login.ok()).toBeTruthy();
   const result: LoginResult = await login.json();
-  const reset = await request.put("/api/auth/preferences", {
-    headers: { Origin: origin, "X-CSRF-Token": result.profile.csrfToken },
-    data: {
-      changes: [
-        { key: "display.language", operation: "reset", value: "" },
-        { key: "display.theme", operation: "reset", value: "" },
-      ],
-    },
+  await resetPreferences(request, {
+    Origin: origin,
+    "X-CSRF-Token": result.profile.csrfToken,
   });
-  expect(reset.ok()).toBeTruthy();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.addInitScript(() =>

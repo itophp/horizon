@@ -35,30 +35,6 @@ type Service interface {
 	Logout(context.Context, *LogoutPayload) (res *LogoutResult, err error)
 	// Snapshot implements snapshot.
 	Snapshot(context.Context, *SnapshotPayload) (res *AdminSnapshot, err error)
-	// CreateAccount implements create_account.
-	CreateAccount(context.Context, *CreateAccountPayload) (res *AccountRecord, err error)
-	// UpdateAccount implements update_account.
-	UpdateAccount(context.Context, *UpdateAccountPayload) (res *AccountRecord, err error)
-	// DeleteAccount implements delete_account.
-	DeleteAccount(context.Context, *DeleteAccountPayload) (err error)
-	// CreateOrganization implements create_organization.
-	CreateOrganization(context.Context, *CreateOrganizationPayload) (res *OrganizationRecord, err error)
-	// UpdateOrganization implements update_organization.
-	UpdateOrganization(context.Context, *UpdateOrganizationPayload) (res *OrganizationRecord, err error)
-	// DeleteOrganization implements delete_organization.
-	DeleteOrganization(context.Context, *DeleteOrganizationPayload) (err error)
-	// CreateDepartment implements create_department.
-	CreateDepartment(context.Context, *CreateDepartmentPayload) (res *DepartmentRecord, err error)
-	// UpdateDepartment implements update_department.
-	UpdateDepartment(context.Context, *UpdateDepartmentPayload) (res *DepartmentRecord, err error)
-	// DeleteDepartment implements delete_department.
-	DeleteDepartment(context.Context, *DeleteDepartmentPayload) (err error)
-	// CreateRole implements create_role.
-	CreateRole(context.Context, *CreateRolePayload) (res *RoleRecord, err error)
-	// UpdateRole implements update_role.
-	UpdateRole(context.Context, *UpdateRolePayload) (res *RoleRecord, err error)
-	// DeleteRole implements delete_role.
-	DeleteRole(context.Context, *DeleteRolePayload) (err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -81,10 +57,8 @@ const ServiceName = "identity"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [22]string{"temporary_access", "request_temporary_access", "review_temporary_access", "cancel_temporary_access", "revoke_temporary_access", "switch_department", "login", "me", "logout", "snapshot", "create_account", "update_account", "delete_account", "create_organization", "update_organization", "delete_organization", "create_department", "update_department", "delete_department", "create_role", "update_role", "delete_role"}
+var MethodNames = [10]string{"temporary_access", "request_temporary_access", "review_temporary_access", "cancel_temporary_access", "revoke_temporary_access", "switch_department", "login", "me", "logout", "snapshot"}
 
-// AccountRecord is the result type of the identity service create_account
-// method.
 type AccountRecord struct {
 	ID             int64
 	Username       string
@@ -118,92 +92,6 @@ type CancelTemporaryAccessPayload struct {
 	ID     int64
 }
 
-// CreateAccountPayload is the payload type of the identity service
-// create_account method.
-type CreateAccountPayload struct {
-	Cookie           string
-	DepartmentAccess *DepartmentAccess
-	Username         string
-	FullName         string
-	Email            string
-	Status           string
-	OrganizationID   int64
-	DepartmentID     int64
-	RoleIds          []int64
-	Overrides        []*PermissionGrant
-	Password         string
-}
-
-// CreateDepartmentPayload is the payload type of the identity service
-// create_department method.
-type CreateDepartmentPayload struct {
-	Cookie         string
-	Name           string
-	Code           string
-	OrganizationID int64
-	ParentID       int64
-	Manager        string
-	Status         string
-	Description    string
-}
-
-// CreateOrganizationPayload is the payload type of the identity service
-// create_organization method.
-type CreateOrganizationPayload struct {
-	Cookie      string
-	Name        string
-	Code        string
-	Kind        string
-	ParentID    int64
-	Status      string
-	Description string
-}
-
-// CreateRolePayload is the payload type of the identity service create_role
-// method.
-type CreateRolePayload struct {
-	Cookie      string
-	Name        string
-	Code        string
-	Description string
-	Status      string
-	Grants      []*PermissionGrant
-}
-
-// DeleteAccountPayload is the payload type of the identity service
-// delete_account method.
-type DeleteAccountPayload struct {
-	Cookie string
-	ID     int64
-}
-
-// DeleteDepartmentPayload is the payload type of the identity service
-// delete_department method.
-type DeleteDepartmentPayload struct {
-	Cookie string
-	ID     int64
-}
-
-// DeleteOrganizationPayload is the payload type of the identity service
-// delete_organization method.
-type DeleteOrganizationPayload struct {
-	Cookie string
-	ID     int64
-}
-
-// DeleteRolePayload is the payload type of the identity service delete_role
-// method.
-type DeleteRolePayload struct {
-	Cookie string
-	ID     int64
-}
-
-// Explicitly replace additional memberships; the primary department remains in
-// account fields. Omission preserves existing additional memberships.
-type DepartmentAccess struct {
-	Memberships []*DepartmentMembership
-}
-
 type DepartmentMembership struct {
 	OrganizationID int64
 	DepartmentID   int64
@@ -212,8 +100,6 @@ type DepartmentMembership struct {
 	Overrides      []*PermissionGrant
 }
 
-// DepartmentRecord is the result type of the identity service
-// create_department method.
 type DepartmentRecord struct {
 	ID             int64
 	Name           string
@@ -257,8 +143,6 @@ type MePayload struct {
 	Cookie string
 }
 
-// OrganizationRecord is the result type of the identity service
-// create_organization method.
 type OrganizationRecord struct {
 	ID          int64
 	Name        string
@@ -313,7 +197,6 @@ type RevokeTemporaryAccessPayload struct {
 	ID     int64
 }
 
-// RoleRecord is the result type of the identity service create_role method.
 type RoleRecord struct {
 	ID          int64
 	Name        string
@@ -390,62 +273,6 @@ type TemporaryAccessWorkspace struct {
 	Departments     []*ScopeDepartmentChoice
 	EffectiveGrants []*PermissionGrant
 	CanReview       bool
-}
-
-// UpdateAccountPayload is the payload type of the identity service
-// update_account method.
-type UpdateAccountPayload struct {
-	Cookie           string
-	ID               int64
-	DepartmentAccess *DepartmentAccess
-	Username         string
-	FullName         string
-	Email            string
-	Status           string
-	OrganizationID   int64
-	DepartmentID     int64
-	RoleIds          []int64
-	Overrides        []*PermissionGrant
-	Password         string
-}
-
-// UpdateDepartmentPayload is the payload type of the identity service
-// update_department method.
-type UpdateDepartmentPayload struct {
-	Cookie         string
-	ID             int64
-	Name           string
-	Code           string
-	OrganizationID int64
-	ParentID       int64
-	Manager        string
-	Status         string
-	Description    string
-}
-
-// UpdateOrganizationPayload is the payload type of the identity service
-// update_organization method.
-type UpdateOrganizationPayload struct {
-	Cookie      string
-	ID          int64
-	Name        string
-	Code        string
-	Kind        string
-	ParentID    int64
-	Status      string
-	Description string
-}
-
-// UpdateRolePayload is the payload type of the identity service update_role
-// method.
-type UpdateRolePayload struct {
-	Cookie      string
-	ID          int64
-	Name        string
-	Code        string
-	Description string
-	Status      string
-	Grants      []*PermissionGrant
 }
 
 // Error returns an error description.

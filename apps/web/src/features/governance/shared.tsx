@@ -12,7 +12,7 @@ import {
   DataTable,
   type AdminColumn,
 } from "@/features/administration/shared";
-import type { ChangeRecord, SettingSchedule } from "@/api/generated/models";
+import type { ChangeRecord, SettingSchedule } from "@/api/types";
 import {
   settingsPublish,
   settingsSchedule,
@@ -22,7 +22,7 @@ import {
   settingsRollback,
   dictionariesPublish,
   dictionariesRollback,
-} from "@/api/generated/baseline";
+} from "@/lib/capabilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { localScheduleTime, scheduleInstant } from "./schedule-time";

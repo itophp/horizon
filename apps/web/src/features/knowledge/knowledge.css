@@ -1,0 +1,141 @@
+/* Two columns: writing a document on the left, the indexed corpus on the right.
+   The corpus scrolls independently so a long list never moves the form. */
+.knowledge-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.knowledge-create h3,
+.knowledge-list h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.knowledge-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.knowledge-field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-bg);
+  color: var(--app-ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.knowledge-hint {
+  margin: 0 0 12px;
+  font-size: 11px;
+  color: var(--app-muted);
+  line-height: 1.6;
+}
+.knowledge-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--app-strong-line);
+  border-radius: 8px;
+  background: var(--app-hover);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.knowledge-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.knowledge-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: var(--app-wash);
+  color: var(--app-muted);
+  font-size: 12px;
+}
+.knowledge-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.knowledge-list-heading h3 {
+  margin: 0;
+}
+.knowledge-reindex {
+  padding: 5px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.knowledge-reindex:hover:not(:disabled) {
+  border-color: var(--app-strong-line);
+  color: var(--app-ink);
+}
+.knowledge-reindex:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.knowledge-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+.knowledge-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+}
+.knowledge-list li strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.knowledge-list li small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--app-muted);
+}
+.knowledge-list li button {
+  flex: none;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+}
+.knowledge-list li button:hover {
+  border-color: var(--app-strong-line);
+  color: var(--app-ink);
+}
+@media (max-width: 1000px) {
+  .knowledge-layout {
+    grid-template-columns: 1fr;
+  }
+}

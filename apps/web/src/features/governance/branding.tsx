@@ -2,11 +2,8 @@ import { useEffect } from "react";
 import { changeLanguage } from "@/i18n";
 import { useTheme } from "@/app/providers/theme";
 import { useQuery } from "@tanstack/react-query";
-import {
-  brandingGet,
-  brandingLogo,
-  settingsLogo,
-} from "@/api/generated/baseline";
+import { brandingGet, brandingLogo } from "@/api/generated/baseline";
+import { settingsLogo } from "@/lib/capabilities";
 import { useAuth } from "@/features/administration/auth";
 import { useConfiguration } from "./runtime";
 export function useBranding() {

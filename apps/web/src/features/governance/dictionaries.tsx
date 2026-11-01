@@ -14,7 +14,7 @@ import {
   dictionariesImportDraft,
   dictionariesRemove,
   dictionariesOptions,
-} from "@/api/generated/baseline";
+} from "@/lib/capabilities";
 import type {
   ConfigTarget,
   DictionaryDefinition,
@@ -22,7 +22,7 @@ import type {
   DictionaryItem,
   DictionaryDetail,
   ImportPreview,
-} from "@/api/generated/models";
+} from "@/api/types";
 import { useSession } from "@/features/administration/auth";
 import {
   useAdminData,
@@ -366,7 +366,7 @@ function DictionaryForm({
             baseRevision: d?.revision ?? 0,
             reason: data.reason,
           });
-          if (response.status === 201)
+          if (response.status === 200)
             onSaved?.(response.data.document?.definition.id ?? 0);
           form.setValue("reason", "");
         }),

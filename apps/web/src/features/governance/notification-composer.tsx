@@ -9,7 +9,7 @@ import {
   notificationsAudience,
   notificationsPreview,
   notificationsSend,
-} from "@/api/generated/baseline";
+} from "@/lib/capabilities";
 import {
   ErrorBanner,
   Loading,
@@ -232,7 +232,7 @@ export function NotificationComposer({ onSent }: { onSent: () => void }) {
                     clientKey,
                     fileIds: [],
                   });
-                  if (response.status === 201) {
+                  if (response.status === 200) {
                     setConfirmation(null);
                     form.reset();
                     setClientKey(crypto.randomUUID());

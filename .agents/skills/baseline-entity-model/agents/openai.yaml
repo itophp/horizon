@@ -1,0 +1,3 @@
+interface:
+  display_name: "实体模型"
+  short_description: "Declare business entities validated against migrations"

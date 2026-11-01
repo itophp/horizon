@@ -18,7 +18,7 @@ description: "Build or modify React pages, navigation, shared UI, forms, tables,
 
 可观察验收至少涵盖实际用户路径和相关 loading/error/empty 状态；表单补组件交互测试，关键跨层流程补 Playwright。使用 label、role、focus-visible 和键盘交互。前端隐藏按钮不代替权限测试。
 
-执行 pnpm lint、pnpm typecheck、相关 Vitest、pnpm i18n:check、pnpm build；关键交互再运行 make test-e2e。纯样式改动不要求发明镜像实现的单元测试。
+执行 pnpm lint、pnpm typecheck、相关 Vitest、pnpm i18n:check、pnpm build；关键交互在授权范围内只跑映射命中的单个 spec（E2E 默认暂停，见根 AGENTS.md）。纯样式改动不要求发明镜像实现的单元测试。
 
 权限矩阵和临时权限页以服务端 PermissionDefinition 的 module/function/code 为源，一级模块用语义化 rowSpan 合并。申请人入口与审批入口分开，分别展示原始请求/最终批准，沿用现有表单、弹窗、列表和浅暗主题；审批上限及有效期只由后端判定，细则见 [ADR 003](../../../docs/decisions/003-temporary-access.md)。
 

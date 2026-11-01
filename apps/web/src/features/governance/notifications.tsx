@@ -11,7 +11,7 @@ import {
   notificationsDeliveries,
   notificationsRetry,
   notificationsTest,
-} from "@/api/generated/baseline";
+} from "@/lib/capabilities";
 import { useSession } from "@/features/administration/auth";
 import {
   PageHeading,
@@ -21,7 +21,7 @@ import {
   Loading,
   type AdminColumn,
 } from "@/features/administration/shared";
-import type { DeliveryRecord } from "@/api/generated/models";
+import type { DeliveryRecord } from "@/api/types";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useGovKey, useGovTask } from "./shared";
 function useInbox() {

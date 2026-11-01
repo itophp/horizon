@@ -1,6 +1,12 @@
 // This inventory includes public routes even though the authenticated provider
 // deliberately disconnects before entering them.
 export const webMcpRoutes = [
+  {
+    path: "/articles",
+    module: "articles",
+    permission: "articles:read",
+    connected: false,
+  },
   { path: "/mcp", module: "development", permission: "", connected: true },
   // Legacy entry points redirect to the unified page; kept so older links and
   // agent instructions still resolve.
@@ -11,6 +17,29 @@ export const webMcpRoutes = [
     connected: true,
   },
   { path: "/", module: "workspace", permission: "", connected: true },
+  // Statistics took over the former landing dashboard; "/" now redirects to the
+  // AI workbench, so the page keeps its own path.
+  { path: "/analytics", module: "workspace", permission: "", connected: true },
+  // The workbench is a first class console surface: its page tools are only
+  // published while the agent grant is held.
+  {
+    path: "/capabilities",
+    module: "capability",
+    permission: "example:read",
+    connected: true,
+  },
+  {
+    path: "/ai",
+    module: "ai",
+    permission: "assistant:use",
+    connected: true,
+  },
+  {
+    path: "/knowledge",
+    module: "knowledge",
+    permission: "knowledge:read",
+    connected: true,
+  },
   {
     path: "/accounts",
     module: "administration",

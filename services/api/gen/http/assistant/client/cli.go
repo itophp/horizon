@@ -11,6 +11,7 @@ import (
 	assistant "baseline/services/api/gen/assistant"
 	"encoding/json"
 	"fmt"
+	"unicode/utf8"
 
 	goa "goa.design/goa/v3/pkg"
 )
@@ -103,6 +104,143 @@ func BuildChatPayload(assistantChatBody *string, assistantChatCookie *string) (*
 			}
 			v.Tools[i] = marshalAssistantToolRequestBodyToAssistantAssistantTool(val)
 		}
+	}
+	v.Cookie = cookie
+
+	return v, nil
+}
+
+// BuildAgentPayload builds the payload for the assistant agent endpoint from
+// CLI flags.
+func BuildAgentPayload(assistantAgentBody *string, assistantAgentCookie *string) (*assistant.AgentPayload, error) {
+	var err error
+	var body AgentRequestBody
+	{
+		if assistantAgentBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*assistantAgentBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"question\": \"57\"\n   }'")
+		}
+		if utf8.RuneCountInString(body.Question) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
+		}
+		if utf8.RuneCountInString(body.Question) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 2000, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var cookie string
+	{
+		if assistantAgentCookie == nil {
+			return nil, fmt.Errorf("missing required flag --cookie")
+		}
+		cookie = *assistantAgentCookie
+	}
+	v := &assistant.AgentPayload{
+		Question: body.Question,
+	}
+	v.Cookie = cookie
+
+	return v, nil
+}
+
+// BuildWorkflowPayload builds the payload for the assistant workflow endpoint
+// from CLI flags.
+func BuildWorkflowPayload(assistantWorkflowBody *string, assistantWorkflowCookie *string) (*assistant.WorkflowPayload, error) {
+	var err error
+	var body WorkflowRequestBody
+	{
+		if assistantWorkflowBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*assistantWorkflowBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"question\": \"t\"\n   }'")
+		}
+		if utf8.RuneCountInString(body.Question) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
+		}
+		if utf8.RuneCountInString(body.Question) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 2000, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var cookie string
+	{
+		if assistantWorkflowCookie == nil {
+			return nil, fmt.Errorf("missing required flag --cookie")
+		}
+		cookie = *assistantWorkflowCookie
+	}
+	v := &assistant.WorkflowPayload{
+		Question: body.Question,
+	}
+	v.Cookie = cookie
+
+	return v, nil
+}
+
+// BuildKnowledgePayload builds the payload for the assistant knowledge
+// endpoint from CLI flags.
+func BuildKnowledgePayload(assistantKnowledgeCookie *string) (*assistant.KnowledgePayload, error) {
+	var cookie string
+	{
+		if assistantKnowledgeCookie == nil {
+			return nil, fmt.Errorf("missing required flag --cookie")
+		}
+		cookie = *assistantKnowledgeCookie
+	}
+	v := &assistant.KnowledgePayload{}
+	v.Cookie = cookie
+
+	return v, nil
+}
+
+// BuildIngestPayload builds the payload for the assistant ingest endpoint from
+// CLI flags.
+func BuildIngestPayload(assistantIngestBody *string, assistantIngestCookie *string) (*assistant.IngestPayload, error) {
+	var err error
+	var body IngestRequestBody
+	{
+		if assistantIngestBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*assistantIngestBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"content\": \"r\",\n      \"title\": \"b4\"\n   }'")
+		}
+		if utf8.RuneCountInString(body.Title) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", body.Title, utf8.RuneCountInString(body.Title), 1, true))
+		}
+		if utf8.RuneCountInString(body.Title) > 200 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", body.Title, utf8.RuneCountInString(body.Title), 200, false))
+		}
+		if utf8.RuneCountInString(body.Content) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content", body.Content, utf8.RuneCountInString(body.Content), 1, true))
+		}
+		if utf8.RuneCountInString(body.Content) > 40000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content", body.Content, utf8.RuneCountInString(body.Content), 40000, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var cookie string
+	{
+		if assistantIngestCookie == nil {
+			return nil, fmt.Errorf("missing required flag --cookie")
+		}
+		cookie = *assistantIngestCookie
+	}
+	v := &assistant.IngestPayload{
+		Title:   body.Title,
+		Content: body.Content,
 	}
 	v.Cookie = cookie
 

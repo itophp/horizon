@@ -1,0 +1,163 @@
+{
+  "nav": "AI 工作台",
+  "title": "AI 工作台",
+  "subtitle": "用目标描述你要的结果。智能体只在已注册的业务能力范围内规划，所有动作都不越过你本人的权限。",
+  "forbidden": "当前账号没有 AI 使用授权（assistant:use）。请联系管理员授予后再使用工作台。",
+  "tabs": {
+    "chat": "对话",
+    "runs": "执行记录"
+  },
+  "runtime": {
+    "on": "智能体已启用",
+    "off": "智能体未启用",
+    "capabilities": "{{total}} 项能力"
+  },
+  "workbench": {
+    "title": "目标驱动助手",
+    "runtime": "{{model}} · 可用能力 {{capabilities}} 项",
+    "noModel": "未配置模型",
+    "loadingRuntime": "正在读取运行配置",
+    "notConfigured": "模型未配置",
+    "intro": "直接说要达成什么，而不是去哪个菜单。智能体只能调用你有权使用的能力，高风险动作会先等你确认。",
+    "suggestion": {
+      "one": "看看我收件箱里还有哪些未读通知。",
+      "two": "工作区的制度文档对密码长度是怎么规定的？",
+      "three": "给本部门发一条今晚停机维护的通知。"
+    },
+    "thinking": "正在规划并调用业务能力",
+    "ask": "向智能体提问",
+    "placeholder": "描述你要达成的结果。Shift + Enter 换行。",
+    "send": "发送",
+    "emptyAnswer": "本次执行没有产出文字结论，可在执行记录中查看已记录步骤。",
+    "pending": "等待确认",
+    "noPending": "当前没有待确认的动作。",
+    "run": "执行 #{{id}}",
+    "review": "查看",
+    "department": "当前部门",
+    "registry": "能力目录版本",
+    "pendingMeta": "{{time}} · 执行 #{{run}}",
+    "disabled": "当前工作区尚未启用智能体。管理员可在「系统设置」中开启并配置模型。",
+    "openSettings": "前往系统设置",
+    "modelFailed": "模型没有返回结果。请到「系统设置」检查 Token 是否有效、智能体接口地址是否可达；这次失败的执行已保留在执行记录里。"
+  },
+  "trace": {
+    "title": "执行步骤",
+    "meta": "{{tools}} 次工具调用 · {{duration}} 毫秒 · 输入 {{prompt}} / 输出 {{completion}} tokens",
+    "id": "追踪",
+    "invocationMeta": "{{origin}} · {{status}}{{error}}{{duration}}",
+    "errorSuffix": " · {{code}}",
+    "durationSuffix": " · {{ms}}ms"
+  },
+  "risk": {
+    "low": "低风险",
+    "medium": "中风险",
+    "high": "高风险",
+    "critical": "关键风险"
+  },
+  "runStatus": {
+    "running": "执行中",
+    "completed": "已完成",
+    "awaiting_approval": "待确认",
+    "failed": "失败",
+    "cancelled": "已取消"
+  },
+  "stepKind": {
+    "tool": "能力调用",
+    "approval": "人工决策",
+    "answer": "回答",
+    "error": "错误"
+  },
+  "stepStatus": {
+    "succeeded": "成功",
+    "failed": "失败",
+    "denied": "已拒绝",
+    "pending_approval": "待确认"
+  },
+  "approval": {
+    "title": "这个动作需要你确认",
+    "expires": "{{time}} 前有效",
+    "approve": "确认执行",
+    "reject": "驳回",
+    "auto": "自动执行",
+    "confirm": "需一次确认",
+    "four-eyes": "需第二人审批",
+    "forbidden": "禁止智能体执行",
+    "meta": "{{capability}} · {{time}}"
+  },
+  "argument": {
+    "title": "标题",
+    "targets": "接收对象",
+    "email": "同时发送邮件"
+  },
+  "yes": "是",
+  "no": "否",
+  "code": {
+    "forbidden": "缺少权限",
+    "invalid": "参数不合法",
+    "unavailable": "服务暂不可用",
+    "approval_required": "等待确认",
+    "rejected": "已驳回",
+    "conflict": "已被处理或已过期",
+    "not_found": "未找到",
+    "result_too_large": "结果过大，请缩小查询范围",
+    "internal": "内部错误",
+    "unauthenticated": "会话已失效"
+  },
+  "capabilities": {
+    "search": "搜索名称、领域或权限",
+    "risk": "风险筛选",
+    "all": "全部",
+    "count": "共 {{total}} 项",
+    "readOnly": "只读",
+    "writable": "写入数据",
+    "idempotent": "幂等",
+    "schema": "输入契约",
+    "authenticated": "任意登录账号",
+    "columns": {
+      "capability": "业务能力",
+      "domain": "领域 / 实体",
+      "risk": "风险",
+      "approval": "审批策略",
+      "permission": "所需权限",
+      "contract": "契约"
+    }
+  },
+  "history": {
+    "columns": {
+      "time": "开始时间",
+      "question": "请求",
+      "status": "状态",
+      "tools": "调用次数",
+      "duration": "耗时"
+    },
+    "detail": "执行 #{{id}} · {{model}}",
+    "unavailable": "当前范围内看不到这次执行。",
+    "version": "{{model}} · {{version}}"
+  },
+  "tasks": {
+    "title": "任务",
+    "new": "新建任务",
+    "empty": "还没有任务。提出第一个问题即可创建。",
+    "archivedEmpty": "没有已归档的任务。",
+    "meta": "{{count}} 轮对话 · {{time}}",
+    "views": {
+      "active": "进行中",
+      "archived": "已归档"
+    },
+    "sort": {
+      "label": "任务排序",
+      "recent": "最近活动",
+      "oldest": "最早活动",
+      "title": "标题 A–Z"
+    },
+    "rename": "重命名",
+    "renameTask": "重命名「{{title}}」",
+    "renameLabel": "任务标题",
+    "renameSave": "保存标题",
+    "renameCancel": "取消重命名",
+    "archive": "归档",
+    "archiveTask": "归档「{{title}}」",
+    "restore": "恢复",
+    "restoreTask": "恢复「{{title}}」"
+  }
+}

@@ -16,3 +16,23 @@ func StatusAssistantPath() string {
 func ChatAssistantPath() string {
 	return "/api/assistant/chat"
 }
+
+// AgentAssistantPath returns the URL path to the assistant service agent HTTP endpoint.
+func AgentAssistantPath() string {
+	return "/api/assistant/agent"
+}
+
+// WorkflowAssistantPath returns the URL path to the assistant service workflow HTTP endpoint.
+func WorkflowAssistantPath() string {
+	return "/api/assistant/workflow"
+}
+
+// KnowledgeAssistantPath returns the URL path to the assistant service knowledge HTTP endpoint.
+func KnowledgeAssistantPath() string {
+	return "/api/assistant/knowledge"
+}
+
+// IngestAssistantPath returns the URL path to the assistant service ingest HTTP endpoint.
+func IngestAssistantPath() string {
+	return "/api/assistant/knowledge"
+}

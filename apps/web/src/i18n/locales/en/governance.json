@@ -215,7 +215,8 @@
     "assistant_enabled": "Enable the assistant",
     "assistant_baseUrl": "Model endpoint",
     "assistant_model": "Model",
-    "assistant_token": "API token"
+    "assistant_token": "API token",
+    "articles.blockedWords": "Blocked words (one per line or comma separated)"
   },
   "choices": {
     "en": "English",
@@ -254,7 +255,11 @@
     "retry": "Retry delivery",
     "test": "SMTP test",
     "send": "Send notification",
-    "revoke": "Revoke"
+    "revoke": "Revoke",
+    "run": "Run workflow",
+    "cancel": "Cancel workflow",
+    "write": "Write articles",
+    "review": "Review articles"
   },
   "noLogo": "Default brand mark",
   "logoHint": "Upload a PNG/JPEG logo from Attachments, then select it here.",
@@ -414,5 +419,6 @@
     "invalid": "The configuration no longer passes validation.",
     "unavailable": "A required service or storage is unavailable.",
     "internal": "Publication failed; review the configuration and schedule again."
-  }
+  },
+  "orchestration": "Workflow orchestration"
 }

@@ -1,0 +1,148 @@
+/* Capability console. Layout and colours reuse the console tokens shared with the
+   AI workbench so light and dark themes stay consistent. */
+
+.capability-workbench {
+  margin-bottom: 16px;
+}
+.capability-records {
+  display: flex;
+  flex-direction: column;
+}
+.capability-create {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--app-line);
+}
+.capability-create label {
+  color: var(--app-muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.capability-create > div {
+  display: flex;
+  gap: 8px;
+}
+.capability-create input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+  color: var(--app-ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+.capability-create input:focus-visible {
+  outline: 2px solid var(--app-strong-line);
+  outline-offset: 1px;
+}
+.capability-events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.capability-event {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 9px;
+  background: var(--app-subtle);
+}
+.capability-event > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.capability-event strong {
+  color: var(--app-ink);
+  font-size: 11px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.capability-event small {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.capability-approval {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid color-mix(in oklab, #d9a441 45%, var(--app-line));
+  border-radius: 9px;
+  background: color-mix(in oklab, #d9a441 8%, var(--app-panel));
+}
+.capability-approval strong {
+  display: block;
+  color: var(--app-ink);
+  font-size: 11px;
+}
+.capability-approval small {
+  display: block;
+  margin-top: 2px;
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.capability-approval-actions {
+  display: flex;
+  gap: 8px;
+}
+.capability-table-card,
+.capability-catalog {
+  margin-top: 16px;
+}
+.record-archived {
+  opacity: 0.7;
+}
+
+.workflow-example {
+  margin-bottom: 18px;
+}
+.workflow-example-body {
+  padding: 16px 20px;
+}
+.workflow-example-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.workflow-example-hint {
+  color: var(--app-muted);
+  font-size: 12px;
+  margin: 10px 0;
+}
+.workflow-example-run {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.workflow-example-stages {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.workflow-example-stages li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+.workflow-example-success {
+  color: var(--app-ink);
+  font-size: 13px;
+}

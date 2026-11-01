@@ -17,6 +17,7 @@ import (
 	"net/url"
 
 	goahttp "goa.design/goa/v3/http"
+	goa "goa.design/goa/v3/pkg"
 )
 
 // BuildStatusRequest instantiates a HTTP request object with method and path
@@ -337,6 +338,652 @@ func DecodeChatResponse(decoder func(*http.Response) goahttp.Decoder, restoreBod
 	}
 }
 
+// BuildAgentRequest instantiates a HTTP request object with method and path
+// set to call the "assistant" service "agent" endpoint
+func (c *Client) BuildAgentRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: AgentAssistantPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("assistant", "agent", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeAgentRequest returns an encoder for requests sent to the assistant
+// agent server.
+func EncodeAgentRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*assistant.AgentPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("assistant", "agent", "*assistant.AgentPayload", v)
+		}
+		{
+			head := p.Cookie
+			req.Header.Set("Cookie", head)
+		}
+		body := NewAgentRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("assistant", "agent", err)
+		}
+		return nil
+	}
+}
+
+// DecodeAgentResponse returns a decoder for responses returned by the
+// assistant agent endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeAgentResponse may return the following errors:
+//   - "unauthenticated" (type *assistant.IAMProblem): http.StatusUnauthorized
+//   - "forbidden" (type *assistant.IAMProblem): http.StatusForbidden
+//   - "invalid" (type *assistant.IAMProblem): http.StatusBadRequest
+//   - "unavailable" (type *assistant.IAMProblem): http.StatusServiceUnavailable
+//   - "internal" (type *assistant.IAMProblem): http.StatusInternalServerError
+//   - error: internal error
+func DecodeAgentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("assistant", "agent", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body AgentResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			err = ValidateAgentResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "agent", err)
+			}
+			res := NewAgentAssistantAgentReplyOK(&body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body AgentUnauthenticatedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			err = ValidateAgentUnauthenticatedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "agent", err)
+			}
+			return nil, NewAgentUnauthenticated(&body)
+		case http.StatusForbidden:
+			var (
+				body AgentForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			err = ValidateAgentForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "agent", err)
+			}
+			return nil, NewAgentForbidden(&body)
+		case http.StatusBadRequest:
+			var (
+				body AgentInvalidResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			err = ValidateAgentInvalidResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "agent", err)
+			}
+			return nil, NewAgentInvalid(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body AgentUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			err = ValidateAgentUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "agent", err)
+			}
+			return nil, NewAgentUnavailable(&body)
+		case http.StatusInternalServerError:
+			var (
+				body AgentInternalResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			err = ValidateAgentInternalResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "agent", err)
+			}
+			return nil, NewAgentInternal(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "agent", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("assistant", "agent", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildWorkflowRequest instantiates a HTTP request object with method and path
+// set to call the "assistant" service "workflow" endpoint
+func (c *Client) BuildWorkflowRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: WorkflowAssistantPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("assistant", "workflow", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeWorkflowRequest returns an encoder for requests sent to the assistant
+// workflow server.
+func EncodeWorkflowRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*assistant.WorkflowPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("assistant", "workflow", "*assistant.WorkflowPayload", v)
+		}
+		{
+			head := p.Cookie
+			req.Header.Set("Cookie", head)
+		}
+		body := NewWorkflowRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("assistant", "workflow", err)
+		}
+		return nil
+	}
+}
+
+// DecodeWorkflowResponse returns a decoder for responses returned by the
+// assistant workflow endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeWorkflowResponse may return the following errors:
+//   - "unauthenticated" (type *assistant.IAMProblem): http.StatusUnauthorized
+//   - "forbidden" (type *assistant.IAMProblem): http.StatusForbidden
+//   - "invalid" (type *assistant.IAMProblem): http.StatusBadRequest
+//   - "unavailable" (type *assistant.IAMProblem): http.StatusServiceUnavailable
+//   - "internal" (type *assistant.IAMProblem): http.StatusInternalServerError
+//   - error: internal error
+func DecodeWorkflowResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("assistant", "workflow", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body WorkflowResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			err = ValidateWorkflowResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "workflow", err)
+			}
+			res := NewWorkflowAssistantAgentReplyOK(&body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body WorkflowUnauthenticatedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			err = ValidateWorkflowUnauthenticatedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "workflow", err)
+			}
+			return nil, NewWorkflowUnauthenticated(&body)
+		case http.StatusForbidden:
+			var (
+				body WorkflowForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			err = ValidateWorkflowForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "workflow", err)
+			}
+			return nil, NewWorkflowForbidden(&body)
+		case http.StatusBadRequest:
+			var (
+				body WorkflowInvalidResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			err = ValidateWorkflowInvalidResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "workflow", err)
+			}
+			return nil, NewWorkflowInvalid(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body WorkflowUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			err = ValidateWorkflowUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "workflow", err)
+			}
+			return nil, NewWorkflowUnavailable(&body)
+		case http.StatusInternalServerError:
+			var (
+				body WorkflowInternalResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			err = ValidateWorkflowInternalResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "workflow", err)
+			}
+			return nil, NewWorkflowInternal(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "workflow", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("assistant", "workflow", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildKnowledgeRequest instantiates a HTTP request object with method and
+// path set to call the "assistant" service "knowledge" endpoint
+func (c *Client) BuildKnowledgeRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: KnowledgeAssistantPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("assistant", "knowledge", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeKnowledgeRequest returns an encoder for requests sent to the assistant
+// knowledge server.
+func EncodeKnowledgeRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*assistant.KnowledgePayload)
+		if !ok {
+			return goahttp.ErrInvalidType("assistant", "knowledge", "*assistant.KnowledgePayload", v)
+		}
+		{
+			head := p.Cookie
+			req.Header.Set("Cookie", head)
+		}
+		return nil
+	}
+}
+
+// DecodeKnowledgeResponse returns a decoder for responses returned by the
+// assistant knowledge endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeKnowledgeResponse may return the following errors:
+//   - "unauthenticated" (type *assistant.IAMProblem): http.StatusUnauthorized
+//   - "forbidden" (type *assistant.IAMProblem): http.StatusForbidden
+//   - "invalid" (type *assistant.IAMProblem): http.StatusBadRequest
+//   - "unavailable" (type *assistant.IAMProblem): http.StatusServiceUnavailable
+//   - "internal" (type *assistant.IAMProblem): http.StatusInternalServerError
+//   - error: internal error
+func DecodeKnowledgeResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("assistant", "knowledge", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body []*KnowledgeDocumentResponse
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			for _, e := range body {
+				if e != nil {
+					if err2 := validateKnowledgeDocumentResponse(e, "body[*]"); err2 != nil {
+						err = goa.MergeErrors(err, err2)
+					}
+				}
+			}
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "knowledge", err)
+			}
+			res := NewKnowledgeKnowledgeDocumentOK(body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body KnowledgeUnauthenticatedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			err = ValidateKnowledgeUnauthenticatedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "knowledge", err)
+			}
+			return nil, NewKnowledgeUnauthenticated(&body)
+		case http.StatusForbidden:
+			var (
+				body KnowledgeForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			err = ValidateKnowledgeForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "knowledge", err)
+			}
+			return nil, NewKnowledgeForbidden(&body)
+		case http.StatusBadRequest:
+			var (
+				body KnowledgeInvalidResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			err = ValidateKnowledgeInvalidResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "knowledge", err)
+			}
+			return nil, NewKnowledgeInvalid(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body KnowledgeUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			err = ValidateKnowledgeUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "knowledge", err)
+			}
+			return nil, NewKnowledgeUnavailable(&body)
+		case http.StatusInternalServerError:
+			var (
+				body KnowledgeInternalResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			err = ValidateKnowledgeInternalResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "knowledge", err)
+			}
+			return nil, NewKnowledgeInternal(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "knowledge", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("assistant", "knowledge", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildIngestRequest instantiates a HTTP request object with method and path
+// set to call the "assistant" service "ingest" endpoint
+func (c *Client) BuildIngestRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: IngestAssistantPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("assistant", "ingest", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeIngestRequest returns an encoder for requests sent to the assistant
+// ingest server.
+func EncodeIngestRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*assistant.IngestPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("assistant", "ingest", "*assistant.IngestPayload", v)
+		}
+		{
+			head := p.Cookie
+			req.Header.Set("Cookie", head)
+		}
+		body := NewIngestRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("assistant", "ingest", err)
+		}
+		return nil
+	}
+}
+
+// DecodeIngestResponse returns a decoder for responses returned by the
+// assistant ingest endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeIngestResponse may return the following errors:
+//   - "unauthenticated" (type *assistant.IAMProblem): http.StatusUnauthorized
+//   - "forbidden" (type *assistant.IAMProblem): http.StatusForbidden
+//   - "invalid" (type *assistant.IAMProblem): http.StatusBadRequest
+//   - "unavailable" (type *assistant.IAMProblem): http.StatusServiceUnavailable
+//   - "internal" (type *assistant.IAMProblem): http.StatusInternalServerError
+//   - error: internal error
+func DecodeIngestResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("assistant", "ingest", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body IngestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			err = ValidateIngestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "ingest", err)
+			}
+			res := NewIngestKnowledgeIngestedCreated(&body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body IngestUnauthenticatedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			err = ValidateIngestUnauthenticatedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "ingest", err)
+			}
+			return nil, NewIngestUnauthenticated(&body)
+		case http.StatusForbidden:
+			var (
+				body IngestForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			err = ValidateIngestForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "ingest", err)
+			}
+			return nil, NewIngestForbidden(&body)
+		case http.StatusBadRequest:
+			var (
+				body IngestInvalidResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			err = ValidateIngestInvalidResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "ingest", err)
+			}
+			return nil, NewIngestInvalid(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body IngestUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			err = ValidateIngestUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "ingest", err)
+			}
+			return nil, NewIngestUnavailable(&body)
+		case http.StatusInternalServerError:
+			var (
+				body IngestInternalResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			err = ValidateIngestInternalResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("assistant", "ingest", err)
+			}
+			return nil, NewIngestInternal(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("assistant", "ingest", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("assistant", "ingest", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // marshalAssistantAssistantMessageToAssistantMessageRequestBody builds a value
 // of type *AssistantMessageRequestBody from a value of type
 // *assistant.AssistantMessage.
@@ -441,6 +1088,21 @@ func unmarshalAssistantToolCallResponseBodyToAssistantAssistantToolCall(v *Assis
 		ID:        *v.ID,
 		Name:      *v.Name,
 		Arguments: *v.Arguments,
+	}
+
+	return res
+}
+
+// unmarshalKnowledgeDocumentResponseToAssistantKnowledgeDocument builds a
+// value of type *assistant.KnowledgeDocument from a value of type
+// *KnowledgeDocumentResponse.
+func unmarshalKnowledgeDocumentResponseToAssistantKnowledgeDocument(v *KnowledgeDocumentResponse) *assistant.KnowledgeDocument {
+	res := &assistant.KnowledgeDocument{
+		ID:        *v.ID,
+		Title:     *v.Title,
+		Source:    *v.Source,
+		Chunks:    *v.Chunks,
+		CreatedAt: *v.CreatedAt,
 	}
 
 	return res

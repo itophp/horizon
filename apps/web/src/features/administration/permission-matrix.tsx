@@ -31,6 +31,7 @@ export function scopeOptions(t: TFunction) {
 }
 export function permissionFunctionLabel(key: string, t: TFunction) {
   const labels: Record<string, string> = {
+    articles: t("articles:heading"),
     accounts: t("admin:nav.accounts"),
     organizations: t("admin:nav.organizations"),
     departments: t("admin:nav.departments"),
@@ -42,6 +43,7 @@ export function permissionFunctionLabel(key: string, t: TFunction) {
     files: t("governance:files"),
     notifications: t("governance:messages"),
     mcp: t("mcp:title"),
+    orchestration: t("governance:orchestration"),
   };
   return labels[key] ?? key;
 }

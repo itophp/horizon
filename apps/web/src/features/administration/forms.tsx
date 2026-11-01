@@ -1,20 +1,21 @@
 import { useConfiguration } from "@/features/governance/runtime";
+import { useMutation } from "@tanstack/react-query";
+import {
+  identityCreateAccount,
+  identityCreateDepartment,
+  identityCreateOrganization,
+  identityCreateRole,
+  identityUpdateAccount,
+  identityUpdateDepartment,
+  identityUpdateOrganization,
+  identityUpdateRole,
+} from "@/lib/capabilities";
 import { useState, useId, cloneElement, type ReactElement } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { LoaderCircle } from "lucide-react";
-import {
-  useIdentityCreateAccount,
-  useIdentityUpdateAccount,
-  useIdentityCreateOrganization,
-  useIdentityUpdateOrganization,
-  useIdentityCreateDepartment,
-  useIdentityUpdateDepartment,
-  useIdentityCreateRole,
-  useIdentityUpdateRole,
-} from "@/api/generated/baseline";
 import type {
   AccountRecord,
   OrganizationRecord,
@@ -33,6 +34,46 @@ import {
   ScopeLabel,
 } from "./shared";
 import { PermissionMatrix } from "./permission-matrix";
+// The console no longer owns per-resource REST hooks: each form mutation is one
+// capability invocation, so the gateway records the same audit as an agent call.
+const useIdentityCreateOrganization = () =>
+  useMutation({
+    mutationFn: ({ data }: { data: unknown }) =>
+      identityCreateOrganization(data),
+  });
+const useIdentityUpdateOrganization = () =>
+  useMutation({
+    mutationFn: ({ id, data }: { id: number; data: unknown }) =>
+      identityUpdateOrganization(id, data),
+  });
+const useIdentityCreateDepartment = () =>
+  useMutation({
+    mutationFn: ({ data }: { data: unknown }) => identityCreateDepartment(data),
+  });
+const useIdentityUpdateDepartment = () =>
+  useMutation({
+    mutationFn: ({ id, data }: { id: number; data: unknown }) =>
+      identityUpdateDepartment(id, data),
+  });
+const useIdentityCreateRole = () =>
+  useMutation({
+    mutationFn: ({ data }: { data: unknown }) => identityCreateRole(data),
+  });
+const useIdentityUpdateRole = () =>
+  useMutation({
+    mutationFn: ({ id, data }: { id: number; data: unknown }) =>
+      identityUpdateRole(id, data),
+  });
+const useIdentityCreateAccount = () =>
+  useMutation({
+    mutationFn: ({ data }: { data: unknown }) => identityCreateAccount(data),
+  });
+const useIdentityUpdateAccount = () =>
+  useMutation({
+    mutationFn: ({ id, data }: { id: number; data: unknown }) =>
+      identityUpdateAccount(id, data),
+  });
+
 const required = z
   .string()
   .trim()

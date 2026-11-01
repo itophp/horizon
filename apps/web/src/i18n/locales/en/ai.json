@@ -1,0 +1,163 @@
+{
+  "nav": "AI workbench",
+  "title": "AI workbench",
+  "subtitle": "Describe the outcome. The agent plans with registered capabilities and every action stays inside your own authority.",
+  "forbidden": "Your account does not hold the AI usage grant (assistant:use). Ask an administrator to grant it before using the workbench.",
+  "tabs": {
+    "chat": "Workbench",
+    "runs": "Execution log"
+  },
+  "runtime": {
+    "on": "Agent enabled",
+    "off": "Agent disabled",
+    "capabilities": "{{total}} capabilities"
+  },
+  "workbench": {
+    "title": "Goal driven assistant",
+    "runtime": "{{model}} · {{capabilities}} capabilities available",
+    "noModel": "no model configured",
+    "loadingRuntime": "Reading runtime configuration",
+    "notConfigured": "Model not configured",
+    "intro": "Ask for an outcome, not a menu path. The agent can only use capabilities you are allowed to use, and high risk actions wait for your confirmation.",
+    "suggestion": {
+      "one": "Show me the pending notifications in my inbox.",
+      "two": "What do the workspace policy documents say about password length?",
+      "three": "Send an announcement to my department about tonight's maintenance window."
+    },
+    "thinking": "Planning and calling capabilities",
+    "ask": "Ask the agent",
+    "placeholder": "Describe the outcome you need. Shift + Enter adds a line.",
+    "send": "Send",
+    "emptyAnswer": "The run ended without a written answer. Open the execution log for the recorded steps.",
+    "pending": "Waiting for confirmation",
+    "noPending": "No confirmation is waiting.",
+    "run": "Run #{{id}}",
+    "review": "Review",
+    "department": "Active department",
+    "registry": "Registry version",
+    "pendingMeta": "{{time}} · run #{{run}}",
+    "disabled": "The agent is not enabled for this workspace yet. An administrator can turn it on and configure the model under System settings.",
+    "openSettings": "Open system settings",
+    "modelFailed": "The model did not answer. Check that the token under System settings is valid and that the agent endpoint is reachable; the failed task is kept in Run history."
+  },
+  "trace": {
+    "title": "Execution steps",
+    "meta": "{{tools}} tool calls · {{duration}} ms · {{prompt}} prompt / {{completion}} completion tokens",
+    "id": "Trace",
+    "invocationMeta": "{{origin}} · {{status}}{{error}}{{duration}}",
+    "errorSuffix": " · {{code}}",
+    "durationSuffix": " · {{ms}}ms"
+  },
+  "risk": {
+    "low": "Low risk",
+    "medium": "Medium risk",
+    "high": "High risk",
+    "critical": "Critical"
+  },
+  "runStatus": {
+    "running": "Running",
+    "completed": "Completed",
+    "awaiting_approval": "Awaiting approval",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "stepKind": {
+    "tool": "Capability call",
+    "approval": "Human decision",
+    "answer": "Answer",
+    "error": "Error"
+  },
+  "stepStatus": {
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "denied": "Denied",
+    "pending_approval": "Pending approval"
+  },
+  "approval": {
+    "title": "This action needs your confirmation",
+    "expires": "Expires {{time}}",
+    "approve": "Confirm and run",
+    "reject": "Reject",
+    "auto": "Automatic",
+    "confirm": "Confirm once",
+    "four-eyes": "Second approver",
+    "forbidden": "Closed to agents",
+    "meta": "{{capability}} · {{time}}"
+  },
+  "argument": {
+    "title": "Title",
+    "targets": "Recipients",
+    "email": "Also send email"
+  },
+  "yes": "Yes",
+  "no": "No",
+  "code": {
+    "forbidden": "Missing permission",
+    "invalid": "Invalid input",
+    "unavailable": "Service unavailable",
+    "approval_required": "Waiting for confirmation",
+    "rejected": "Rejected",
+    "conflict": "Already decided or expired",
+    "not_found": "Not found",
+    "result_too_large": "Result too large, narrow the request",
+    "internal": "Internal error",
+    "unauthenticated": "Session expired"
+  },
+  "capabilities": {
+    "search": "Search name, domain or permission",
+    "risk": "Risk filter",
+    "all": "All",
+    "count": "{{total}} registered",
+    "readOnly": "Read only",
+    "writable": "Writes data",
+    "idempotent": "Idempotent",
+    "schema": "Input contract",
+    "authenticated": "Any signed in account",
+    "columns": {
+      "capability": "Capability",
+      "domain": "Domain / entity",
+      "risk": "Risk",
+      "approval": "Approval",
+      "permission": "Permission",
+      "contract": "Contract"
+    }
+  },
+  "history": {
+    "columns": {
+      "time": "Started",
+      "question": "Request",
+      "status": "Status",
+      "tools": "Calls",
+      "duration": "Duration"
+    },
+    "detail": "Run #{{id}} · {{model}}",
+    "unavailable": "This run is not available in the current scope.",
+    "version": "{{model}} · {{version}}"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "new": "New task",
+    "empty": "No tasks yet. Ask the first question to start one.",
+    "archivedEmpty": "No archived tasks.",
+    "meta": "{{count}} turns · {{time}}",
+    "views": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "sort": {
+      "label": "Sort tasks",
+      "recent": "Last activity",
+      "oldest": "Oldest first",
+      "title": "Title A–Z"
+    },
+    "rename": "Rename",
+    "renameTask": "Rename {{title}}",
+    "renameLabel": "Task title",
+    "renameSave": "Save title",
+    "renameCancel": "Cancel rename",
+    "archive": "Archive",
+    "archiveTask": "Archive {{title}}",
+    "restore": "Restore",
+    "restoreTask": "Restore {{title}}"
+  }
+}

@@ -220,6 +220,7 @@ export function usePageTools(tools: PageTool[]) {
 }
 const routes = {
   "/": "",
+  "/analytics": "",
   "/accounts": "accounts:read",
   "/organizations": "organizations:read",
   "/departments": "departments:read",

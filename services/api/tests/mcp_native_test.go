@@ -3,7 +3,7 @@
 package tests
 
 import (
-	gen "baseline/services/api/gen/mcp_management"
+	"baseline/services/api/internal/modules/mcp"
 	"bufio"
 	"context"
 	"encoding/json"
@@ -25,9 +25,9 @@ func TestMCPNativeClients(t *testing.T) {
 	}
 	handler, _, root := iamFixture(t)
 	owner := loginIAM(t, handler, "root-admin")
-	response := owner.request(t, "POST", "/api/auth/mcp/tokens", map[string]interface{}{"name": "native acceptance", "password": "TestOnly!2026Secure", "days": 1, "departmentId": root.DepartmentID, "tools": []string{"context_get", "capabilities_list"}}, true)
-	checkStatus(t, response, 201)
-	created := decodeBody[gen.MCPTokenCreated](t, response)
+	response := owner.invoke(t, "mcp.token.create", map[string]interface{}{"name": "native acceptance", "password": "TestOnly!2026Secure", "days": 1, "departmentId": root.DepartmentID, "tools": []string{"context_get", "capabilities_list"}}, true)
+	checkStatus(t, response, 200)
+	created := decodeBody[mcp.MCPTokenCreated](t, response)
 	server := httptest.NewServer(handler)
 	defer server.Close()
 	repo, err := filepath.Abs("../../..")

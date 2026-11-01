@@ -1,0 +1,35 @@
+{
+  "name": "example-review",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "properties": {
+      "question": {
+        "type": "string",
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "question"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "id": "review",
+      "input": {
+        "question": {
+          "from": "input",
+          "field": "question"
+        }
+      },
+      "agent": {
+        "instruction": "Review the reference records for the user's question using the provided read tool. Return a concise factual answer.",
+        "tools": [
+          "example.record.list@1.0.0"
+        ],
+        "maxIterations": 5
+      }
+    }
+  ]
+}

@@ -7,11 +7,6 @@ var _ = API("baseline", func() {
 	Description("Application infrastructure and technical demonstrations")
 	Server("api", func() { Host("local", func() { URI("http://127.0.0.1:8080") }) })
 })
-var Record = Type("TechnicalRecord", func() {
-	Attribute("id", Int64)
-	Attribute("label", String)
-	Required("id", "label")
-})
 var _ = Service("system", func() {
 	Method("health", func() {
 		Result(func() { Attribute("status", String); Required("status") })
@@ -27,62 +22,6 @@ var _ = Service("system", func() {
 		HTTP(func() { GET("/api/echo"); Param("name"); Response(StatusOK) })
 	})
 })
-var Bearer = APIKeySecurity("bearer", func() { Description("Authorization header containing Bearer followed by a verified credential") })
-var AccessError = Type("AccessError", func() { Attribute("code", String, func() { Meta("struct:error:name") }); Required("code") })
-var _ = Service("demo", func() {
-	Description("Protected technical-only demo. Bearer identity is verified by transport middleware.")
-	Security(Bearer)
-	Error("unauthenticated", AccessError)
-	Error("forbidden", AccessError)
-	Error("unavailable")
-	Error("internal")
-	HTTP(func() {
-		Response("unauthenticated", StatusUnauthorized)
-		Response("forbidden", StatusForbidden)
-		Header("token:Authorization")
-		Response("unavailable", StatusServiceUnavailable)
-		Response("internal", StatusInternalServerError)
-	})
-	Method("list", func() {
-		Payload(func() { APIKey("bearer", "token", String); Required("token") })
-		Result(ArrayOf(Record))
-		HTTP(func() { GET("/api/demo/records"); Response(StatusOK) })
-	})
-	Method("get", func() {
-		Error("not_found")
-		Payload(func() {
-			APIKey("bearer", "token", String)
-			Required("token")
-			Attribute("id", Int64, func() { Minimum(1) })
-			Required("id")
-		})
-		Result(Record)
-		HTTP(func() { GET("/api/demo/records/{id}"); Response("not_found", StatusNotFound); Response(StatusOK) })
-	})
-	Method("update", func() {
-		Error("not_found")
-		Payload(func() {
-			APIKey("bearer", "token", String)
-			Required("token")
-			Attribute("id", Int64, func() { Minimum(1) })
-			Attribute("label", String, func() { MinLength(1); MaxLength(80) })
-			Required("id", "label")
-		})
-		Result(Record)
-		HTTP(func() { PATCH("/api/demo/records/{id}"); Response("not_found", StatusNotFound); Response(StatusOK) })
-	})
-	Method("delete", func() {
-		Error("not_found")
-		Payload(func() {
-			APIKey("bearer", "token", String)
-			Required("token")
-			Attribute("id", Int64, func() { Minimum(1) })
-			Required("id")
-		})
-		HTTP(func() {
-			DELETE("/api/demo/records/{id}")
-			Response("not_found", StatusNotFound)
-			Response(StatusNoContent)
-		})
-	})
-})
+
+// resourceId is the shared payload fragment for methods addressed by primary key.
+func resourceId() { Attribute("id", Int64, func() { Minimum(1) }); Required("id") }

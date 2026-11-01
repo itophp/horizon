@@ -252,7 +252,7 @@ func (r *Repository) createSession(ctx context.Context, tenant string, id int64,
 	return r.q.IAMCreateSession(ctx, dbgen.IAMCreateSessionParams{TenantID: tenant, AccountID: id, TokenHash: hash, CsrfToken: csrf, ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Duration(minutes) * time.Minute), Valid: true}})
 }
 
-func (r *Repository) createOrganization(ctx context.Context, scope Scope, payload *genidentity.CreateOrganizationPayload) (*genidentity.OrganizationRecord, error) {
+func (r *Repository) createOrganization(ctx context.Context, scope Scope, payload *OrganizationInput) (*genidentity.OrganizationRecord, error) {
 	idResult, err := r.q.IAMCreateOrganization(ctx, dbgen.IAMCreateOrganizationParams{Name: payload.Name, Code: payload.Code, Kind: payload.Kind, ParentID: payload.ParentID, Status: payload.Status, Description: payload.Description, TenantID: scope.TenantID})
 	if err != nil {
 		return nil, err
@@ -260,7 +260,7 @@ func (r *Repository) createOrganization(ctx context.Context, scope Scope, payloa
 	return r.organization(ctx, Scope{TenantID: scope.TenantID, All: true}, idResult)
 }
 
-func (r *Repository) updateOrganization(ctx context.Context, scope Scope, id int64, payload *genidentity.UpdateOrganizationPayload) (*genidentity.OrganizationRecord, error) {
+func (r *Repository) updateOrganization(ctx context.Context, scope Scope, id int64, payload *OrganizationInput) (*genidentity.OrganizationRecord, error) {
 	idResult, err := r.q.IAMUpdateOrganization(ctx, dbgen.IAMUpdateOrganizationParams{Name: payload.Name, Code: payload.Code, Kind: payload.Kind, ParentID: payload.ParentID, Status: payload.Status, Description: payload.Description, TenantID: scope.TenantID, AllData: scope.All, OrgIds: scope.OrgIDs, ID: id})
 	if err != nil {
 		return nil, err
@@ -268,7 +268,7 @@ func (r *Repository) updateOrganization(ctx context.Context, scope Scope, id int
 	return r.organization(ctx, Scope{TenantID: scope.TenantID, All: true}, idResult)
 }
 
-func (r *Repository) createDepartment(ctx context.Context, scope Scope, payload *genidentity.CreateDepartmentPayload) (*genidentity.DepartmentRecord, error) {
+func (r *Repository) createDepartment(ctx context.Context, scope Scope, payload *DepartmentInput) (*genidentity.DepartmentRecord, error) {
 	idResult, err := r.q.IAMCreateDepartment(ctx, dbgen.IAMCreateDepartmentParams{Name: payload.Name, Code: payload.Code, OrganizationID: payload.OrganizationID, ParentID: payload.ParentID, Manager: payload.Manager, Status: payload.Status, Description: payload.Description, TenantID: scope.TenantID})
 	if err != nil {
 		return nil, err
@@ -276,7 +276,7 @@ func (r *Repository) createDepartment(ctx context.Context, scope Scope, payload 
 	return r.department(ctx, Scope{TenantID: scope.TenantID, All: true}, idResult)
 }
 
-func (r *Repository) updateDepartment(ctx context.Context, scope Scope, id int64, payload *genidentity.UpdateDepartmentPayload) (*genidentity.DepartmentRecord, error) {
+func (r *Repository) updateDepartment(ctx context.Context, scope Scope, id int64, payload *DepartmentInput) (*genidentity.DepartmentRecord, error) {
 	idResult, err := r.q.IAMUpdateDepartment(ctx, dbgen.IAMUpdateDepartmentParams{Name: payload.Name, Code: payload.Code, OrganizationID: payload.OrganizationID, ParentID: payload.ParentID, Manager: payload.Manager, Status: payload.Status, Description: payload.Description, TenantID: scope.TenantID, AllData: scope.All, OrgIds: scope.OrgIDs, DeptIds: scope.DeptIDs, ID: id})
 	if err != nil {
 		return nil, err
@@ -284,7 +284,7 @@ func (r *Repository) updateDepartment(ctx context.Context, scope Scope, id int64
 	return r.department(ctx, Scope{TenantID: scope.TenantID, All: true}, idResult)
 }
 
-func (r *Repository) createRole(ctx context.Context, scope Scope, payload *genidentity.CreateRolePayload) (*genidentity.RoleRecord, error) {
+func (r *Repository) createRole(ctx context.Context, scope Scope, payload *RoleInput) (*genidentity.RoleRecord, error) {
 	grants, err := json.Marshal(payload.Grants)
 	if err != nil {
 		return nil, err
@@ -296,7 +296,7 @@ func (r *Repository) createRole(ctx context.Context, scope Scope, payload *genid
 	return r.role(ctx, Scope{TenantID: scope.TenantID, All: true}, idResult)
 }
 
-func (r *Repository) updateRole(ctx context.Context, scope Scope, id int64, payload *genidentity.UpdateRolePayload) (*genidentity.RoleRecord, error) {
+func (r *Repository) updateRole(ctx context.Context, scope Scope, id int64, payload *RoleInput) (*genidentity.RoleRecord, error) {
 	grants, err := json.Marshal(payload.Grants)
 	if err != nil {
 		return nil, err
@@ -308,7 +308,7 @@ func (r *Repository) updateRole(ctx context.Context, scope Scope, id int64, payl
 	return r.role(ctx, Scope{TenantID: scope.TenantID, All: true}, idResult)
 }
 
-func (r *Repository) writeAccount(ctx context.Context, scope Scope, id int64, payload *genidentity.CreateAccountPayload, passwordHash string) (*genidentity.AccountRecord, error) {
+func (r *Repository) writeAccount(ctx context.Context, scope Scope, id int64, payload *AccountInput, passwordHash string) (*genidentity.AccountRecord, error) {
 	grants, err := json.Marshal(payload.Overrides)
 	if err != nil {
 		return nil, err

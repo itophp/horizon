@@ -119,3 +119,8 @@ WorkBuddy 推荐生成官方连接器结构：`connector-meta.json`、`mcp.json`
 ## 当前实现与验收入口
 
 实现见 [ADR 011](decisions/011-remote-mcp.md)，使用与恢复见 [操作指南](mcp-operations.md)。首阶段代码包括远程入口、个人 Token 生命周期/重新认证、工具选择/分页/审计/限流、网页诊断、本机配对安装及客户端运行时指南。验证结果以真实命令与交付记录为准；配置生成和模拟客户端均不能替代真实 Codex/WorkBuddy 验收。
+
+
+## 持久化流程工具
+
+workflows_list / workflows_get / workflows_run / workflows_cancel 对应 orchestration.workflow 能力。Token 工具集合与当前 read/run/cancel 权限取交集；旧 Token 不增加工具。启动/取消为高风险自动化调用，通过 Gateway 审批，不因 MCP 的提示元数据绕过授权。详见 [编排方案](orchestration-plan.md)。

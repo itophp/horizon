@@ -79,7 +79,9 @@ func identityStatus(err error) int {
 func guardedPath(path string) bool {
 	return strings.HasPrefix(path, "/api/admin/") ||
 		strings.HasPrefix(path, "/api/auth/") ||
-		strings.HasPrefix(path, "/api/assistant/")
+		strings.HasPrefix(path, "/api/assistant/") ||
+		strings.HasPrefix(path, "/api/ai/") ||
+		strings.HasPrefix(path, "/api/capabilities")
 }
 func mountIdentity(mux goahttp.Muxer, service *identity.Service, onError func(context.Context, http.ResponseWriter, error)) func(http.ResponseWriter, *http.Request) (*http.Request, bool) {
 	identityhttp.Mount(mux, identityhttp.New(genidentity.NewEndpoints(service), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, onError, nil))

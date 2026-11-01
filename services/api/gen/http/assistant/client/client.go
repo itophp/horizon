@@ -23,6 +23,20 @@ type Client struct {
 	// Chat Doer is the HTTP client used to make requests to the chat endpoint.
 	ChatDoer goahttp.Doer
 
+	// Agent Doer is the HTTP client used to make requests to the agent endpoint.
+	AgentDoer goahttp.Doer
+
+	// Workflow Doer is the HTTP client used to make requests to the workflow
+	// endpoint.
+	WorkflowDoer goahttp.Doer
+
+	// Knowledge Doer is the HTTP client used to make requests to the knowledge
+	// endpoint.
+	KnowledgeDoer goahttp.Doer
+
+	// Ingest Doer is the HTTP client used to make requests to the ingest endpoint.
+	IngestDoer goahttp.Doer
+
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
 	RestoreResponseBody bool
@@ -45,6 +59,10 @@ func NewClient(
 	return &Client{
 		StatusDoer:          doer,
 		ChatDoer:            doer,
+		AgentDoer:           doer,
+		WorkflowDoer:        doer,
+		KnowledgeDoer:       doer,
+		IngestDoer:          doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
 		host:                host,
@@ -96,6 +114,102 @@ func (c *Client) Chat() goa.Endpoint {
 		resp, err := c.ChatDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("assistant", "chat", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Agent returns an endpoint that makes HTTP requests to the assistant service
+// agent server.
+func (c *Client) Agent() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeAgentRequest(c.encoder)
+		decodeResponse = DecodeAgentResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildAgentRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.AgentDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("assistant", "agent", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Workflow returns an endpoint that makes HTTP requests to the assistant
+// service workflow server.
+func (c *Client) Workflow() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeWorkflowRequest(c.encoder)
+		decodeResponse = DecodeWorkflowResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildWorkflowRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.WorkflowDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("assistant", "workflow", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Knowledge returns an endpoint that makes HTTP requests to the assistant
+// service knowledge server.
+func (c *Client) Knowledge() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeKnowledgeRequest(c.encoder)
+		decodeResponse = DecodeKnowledgeResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildKnowledgeRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.KnowledgeDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("assistant", "knowledge", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Ingest returns an endpoint that makes HTTP requests to the assistant service
+// ingest server.
+func (c *Client) Ingest() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeIngestRequest(c.encoder)
+		decodeResponse = DecodeIngestResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildIngestRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.IngestDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("assistant", "ingest", err)
 		}
 		return decodeResponse(resp)
 	}

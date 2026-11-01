@@ -41,8 +41,32 @@ var AssistantStatus = Type("AssistantStatus", func() {
 	Description("Availability projection for the launcher. Credentials and endpoints are never returned.")
 	Attribute("enabled", Boolean)
 	Attribute("configured", Boolean)
+	Attribute("agentEnabled", Boolean)
 	Attribute("model", String)
-	Required("enabled", "configured", "model")
+	Required("enabled", "configured", "agentEnabled", "model")
+})
+
+var AssistantAgentReply = Type("AssistantAgentReply", func() {
+	Description("Eino agent answer. Tool names are labels only; arguments and payloads stay server side.")
+	Attribute("content", String)
+	Attribute("tools", ArrayOf(String))
+	Attribute("model", String)
+	Attribute("mode", String, func() { Enum("agent", "workflow") })
+	Required("content", "tools", "model", "mode")
+})
+
+var KnowledgeDocument = Type("KnowledgeDocument", func() {
+	Attribute("id", Int64)
+	Attribute("title", String)
+	Attribute("source", String)
+	Attribute("chunks", Int64)
+	Attribute("createdAt", String)
+	Required("id", "title", "source", "chunks", "createdAt")
+})
+
+var KnowledgeIngested = Type("KnowledgeIngested", func() {
+	Attribute("id", Int64)
+	Required("id")
 })
 
 var _ = Service("assistant", func() {
@@ -77,5 +101,42 @@ var _ = Service("assistant", func() {
 		})
 		Result(AssistantReply)
 		HTTP(func() { POST("/api/assistant/chat"); Response(StatusOK) })
+	})
+	Method("agent", func() {
+		Description("Run the Eino agent for one question. The agent decides whether to search the knowledge base.")
+		Payload(func() {
+			cookiePayload()
+			Attribute("question", String, func() { MinLength(1); MaxLength(2000) })
+			Required("question")
+		})
+		Result(AssistantAgentReply)
+		HTTP(func() { POST("/api/assistant/agent"); Response(StatusOK) })
+	})
+	Method("workflow", func() {
+		Description("Run the retrieval workflow: retrieve, ground the prompt, then answer. Always grounded.")
+		Payload(func() {
+			cookiePayload()
+			Attribute("question", String, func() { MinLength(1); MaxLength(2000) })
+			Required("question")
+		})
+		Result(AssistantAgentReply)
+		HTTP(func() { POST("/api/assistant/workflow"); Response(StatusOK) })
+	})
+	Method("knowledge", func() {
+		Description("List indexed knowledge documents for the current tenant.")
+		Payload(func() { cookiePayload() })
+		Result(ArrayOf(KnowledgeDocument))
+		HTTP(func() { GET("/api/assistant/knowledge"); Response(StatusOK) })
+	})
+	Method("ingest", func() {
+		Description("Index one knowledge document. Requires settings:update and is tenant scoped.")
+		Payload(func() {
+			cookiePayload()
+			Attribute("title", String, func() { MinLength(1); MaxLength(200) })
+			Attribute("content", String, func() { MinLength(1); MaxLength(40000) })
+			Required("title", "content")
+		})
+		Result(KnowledgeIngested)
+		HTTP(func() { POST("/api/assistant/knowledge"); Response(StatusCreated) })
 	})
 })

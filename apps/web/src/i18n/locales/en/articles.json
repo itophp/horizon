@@ -1,0 +1,35 @@
+{
+  "heading": "Articles",
+  "description": "Write, submit and review articles before publishing.",
+  "policy": "Configure and publish blocked words in System settings → Security. Matches, suspected matches and unavailable AI require another reviewer. Published articles are immutable.",
+  "title": "Title",
+  "body": "Body",
+  "status": "Status",
+  "reason": "Review result",
+  "actions": "Actions",
+  "open": "Open",
+  "new": "New article",
+  "save": "Save draft",
+  "submit": "Submit for publishing",
+  "assess": "Retry AI review",
+  "approve": "Approve and publish",
+  "reject": "Reject",
+  "loading": "Loading…",
+  "error": "The action failed. Refresh the article and check your permissions.",
+  "invalid": "Enter a title (1–200 characters) and body (1–20,000 characters).",
+  "denied": "You do not have article access.",
+  "states": {
+    "draft": "Draft",
+    "pending_ai": "AI review pending",
+    "pending_review": "Human review pending",
+    "published": "Published",
+    "rejected": "Rejected"
+  },
+  "codes": {
+    "safe": "AI: safe",
+    "blocked": "Blocked word match",
+    "suspected": "Suspected blocked word",
+    "unavailable": "AI or word list unavailable",
+    "human_review": "Human review completed"
+  }
+}

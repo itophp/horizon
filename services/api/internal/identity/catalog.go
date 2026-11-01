@@ -15,10 +15,15 @@ func PermissionCatalog() []*genidentity.PermissionDefinition {
 	out = append(out,
 		&genidentity.PermissionDefinition{Code: "access:manage", Module: "access", Function: "policies", Action: "manage"},
 		&genidentity.PermissionDefinition{Code: "temporary:approve", Module: "access", Function: "temporary", Action: "approve"},
+		&genidentity.PermissionDefinition{Code: "capability:approve", Module: "system", Function: "capability", Action: "approve", ScopeConfigurable: false, TemporaryEligible: false},
 		&genidentity.PermissionDefinition{Code: "mcp:revoke", Module: "system", Function: "mcp", Action: "revoke", ScopeConfigurable: false, TemporaryEligible: false})
-	for resource, actions := range map[string][]string{"settings": {"read", "update", "publish", "history", "rollback", "export"}, "dictionaries": {"read", "create", "update", "delete", "publish", "import", "export", "history", "rollback", "use"}, "files": {"read", "create", "delete"}, "notifications": {"read", "retry", "test", "send"}, "assistant": {"use"}} {
+	out = append(out,
+		&genidentity.PermissionDefinition{Code: "example:read", Module: "business", Function: "example", Action: "read", ScopeConfigurable: false, TemporaryEligible: false},
+		&genidentity.PermissionDefinition{Code: "example:create", Module: "business", Function: "example", Action: "create", ScopeConfigurable: false, TemporaryEligible: false},
+		&genidentity.PermissionDefinition{Code: "example:archive", Module: "business", Function: "example", Action: "archive", ScopeConfigurable: false, TemporaryEligible: false})
+	for resource, actions := range map[string][]string{"articles": {"read", "write", "review"}, "orchestration": {"read", "run", "cancel"}, "settings": {"read", "update", "publish", "history", "rollback", "export"}, "dictionaries": {"read", "create", "update", "delete", "publish", "import", "export", "history", "rollback", "use"}, "files": {"read", "create", "delete"}, "notifications": {"read", "retry", "test", "send"}, "assistant": {"use"}, "knowledge": {"read", "create", "delete"}} {
 		for _, action := range actions {
-			out = append(out, &genidentity.PermissionDefinition{Code: resource + ":" + action, Module: "system", Function: resource, Action: action, ScopeConfigurable: resource != "settings" && (resource != "dictionaries" || action == "use"), TemporaryEligible: resource == "files" && action == "read" || resource == "dictionaries" && action == "use"})
+			out = append(out, &genidentity.PermissionDefinition{Code: resource + ":" + action, Module: "system", Function: resource, Action: action, ScopeConfigurable: resource != "articles" && resource != "orchestration" && resource != "settings" && (resource != "dictionaries" || action == "use"), TemporaryEligible: resource == "files" && action == "read" || resource == "dictionaries" && action == "use"})
 		}
 	}
 	sort.SliceStable(out[18:], func(i, j int) bool { return out[18+i].Code < out[18+j].Code })

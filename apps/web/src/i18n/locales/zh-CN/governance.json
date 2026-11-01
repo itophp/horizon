@@ -215,7 +215,8 @@
     "assistant_enabled": "开启 AI 助手",
     "assistant_baseUrl": "模型地址",
     "assistant_model": "模型",
-    "assistant_token": "API Token"
+    "assistant_token": "API Token",
+    "articles.blockedWords": "文章屏蔽词（每行一个或用逗号分隔）"
   },
   "choices": {
     "en": "English",
@@ -254,7 +255,11 @@
     "retry": "重试投递",
     "test": "SMTP 测试",
     "send": "发送通知",
-    "revoke": "撤销"
+    "revoke": "撤销",
+    "run": "启动流程",
+    "cancel": "取消流程",
+    "write": "编写文章",
+    "review": "审核文章"
   },
   "noLogo": "默认品牌标志",
   "logoHint": "在附件管理上传 PNG/JPEG Logo 后，在此选择。",
@@ -414,5 +419,6 @@
     "invalid": "配置已无法通过校验，请修改后重新排期。",
     "unavailable": "依赖服务或存储当前不可用。",
     "internal": "发布失败，请检查配置后重新排期。"
-  }
+  },
+  "orchestration": "流程编排"
 }

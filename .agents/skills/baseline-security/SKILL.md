@@ -62,3 +62,17 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 账号远程 MCP 按 [实现方案](../../../docs/mcp-service-plan.md)（首阶段实现）：复用可信身份与范围，Token 固化工具集合与当前正式权限取交集，禁用/撤销实时生效，秘密仅一次显示，不入日志/配置包；账号凭证与页面配对密钥隔离。
 
 远程 MCP 精确规则见 [ADR 011](../../../docs/decisions/011-remote-mcp.md)。创建/轮换/撤销须 VerifyCurrentPassword 和浏览器会话/Origin/CSRF；MCP 复用 PrincipalForTask 的正式授权。数据库延迟归属检查避免清空重建误撤销，但删除后重新加入不复活 Token，停用/密码重置也撤销。扩展测试须包含重认证拒绝、并发轮换、跨账号/租户、范围外 ID、身份失效及秘密投影。助手固定远程来源，不接受任意地址/命令/路径，安装证明短时单次且校验 Token 账号/部门。
+
+
+## AI 与业务人工任务的边界
+
+按 [开发工作流](../../../docs/agent-workflow.md#eino-选型与人工节点) 区分业务审核与 Gateway 风险确认。前者需审核人自身身份、任务可见范围、禁止自审、版本条件、重复/过期决定拒绝及可展示原因；不能用启动人的权限替审核人决定，也不能让审核人身份冒充原作者继续发布。
+
+分别确认应用内 Agent、远程 MCP、页面 WebMCP 的操作与字段范围，不能因 Entries 注册或某人有权限就推断所有渠道都获准暴露。敏感读取的 TransientResult 只控制调用结果持久化与重放；还须检查模型回答、AI 历史、事件和 Workflow 检查点。模型可提出候选结论，状态转换、版本约束和权限仍由服务端能力校验；失败、不确定或规范化后无有效规则不得默认放行。
+
+
+## 持久化流程
+
+Eino Workflow/Graph/ADK 的业务节点仍经 Gateway；嵌套来源强制 OriginCapability，继承深度并拒绝事务内互调。恢复和节点前重建原账号/部门身份；Agent 工具版本白名单与当前权限取交集，禁止递归流程。run/read/cancel 权限独立，查询/取消强制 tenant+account；MCP Token 不自动获得新工具。检查点加密绑定 tenant/run/key，不进入明文审计。取消撤销未执行审批；已在执行或已提交动作不回滚。恢复读取原 invocation，独立流程动作不能因相同载荷共用审批。验证按 docs/orchestration-plan.md（仓库根路径）。
+
+文章审核验证作者隔离、跨租户、版本条件、自审/自动化拒绝、伪造结果拒绝，以及正文不进入事件、调用审计或 AI 轨迹；敏感只读使用 TransientResult 禁止持久化与重放。

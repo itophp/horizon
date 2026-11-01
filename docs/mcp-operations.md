@@ -38,3 +38,7 @@ Codex 通过本机官方 CLI 配置；可用 CODEX_BIN 指定已有 CLI 路径�
 MCP_CLIENT_HOME 仅用于独立测试客户端配置，正常安装应省略。移动仓库或 Node 路径后重新安装。助手关闭不影响已安装 stdio 桥直接连接远程服务。
 
 本轮实现及已执行验证见 [验证记录](mcp-verification.md)。WorkBuddy 桌面端最终调用由用户选择自行完成，步骤见该记录；助手和原生 CLI 通过不代替此项。
+
+## 文章查询和投稿
+
+新 Token 可显式勾选 articles_list / articles_get（articles:read）和 articles_create / articles_submit（articles:write）。先创建草稿，读取 revision，再以独立稳定幂等键投稿；查询 published 状态才表示发布成功。投稿仍经 Gateway 与 AI/人工审核；不开放人工审核、评审结果写入或跳过审核工具。现有 Token 不自动增加工具。

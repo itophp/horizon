@@ -1,0 +1,376 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16
+    },
+    "input": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/CapabilitySchema"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "object"
+            }
+          }
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "#/$defs/Step"
+      },
+      "minItems": 1,
+      "maxItems": 64
+    }
+  },
+  "$id": "urn:baseline:workflow:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Generated from Go runtime types; do not edit. Capability resolution, graph semantics and authorization require separate validation.",
+  "$defs": {
+    "Agent": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^@\\s]+@[^@\\s]+$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "maxIterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        }
+      },
+      "required": [
+        "instruction",
+        "tools",
+        "maxIterations"
+      ],
+      "additionalProperties": false
+    },
+    "CapabilitySchema": {
+      "type": "object",
+      "properties": {
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enum": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "items": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "$ref": "#/$defs/CapabilitySchema"
+        },
+        "maxItems": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "maxLength": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "maximum": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "minItems": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "minLength": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "minimum": {
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "$ref": "#/$defs/CapabilitySchema"
+          }
+        },
+        "required": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "object",
+            "array",
+            "string",
+            "integer",
+            "number",
+            "boolean"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "additionalProperties"
+      ],
+      "additionalProperties": false
+    },
+    "Compensation": {
+      "type": "object",
+      "properties": {
+        "capability": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "$ref": "#/$defs/Mapping"
+          }
+        },
+        "constants": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "capability",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "Mapping": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "from",
+        "field"
+      ],
+      "additionalProperties": false
+    },
+    "Poll": {
+      "type": "object",
+      "properties": {
+        "doneField": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maxSteps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "doneField",
+        "maxSteps"
+      ],
+      "additionalProperties": false
+    },
+    "Step": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$",
+          "not": {
+            "const": "input"
+          }
+        },
+        "capability": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "dependsOn": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "$ref": "#/$defs/Mapping"
+          }
+        },
+        "constants": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "compensation": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "$ref": "#/$defs/Compensation"
+        },
+        "poll": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "$ref": "#/$defs/Poll"
+        },
+        "agent": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "$ref": "#/$defs/Agent"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": [
+            "capability",
+            "version"
+          ],
+          "not": {
+            "required": [
+              "agent"
+            ]
+          }
+        },
+        {
+          "required": [
+            "agent"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "capability"
+                ]
+              },
+              {
+                "required": [
+                  "version"
+                ]
+              },
+              {
+                "required": [
+                  "poll"
+                ]
+              },
+              {
+                "required": [
+                  "maxAttempts"
+                ]
+              },
+              {
+                "required": [
+                  "compensation"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "if": {
+        "required": [
+          "poll"
+        ]
+      },
+      "then": {
+        "properties": {
+          "maxAttempts": {
+            "maximum": 1
+          }
+        }
+      }
+    }
+  },
+  "title": "Baseline workflow definition v1",
+  "required": [
+    "name",
+    "version",
+    "input",
+    "steps"
+  ],
+  "additionalProperties": false
+}

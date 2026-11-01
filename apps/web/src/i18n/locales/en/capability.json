@@ -1,0 +1,177 @@
+{
+  "nav": "Business capabilities",
+  "title": "Business capabilities",
+  "subtitle": "One contract for buttons, agents and workflows. Every call is authorized, idempotent, audited and emits business events.",
+  "forbidden": "Your account cannot use the capability console. Ask an administrator for the example module permissions.",
+  "summary": {
+    "definitions": "{{total}} capabilities",
+    "events": "{{total}} recent events",
+    "pending": "{{total}} pending approvals"
+  },
+  "records": {
+    "title": "Example records",
+    "hint": "Creating a record runs a business transaction and writes an outbox event in the same commit. The AI review then runs asynchronously.",
+    "create": "Create record",
+    "creating": "Creating",
+    "titleLabel": "Record title",
+    "titlePlaceholder": "For example: line 3 changeover checklist",
+    "empty": "No example records yet.",
+    "archive": "Archive",
+    "archiving": "Archiving",
+    "created": "Record #{{id}} created. Its event is queued for AI review.",
+    "columns": {
+      "id": "ID",
+      "title": "Title",
+      "status": "Status",
+      "createdAt": "Created",
+      "actions": "Actions"
+    }
+  },
+  "status": {
+    "draft": "Draft",
+    "active": "Active",
+    "archived": "Archived"
+  },
+  "approvals": {
+    "title": "Pending approvals",
+    "empty": "No confirmation is waiting.",
+    "approve": "Approve and run",
+    "reject": "Reject",
+    "expires": "expires {{time}}",
+    "mine": "Requested by you",
+    "review": "Review"
+  },
+  "events": {
+    "title": "Business events",
+    "empty": "No business events yet.",
+    "aggregate": "{{type}} #{{id}}",
+    "depth": "depth {{depth}}",
+    "aiStatus": {
+      "queued": "AI queued",
+      "running": "AI running",
+      "completed": "AI reviewed",
+      "failed": "AI failed",
+      "skipped": "AI skipped",
+      "none": "No AI policy"
+    },
+    "meta": "{{time}} · {{depth}}{{policy}}",
+    "policySuffix": " · {{policy}}"
+  },
+  "invocations": {
+    "title": "Recent invocations",
+    "empty": "No capability invocation yet.",
+    "replay": "Replayed",
+    "columns": {
+      "capability": "Capability",
+      "origin": "Origin",
+      "status": "Status",
+      "duration": "Duration",
+      "time": "Time"
+    },
+    "origin": {
+      "human-ui": "Console",
+      "agent": "Agent",
+      "workflow": "Workflow",
+      "api": "API",
+      "event": "Event",
+      "approval": "Approval",
+      "capability": "Capability composition"
+    },
+    "status": {
+      "requested": "Requested",
+      "awaiting_approval": "Awaiting approval",
+      "executing": "Executing",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "catalog": {
+    "title": "Capability catalog",
+    "search": "Search name, domain or permission",
+    "count": "{{total}} registered",
+    "empty": "No capability matches the filter.",
+    "columns": {
+      "capability": "Capability",
+      "domain": "Domain / entity",
+      "risk": "Risk",
+      "approval": "Approval",
+      "permission": "Permission",
+      "events": "Events"
+    },
+    "none": "—"
+  },
+  "risk": {
+    "low": "Low risk",
+    "medium": "Medium risk",
+    "high": "High risk",
+    "critical": "Critical"
+  },
+  "approval": {
+    "auto": "Automatic",
+    "confirm": "Confirm once",
+    "four-eyes": "Second approver",
+    "forbidden": "Closed to agents"
+  },
+  "definitions": {
+    "knowledge_search": {
+      "title": "Knowledge search",
+      "description": "Search the workspace knowledge base for rules, configuration and uploaded documents."
+    },
+    "dictionary_options": {
+      "title": "Dictionary options",
+      "description": "Read the published options of a business dictionary."
+    },
+    "notification_inbox": {
+      "title": "My inbox",
+      "description": "Read the notifications delivered to your own account."
+    },
+    "notification_send": {
+      "title": "Send announcement",
+      "description": "Send an in-app announcement, optionally by email, to people your role may reach."
+    },
+    "example_record_list": {
+      "title": "List example records",
+      "description": "Read the example business records of the current tenant."
+    },
+    "example_record_create": {
+      "title": "Create example record",
+      "description": "Create a record and emit example.record.created in the same transaction."
+    },
+    "example_record_archive": {
+      "title": "Archive example record",
+      "description": "Archive a record. High risk: automation must obtain human confirmation."
+    },
+    "example_record_get": {
+      "title": "Inspect own example record",
+      "description": "Read a record you created and whether it is ready for review. Archived records are not ready."
+    }
+  },
+  "demo": {
+    "title": "Workflow example test",
+    "hint": "Running creates a reference record. Archiving requires your confirmation.",
+    "refresh": "Refresh workflow progress",
+    "unavailable": "This API does not yet provide orchestration. Update and restart the API.",
+    "forbidden": "Workflow run/read and example create/read/archive permissions are required.",
+    "basic": "Run basic test",
+    "full": "Run full test (with agent)",
+    "cancel": "Cancel run",
+    "fullReady": "The full test includes readiness checks and agent review using your configured model.",
+    "modelRequired": "The basic test needs no model. The full test also requires assistant permission and an enabled, configured agent model.",
+    "recordTitle": "Workflow page test record",
+    "starting": "Starting…",
+    "run": "Run #{{id}}",
+    "pendingStart": "Awaiting start approval",
+    "waiting": "No recent invocation",
+    "approvalHint": "Confirm the archive action below. The workflow continues after approval.",
+    "completed": "Test completed: the reference record finished the workflow and was archived.",
+    "failed": "The workflow did not finish. Service code: {{code}}. Check the invocation trace.",
+    "cancelled": "Run cancelled. Already committed records remain.",
+    "stages": {
+      "create": "Create record",
+      "ready": "Check readiness",
+      "review": "Agent review query",
+      "archive": "Approve and archive"
+    }
+  }
+}

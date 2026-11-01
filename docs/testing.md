@@ -4,14 +4,16 @@
 
 采用“连续开发累计变更 → 阶段验收集中验证 → 发布/CI 全量回归”。测试覆盖要求保留，执行时机按批次安排；单个功能完成、一次回复或聊天结束都不自动构成验收节点，也不必为是否运行测试反复询问用户。
 
-- 普通开发：完成实现并按风险补充测试，记录受影响模块和待验命令，继续后续功能；不自动启动 ci-fast、数据库集成或 E2E，也不要求每完成一个普通功能就运行单元测试。需要浏览器旁证时用 `make test-e2e-changed` 只跑改动对应的文件，纯文档/规则改动不启动浏览器。
+**E2E 当前处于暂停状态（用户现行指示）**：默认不启动任何浏览器验收；确需旁证时只跑改动模块对应的 spec；全量浏览器集合必须获得用户当轮明确授权。本节优先级高于下方各批次描述与 profiles 表的历史“何时执行”措辞。
+
+- 普通开发：完成实现并按风险补充测试，记录受影响模块和待验命令，继续后续功能；不自动启动 ci-fast、数据库集成或 E2E，也不要求每完成一个普通功能就运行单元测试。纯文档/规则改动不启动浏览器。
 - 提前定向验证：复现缺陷、排查编译错误，以及认证/授权/数据范围、敏感字段、迁移/事务、契约兼容等高风险改动，应在继续依赖该行为的开发前运行最小相关检查。SQL 行为使用真实隔离 PostgreSQL，权限覆盖允许与拒绝；这不触发无关模块或全量回归。
-- 阶段验收：用户要求验收/测试，或准备提交、创建 PR 时，对累计代码变更统一运行一次 make ci-fast；涉及 SQL/事务追加 test-integration，涉及安全追加 test-security（已包含 integration，不再单独重复），关键跨层流程选相关 E2E 文件。仅文档/规则运行 make check-rules。普通跨层功能完成本身不触发 make ci。
-- 完整回归：发布候选、用户明确要求全量验收或 CI 使用默认 make ci；保留现有 CI 全量覆盖。若已决定运行 make ci，不先另跑一遍 ci-fast、integration 和 E2E。
+- 阶段验收：用户要求验收/测试，或准备提交、创建 PR 时，对累计代码变更统一运行一次 make ci-fast；涉及 SQL/事务追加 test-integration，涉及安全追加 test-security（已包含 integration，不再单独重复）。浏览器默认仍不执行；用户当轮要求浏览器旁证时，只跑映射命中的模块 spec。仅文档/规则运行 make check-rules。普通跨层功能完成本身不触发 make ci。
+- 完整回归：发布候选或用户明确要求全量验收时使用默认 make ci。执行前必须取得用户对“全量 E2E”的明确授权；未授权时只执行 fast/integration 等非浏览器部分并声明 E2E 未执行。若已决定运行 make ci，不先另跑一遍 ci-fast、integration 和 E2E。
 - 结果复用：记录命令、检查覆盖的变更范围、结果及此后修改。同一批次中，输入未变且未受后续改动影响的已通过检查直接复用；源码、测试、契约、依赖、配置或相关环境改变时重跑受影响检查。跨会话无可靠记录则不能假定已通过。失败先修复并重跑失败集，只有新的影响或验收节点才扩大范围。
 - 延后验证的回复明确写“实现已完成，尚未验证”，简列累计待验模块/命令；不能宣称测试通过或可发布。阶段验收报告区分本次执行、复用证据、未执行项和风险。
 
-例如：连续调整账号表单、角色列表和通知布局时，先累计三个模块的待验项，阶段验收统一跑快速门禁和相关浏览器文件；若中途修改部门授权范围，则立即定向验证该范围的允许/拒绝，不顺带启动其他浏览器流程。
+例如：连续调整账号表单、角色列表和通知布局时，先累计三个模块的待验项，阶段验收统一跑快速门禁；需要浏览器旁证时按映射只跑 administration、governance 对应文件的一次，不顺手带其它 spec。若中途修改部门授权范围，则立即定向验证该范围的允许/拒绝，不顺带启动其他浏览器流程。
 
 ## 可执行 profiles
 
@@ -21,19 +23,19 @@
 | make ci-fast | check-rules + 格式 + ESLint/Go vet + TypeScript + Vitest/Go/HTTP + i18n keys + 生成一致性 + 构建 | 代码批次阶段验收统一执行一次；不需要 DB/浏览器 |
 | make test-integration | 隔离真实 PostgreSQL、迁移、约束、scope、事务与并发 | SQL、Repository、事务或权限范围改动 |
 | make test-security | 认证/授权/config/scope/HTTP 单元负向用例 + 数据库范围/字段投影/撤销 | 受保护端点、身份、权限、租户、敏感字段及配置边界变更 |
-| make test-e2e | 真实 Go + 生产构建 preview 的关键流程，失败 screenshot/trace 和诊断 | 完成关键用户流程、路由/语言持久化或跨层功能 |
-| make test-e2e-changed | 按 git 改动映射到相关 spec 文件；纯文档/规则改动直接不启动浏览器 | 日常改动后需要一处跨层旁证 |
-| make test-e2e-smoke | `@smoke` 两条最便宜链路：API→SDK→UI、登录会话与主题持久化 | 改动路径没有专属 spec 时的快速旁证 |
-| make test-e2e-parallel | 默认栈与 governance 栈并行，覆盖与 test-e2e 相同的文件 | 需要完整浏览器集合但不想等串行 |
-| make ci | ci-fast → integration → E2E，顺序执行 | 发布候选、明确全量验收和 CI |
+| make test-e2e | 真实 Go + 生产构建 preview 的关键流程，失败 screenshot/trace 和诊断 | 全量集合：暂停，须用户当轮明确授权才执行；禁止不带 E2E_ARGS 直接跑 |
+| make test-e2e-changed | 按 git 改动映射到相关 spec 文件；纯文档/规则改动直接不启动浏览器 | 唯一默认可用的浏览器入口：只跑映射命中的模块 spec |
+| make test-e2e-smoke | `@smoke` 两条最便宜链路：API→SDK→UI、登录会话与主题持久化 | 默认不用；映射未命中且用户当轮要求旁证时才启，须说明理由 |
+| make test-e2e-parallel | 默认栈与 governance 栈并行，覆盖与 test-e2e 相同的文件 | 全量集合：与 test-e2e 同样需明确授权 |
+| make ci | ci-fast → integration → E2E，顺序执行 | 发布候选且已取得全量 E2E 授权；否则只跑其非浏览器部分 |
 
 表中“何时执行”表示覆盖要求，执行时机统一遵循上方批次规则，不表示每个功能都立即执行。文档-only 批次运行 check-rules 并审查语义，不为无关改动启动慢测试。前端快速迭代可先运行受影响 Vitest，后端先运行相关包 go test。纯布局变更用可观察交互/可访问性验证，不编写只镜像 CSS 常量的测试。
 
 ### 浏览器集合的加速入口
 
-`test-e2e-changed`、`test-e2e-smoke` 与 `test-e2e-parallel` 只为缩短等待，不等于全量：只有 `make test-e2e` 和 `make ci` 代表完整浏览器集合。用前两个交付时必须写明选中的文件、未重跑的集合和理由，不能宣称全量通过。
+`test-e2e-changed`、`test-e2e-smoke` 与 `test-e2e-parallel` 只为缩短等待，不等于全量：只有 `make test-e2e` 和 `make ci` 代表完整浏览器集合。用前两个交付时必须写明选中的文件、未重跑的集合和理由，不能宣称全量通过。在 E2E 暂停期内只有 `test-e2e-changed` 默认可用，`test-e2e-smoke` 需要理由，`test-e2e-parallel` 与 `make test-e2e` 需要授权。
 
-- 映射表在 `scripts/e2e-changed.mjs`：`features/<模块>` 对应同名 spec，`src/{api,i18n,app,lib,components}`、`design/` 与 `internal/server` 对应 foundation，改了 spec 就跑该 spec；无映射的路径（如迁移 SQL）会被列出并退回 `@smoke`，不会静默扩成全集。`node scripts/e2e-changed.mjs --dry-run` 只打印选择结果。
+- 映射表在 `scripts/e2e-changed.mjs`：`features/<模块>` 对应同名 spec，`src/{api,i18n,app,lib,components}`、`design/` 与 `internal/server` 对应 foundation，改了 spec 就跑该 spec；无映射的路径（如迁移 SQL）会被列出并退回 `@smoke`，不会静默扩成全集。暂停期内退回 `@smoke` 视为映射未命中，不跑浏览器，在汇报中记未覆盖。`node scripts/e2e-changed.mjs --dry-run` 只打印选择结果。
 - `@smoke` 用 Playwright 标题后缀标记，选择标准是“单文件内最便宜且真的跨层”，不把慢用例塞进快速集。
 - `test-e2e-parallel` 按端口分组：默认栈（5179/8099/WebMCP 18794）跑 administration、foundation、mcp、webmcp；governance 栈（5183/8101）跑 governance、notifications、settings-schedules。分组由 spec 内写死的 Origin 决定，新增 spec 必须先确认它连哪个栈才能改分组。
 - `E2E_WORKERS` 可提高单进程 worker 数，但所有用例共用一套 Go 服务与隔离 schema，只有所选文件互不写全局设置时才安全；默认 1。
@@ -71,7 +73,7 @@ check-rules 能检查结构完整与引用，不理解自然语言是否写对�
 
 通知中心按 ADR 008 覆盖混选组织/账号去重、范围外组织拒绝、重复发送幂等/内容冲突、偏好/失效归属、绑定附件读取及跨租户/未绑定文件拒绝。Markdown 组件覆盖 HTML/脚本 URL/未绑定引用、GFM 与安全图片；真实浏览器用例通过接口落地一条带绑定附件的通知，再验证收到的列表只显示标题与时间、点击进入 `/notifications/:id` 详情、附件下载、标为已读、已发送正文默认收起以及投递记录，SMTP 仅隔离测试服务器。发送页编辑器是第三方富文本组件，浏览器只验证其表单接线由组件测试承担，不在浏览器里驱动 Lexical；写入/校验/幂等由 Go 集成与组件测试覆盖。
 
-`E2E_ARGS` 可显式选择相关浏览器文件，例如 `make ci E2E_ARGS="e2e/governance.spec.ts e2e/notifications.spec.ts"`。默认 `make ci` 仍跑全部浏览器用例。使用该参数交付时必须报告选择的文件和未重跑集合，不能宣称全量浏览器通过；本机已有无关用例总预算超时的诊断保留在 verification.md。
+`E2E_ARGS` 可显式选择相关浏览器文件，例如 `make ci E2E_ARGS="e2e/governance.spec.ts e2e/notifications.spec.ts"`。默认 `make ci` 仍跑全部浏览器用例。暂停期内这是唯一允许的浏览器入口形式：只放本次改动模块对应的 spec，多个模块确有映射时才并列，不借机补跑同栈其它文件。使用该参数交付时必须报告选择的文件和未重跑集合，不能宣称全量浏览器通过；本机已有无关用例总预算超时的诊断保留在 verification.md。
 
 ## WebMCP 验证
 
@@ -90,3 +92,8 @@ WebMCP 专项 E2E 还验证 `notifications/tools/list_changed` 从浏览器经�
 `make test-mcp` 执行本机助手、Go 协议和真实隔离数据库专项；`make test-mcp-e2e` 运行精确 e2e/mcp.spec.ts 文件，验证真实 Go+浏览器、同源代理、Token/诊断、实际 Codex CLI 配置合并及安装后 stdio 独立调用。`make ci-fast` 包含本机助手测试，`make test-security` 包含 MCP 单元和完整数据库集合；生成一致性检查先于浏览器。真实桌面客户端互通须独立记录，不能用已安装配置或通用 SDK 客户端通过代替。
 
 `make test-mcp-native` 使用本机 Codex 与 WORKBUDDY_CLI 指定的腾讯客户端随附 CLI，真实执行原生连接/工具调用与撤销拒绝，不启动模型 turn；`make test-mcp-native-e2e` 显式开启浏览器内原生客户端验收。常规浏览器集合不依赖全局安装的 Codex 或 WorkBuddy。桌面端的最终手动调用记录与 CLI health 分开。
+
+
+## 编排与生成规格
+
+`make check-workflows` 检查生成的流程 JSON Schema、结构拒绝路径和实际能力目录/依赖/预算；`make check-generated` 包含 docs/generated/workflows 的漂移检查。两者已接入 ci-fast。`make test-orchestration-example` 使用显式 TEST_DATABASE_URL，在隔离 schema 验证真实 Eino 三引擎、审批重建、Outbox/事件、去重 Trigger 与能力回调；只替换远程模型，不属于浏览器或真实模型验收。用法见 [完整示例](orchestration-example.md)。

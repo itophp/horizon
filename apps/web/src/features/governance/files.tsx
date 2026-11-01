@@ -11,8 +11,8 @@ import {
   filesUpload,
   filesContent,
   filesRemove,
-} from "@/api/generated/baseline";
-import type { ManagedFile } from "@/api/generated/models";
+} from "@/lib/capabilities";
+import type { ManagedFile } from "@/api/types";
 import { ApiError } from "@/api/client/request";
 import { useSession } from "@/features/administration/auth";
 import {

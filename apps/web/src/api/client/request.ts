@@ -10,18 +10,22 @@ export class ApiError extends Error {
     super(code);
   }
 }
+// Long-running calls keep a larger budget than interactive reads: a capability
+// may carry an attachment, and an agent turn plans and calls tools before it
+// answers. Exported so the policy is testable without waiting on a timer.
+export function requestTimeout(url: string): number {
+  const longRunning =
+    url.startsWith("/api/capabilities/") ||
+    url.startsWith("/api/assistant/chat") ||
+    url.startsWith("/api/ai/runs");
+  return longRunning ? 180000 : 10000;
+}
 // No automatic mutation retries. The session stays in an HttpOnly cookie; only its CSRF nonce is held in memory.
 export async function request<T>(
   url: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const timeout =
-    url.startsWith("/api/admin/files") ||
-    url.startsWith("/api/admin/dictionaries")
-      ? 120000
-      : url.startsWith("/api/assistant/chat")
-        ? 120000
-        : 10000;
+  const timeout = requestTimeout(url);
   const signal = options.signal
     ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)])
     : AbortSignal.timeout(timeout);
@@ -45,7 +49,10 @@ export async function request<T>(
       429: "rate_limited",
       503: "unavailable",
     };
-    if (response.status === 401 && url.startsWith("/api/admin/"))
+    if (
+      response.status === 401 &&
+      (url.startsWith("/api/admin/") || url.startsWith("/api/capabilities/"))
+    )
       window.dispatchEvent(new Event("baseline:unauthenticated"));
     throw new ApiError(codes[response.status] ?? "internal", response.status);
   }

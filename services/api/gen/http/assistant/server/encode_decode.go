@@ -276,6 +276,539 @@ func EncodeChatError(encoder func(context.Context, http.ResponseWriter) goahttp.
 	}
 }
 
+// EncodeAgentResponse returns an encoder for responses returned by the
+// assistant agent endpoint.
+func EncodeAgentResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*assistant.AssistantAgentReply)
+		enc := encoder(ctx, w)
+		body := NewAgentResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeAgentRequest returns a decoder for requests sent to the assistant
+// agent endpoint.
+func DecodeAgentRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*assistant.AgentPayload, error) {
+	return func(r *http.Request) (*assistant.AgentPayload, error) {
+		var payload *assistant.AgentPayload
+		var (
+			body AgentRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return payload, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return payload, gerr
+			}
+			return payload, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateAgentRequestBody(&body)
+		if err != nil {
+			return payload, err
+		}
+
+		var (
+			cookie string
+		)
+		cookie = r.Header.Get("Cookie")
+		if cookie == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("cookie", "header"))
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewAgentPayload(&body, cookie)
+		if index := strings.IndexByte(string(payload.Cookie), ' '); index >= 0 {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			payload.Cookie = payload.Cookie[index+1:]
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeAgentError returns an encoder for errors returned by the agent
+// assistant endpoint.
+func EncodeAgentError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "unauthenticated":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewAgentUnauthenticatedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "forbidden":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewAgentForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "invalid":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewAgentInvalidResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "unavailable":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewAgentUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "internal":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewAgentInternalResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeWorkflowResponse returns an encoder for responses returned by the
+// assistant workflow endpoint.
+func EncodeWorkflowResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*assistant.AssistantAgentReply)
+		enc := encoder(ctx, w)
+		body := NewWorkflowResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeWorkflowRequest returns a decoder for requests sent to the assistant
+// workflow endpoint.
+func DecodeWorkflowRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*assistant.WorkflowPayload, error) {
+	return func(r *http.Request) (*assistant.WorkflowPayload, error) {
+		var payload *assistant.WorkflowPayload
+		var (
+			body WorkflowRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return payload, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return payload, gerr
+			}
+			return payload, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateWorkflowRequestBody(&body)
+		if err != nil {
+			return payload, err
+		}
+
+		var (
+			cookie string
+		)
+		cookie = r.Header.Get("Cookie")
+		if cookie == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("cookie", "header"))
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewWorkflowPayload(&body, cookie)
+		if index := strings.IndexByte(string(payload.Cookie), ' '); index >= 0 {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			payload.Cookie = payload.Cookie[index+1:]
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeWorkflowError returns an encoder for errors returned by the workflow
+// assistant endpoint.
+func EncodeWorkflowError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "unauthenticated":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewWorkflowUnauthenticatedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "forbidden":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewWorkflowForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "invalid":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewWorkflowInvalidResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "unavailable":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewWorkflowUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "internal":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewWorkflowInternalResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeKnowledgeResponse returns an encoder for responses returned by the
+// assistant knowledge endpoint.
+func EncodeKnowledgeResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.([]*assistant.KnowledgeDocument)
+		enc := encoder(ctx, w)
+		body := NewKnowledgeResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeKnowledgeRequest returns a decoder for requests sent to the assistant
+// knowledge endpoint.
+func DecodeKnowledgeRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*assistant.KnowledgePayload, error) {
+	return func(r *http.Request) (*assistant.KnowledgePayload, error) {
+		var payload *assistant.KnowledgePayload
+		var (
+			cookie string
+			err    error
+		)
+		cookie = r.Header.Get("Cookie")
+		if cookie == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("cookie", "header"))
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewKnowledgePayload(cookie)
+		if index := strings.IndexByte(string(payload.Cookie), ' '); index >= 0 {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			payload.Cookie = payload.Cookie[index+1:]
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeKnowledgeError returns an encoder for errors returned by the knowledge
+// assistant endpoint.
+func EncodeKnowledgeError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "unauthenticated":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewKnowledgeUnauthenticatedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "forbidden":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewKnowledgeForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "invalid":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewKnowledgeInvalidResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "unavailable":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewKnowledgeUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "internal":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewKnowledgeInternalResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeIngestResponse returns an encoder for responses returned by the
+// assistant ingest endpoint.
+func EncodeIngestResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*assistant.KnowledgeIngested)
+		enc := encoder(ctx, w)
+		body := NewIngestResponseBody(res)
+		w.WriteHeader(http.StatusCreated)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeIngestRequest returns a decoder for requests sent to the assistant
+// ingest endpoint.
+func DecodeIngestRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*assistant.IngestPayload, error) {
+	return func(r *http.Request) (*assistant.IngestPayload, error) {
+		var payload *assistant.IngestPayload
+		var (
+			body IngestRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return payload, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return payload, gerr
+			}
+			return payload, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateIngestRequestBody(&body)
+		if err != nil {
+			return payload, err
+		}
+
+		var (
+			cookie string
+		)
+		cookie = r.Header.Get("Cookie")
+		if cookie == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("cookie", "header"))
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewIngestPayload(&body, cookie)
+		if index := strings.IndexByte(string(payload.Cookie), ' '); index >= 0 {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			payload.Cookie = payload.Cookie[index+1:]
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeIngestError returns an encoder for errors returned by the ingest
+// assistant endpoint.
+func EncodeIngestError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "unauthenticated":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewIngestUnauthenticatedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "forbidden":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewIngestForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "invalid":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewIngestInvalidResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "unavailable":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewIngestUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "internal":
+			var res *assistant.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewIngestInternalResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // unmarshalAssistantMessageRequestBodyToAssistantAssistantMessage builds a
 // value of type *assistant.AssistantMessage from a value of type
 // *AssistantMessageRequestBody.
@@ -332,6 +865,21 @@ func marshalAssistantAssistantToolCallToAssistantToolCallResponseBody(v *assista
 		ID:        v.ID,
 		Name:      v.Name,
 		Arguments: v.Arguments,
+	}
+
+	return res
+}
+
+// marshalAssistantKnowledgeDocumentToKnowledgeDocumentResponse builds a value
+// of type *KnowledgeDocumentResponse from a value of type
+// *assistant.KnowledgeDocument.
+func marshalAssistantKnowledgeDocumentToKnowledgeDocumentResponse(v *assistant.KnowledgeDocument) *KnowledgeDocumentResponse {
+	res := &KnowledgeDocumentResponse{
+		ID:        v.ID,
+		Title:     v.Title,
+		Source:    v.Source,
+		Chunks:    v.Chunks,
+		CreatedAt: v.CreatedAt,
 	}
 
 	return res

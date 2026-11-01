@@ -1,3 +1,4 @@
+import { invoke, resetPreferences } from "./helpers";
 import type {
   AccountRecord,
   AdminSnapshot,
@@ -12,7 +13,7 @@ import {
   type APIRequestContext,
 } from "@playwright/test";
 
-async function signIn(page: Page, heading = "Workspace overview") {
+async function signIn(page: Page, heading?: string) {
   await page.goto("/login");
   await page
     .getByRole("textbox", { name: "Account", exact: true })
@@ -21,8 +22,16 @@ async function signIn(page: Page, heading = "Workspace overview") {
     .getByLabel("Password", { exact: true })
     .fill("TestOnly!2026Secure");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  if (heading) {
+    await expect(
+      page.getByRole("heading", { name: heading, exact: true }),
+    ).toBeVisible();
+    return;
+  }
+  // Sign in lands on the default workbench, which depends on the account's
+  // permissions, so wait for the console shell instead of a fixed page.
   await expect(
-    page.getByRole("heading", { name: heading, exact: true }),
+    page.getByRole("navigation", { name: "Main navigation" }),
   ).toBeVisible();
 }
 const diagnostics = new WeakMap<
@@ -42,19 +51,10 @@ test.beforeEach(async ({ page, request }) => {
   });
   expect(response.ok()).toBeTruthy();
   const session: LoginResult = await response.json();
-  const reset = await request.put("/api/auth/preferences", {
-    headers: {
-      Origin: "http://127.0.0.1:5179",
-      "X-CSRF-Token": session.profile.csrfToken,
-    },
-    data: {
-      changes: [
-        { key: "display.language", operation: "reset", value: "" },
-        { key: "display.theme", operation: "reset", value: "" },
-      ],
-    },
+  await resetPreferences(request, {
+    Origin: "http://127.0.0.1:5179",
+    "X-CSRF-Token": session.profile.csrfToken,
   });
-  expect(reset.ok()).toBeTruthy();
   const diagnostic = { console: [] as string[], failed: [] as string[] };
   diagnostics.set(page, diagnostic);
   page.on("console", (message) => {
@@ -86,16 +86,17 @@ test("session protection, compact login, theme persistence and logout @smoke", a
   );
   await signIn(page, "Account management");
   await expect(page).toHaveURL(/\/accounts$/);
-  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page.getByRole("link", { name: "Statistics", exact: true }).click();
+  await expect(page).toHaveURL(/\/analytics$/);
   await expect(
-    page.getByRole("heading", { name: "Workspace overview", exact: true }),
+    page.getByRole("heading", { name: "Data statistics", exact: true }),
   ).toBeVisible();
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.getByRole("button", { name: "Switch appearance" }).click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Workspace overview", exact: true }),
+    page.getByRole("heading", { name: "Data statistics", exact: true }),
   ).toBeVisible();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
   await page.locator(".sidebar-profile").click();
@@ -126,9 +127,12 @@ test("organization, department, role and account changes persist through real AP
   const responses: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("response", (response) => {
-    if (response.url().includes("/api/admin/"))
+    // Writes go through the capability gateway now, so the console traffic is a
+    // mix of session/snapshot reads under /api/admin/ and capability invocations.
+    const url = response.url();
+    if (url.includes("/api/admin/") || url.includes("/api/capabilities/"))
       responses.push(
-        `${response.status()} ${response.request().method()} ${response.url()}`,
+        `${response.status()} ${response.request().method()} ${url}`,
       );
   });
   try {
@@ -265,17 +269,23 @@ test("organization, department, role and account changes persist through real AP
     await expect(updated).not.toBeVisible();
     expect(
       responses.some(
-        (line) => line.startsWith("201 POST") && line.includes("/accounts"),
+        (line) =>
+          line.startsWith("200 POST") &&
+          line.includes("identity.account.create"),
       ),
     ).toBe(true);
     expect(
       responses.some(
-        (line) => line.startsWith("200 PUT") && line.includes("/accounts/"),
+        (line) =>
+          line.startsWith("200 POST") &&
+          line.includes("identity.account.update"),
       ),
     ).toBe(true);
     expect(
       responses.some(
-        (line) => line.startsWith("204 DELETE") && line.includes("/accounts/"),
+        (line) =>
+          line.startsWith("200 POST") &&
+          line.includes("identity.account.delete"),
       ),
     ).toBe(true);
     expect(errors).toEqual([]);
@@ -343,7 +353,7 @@ test("an account without resource permissions can request temporary access", asy
     .fill("TestOnly!2026Secure");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Workspace overview", exact: true }),
+    page.getByRole("navigation", { name: "Main navigation" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /^Accounts/ })).not.toBeVisible();
   await expect(
@@ -529,12 +539,11 @@ async function temporaryApplicantFixture(request: APIRequestContext) {
   );
   expect(department).toBeDefined();
   const suffix = Date.now().toString(36);
-  const created = await request.post("/api/admin/accounts", {
-    headers: {
-      Origin: "http://127.0.0.1:5179",
-      "X-CSRF-Token": admin.csrfToken,
-    },
-    data: {
+  const account = await invoke<AccountRecord>(
+    request,
+    { Origin: "http://127.0.0.1:5179", "X-CSRF-Token": admin.csrfToken },
+    "identity.account.create",
+    {
       username: `temporary.${suffix}`,
       fullName: `Temporary applicant ${suffix}`,
       email: "",
@@ -545,9 +554,7 @@ async function temporaryApplicantFixture(request: APIRequestContext) {
       overrides: [],
       password: "TestOnly!2026Secure",
     },
-  });
-  expect(created.status()).toBe(201);
-  const account = (await created.json()) as AccountRecord;
+  );
   return { account, admin };
 }
 
@@ -611,7 +618,7 @@ test("account department policies persist and switching departments isolates per
     .fill("TestOnly!2026Secure");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Workspace overview", exact: true }),
+    page.getByRole("navigation", { name: "Main navigation" }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Accounts", exact: true }),
@@ -641,7 +648,7 @@ test("account department policies persist and switching departments isolates per
     page.getByRole("link", { name: "Accounts", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Workspace overview", exact: true }),
+    page.getByRole("navigation", { name: "Main navigation" }),
   ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("department-context-isolation.png"),

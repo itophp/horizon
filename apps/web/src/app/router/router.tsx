@@ -1,4 +1,8 @@
+import { ArticlesPage } from "@/features/articles/page";
 import { McpHubPage } from "@/features/mcp/hub";
+import { AiPage } from "@/features/ai/page";
+import { KnowledgePage } from "@/features/knowledge/page";
+import { CapabilityPage } from "@/features/capabilities/page";
 import { SettingsPage } from "@/features/governance/settings";
 import { FilesPage, FileDownloadPage } from "@/features/governance/files";
 import {
@@ -13,6 +17,7 @@ import {
   AdminLayout,
 } from "@/features/administration/layout";
 import { LoginPage } from "@/features/administration/login";
+import { useSession } from "@/features/administration/auth";
 import { DashboardPage } from "@/features/administration/dashboard";
 import {
   AccountsPage,
@@ -41,6 +46,15 @@ function NotFound() {
   const { t } = useTranslation();
   return <h1>{t("notFound")}</h1>;
 }
+// The AI workbench is the default surface after sign in. An account without the
+// agent grant lands on statistics instead of a workbench it may not open.
+export function defaultWorkspacePath(permissions: readonly string[]) {
+  return permissions.includes("assistant:use") ? "/ai" : "/analytics";
+}
+function DefaultWorkspace() {
+  const session = useSession();
+  return <Navigate to={defaultWorkspacePath(session.permissions)} replace />;
+}
 export const router = createBrowserRouter([
   {
     element: <AuthBoundary />,
@@ -52,7 +66,12 @@ export const router = createBrowserRouter([
           {
             element: <AdminLayout />,
             children: [
-              { path: "/", element: <DashboardPage /> },
+              { path: "/", element: <DefaultWorkspace /> },
+              { path: "/analytics", element: <DashboardPage /> },
+              { path: "/capabilities", element: <CapabilityPage /> },
+              { path: "/ai", element: <AiPage /> },
+              { path: "/articles", element: <ArticlesPage /> },
+              { path: "/knowledge", element: <KnowledgePage /> },
               { path: "/accounts", element: <AccountsPage /> },
               { path: "/organizations", element: <OrganizationsPage /> },
               {

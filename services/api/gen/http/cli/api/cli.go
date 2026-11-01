@@ -8,15 +8,11 @@
 package cli
 
 import (
+	aic "baseline/services/api/gen/http/ai/client"
 	assistantc "baseline/services/api/gen/http/assistant/client"
 	brandingc "baseline/services/api/gen/http/branding/client"
-	democ "baseline/services/api/gen/http/demo/client"
-	dictionariesc "baseline/services/api/gen/http/dictionaries/client"
-	filesc "baseline/services/api/gen/http/files/client"
+	capabilityc "baseline/services/api/gen/http/capability/client"
 	identityc "baseline/services/api/gen/http/identity/client"
-	mcpmanagementc "baseline/services/api/gen/http/mcp_management/client"
-	notificationsc "baseline/services/api/gen/http/notifications/client"
-	settingsc "baseline/services/api/gen/http/settings/client"
 	systemc "baseline/services/api/gen/http/system/client"
 	"flag"
 	"fmt"
@@ -33,25 +29,21 @@ import (
 func UsageCommands() []string {
 	return []string{
 		"system (health|echo)",
-		"demo (list|get|update|delete)",
-		"assistant (status|chat)",
-		"settings (workspace|effective|logo|preferences|draft|schedules|schedule|cancel-schedule|publish|rollback|export|reauthenticate)",
-		"dictionaries (list|get|draft|publish|rollback|remove|override|options|import|import-draft|export)",
-		"files (list|drivers|upload|content|remove)",
-		"notifications (audience|preview|send|sent|attachment|message|inbox|read|deliveries|retry|test)",
+		"ai (status|run|runs|conversations|run-detail|update-conversation)",
+		"assistant (status|chat|agent|workflow|knowledge|ingest)",
+		"capability (definitions|invoke|invocations|invocation|approvals|decide|events)",
 		"branding (get|logo)",
-		"mcp-management (create|list|revoke|rotate|capabilities|admin-revoke|audit)",
-		"identity (temporary-access|request-temporary-access|review-temporary-access|cancel-temporary-access|revoke-temporary-access|switch-department|login|me|logout|snapshot|create-account|update-account|delete-account|create-organization|update-organization|delete-organization|create-department|update-department|delete-department|create-role|update-role|delete-role)",
+		"identity (temporary-access|request-temporary-access|review-temporary-access|cancel-temporary-access|revoke-temporary-access|switch-department|login|me|logout|snapshot)",
 	}
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
 	return os.Args[0] + " " + "system health" + "\n" +
-		os.Args[0] + " " + "demo list --token \"Aliquam fugiat.\"" + "\n" +
+		os.Args[0] + " " + "ai status --cookie \"Inventore optio error adipisci nihil quo ullam.\"" + "\n" +
 		os.Args[0] + " " + "assistant status --cookie \"Quo ea quis odit aut mollitia quisquam.\"" + "\n" +
-		os.Args[0] + " " + "settings workspace --target-kind \"workspace\" --target-id 0 --cookie \"A consectetur.\"" + "\n" +
-		os.Args[0] + " " + "dictionaries list --target-kind \"workspace\" --target-id 0 --cookie \"Provident et repellendus voluptatem ducimus est sit.\"" + "\n" +
+		os.Args[0] + " " + "capability definitions --cookie \"Minus rerum expedita.\"" + "\n" +
+		os.Args[0] + " " + "branding get" + "\n" +
 		""
 }
 
@@ -91,23 +83,32 @@ func ParseEndpoint(
 		systemEchoFlags    = flag.NewFlagSet("echo", flag.ExitOnError)
 		systemEchoNameFlag = new(cliStringFlag)
 
-		demoFlags = flag.NewFlagSet("demo", flag.ContinueOnError)
+		aiFlags = flag.NewFlagSet("ai", flag.ContinueOnError)
 
-		demoListFlags     = flag.NewFlagSet("list", flag.ExitOnError)
-		demoListTokenFlag = new(cliStringFlag)
+		aiStatusFlags      = flag.NewFlagSet("status", flag.ExitOnError)
+		aiStatusCookieFlag = new(cliStringFlag)
 
-		demoGetFlags     = flag.NewFlagSet("get", flag.ExitOnError)
-		demoGetIDFlag    = new(cliStringFlag)
-		demoGetTokenFlag = new(cliStringFlag)
+		aiRunFlags      = flag.NewFlagSet("run", flag.ExitOnError)
+		aiRunBodyFlag   = new(cliStringFlag)
+		aiRunCookieFlag = new(cliStringFlag)
 
-		demoUpdateFlags     = flag.NewFlagSet("update", flag.ExitOnError)
-		demoUpdateBodyFlag  = new(cliStringFlag)
-		demoUpdateIDFlag    = new(cliStringFlag)
-		demoUpdateTokenFlag = new(cliStringFlag)
+		aiRunsFlags         = flag.NewFlagSet("runs", flag.ExitOnError)
+		aiRunsLimitFlag     = aiRunsFlags.String("limit", "30", "")
+		aiRunsSessionIDFlag = new(cliStringFlag)
+		aiRunsCookieFlag    = new(cliStringFlag)
 
-		demoDeleteFlags     = flag.NewFlagSet("delete", flag.ExitOnError)
-		demoDeleteIDFlag    = new(cliStringFlag)
-		demoDeleteTokenFlag = new(cliStringFlag)
+		aiConversationsFlags      = flag.NewFlagSet("conversations", flag.ExitOnError)
+		aiConversationsLimitFlag  = aiConversationsFlags.String("limit", "30", "")
+		aiConversationsCookieFlag = new(cliStringFlag)
+
+		aiRunDetailFlags      = flag.NewFlagSet("run-detail", flag.ExitOnError)
+		aiRunDetailIDFlag     = new(cliStringFlag)
+		aiRunDetailCookieFlag = new(cliStringFlag)
+
+		aiUpdateConversationFlags         = flag.NewFlagSet("update-conversation", flag.ExitOnError)
+		aiUpdateConversationBodyFlag      = new(cliStringFlag)
+		aiUpdateConversationSessionIDFlag = new(cliStringFlag)
+		aiUpdateConversationCookieFlag    = new(cliStringFlag)
 
 		assistantFlags = flag.NewFlagSet("assistant", flag.ContinueOnError)
 
@@ -118,215 +119,56 @@ func ParseEndpoint(
 		assistantChatBodyFlag   = new(cliStringFlag)
 		assistantChatCookieFlag = new(cliStringFlag)
 
-		settingsFlags = flag.NewFlagSet("settings", flag.ContinueOnError)
+		assistantAgentFlags      = flag.NewFlagSet("agent", flag.ExitOnError)
+		assistantAgentBodyFlag   = new(cliStringFlag)
+		assistantAgentCookieFlag = new(cliStringFlag)
 
-		settingsWorkspaceFlags          = flag.NewFlagSet("workspace", flag.ExitOnError)
-		settingsWorkspaceTargetKindFlag = settingsWorkspaceFlags.String("target-kind", "workspace", "")
-		settingsWorkspaceTargetIDFlag   = settingsWorkspaceFlags.String("target-id", "0", "")
-		settingsWorkspaceCookieFlag     = new(cliStringFlag)
+		assistantWorkflowFlags      = flag.NewFlagSet("workflow", flag.ExitOnError)
+		assistantWorkflowBodyFlag   = new(cliStringFlag)
+		assistantWorkflowCookieFlag = new(cliStringFlag)
 
-		settingsEffectiveFlags      = flag.NewFlagSet("effective", flag.ExitOnError)
-		settingsEffectiveCookieFlag = new(cliStringFlag)
+		assistantKnowledgeFlags      = flag.NewFlagSet("knowledge", flag.ExitOnError)
+		assistantKnowledgeCookieFlag = new(cliStringFlag)
 
-		settingsLogoFlags      = flag.NewFlagSet("logo", flag.ExitOnError)
-		settingsLogoCookieFlag = new(cliStringFlag)
+		assistantIngestFlags      = flag.NewFlagSet("ingest", flag.ExitOnError)
+		assistantIngestBodyFlag   = new(cliStringFlag)
+		assistantIngestCookieFlag = new(cliStringFlag)
 
-		settingsPreferencesFlags      = flag.NewFlagSet("preferences", flag.ExitOnError)
-		settingsPreferencesBodyFlag   = new(cliStringFlag)
-		settingsPreferencesCookieFlag = new(cliStringFlag)
+		capabilityFlags = flag.NewFlagSet("capability", flag.ContinueOnError)
 
-		settingsDraftFlags      = flag.NewFlagSet("draft", flag.ExitOnError)
-		settingsDraftBodyFlag   = new(cliStringFlag)
-		settingsDraftCookieFlag = new(cliStringFlag)
+		capabilityDefinitionsFlags      = flag.NewFlagSet("definitions", flag.ExitOnError)
+		capabilityDefinitionsCookieFlag = new(cliStringFlag)
 
-		settingsSchedulesFlags      = flag.NewFlagSet("schedules", flag.ExitOnError)
-		settingsSchedulesCookieFlag = new(cliStringFlag)
+		capabilityInvokeFlags      = flag.NewFlagSet("invoke", flag.ExitOnError)
+		capabilityInvokeBodyFlag   = new(cliStringFlag)
+		capabilityInvokeNameFlag   = new(cliStringFlag)
+		capabilityInvokeCookieFlag = new(cliStringFlag)
 
-		settingsScheduleFlags      = flag.NewFlagSet("schedule", flag.ExitOnError)
-		settingsScheduleBodyFlag   = new(cliStringFlag)
-		settingsScheduleIDFlag     = new(cliStringFlag)
-		settingsScheduleCookieFlag = new(cliStringFlag)
+		capabilityInvocationsFlags      = flag.NewFlagSet("invocations", flag.ExitOnError)
+		capabilityInvocationsLimitFlag  = capabilityInvocationsFlags.String("limit", "30", "")
+		capabilityInvocationsCookieFlag = new(cliStringFlag)
 
-		settingsCancelScheduleFlags      = flag.NewFlagSet("cancel-schedule", flag.ExitOnError)
-		settingsCancelScheduleIDFlag     = new(cliStringFlag)
-		settingsCancelScheduleCookieFlag = new(cliStringFlag)
+		capabilityInvocationFlags            = flag.NewFlagSet("invocation", flag.ExitOnError)
+		capabilityInvocationInvocationIDFlag = new(cliStringFlag)
+		capabilityInvocationCookieFlag       = new(cliStringFlag)
 
-		settingsPublishFlags      = flag.NewFlagSet("publish", flag.ExitOnError)
-		settingsPublishBodyFlag   = new(cliStringFlag)
-		settingsPublishIDFlag     = new(cliStringFlag)
-		settingsPublishCookieFlag = new(cliStringFlag)
+		capabilityApprovalsFlags      = flag.NewFlagSet("approvals", flag.ExitOnError)
+		capabilityApprovalsCookieFlag = new(cliStringFlag)
 
-		settingsRollbackFlags      = flag.NewFlagSet("rollback", flag.ExitOnError)
-		settingsRollbackBodyFlag   = new(cliStringFlag)
-		settingsRollbackIDFlag     = new(cliStringFlag)
-		settingsRollbackCookieFlag = new(cliStringFlag)
+		capabilityDecideFlags      = flag.NewFlagSet("decide", flag.ExitOnError)
+		capabilityDecideBodyFlag   = new(cliStringFlag)
+		capabilityDecideIDFlag     = new(cliStringFlag)
+		capabilityDecideCookieFlag = new(cliStringFlag)
 
-		settingsExportFlags          = flag.NewFlagSet("export", flag.ExitOnError)
-		settingsExportTargetKindFlag = settingsExportFlags.String("target-kind", "workspace", "")
-		settingsExportTargetIDFlag   = settingsExportFlags.String("target-id", "0", "")
-		settingsExportCookieFlag     = new(cliStringFlag)
-
-		settingsReauthenticateFlags      = flag.NewFlagSet("reauthenticate", flag.ExitOnError)
-		settingsReauthenticateBodyFlag   = new(cliStringFlag)
-		settingsReauthenticateCookieFlag = new(cliStringFlag)
-
-		dictionariesFlags = flag.NewFlagSet("dictionaries", flag.ContinueOnError)
-
-		dictionariesListFlags          = flag.NewFlagSet("list", flag.ExitOnError)
-		dictionariesListTargetKindFlag = dictionariesListFlags.String("target-kind", "workspace", "")
-		dictionariesListTargetIDFlag   = dictionariesListFlags.String("target-id", "0", "")
-		dictionariesListCookieFlag     = new(cliStringFlag)
-
-		dictionariesGetFlags          = flag.NewFlagSet("get", flag.ExitOnError)
-		dictionariesGetIDFlag         = new(cliStringFlag)
-		dictionariesGetTargetKindFlag = dictionariesGetFlags.String("target-kind", "workspace", "")
-		dictionariesGetTargetIDFlag   = dictionariesGetFlags.String("target-id", "0", "")
-		dictionariesGetCookieFlag     = new(cliStringFlag)
-
-		dictionariesDraftFlags      = flag.NewFlagSet("draft", flag.ExitOnError)
-		dictionariesDraftBodyFlag   = new(cliStringFlag)
-		dictionariesDraftCookieFlag = new(cliStringFlag)
-
-		dictionariesPublishFlags      = flag.NewFlagSet("publish", flag.ExitOnError)
-		dictionariesPublishBodyFlag   = new(cliStringFlag)
-		dictionariesPublishIDFlag     = new(cliStringFlag)
-		dictionariesPublishCookieFlag = new(cliStringFlag)
-
-		dictionariesRollbackFlags      = flag.NewFlagSet("rollback", flag.ExitOnError)
-		dictionariesRollbackBodyFlag   = new(cliStringFlag)
-		dictionariesRollbackIDFlag     = new(cliStringFlag)
-		dictionariesRollbackCookieFlag = new(cliStringFlag)
-
-		dictionariesRemoveFlags      = flag.NewFlagSet("remove", flag.ExitOnError)
-		dictionariesRemoveIDFlag     = new(cliStringFlag)
-		dictionariesRemoveCookieFlag = new(cliStringFlag)
-
-		dictionariesOverrideFlags      = flag.NewFlagSet("override", flag.ExitOnError)
-		dictionariesOverrideBodyFlag   = new(cliStringFlag)
-		dictionariesOverrideIDFlag     = new(cliStringFlag)
-		dictionariesOverrideCookieFlag = new(cliStringFlag)
-
-		dictionariesOptionsFlags        = flag.NewFlagSet("options", flag.ExitOnError)
-		dictionariesOptionsCodeFlag     = new(cliStringFlag)
-		dictionariesOptionsLanguageFlag = dictionariesOptionsFlags.String("language", "en", "")
-		dictionariesOptionsIdsFlag      = new(cliStringFlag)
-		dictionariesOptionsSearchFlag   = dictionariesOptionsFlags.String("search", "", "")
-		dictionariesOptionsCookieFlag   = new(cliStringFlag)
-
-		dictionariesImportFlags      = flag.NewFlagSet("import", flag.ExitOnError)
-		dictionariesImportBodyFlag   = new(cliStringFlag)
-		dictionariesImportIDFlag     = new(cliStringFlag)
-		dictionariesImportCookieFlag = new(cliStringFlag)
-
-		dictionariesImportDraftFlags      = flag.NewFlagSet("import-draft", flag.ExitOnError)
-		dictionariesImportDraftBodyFlag   = new(cliStringFlag)
-		dictionariesImportDraftIDFlag     = new(cliStringFlag)
-		dictionariesImportDraftCookieFlag = new(cliStringFlag)
-
-		dictionariesExportFlags      = flag.NewFlagSet("export", flag.ExitOnError)
-		dictionariesExportIDFlag     = new(cliStringFlag)
-		dictionariesExportFormatFlag = dictionariesExportFlags.String("format", "json", "")
-		dictionariesExportCookieFlag = new(cliStringFlag)
-
-		filesFlags = flag.NewFlagSet("files", flag.ContinueOnError)
-
-		filesListFlags      = flag.NewFlagSet("list", flag.ExitOnError)
-		filesListCookieFlag = new(cliStringFlag)
-
-		filesDriversFlags      = flag.NewFlagSet("drivers", flag.ExitOnError)
-		filesDriversCookieFlag = new(cliStringFlag)
-
-		filesUploadFlags      = flag.NewFlagSet("upload", flag.ExitOnError)
-		filesUploadBodyFlag   = new(cliStringFlag)
-		filesUploadCookieFlag = new(cliStringFlag)
-
-		filesContentFlags      = flag.NewFlagSet("content", flag.ExitOnError)
-		filesContentIDFlag     = new(cliStringFlag)
-		filesContentCookieFlag = new(cliStringFlag)
-
-		filesRemoveFlags      = flag.NewFlagSet("remove", flag.ExitOnError)
-		filesRemoveIDFlag     = new(cliStringFlag)
-		filesRemoveCookieFlag = new(cliStringFlag)
-
-		notificationsFlags = flag.NewFlagSet("notifications", flag.ContinueOnError)
-
-		notificationsAudienceFlags      = flag.NewFlagSet("audience", flag.ExitOnError)
-		notificationsAudienceCookieFlag = new(cliStringFlag)
-
-		notificationsPreviewFlags      = flag.NewFlagSet("preview", flag.ExitOnError)
-		notificationsPreviewBodyFlag   = new(cliStringFlag)
-		notificationsPreviewCookieFlag = new(cliStringFlag)
-
-		notificationsSendFlags      = flag.NewFlagSet("send", flag.ExitOnError)
-		notificationsSendBodyFlag   = new(cliStringFlag)
-		notificationsSendCookieFlag = new(cliStringFlag)
-
-		notificationsSentFlags      = flag.NewFlagSet("sent", flag.ExitOnError)
-		notificationsSentCookieFlag = new(cliStringFlag)
-
-		notificationsAttachmentFlags      = flag.NewFlagSet("attachment", flag.ExitOnError)
-		notificationsAttachmentIDFlag     = new(cliStringFlag)
-		notificationsAttachmentFileIDFlag = new(cliStringFlag)
-		notificationsAttachmentCookieFlag = new(cliStringFlag)
-
-		notificationsMessageFlags      = flag.NewFlagSet("message", flag.ExitOnError)
-		notificationsMessageIDFlag     = new(cliStringFlag)
-		notificationsMessageCookieFlag = new(cliStringFlag)
-
-		notificationsInboxFlags      = flag.NewFlagSet("inbox", flag.ExitOnError)
-		notificationsInboxCookieFlag = new(cliStringFlag)
-
-		notificationsReadFlags      = flag.NewFlagSet("read", flag.ExitOnError)
-		notificationsReadIDFlag     = new(cliStringFlag)
-		notificationsReadCookieFlag = new(cliStringFlag)
-
-		notificationsDeliveriesFlags      = flag.NewFlagSet("deliveries", flag.ExitOnError)
-		notificationsDeliveriesCookieFlag = new(cliStringFlag)
-
-		notificationsRetryFlags      = flag.NewFlagSet("retry", flag.ExitOnError)
-		notificationsRetryIDFlag     = new(cliStringFlag)
-		notificationsRetryCookieFlag = new(cliStringFlag)
-
-		notificationsTestFlags      = flag.NewFlagSet("test", flag.ExitOnError)
-		notificationsTestBodyFlag   = new(cliStringFlag)
-		notificationsTestCookieFlag = new(cliStringFlag)
+		capabilityEventsFlags      = flag.NewFlagSet("events", flag.ExitOnError)
+		capabilityEventsLimitFlag  = capabilityEventsFlags.String("limit", "30", "")
+		capabilityEventsCookieFlag = new(cliStringFlag)
 
 		brandingFlags = flag.NewFlagSet("branding", flag.ContinueOnError)
 
 		brandingGetFlags = flag.NewFlagSet("get", flag.ExitOnError)
 
 		brandingLogoFlags = flag.NewFlagSet("logo", flag.ExitOnError)
-
-		mcpManagementFlags = flag.NewFlagSet("mcp-management", flag.ContinueOnError)
-
-		mcpManagementCreateFlags      = flag.NewFlagSet("create", flag.ExitOnError)
-		mcpManagementCreateBodyFlag   = new(cliStringFlag)
-		mcpManagementCreateCookieFlag = new(cliStringFlag)
-
-		mcpManagementListFlags      = flag.NewFlagSet("list", flag.ExitOnError)
-		mcpManagementListCookieFlag = new(cliStringFlag)
-
-		mcpManagementRevokeFlags      = flag.NewFlagSet("revoke", flag.ExitOnError)
-		mcpManagementRevokeBodyFlag   = new(cliStringFlag)
-		mcpManagementRevokeIDFlag     = new(cliStringFlag)
-		mcpManagementRevokeCookieFlag = new(cliStringFlag)
-
-		mcpManagementRotateFlags      = flag.NewFlagSet("rotate", flag.ExitOnError)
-		mcpManagementRotateBodyFlag   = new(cliStringFlag)
-		mcpManagementRotateIDFlag     = new(cliStringFlag)
-		mcpManagementRotateCookieFlag = new(cliStringFlag)
-
-		mcpManagementCapabilitiesFlags            = flag.NewFlagSet("capabilities", flag.ExitOnError)
-		mcpManagementCapabilitiesDepartmentIDFlag = new(cliStringFlag)
-		mcpManagementCapabilitiesCookieFlag       = new(cliStringFlag)
-
-		mcpManagementAdminRevokeFlags      = flag.NewFlagSet("admin-revoke", flag.ExitOnError)
-		mcpManagementAdminRevokeBodyFlag   = new(cliStringFlag)
-		mcpManagementAdminRevokeIDFlag     = new(cliStringFlag)
-		mcpManagementAdminRevokeCookieFlag = new(cliStringFlag)
-
-		mcpManagementAuditFlags      = flag.NewFlagSet("audit", flag.ExitOnError)
-		mcpManagementAuditCookieFlag = new(cliStringFlag)
 
 		identityFlags = flag.NewFlagSet("identity", flag.ContinueOnError)
 
@@ -365,162 +207,41 @@ func ParseEndpoint(
 
 		identitySnapshotFlags      = flag.NewFlagSet("snapshot", flag.ExitOnError)
 		identitySnapshotCookieFlag = new(cliStringFlag)
-
-		identityCreateAccountFlags      = flag.NewFlagSet("create-account", flag.ExitOnError)
-		identityCreateAccountBodyFlag   = new(cliStringFlag)
-		identityCreateAccountCookieFlag = new(cliStringFlag)
-
-		identityUpdateAccountFlags      = flag.NewFlagSet("update-account", flag.ExitOnError)
-		identityUpdateAccountBodyFlag   = new(cliStringFlag)
-		identityUpdateAccountIDFlag     = new(cliStringFlag)
-		identityUpdateAccountCookieFlag = new(cliStringFlag)
-
-		identityDeleteAccountFlags      = flag.NewFlagSet("delete-account", flag.ExitOnError)
-		identityDeleteAccountIDFlag     = new(cliStringFlag)
-		identityDeleteAccountCookieFlag = new(cliStringFlag)
-
-		identityCreateOrganizationFlags      = flag.NewFlagSet("create-organization", flag.ExitOnError)
-		identityCreateOrganizationBodyFlag   = new(cliStringFlag)
-		identityCreateOrganizationCookieFlag = new(cliStringFlag)
-
-		identityUpdateOrganizationFlags      = flag.NewFlagSet("update-organization", flag.ExitOnError)
-		identityUpdateOrganizationBodyFlag   = new(cliStringFlag)
-		identityUpdateOrganizationIDFlag     = new(cliStringFlag)
-		identityUpdateOrganizationCookieFlag = new(cliStringFlag)
-
-		identityDeleteOrganizationFlags      = flag.NewFlagSet("delete-organization", flag.ExitOnError)
-		identityDeleteOrganizationIDFlag     = new(cliStringFlag)
-		identityDeleteOrganizationCookieFlag = new(cliStringFlag)
-
-		identityCreateDepartmentFlags      = flag.NewFlagSet("create-department", flag.ExitOnError)
-		identityCreateDepartmentBodyFlag   = new(cliStringFlag)
-		identityCreateDepartmentCookieFlag = new(cliStringFlag)
-
-		identityUpdateDepartmentFlags      = flag.NewFlagSet("update-department", flag.ExitOnError)
-		identityUpdateDepartmentBodyFlag   = new(cliStringFlag)
-		identityUpdateDepartmentIDFlag     = new(cliStringFlag)
-		identityUpdateDepartmentCookieFlag = new(cliStringFlag)
-
-		identityDeleteDepartmentFlags      = flag.NewFlagSet("delete-department", flag.ExitOnError)
-		identityDeleteDepartmentIDFlag     = new(cliStringFlag)
-		identityDeleteDepartmentCookieFlag = new(cliStringFlag)
-
-		identityCreateRoleFlags      = flag.NewFlagSet("create-role", flag.ExitOnError)
-		identityCreateRoleBodyFlag   = new(cliStringFlag)
-		identityCreateRoleCookieFlag = new(cliStringFlag)
-
-		identityUpdateRoleFlags      = flag.NewFlagSet("update-role", flag.ExitOnError)
-		identityUpdateRoleBodyFlag   = new(cliStringFlag)
-		identityUpdateRoleIDFlag     = new(cliStringFlag)
-		identityUpdateRoleCookieFlag = new(cliStringFlag)
-
-		identityDeleteRoleFlags      = flag.NewFlagSet("delete-role", flag.ExitOnError)
-		identityDeleteRoleIDFlag     = new(cliStringFlag)
-		identityDeleteRoleCookieFlag = new(cliStringFlag)
 	)
 	systemEchoFlags.Var(systemEchoNameFlag, "name", "")
-	demoListFlags.Var(demoListTokenFlag, "token", "")
-	demoGetFlags.Var(demoGetIDFlag, "id", "")
-	demoGetFlags.Var(demoGetTokenFlag, "token", "")
-	demoUpdateFlags.Var(demoUpdateBodyFlag, "body", "")
-	demoUpdateFlags.Var(demoUpdateIDFlag, "id", "")
-	demoUpdateFlags.Var(demoUpdateTokenFlag, "token", "")
-	demoDeleteFlags.Var(demoDeleteIDFlag, "id", "")
-	demoDeleteFlags.Var(demoDeleteTokenFlag, "token", "")
+	aiStatusFlags.Var(aiStatusCookieFlag, "cookie", "")
+	aiRunFlags.Var(aiRunBodyFlag, "body", "")
+	aiRunFlags.Var(aiRunCookieFlag, "cookie", "")
+	aiRunsFlags.Var(aiRunsSessionIDFlag, "session-id", "")
+	aiRunsFlags.Var(aiRunsCookieFlag, "cookie", "")
+	aiConversationsFlags.Var(aiConversationsCookieFlag, "cookie", "")
+	aiRunDetailFlags.Var(aiRunDetailIDFlag, "id", "")
+	aiRunDetailFlags.Var(aiRunDetailCookieFlag, "cookie", "")
+	aiUpdateConversationFlags.Var(aiUpdateConversationBodyFlag, "body", "")
+	aiUpdateConversationFlags.Var(aiUpdateConversationSessionIDFlag, "session-id", "Session the tasks of the conversation belong to.")
+	aiUpdateConversationFlags.Var(aiUpdateConversationCookieFlag, "cookie", "")
 	assistantStatusFlags.Var(assistantStatusCookieFlag, "cookie", "")
 	assistantChatFlags.Var(assistantChatBodyFlag, "body", "")
 	assistantChatFlags.Var(assistantChatCookieFlag, "cookie", "")
-	settingsWorkspaceFlags.Var(settingsWorkspaceCookieFlag, "cookie", "")
-	settingsEffectiveFlags.Var(settingsEffectiveCookieFlag, "cookie", "")
-	settingsLogoFlags.Var(settingsLogoCookieFlag, "cookie", "")
-	settingsPreferencesFlags.Var(settingsPreferencesBodyFlag, "body", "")
-	settingsPreferencesFlags.Var(settingsPreferencesCookieFlag, "cookie", "")
-	settingsDraftFlags.Var(settingsDraftBodyFlag, "body", "")
-	settingsDraftFlags.Var(settingsDraftCookieFlag, "cookie", "")
-	settingsSchedulesFlags.Var(settingsSchedulesCookieFlag, "cookie", "")
-	settingsScheduleFlags.Var(settingsScheduleBodyFlag, "body", "")
-	settingsScheduleFlags.Var(settingsScheduleIDFlag, "id", "")
-	settingsScheduleFlags.Var(settingsScheduleCookieFlag, "cookie", "")
-	settingsCancelScheduleFlags.Var(settingsCancelScheduleIDFlag, "id", "")
-	settingsCancelScheduleFlags.Var(settingsCancelScheduleCookieFlag, "cookie", "")
-	settingsPublishFlags.Var(settingsPublishBodyFlag, "body", "")
-	settingsPublishFlags.Var(settingsPublishIDFlag, "id", "")
-	settingsPublishFlags.Var(settingsPublishCookieFlag, "cookie", "")
-	settingsRollbackFlags.Var(settingsRollbackBodyFlag, "body", "")
-	settingsRollbackFlags.Var(settingsRollbackIDFlag, "id", "")
-	settingsRollbackFlags.Var(settingsRollbackCookieFlag, "cookie", "")
-	settingsExportFlags.Var(settingsExportCookieFlag, "cookie", "")
-	settingsReauthenticateFlags.Var(settingsReauthenticateBodyFlag, "body", "")
-	settingsReauthenticateFlags.Var(settingsReauthenticateCookieFlag, "cookie", "")
-	dictionariesListFlags.Var(dictionariesListCookieFlag, "cookie", "")
-	dictionariesGetFlags.Var(dictionariesGetIDFlag, "id", "")
-	dictionariesGetFlags.Var(dictionariesGetCookieFlag, "cookie", "")
-	dictionariesDraftFlags.Var(dictionariesDraftBodyFlag, "body", "")
-	dictionariesDraftFlags.Var(dictionariesDraftCookieFlag, "cookie", "")
-	dictionariesPublishFlags.Var(dictionariesPublishBodyFlag, "body", "")
-	dictionariesPublishFlags.Var(dictionariesPublishIDFlag, "id", "")
-	dictionariesPublishFlags.Var(dictionariesPublishCookieFlag, "cookie", "")
-	dictionariesRollbackFlags.Var(dictionariesRollbackBodyFlag, "body", "")
-	dictionariesRollbackFlags.Var(dictionariesRollbackIDFlag, "id", "")
-	dictionariesRollbackFlags.Var(dictionariesRollbackCookieFlag, "cookie", "")
-	dictionariesRemoveFlags.Var(dictionariesRemoveIDFlag, "id", "")
-	dictionariesRemoveFlags.Var(dictionariesRemoveCookieFlag, "cookie", "")
-	dictionariesOverrideFlags.Var(dictionariesOverrideBodyFlag, "body", "")
-	dictionariesOverrideFlags.Var(dictionariesOverrideIDFlag, "id", "")
-	dictionariesOverrideFlags.Var(dictionariesOverrideCookieFlag, "cookie", "")
-	dictionariesOptionsFlags.Var(dictionariesOptionsCodeFlag, "code", "")
-	dictionariesOptionsFlags.Var(dictionariesOptionsIdsFlag, "ids", "")
-	dictionariesOptionsFlags.Var(dictionariesOptionsCookieFlag, "cookie", "")
-	dictionariesImportFlags.Var(dictionariesImportBodyFlag, "body", "")
-	dictionariesImportFlags.Var(dictionariesImportIDFlag, "id", "")
-	dictionariesImportFlags.Var(dictionariesImportCookieFlag, "cookie", "")
-	dictionariesImportDraftFlags.Var(dictionariesImportDraftBodyFlag, "body", "")
-	dictionariesImportDraftFlags.Var(dictionariesImportDraftIDFlag, "id", "")
-	dictionariesImportDraftFlags.Var(dictionariesImportDraftCookieFlag, "cookie", "")
-	dictionariesExportFlags.Var(dictionariesExportIDFlag, "id", "")
-	dictionariesExportFlags.Var(dictionariesExportCookieFlag, "cookie", "")
-	filesListFlags.Var(filesListCookieFlag, "cookie", "")
-	filesDriversFlags.Var(filesDriversCookieFlag, "cookie", "")
-	filesUploadFlags.Var(filesUploadBodyFlag, "body", "")
-	filesUploadFlags.Var(filesUploadCookieFlag, "cookie", "")
-	filesContentFlags.Var(filesContentIDFlag, "id", "")
-	filesContentFlags.Var(filesContentCookieFlag, "cookie", "")
-	filesRemoveFlags.Var(filesRemoveIDFlag, "id", "")
-	filesRemoveFlags.Var(filesRemoveCookieFlag, "cookie", "")
-	notificationsAudienceFlags.Var(notificationsAudienceCookieFlag, "cookie", "")
-	notificationsPreviewFlags.Var(notificationsPreviewBodyFlag, "body", "")
-	notificationsPreviewFlags.Var(notificationsPreviewCookieFlag, "cookie", "")
-	notificationsSendFlags.Var(notificationsSendBodyFlag, "body", "")
-	notificationsSendFlags.Var(notificationsSendCookieFlag, "cookie", "")
-	notificationsSentFlags.Var(notificationsSentCookieFlag, "cookie", "")
-	notificationsAttachmentFlags.Var(notificationsAttachmentIDFlag, "id", "")
-	notificationsAttachmentFlags.Var(notificationsAttachmentFileIDFlag, "file-id", "")
-	notificationsAttachmentFlags.Var(notificationsAttachmentCookieFlag, "cookie", "")
-	notificationsMessageFlags.Var(notificationsMessageIDFlag, "id", "")
-	notificationsMessageFlags.Var(notificationsMessageCookieFlag, "cookie", "")
-	notificationsInboxFlags.Var(notificationsInboxCookieFlag, "cookie", "")
-	notificationsReadFlags.Var(notificationsReadIDFlag, "id", "")
-	notificationsReadFlags.Var(notificationsReadCookieFlag, "cookie", "")
-	notificationsDeliveriesFlags.Var(notificationsDeliveriesCookieFlag, "cookie", "")
-	notificationsRetryFlags.Var(notificationsRetryIDFlag, "id", "")
-	notificationsRetryFlags.Var(notificationsRetryCookieFlag, "cookie", "")
-	notificationsTestFlags.Var(notificationsTestBodyFlag, "body", "")
-	notificationsTestFlags.Var(notificationsTestCookieFlag, "cookie", "")
-	mcpManagementCreateFlags.Var(mcpManagementCreateBodyFlag, "body", "")
-	mcpManagementCreateFlags.Var(mcpManagementCreateCookieFlag, "cookie", "")
-	mcpManagementListFlags.Var(mcpManagementListCookieFlag, "cookie", "")
-	mcpManagementRevokeFlags.Var(mcpManagementRevokeBodyFlag, "body", "")
-	mcpManagementRevokeFlags.Var(mcpManagementRevokeIDFlag, "id", "")
-	mcpManagementRevokeFlags.Var(mcpManagementRevokeCookieFlag, "cookie", "")
-	mcpManagementRotateFlags.Var(mcpManagementRotateBodyFlag, "body", "")
-	mcpManagementRotateFlags.Var(mcpManagementRotateIDFlag, "id", "")
-	mcpManagementRotateFlags.Var(mcpManagementRotateCookieFlag, "cookie", "")
-	mcpManagementCapabilitiesFlags.Var(mcpManagementCapabilitiesDepartmentIDFlag, "department-id", "")
-	mcpManagementCapabilitiesFlags.Var(mcpManagementCapabilitiesCookieFlag, "cookie", "")
-	mcpManagementAdminRevokeFlags.Var(mcpManagementAdminRevokeBodyFlag, "body", "")
-	mcpManagementAdminRevokeFlags.Var(mcpManagementAdminRevokeIDFlag, "id", "")
-	mcpManagementAdminRevokeFlags.Var(mcpManagementAdminRevokeCookieFlag, "cookie", "")
-	mcpManagementAuditFlags.Var(mcpManagementAuditCookieFlag, "cookie", "")
+	assistantAgentFlags.Var(assistantAgentBodyFlag, "body", "")
+	assistantAgentFlags.Var(assistantAgentCookieFlag, "cookie", "")
+	assistantWorkflowFlags.Var(assistantWorkflowBodyFlag, "body", "")
+	assistantWorkflowFlags.Var(assistantWorkflowCookieFlag, "cookie", "")
+	assistantKnowledgeFlags.Var(assistantKnowledgeCookieFlag, "cookie", "")
+	assistantIngestFlags.Var(assistantIngestBodyFlag, "body", "")
+	assistantIngestFlags.Var(assistantIngestCookieFlag, "cookie", "")
+	capabilityDefinitionsFlags.Var(capabilityDefinitionsCookieFlag, "cookie", "")
+	capabilityInvokeFlags.Var(capabilityInvokeBodyFlag, "body", "")
+	capabilityInvokeFlags.Var(capabilityInvokeNameFlag, "name", "")
+	capabilityInvokeFlags.Var(capabilityInvokeCookieFlag, "cookie", "")
+	capabilityInvocationsFlags.Var(capabilityInvocationsCookieFlag, "cookie", "")
+	capabilityInvocationFlags.Var(capabilityInvocationInvocationIDFlag, "invocation-id", "")
+	capabilityInvocationFlags.Var(capabilityInvocationCookieFlag, "cookie", "")
+	capabilityApprovalsFlags.Var(capabilityApprovalsCookieFlag, "cookie", "")
+	capabilityDecideFlags.Var(capabilityDecideBodyFlag, "body", "")
+	capabilityDecideFlags.Var(capabilityDecideIDFlag, "id", "")
+	capabilityDecideFlags.Var(capabilityDecideCookieFlag, "cookie", "")
+	capabilityEventsFlags.Var(capabilityEventsCookieFlag, "cookie", "")
 	identityTemporaryAccessFlags.Var(identityTemporaryAccessCookieFlag, "cookie", "")
 	identityRequestTemporaryAccessFlags.Var(identityRequestTemporaryAccessBodyFlag, "body", "")
 	identityRequestTemporaryAccessFlags.Var(identityRequestTemporaryAccessCookieFlag, "cookie", "")
@@ -537,108 +258,39 @@ func ParseEndpoint(
 	identityMeFlags.Var(identityMeCookieFlag, "cookie", "")
 	identityLogoutFlags.Var(identityLogoutCookieFlag, "cookie", "")
 	identitySnapshotFlags.Var(identitySnapshotCookieFlag, "cookie", "")
-	identityCreateAccountFlags.Var(identityCreateAccountBodyFlag, "body", "")
-	identityCreateAccountFlags.Var(identityCreateAccountCookieFlag, "cookie", "")
-	identityUpdateAccountFlags.Var(identityUpdateAccountBodyFlag, "body", "")
-	identityUpdateAccountFlags.Var(identityUpdateAccountIDFlag, "id", "")
-	identityUpdateAccountFlags.Var(identityUpdateAccountCookieFlag, "cookie", "")
-	identityDeleteAccountFlags.Var(identityDeleteAccountIDFlag, "id", "")
-	identityDeleteAccountFlags.Var(identityDeleteAccountCookieFlag, "cookie", "")
-	identityCreateOrganizationFlags.Var(identityCreateOrganizationBodyFlag, "body", "")
-	identityCreateOrganizationFlags.Var(identityCreateOrganizationCookieFlag, "cookie", "")
-	identityUpdateOrganizationFlags.Var(identityUpdateOrganizationBodyFlag, "body", "")
-	identityUpdateOrganizationFlags.Var(identityUpdateOrganizationIDFlag, "id", "")
-	identityUpdateOrganizationFlags.Var(identityUpdateOrganizationCookieFlag, "cookie", "")
-	identityDeleteOrganizationFlags.Var(identityDeleteOrganizationIDFlag, "id", "")
-	identityDeleteOrganizationFlags.Var(identityDeleteOrganizationCookieFlag, "cookie", "")
-	identityCreateDepartmentFlags.Var(identityCreateDepartmentBodyFlag, "body", "")
-	identityCreateDepartmentFlags.Var(identityCreateDepartmentCookieFlag, "cookie", "")
-	identityUpdateDepartmentFlags.Var(identityUpdateDepartmentBodyFlag, "body", "")
-	identityUpdateDepartmentFlags.Var(identityUpdateDepartmentIDFlag, "id", "")
-	identityUpdateDepartmentFlags.Var(identityUpdateDepartmentCookieFlag, "cookie", "")
-	identityDeleteDepartmentFlags.Var(identityDeleteDepartmentIDFlag, "id", "")
-	identityDeleteDepartmentFlags.Var(identityDeleteDepartmentCookieFlag, "cookie", "")
-	identityCreateRoleFlags.Var(identityCreateRoleBodyFlag, "body", "")
-	identityCreateRoleFlags.Var(identityCreateRoleCookieFlag, "cookie", "")
-	identityUpdateRoleFlags.Var(identityUpdateRoleBodyFlag, "body", "")
-	identityUpdateRoleFlags.Var(identityUpdateRoleIDFlag, "id", "")
-	identityUpdateRoleFlags.Var(identityUpdateRoleCookieFlag, "cookie", "")
-	identityDeleteRoleFlags.Var(identityDeleteRoleIDFlag, "id", "")
-	identityDeleteRoleFlags.Var(identityDeleteRoleCookieFlag, "cookie", "")
 
 	systemFlags.Usage = systemUsage
 	systemHealthFlags.Usage = systemHealthUsage
 	systemEchoFlags.Usage = systemEchoUsage
 
-	demoFlags.Usage = demoUsage
-	demoListFlags.Usage = demoListUsage
-	demoGetFlags.Usage = demoGetUsage
-	demoUpdateFlags.Usage = demoUpdateUsage
-	demoDeleteFlags.Usage = demoDeleteUsage
+	aiFlags.Usage = aiUsage
+	aiStatusFlags.Usage = aiStatusUsage
+	aiRunFlags.Usage = aiRunUsage
+	aiRunsFlags.Usage = aiRunsUsage
+	aiConversationsFlags.Usage = aiConversationsUsage
+	aiRunDetailFlags.Usage = aiRunDetailUsage
+	aiUpdateConversationFlags.Usage = aiUpdateConversationUsage
 
 	assistantFlags.Usage = assistantUsage
 	assistantStatusFlags.Usage = assistantStatusUsage
 	assistantChatFlags.Usage = assistantChatUsage
+	assistantAgentFlags.Usage = assistantAgentUsage
+	assistantWorkflowFlags.Usage = assistantWorkflowUsage
+	assistantKnowledgeFlags.Usage = assistantKnowledgeUsage
+	assistantIngestFlags.Usage = assistantIngestUsage
 
-	settingsFlags.Usage = settingsUsage
-	settingsWorkspaceFlags.Usage = settingsWorkspaceUsage
-	settingsEffectiveFlags.Usage = settingsEffectiveUsage
-	settingsLogoFlags.Usage = settingsLogoUsage
-	settingsPreferencesFlags.Usage = settingsPreferencesUsage
-	settingsDraftFlags.Usage = settingsDraftUsage
-	settingsSchedulesFlags.Usage = settingsSchedulesUsage
-	settingsScheduleFlags.Usage = settingsScheduleUsage
-	settingsCancelScheduleFlags.Usage = settingsCancelScheduleUsage
-	settingsPublishFlags.Usage = settingsPublishUsage
-	settingsRollbackFlags.Usage = settingsRollbackUsage
-	settingsExportFlags.Usage = settingsExportUsage
-	settingsReauthenticateFlags.Usage = settingsReauthenticateUsage
-
-	dictionariesFlags.Usage = dictionariesUsage
-	dictionariesListFlags.Usage = dictionariesListUsage
-	dictionariesGetFlags.Usage = dictionariesGetUsage
-	dictionariesDraftFlags.Usage = dictionariesDraftUsage
-	dictionariesPublishFlags.Usage = dictionariesPublishUsage
-	dictionariesRollbackFlags.Usage = dictionariesRollbackUsage
-	dictionariesRemoveFlags.Usage = dictionariesRemoveUsage
-	dictionariesOverrideFlags.Usage = dictionariesOverrideUsage
-	dictionariesOptionsFlags.Usage = dictionariesOptionsUsage
-	dictionariesImportFlags.Usage = dictionariesImportUsage
-	dictionariesImportDraftFlags.Usage = dictionariesImportDraftUsage
-	dictionariesExportFlags.Usage = dictionariesExportUsage
-
-	filesFlags.Usage = filesUsage
-	filesListFlags.Usage = filesListUsage
-	filesDriversFlags.Usage = filesDriversUsage
-	filesUploadFlags.Usage = filesUploadUsage
-	filesContentFlags.Usage = filesContentUsage
-	filesRemoveFlags.Usage = filesRemoveUsage
-
-	notificationsFlags.Usage = notificationsUsage
-	notificationsAudienceFlags.Usage = notificationsAudienceUsage
-	notificationsPreviewFlags.Usage = notificationsPreviewUsage
-	notificationsSendFlags.Usage = notificationsSendUsage
-	notificationsSentFlags.Usage = notificationsSentUsage
-	notificationsAttachmentFlags.Usage = notificationsAttachmentUsage
-	notificationsMessageFlags.Usage = notificationsMessageUsage
-	notificationsInboxFlags.Usage = notificationsInboxUsage
-	notificationsReadFlags.Usage = notificationsReadUsage
-	notificationsDeliveriesFlags.Usage = notificationsDeliveriesUsage
-	notificationsRetryFlags.Usage = notificationsRetryUsage
-	notificationsTestFlags.Usage = notificationsTestUsage
+	capabilityFlags.Usage = capabilityUsage
+	capabilityDefinitionsFlags.Usage = capabilityDefinitionsUsage
+	capabilityInvokeFlags.Usage = capabilityInvokeUsage
+	capabilityInvocationsFlags.Usage = capabilityInvocationsUsage
+	capabilityInvocationFlags.Usage = capabilityInvocationUsage
+	capabilityApprovalsFlags.Usage = capabilityApprovalsUsage
+	capabilityDecideFlags.Usage = capabilityDecideUsage
+	capabilityEventsFlags.Usage = capabilityEventsUsage
 
 	brandingFlags.Usage = brandingUsage
 	brandingGetFlags.Usage = brandingGetUsage
 	brandingLogoFlags.Usage = brandingLogoUsage
-
-	mcpManagementFlags.Usage = mcpManagementUsage
-	mcpManagementCreateFlags.Usage = mcpManagementCreateUsage
-	mcpManagementListFlags.Usage = mcpManagementListUsage
-	mcpManagementRevokeFlags.Usage = mcpManagementRevokeUsage
-	mcpManagementRotateFlags.Usage = mcpManagementRotateUsage
-	mcpManagementCapabilitiesFlags.Usage = mcpManagementCapabilitiesUsage
-	mcpManagementAdminRevokeFlags.Usage = mcpManagementAdminRevokeUsage
-	mcpManagementAuditFlags.Usage = mcpManagementAuditUsage
 
 	identityFlags.Usage = identityUsage
 	identityTemporaryAccessFlags.Usage = identityTemporaryAccessUsage
@@ -651,18 +303,6 @@ func ParseEndpoint(
 	identityMeFlags.Usage = identityMeUsage
 	identityLogoutFlags.Usage = identityLogoutUsage
 	identitySnapshotFlags.Usage = identitySnapshotUsage
-	identityCreateAccountFlags.Usage = identityCreateAccountUsage
-	identityUpdateAccountFlags.Usage = identityUpdateAccountUsage
-	identityDeleteAccountFlags.Usage = identityDeleteAccountUsage
-	identityCreateOrganizationFlags.Usage = identityCreateOrganizationUsage
-	identityUpdateOrganizationFlags.Usage = identityUpdateOrganizationUsage
-	identityDeleteOrganizationFlags.Usage = identityDeleteOrganizationUsage
-	identityCreateDepartmentFlags.Usage = identityCreateDepartmentUsage
-	identityUpdateDepartmentFlags.Usage = identityUpdateDepartmentUsage
-	identityDeleteDepartmentFlags.Usage = identityDeleteDepartmentUsage
-	identityCreateRoleFlags.Usage = identityCreateRoleUsage
-	identityUpdateRoleFlags.Usage = identityUpdateRoleUsage
-	identityDeleteRoleFlags.Usage = identityDeleteRoleUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -681,22 +321,14 @@ func ParseEndpoint(
 		switch svcn {
 		case "system":
 			svcf = systemFlags
-		case "demo":
-			svcf = demoFlags
+		case "ai":
+			svcf = aiFlags
 		case "assistant":
 			svcf = assistantFlags
-		case "settings":
-			svcf = settingsFlags
-		case "dictionaries":
-			svcf = dictionariesFlags
-		case "files":
-			svcf = filesFlags
-		case "notifications":
-			svcf = notificationsFlags
+		case "capability":
+			svcf = capabilityFlags
 		case "branding":
 			svcf = brandingFlags
-		case "mcp-management":
-			svcf = mcpManagementFlags
 		case "identity":
 			svcf = identityFlags
 		default:
@@ -724,19 +356,25 @@ func ParseEndpoint(
 
 			}
 
-		case "demo":
+		case "ai":
 			switch epn {
-			case "list":
-				epf = demoListFlags
+			case "status":
+				epf = aiStatusFlags
 
-			case "get":
-				epf = demoGetFlags
+			case "run":
+				epf = aiRunFlags
 
-			case "update":
-				epf = demoUpdateFlags
+			case "runs":
+				epf = aiRunsFlags
 
-			case "delete":
-				epf = demoDeleteFlags
+			case "conversations":
+				epf = aiConversationsFlags
+
+			case "run-detail":
+				epf = aiRunDetailFlags
+
+			case "update-conversation":
+				epf = aiUpdateConversationFlags
 
 			}
 
@@ -748,138 +386,42 @@ func ParseEndpoint(
 			case "chat":
 				epf = assistantChatFlags
 
-			}
+			case "agent":
+				epf = assistantAgentFlags
 
-		case "settings":
-			switch epn {
-			case "workspace":
-				epf = settingsWorkspaceFlags
+			case "workflow":
+				epf = assistantWorkflowFlags
 
-			case "effective":
-				epf = settingsEffectiveFlags
+			case "knowledge":
+				epf = assistantKnowledgeFlags
 
-			case "logo":
-				epf = settingsLogoFlags
-
-			case "preferences":
-				epf = settingsPreferencesFlags
-
-			case "draft":
-				epf = settingsDraftFlags
-
-			case "schedules":
-				epf = settingsSchedulesFlags
-
-			case "schedule":
-				epf = settingsScheduleFlags
-
-			case "cancel-schedule":
-				epf = settingsCancelScheduleFlags
-
-			case "publish":
-				epf = settingsPublishFlags
-
-			case "rollback":
-				epf = settingsRollbackFlags
-
-			case "export":
-				epf = settingsExportFlags
-
-			case "reauthenticate":
-				epf = settingsReauthenticateFlags
+			case "ingest":
+				epf = assistantIngestFlags
 
 			}
 
-		case "dictionaries":
+		case "capability":
 			switch epn {
-			case "list":
-				epf = dictionariesListFlags
+			case "definitions":
+				epf = capabilityDefinitionsFlags
 
-			case "get":
-				epf = dictionariesGetFlags
+			case "invoke":
+				epf = capabilityInvokeFlags
 
-			case "draft":
-				epf = dictionariesDraftFlags
+			case "invocations":
+				epf = capabilityInvocationsFlags
 
-			case "publish":
-				epf = dictionariesPublishFlags
+			case "invocation":
+				epf = capabilityInvocationFlags
 
-			case "rollback":
-				epf = dictionariesRollbackFlags
+			case "approvals":
+				epf = capabilityApprovalsFlags
 
-			case "remove":
-				epf = dictionariesRemoveFlags
+			case "decide":
+				epf = capabilityDecideFlags
 
-			case "override":
-				epf = dictionariesOverrideFlags
-
-			case "options":
-				epf = dictionariesOptionsFlags
-
-			case "import":
-				epf = dictionariesImportFlags
-
-			case "import-draft":
-				epf = dictionariesImportDraftFlags
-
-			case "export":
-				epf = dictionariesExportFlags
-
-			}
-
-		case "files":
-			switch epn {
-			case "list":
-				epf = filesListFlags
-
-			case "drivers":
-				epf = filesDriversFlags
-
-			case "upload":
-				epf = filesUploadFlags
-
-			case "content":
-				epf = filesContentFlags
-
-			case "remove":
-				epf = filesRemoveFlags
-
-			}
-
-		case "notifications":
-			switch epn {
-			case "audience":
-				epf = notificationsAudienceFlags
-
-			case "preview":
-				epf = notificationsPreviewFlags
-
-			case "send":
-				epf = notificationsSendFlags
-
-			case "sent":
-				epf = notificationsSentFlags
-
-			case "attachment":
-				epf = notificationsAttachmentFlags
-
-			case "message":
-				epf = notificationsMessageFlags
-
-			case "inbox":
-				epf = notificationsInboxFlags
-
-			case "read":
-				epf = notificationsReadFlags
-
-			case "deliveries":
-				epf = notificationsDeliveriesFlags
-
-			case "retry":
-				epf = notificationsRetryFlags
-
-			case "test":
-				epf = notificationsTestFlags
+			case "events":
+				epf = capabilityEventsFlags
 
 			}
 
@@ -890,31 +432,6 @@ func ParseEndpoint(
 
 			case "logo":
 				epf = brandingLogoFlags
-
-			}
-
-		case "mcp-management":
-			switch epn {
-			case "create":
-				epf = mcpManagementCreateFlags
-
-			case "list":
-				epf = mcpManagementListFlags
-
-			case "revoke":
-				epf = mcpManagementRevokeFlags
-
-			case "rotate":
-				epf = mcpManagementRotateFlags
-
-			case "capabilities":
-				epf = mcpManagementCapabilitiesFlags
-
-			case "admin-revoke":
-				epf = mcpManagementAdminRevokeFlags
-
-			case "audit":
-				epf = mcpManagementAuditFlags
 
 			}
 
@@ -950,42 +467,6 @@ func ParseEndpoint(
 			case "snapshot":
 				epf = identitySnapshotFlags
 
-			case "create-account":
-				epf = identityCreateAccountFlags
-
-			case "update-account":
-				epf = identityUpdateAccountFlags
-
-			case "delete-account":
-				epf = identityDeleteAccountFlags
-
-			case "create-organization":
-				epf = identityCreateOrganizationFlags
-
-			case "update-organization":
-				epf = identityUpdateOrganizationFlags
-
-			case "delete-organization":
-				epf = identityDeleteOrganizationFlags
-
-			case "create-department":
-				epf = identityCreateDepartmentFlags
-
-			case "update-department":
-				epf = identityUpdateDepartmentFlags
-
-			case "delete-department":
-				epf = identityDeleteDepartmentFlags
-
-			case "create-role":
-				epf = identityCreateRoleFlags
-
-			case "update-role":
-				epf = identityUpdateRoleFlags
-
-			case "delete-role":
-				epf = identityDeleteRoleFlags
-
 			}
 
 		}
@@ -1017,21 +498,27 @@ func ParseEndpoint(
 				endpoint = c.Echo()
 				data, err = systemc.BuildEchoPayload(systemEchoNameFlag.value)
 			}
-		case "demo":
-			c := democ.NewClient(scheme, host, doer, enc, dec, restore)
+		case "ai":
+			c := aic.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
-			case "list":
-				endpoint = c.List()
-				data, err = democ.BuildListPayload(demoListTokenFlag.value)
-			case "get":
-				endpoint = c.Get()
-				data, err = democ.BuildGetPayload(demoGetIDFlag.value, demoGetTokenFlag.value)
-			case "update":
-				endpoint = c.Update()
-				data, err = democ.BuildUpdatePayload(demoUpdateBodyFlag.value, demoUpdateIDFlag.value, demoUpdateTokenFlag.value)
-			case "delete":
-				endpoint = c.Delete()
-				data, err = democ.BuildDeletePayload(demoDeleteIDFlag.value, demoDeleteTokenFlag.value)
+			case "status":
+				endpoint = c.Status()
+				data, err = aic.BuildStatusPayload(aiStatusCookieFlag.value)
+			case "run":
+				endpoint = c.Run()
+				data, err = aic.BuildRunPayload(aiRunBodyFlag.value, aiRunCookieFlag.value)
+			case "runs":
+				endpoint = c.Runs()
+				data, err = aic.BuildRunsPayload(*aiRunsLimitFlag, aiRunsSessionIDFlag.value, aiRunsCookieFlag.value)
+			case "conversations":
+				endpoint = c.Conversations()
+				data, err = aic.BuildConversationsPayload(*aiConversationsLimitFlag, aiConversationsCookieFlag.value)
+			case "run-detail":
+				endpoint = c.RunDetail()
+				data, err = aic.BuildRunDetailPayload(aiRunDetailIDFlag.value, aiRunDetailCookieFlag.value)
+			case "update-conversation":
+				endpoint = c.UpdateConversation()
+				data, err = aic.BuildUpdateConversationPayload(aiUpdateConversationBodyFlag.value, aiUpdateConversationSessionIDFlag.value, aiUpdateConversationCookieFlag.value)
 			}
 		case "assistant":
 			c := assistantc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -1042,139 +529,43 @@ func ParseEndpoint(
 			case "chat":
 				endpoint = c.Chat()
 				data, err = assistantc.BuildChatPayload(assistantChatBodyFlag.value, assistantChatCookieFlag.value)
+			case "agent":
+				endpoint = c.Agent()
+				data, err = assistantc.BuildAgentPayload(assistantAgentBodyFlag.value, assistantAgentCookieFlag.value)
+			case "workflow":
+				endpoint = c.Workflow()
+				data, err = assistantc.BuildWorkflowPayload(assistantWorkflowBodyFlag.value, assistantWorkflowCookieFlag.value)
+			case "knowledge":
+				endpoint = c.Knowledge()
+				data, err = assistantc.BuildKnowledgePayload(assistantKnowledgeCookieFlag.value)
+			case "ingest":
+				endpoint = c.Ingest()
+				data, err = assistantc.BuildIngestPayload(assistantIngestBodyFlag.value, assistantIngestCookieFlag.value)
 			}
-		case "settings":
-			c := settingsc.NewClient(scheme, host, doer, enc, dec, restore)
+		case "capability":
+			c := capabilityc.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
-			case "workspace":
-				endpoint = c.Workspace()
-				data, err = settingsc.BuildWorkspacePayload(*settingsWorkspaceTargetKindFlag, *settingsWorkspaceTargetIDFlag, settingsWorkspaceCookieFlag.value)
-			case "effective":
-				endpoint = c.Effective()
-				data, err = settingsc.BuildEffectivePayload(settingsEffectiveCookieFlag.value)
-			case "logo":
-				endpoint = c.Logo()
-				data, err = settingsc.BuildLogoPayload(settingsLogoCookieFlag.value)
-			case "preferences":
-				endpoint = c.Preferences()
-				data, err = settingsc.BuildPreferencesPayload(settingsPreferencesBodyFlag.value, settingsPreferencesCookieFlag.value)
-			case "draft":
-				endpoint = c.Draft()
-				data, err = settingsc.BuildDraftPayload(settingsDraftBodyFlag.value, settingsDraftCookieFlag.value)
-			case "schedules":
-				endpoint = c.Schedules()
-				data, err = settingsc.BuildSchedulesPayload(settingsSchedulesCookieFlag.value)
-			case "schedule":
-				endpoint = c.Schedule()
-				data, err = settingsc.BuildSchedulePayload(settingsScheduleBodyFlag.value, settingsScheduleIDFlag.value, settingsScheduleCookieFlag.value)
-			case "cancel-schedule":
-				endpoint = c.CancelSchedule()
-				data, err = settingsc.BuildCancelSchedulePayload(settingsCancelScheduleIDFlag.value, settingsCancelScheduleCookieFlag.value)
-			case "publish":
-				endpoint = c.Publish()
-				data, err = settingsc.BuildPublishPayload(settingsPublishBodyFlag.value, settingsPublishIDFlag.value, settingsPublishCookieFlag.value)
-			case "rollback":
-				endpoint = c.Rollback()
-				data, err = settingsc.BuildRollbackPayload(settingsRollbackBodyFlag.value, settingsRollbackIDFlag.value, settingsRollbackCookieFlag.value)
-			case "export":
-				endpoint = c.Export()
-				data, err = settingsc.BuildExportPayload(*settingsExportTargetKindFlag, *settingsExportTargetIDFlag, settingsExportCookieFlag.value)
-			case "reauthenticate":
-				endpoint = c.Reauthenticate()
-				data, err = settingsc.BuildReauthenticatePayload(settingsReauthenticateBodyFlag.value, settingsReauthenticateCookieFlag.value)
-			}
-		case "dictionaries":
-			c := dictionariesc.NewClient(scheme, host, doer, enc, dec, restore)
-			switch epn {
-			case "list":
-				endpoint = c.List()
-				data, err = dictionariesc.BuildListPayload(*dictionariesListTargetKindFlag, *dictionariesListTargetIDFlag, dictionariesListCookieFlag.value)
-			case "get":
-				endpoint = c.Get()
-				data, err = dictionariesc.BuildGetPayload(dictionariesGetIDFlag.value, *dictionariesGetTargetKindFlag, *dictionariesGetTargetIDFlag, dictionariesGetCookieFlag.value)
-			case "draft":
-				endpoint = c.Draft()
-				data, err = dictionariesc.BuildDraftPayload(dictionariesDraftBodyFlag.value, dictionariesDraftCookieFlag.value)
-			case "publish":
-				endpoint = c.Publish()
-				data, err = dictionariesc.BuildPublishPayload(dictionariesPublishBodyFlag.value, dictionariesPublishIDFlag.value, dictionariesPublishCookieFlag.value)
-			case "rollback":
-				endpoint = c.Rollback()
-				data, err = dictionariesc.BuildRollbackPayload(dictionariesRollbackBodyFlag.value, dictionariesRollbackIDFlag.value, dictionariesRollbackCookieFlag.value)
-			case "remove":
-				endpoint = c.Remove()
-				data, err = dictionariesc.BuildRemovePayload(dictionariesRemoveIDFlag.value, dictionariesRemoveCookieFlag.value)
-			case "override":
-				endpoint = c.Override()
-				data, err = dictionariesc.BuildOverridePayload(dictionariesOverrideBodyFlag.value, dictionariesOverrideIDFlag.value, dictionariesOverrideCookieFlag.value)
-			case "options":
-				endpoint = c.Options()
-				data, err = dictionariesc.BuildOptionsPayload(dictionariesOptionsCodeFlag.value, *dictionariesOptionsLanguageFlag, dictionariesOptionsIdsFlag.value, *dictionariesOptionsSearchFlag, dictionariesOptionsCookieFlag.value)
-			case "import":
-				endpoint = c.Import()
-				data, err = dictionariesc.BuildImportPayload(dictionariesImportBodyFlag.value, dictionariesImportIDFlag.value, dictionariesImportCookieFlag.value)
-			case "import-draft":
-				endpoint = c.ImportDraft()
-				data, err = dictionariesc.BuildImportDraftPayload(dictionariesImportDraftBodyFlag.value, dictionariesImportDraftIDFlag.value, dictionariesImportDraftCookieFlag.value)
-			case "export":
-				endpoint = c.Export()
-				data, err = dictionariesc.BuildExportPayload(dictionariesExportIDFlag.value, *dictionariesExportFormatFlag, dictionariesExportCookieFlag.value)
-			}
-		case "files":
-			c := filesc.NewClient(scheme, host, doer, enc, dec, restore)
-			switch epn {
-			case "list":
-				endpoint = c.List()
-				data, err = filesc.BuildListPayload(filesListCookieFlag.value)
-			case "drivers":
-				endpoint = c.Drivers()
-				data, err = filesc.BuildDriversPayload(filesDriversCookieFlag.value)
-			case "upload":
-				endpoint = c.Upload()
-				data, err = filesc.BuildUploadPayload(filesUploadBodyFlag.value, filesUploadCookieFlag.value)
-			case "content":
-				endpoint = c.Content()
-				data, err = filesc.BuildContentPayload(filesContentIDFlag.value, filesContentCookieFlag.value)
-			case "remove":
-				endpoint = c.Remove()
-				data, err = filesc.BuildRemovePayload(filesRemoveIDFlag.value, filesRemoveCookieFlag.value)
-			}
-		case "notifications":
-			c := notificationsc.NewClient(scheme, host, doer, enc, dec, restore)
-			switch epn {
-			case "audience":
-				endpoint = c.Audience()
-				data, err = notificationsc.BuildAudiencePayload(notificationsAudienceCookieFlag.value)
-			case "preview":
-				endpoint = c.Preview()
-				data, err = notificationsc.BuildPreviewPayload(notificationsPreviewBodyFlag.value, notificationsPreviewCookieFlag.value)
-			case "send":
-				endpoint = c.Send()
-				data, err = notificationsc.BuildSendPayload(notificationsSendBodyFlag.value, notificationsSendCookieFlag.value)
-			case "sent":
-				endpoint = c.Sent()
-				data, err = notificationsc.BuildSentPayload(notificationsSentCookieFlag.value)
-			case "attachment":
-				endpoint = c.Attachment()
-				data, err = notificationsc.BuildAttachmentPayload(notificationsAttachmentIDFlag.value, notificationsAttachmentFileIDFlag.value, notificationsAttachmentCookieFlag.value)
-			case "message":
-				endpoint = c.Message()
-				data, err = notificationsc.BuildMessagePayload(notificationsMessageIDFlag.value, notificationsMessageCookieFlag.value)
-			case "inbox":
-				endpoint = c.Inbox()
-				data, err = notificationsc.BuildInboxPayload(notificationsInboxCookieFlag.value)
-			case "read":
-				endpoint = c.Read()
-				data, err = notificationsc.BuildReadPayload(notificationsReadIDFlag.value, notificationsReadCookieFlag.value)
-			case "deliveries":
-				endpoint = c.Deliveries()
-				data, err = notificationsc.BuildDeliveriesPayload(notificationsDeliveriesCookieFlag.value)
-			case "retry":
-				endpoint = c.Retry()
-				data, err = notificationsc.BuildRetryPayload(notificationsRetryIDFlag.value, notificationsRetryCookieFlag.value)
-			case "test":
-				endpoint = c.Test()
-				data, err = notificationsc.BuildTestPayload(notificationsTestBodyFlag.value, notificationsTestCookieFlag.value)
+			case "definitions":
+				endpoint = c.Definitions()
+				data, err = capabilityc.BuildDefinitionsPayload(capabilityDefinitionsCookieFlag.value)
+			case "invoke":
+				endpoint = c.Invoke()
+				data, err = capabilityc.BuildInvokePayload(capabilityInvokeBodyFlag.value, capabilityInvokeNameFlag.value, capabilityInvokeCookieFlag.value)
+			case "invocations":
+				endpoint = c.Invocations()
+				data, err = capabilityc.BuildInvocationsPayload(*capabilityInvocationsLimitFlag, capabilityInvocationsCookieFlag.value)
+			case "invocation":
+				endpoint = c.Invocation()
+				data, err = capabilityc.BuildInvocationPayload(capabilityInvocationInvocationIDFlag.value, capabilityInvocationCookieFlag.value)
+			case "approvals":
+				endpoint = c.Approvals()
+				data, err = capabilityc.BuildApprovalsPayload(capabilityApprovalsCookieFlag.value)
+			case "decide":
+				endpoint = c.Decide()
+				data, err = capabilityc.BuildDecidePayload(capabilityDecideBodyFlag.value, capabilityDecideIDFlag.value, capabilityDecideCookieFlag.value)
+			case "events":
+				endpoint = c.Events()
+				data, err = capabilityc.BuildEventsPayload(*capabilityEventsLimitFlag, capabilityEventsCookieFlag.value)
 			}
 		case "branding":
 			c := brandingc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -1183,31 +574,6 @@ func ParseEndpoint(
 				endpoint = c.Get()
 			case "logo":
 				endpoint = c.Logo()
-			}
-		case "mcp-management":
-			c := mcpmanagementc.NewClient(scheme, host, doer, enc, dec, restore)
-			switch epn {
-			case "create":
-				endpoint = c.Create()
-				data, err = mcpmanagementc.BuildCreatePayload(mcpManagementCreateBodyFlag.value, mcpManagementCreateCookieFlag.value)
-			case "list":
-				endpoint = c.List()
-				data, err = mcpmanagementc.BuildListPayload(mcpManagementListCookieFlag.value)
-			case "revoke":
-				endpoint = c.Revoke()
-				data, err = mcpmanagementc.BuildRevokePayload(mcpManagementRevokeBodyFlag.value, mcpManagementRevokeIDFlag.value, mcpManagementRevokeCookieFlag.value)
-			case "rotate":
-				endpoint = c.Rotate()
-				data, err = mcpmanagementc.BuildRotatePayload(mcpManagementRotateBodyFlag.value, mcpManagementRotateIDFlag.value, mcpManagementRotateCookieFlag.value)
-			case "capabilities":
-				endpoint = c.Capabilities()
-				data, err = mcpmanagementc.BuildCapabilitiesPayload(mcpManagementCapabilitiesDepartmentIDFlag.value, mcpManagementCapabilitiesCookieFlag.value)
-			case "admin-revoke":
-				endpoint = c.AdminRevoke()
-				data, err = mcpmanagementc.BuildAdminRevokePayload(mcpManagementAdminRevokeBodyFlag.value, mcpManagementAdminRevokeIDFlag.value, mcpManagementAdminRevokeCookieFlag.value)
-			case "audit":
-				endpoint = c.Audit()
-				data, err = mcpmanagementc.BuildAuditPayload(mcpManagementAuditCookieFlag.value)
 			}
 		case "identity":
 			c := identityc.NewClient(scheme, host, doer, enc, dec, restore)
@@ -1242,42 +608,6 @@ func ParseEndpoint(
 			case "snapshot":
 				endpoint = c.Snapshot()
 				data, err = identityc.BuildSnapshotPayload(identitySnapshotCookieFlag.value)
-			case "create-account":
-				endpoint = c.CreateAccount()
-				data, err = identityc.BuildCreateAccountPayload(identityCreateAccountBodyFlag.value, identityCreateAccountCookieFlag.value)
-			case "update-account":
-				endpoint = c.UpdateAccount()
-				data, err = identityc.BuildUpdateAccountPayload(identityUpdateAccountBodyFlag.value, identityUpdateAccountIDFlag.value, identityUpdateAccountCookieFlag.value)
-			case "delete-account":
-				endpoint = c.DeleteAccount()
-				data, err = identityc.BuildDeleteAccountPayload(identityDeleteAccountIDFlag.value, identityDeleteAccountCookieFlag.value)
-			case "create-organization":
-				endpoint = c.CreateOrganization()
-				data, err = identityc.BuildCreateOrganizationPayload(identityCreateOrganizationBodyFlag.value, identityCreateOrganizationCookieFlag.value)
-			case "update-organization":
-				endpoint = c.UpdateOrganization()
-				data, err = identityc.BuildUpdateOrganizationPayload(identityUpdateOrganizationBodyFlag.value, identityUpdateOrganizationIDFlag.value, identityUpdateOrganizationCookieFlag.value)
-			case "delete-organization":
-				endpoint = c.DeleteOrganization()
-				data, err = identityc.BuildDeleteOrganizationPayload(identityDeleteOrganizationIDFlag.value, identityDeleteOrganizationCookieFlag.value)
-			case "create-department":
-				endpoint = c.CreateDepartment()
-				data, err = identityc.BuildCreateDepartmentPayload(identityCreateDepartmentBodyFlag.value, identityCreateDepartmentCookieFlag.value)
-			case "update-department":
-				endpoint = c.UpdateDepartment()
-				data, err = identityc.BuildUpdateDepartmentPayload(identityUpdateDepartmentBodyFlag.value, identityUpdateDepartmentIDFlag.value, identityUpdateDepartmentCookieFlag.value)
-			case "delete-department":
-				endpoint = c.DeleteDepartment()
-				data, err = identityc.BuildDeleteDepartmentPayload(identityDeleteDepartmentIDFlag.value, identityDeleteDepartmentCookieFlag.value)
-			case "create-role":
-				endpoint = c.CreateRole()
-				data, err = identityc.BuildCreateRolePayload(identityCreateRoleBodyFlag.value, identityCreateRoleCookieFlag.value)
-			case "update-role":
-				endpoint = c.UpdateRole()
-				data, err = identityc.BuildUpdateRolePayload(identityUpdateRoleBodyFlag.value, identityUpdateRoleIDFlag.value, identityUpdateRoleCookieFlag.value)
-			case "delete-role":
-				endpoint = c.DeleteRole()
-				data, err = identityc.BuildDeleteRolePayload(identityDeleteRoleIDFlag.value, identityDeleteRoleCookieFlag.value)
 			}
 		}
 	}
@@ -1333,97 +663,141 @@ func systemEchoUsage() {
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "system echo --name \"h8\"")
 }
 
-// demoUsage displays the usage of the demo command and its subcommands.
-func demoUsage() {
-	fmt.Fprintln(os.Stderr, `Protected technical-only demo. Bearer identity is verified by transport middleware.`)
-	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] demo COMMAND [flags]\n\n", os.Args[0])
+// aiUsage displays the usage of the ai command and its subcommands.
+func aiUsage() {
+	fmt.Fprintln(os.Stderr, `Agent workbench: start a task, read its trace and inspect runtime quality.`)
+	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] ai COMMAND [flags]\n\n", os.Args[0])
 	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    list: List implements list.`)
-	fmt.Fprintln(os.Stderr, `    get: Get implements get.`)
-	fmt.Fprintln(os.Stderr, `    update: Update implements update.`)
-	fmt.Fprintln(os.Stderr, `    delete: Delete implements delete.`)
+	fmt.Fprintln(os.Stderr, `    status: Report whether the agent is enabled, the catalog size and the tenant quality snapshot.`)
+	fmt.Fprintln(os.Stderr, `    run: Execute one agent task. Business actions inside it go through the capability gateway.`)
+	fmt.Fprintln(os.Stderr, `    runs: List the caller's own tasks, newest first. A session id narrows it to one conversation.`)
+	fmt.Fprintln(os.Stderr, `    conversations: List the caller's conversations, newest first. The workbench uses it as its task list.`)
+	fmt.Fprintln(os.Stderr, `    run-detail: Read one task with the capability calls it caused.`)
+	fmt.Fprintln(os.Stderr, `    update-conversation: Rename or archive one conversation of the caller. A renamed title replaces the derived first question; an archived conversation stays readable and is restored with archived=false.`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
-	fmt.Fprintf(os.Stderr, "    %s demo COMMAND --help\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "    %s ai COMMAND --help\n", os.Args[0])
 }
-func demoListUsage() {
+func aiStatusUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] demo list", os.Args[0])
-	fmt.Fprint(os.Stderr, " -token STRING")
+	fmt.Fprintf(os.Stderr, "%s [flags] ai status", os.Args[0])
+	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `List implements list.`)
+	fmt.Fprintln(os.Stderr, `Report whether the agent is enabled, the catalog size and the tenant quality snapshot.`)
 
 	// Flags list
-	fmt.Fprintln(os.Stderr, `    -token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "demo list --token \"Aliquam fugiat.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai status --cookie \"Inventore optio error adipisci nihil quo ullam.\"")
 }
 
-func demoGetUsage() {
+func aiRunUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] demo get", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -token STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get implements get.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -token STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "demo get --id 7542356293996583093 --token \"Doloribus et assumenda iure nam.\"")
-}
-
-func demoUpdateUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] demo update", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] ai run", os.Args[0])
 	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -token STRING")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Update implements update.`)
+	fmt.Fprintln(os.Stderr, `Execute one agent task. Business actions inside it go through the capability gateway.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "demo update --body '{\n      \"label\": \"w\"\n   }' --id 2202113413207571743 --token \"Quia quae.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run --body '{\n      \"page\": {\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"route\": \"xh0\"\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }' --cookie \"Ut dicta autem.\"")
 }
 
-func demoDeleteUsage() {
+func aiRunsUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] demo delete", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -token STRING")
+	fmt.Fprintf(os.Stderr, "%s [flags] ai runs", os.Args[0])
+	fmt.Fprint(os.Stderr, " -limit INT")
+	fmt.Fprint(os.Stderr, " -session-id STRING")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete implements delete.`)
+	fmt.Fprintln(os.Stderr, `List the caller's own tasks, newest first. A session id narrows it to one conversation.`)
 
 	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -limit INT: `)
+	fmt.Fprintln(os.Stderr, `    -session-id STRING: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "demo delete --id 7844361218811283284 --token \"Dolorem illo fugiat.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai runs --limit 56 --session-id \"fwv\" --cookie \"Cum ipsum.\"")
+}
+
+func aiConversationsUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] ai conversations", os.Args[0])
+	fmt.Fprint(os.Stderr, " -limit INT")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `List the caller's conversations, newest first. The workbench uses it as its task list.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -limit INT: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai conversations --limit 72 --cookie \"Expedita dicta voluptatum quo libero.\"")
+}
+
+func aiRunDetailUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] ai run-detail", os.Args[0])
+	fmt.Fprint(os.Stderr, " -id INT64")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Read one task with the capability calls it caused.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -id INT64: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run-detail --id 3986194929418862693 --cookie \"Maiores eveniet.\"")
+}
+
+func aiUpdateConversationUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] ai update-conversation", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -session-id STRING")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Rename or archive one conversation of the caller. A renamed title replaces the derived first question; an archived conversation stays readable and is restored with archived=false.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -session-id STRING: Session the tasks of the conversation belong to.`)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai update-conversation --body '{\n      \"archived\": false,\n      \"title\": \"r1d\"\n   }' --session-id \"u\" --cookie \"Quia enim rerum deleniti.\"")
 }
 
 // assistantUsage displays the usage of the assistant command and its
@@ -1434,6 +808,10 @@ func assistantUsage() {
 	fmt.Fprintln(os.Stderr, "COMMAND:")
 	fmt.Fprintln(os.Stderr, `    status: Report whether the assistant is enabled for this workspace and which model is configured.`)
 	fmt.Fprintln(os.Stderr, `    chat: Send the conversation and the currently registered page tools; returns assistant text plus any requested tool calls.`)
+	fmt.Fprintln(os.Stderr, `    agent: Run the Eino agent for one question. The agent decides whether to search the knowledge base.`)
+	fmt.Fprintln(os.Stderr, `    workflow: Run the retrieval workflow: retrieve, ground the prompt, then answer. Always grounded.`)
+	fmt.Fprintln(os.Stderr, `    knowledge: List indexed knowledge documents for the current tenant.`)
+	fmt.Fprintln(os.Stderr, `    ingest: Index one knowledge document. Requires settings:update and is tenant scoped.`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s assistant COMMAND --help\n", os.Args[0])
@@ -1476,95 +854,16 @@ func assistantChatUsage() {
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant chat --body '{\n      \"messages\": [\n         {\n            \"content\": \"gbw\",\n            \"role\": \"user\",\n            \"toolCallId\": \"lkf\",\n            \"toolCalls\": [\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               }\n            ]\n         },\n         {\n            \"content\": \"gbw\",\n            \"role\": \"user\",\n            \"toolCallId\": \"lkf\",\n            \"toolCalls\": [\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               }\n            ]\n         },\n         {\n            \"content\": \"gbw\",\n            \"role\": \"user\",\n            \"toolCallId\": \"lkf\",\n            \"toolCalls\": [\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               },\n               {\n                  \"arguments\": \"Impedit qui rerum minus non ipsa optio.\",\n                  \"id\": \"Eveniet voluptatem.\",\n                  \"name\": \"Et qui sit et sint reiciendis.\"\n               }\n            ]\n         }\n      ],\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }' --cookie \"Cupiditate sequi suscipit deleniti unde.\"")
 }
 
-// settingsUsage displays the usage of the settings command and its subcommands.
-func settingsUsage() {
-	fmt.Fprintln(os.Stderr, `Service is the settings service interface.`)
-	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] settings COMMAND [flags]\n\n", os.Args[0])
-	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    workspace: Workspace implements workspace.`)
-	fmt.Fprintln(os.Stderr, `    effective: Effective implements effective.`)
-	fmt.Fprintln(os.Stderr, `    logo: Logo implements logo.`)
-	fmt.Fprintln(os.Stderr, `    preferences: Preferences implements preferences.`)
-	fmt.Fprintln(os.Stderr, `    draft: Draft implements draft.`)
-	fmt.Fprintln(os.Stderr, `    schedules: Schedules implements schedules.`)
-	fmt.Fprintln(os.Stderr, `    schedule: Schedule implements schedule.`)
-	fmt.Fprintln(os.Stderr, `    cancel-schedule: CancelSchedule implements cancel_schedule.`)
-	fmt.Fprintln(os.Stderr, `    publish: Publish implements publish.`)
-	fmt.Fprintln(os.Stderr, `    rollback: Rollback implements rollback.`)
-	fmt.Fprintln(os.Stderr, `    export: Export implements export.`)
-	fmt.Fprintln(os.Stderr, `    reauthenticate: Reauthenticate implements reauthenticate.`)
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Additional help:")
-	fmt.Fprintf(os.Stderr, "    %s settings COMMAND --help\n", os.Args[0])
-}
-func settingsWorkspaceUsage() {
+func assistantAgentUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings workspace", os.Args[0])
-	fmt.Fprint(os.Stderr, " -target-kind STRING")
-	fmt.Fprint(os.Stderr, " -target-id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Workspace implements workspace.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -target-kind STRING: `)
-	fmt.Fprintln(os.Stderr, `    -target-id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings workspace --target-kind \"workspace\" --target-id 0 --cookie \"A consectetur.\"")
-}
-
-func settingsEffectiveUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings effective", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Effective implements effective.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings effective --cookie \"Quo voluptatem ut vel.\"")
-}
-
-func settingsLogoUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings logo", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Logo implements logo.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings logo --cookie \"Autem architecto ad.\"")
-}
-
-func settingsPreferencesUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings preferences", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] assistant agent", os.Args[0])
 	fmt.Fprint(os.Stderr, " -body JSON")
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Preferences implements preferences.`)
+	fmt.Fprintln(os.Stderr, `Run the Eino agent for one question. The agent decides whether to search the knowledge base.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)
@@ -1572,19 +871,19 @@ func settingsPreferencesUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings preferences --body '{\n      \"changes\": [\n         {\n            \"key\": \"vh\",\n            \"operation\": \"reset\",\n            \"value\": \"kac\"\n         },\n         {\n            \"key\": \"vh\",\n            \"operation\": \"reset\",\n            \"value\": \"kac\"\n         },\n         {\n            \"key\": \"vh\",\n            \"operation\": \"reset\",\n            \"value\": \"kac\"\n         }\n      ]\n   }' --cookie \"Aliquid veniam iste.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant agent --body '{\n      \"question\": \"57\"\n   }' --cookie \"Qui consequatur dolor.\"")
 }
 
-func settingsDraftUsage() {
+func assistantWorkflowUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings draft", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] assistant workflow", os.Args[0])
 	fmt.Fprint(os.Stderr, " -body JSON")
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Draft implements draft.`)
+	fmt.Fprintln(os.Stderr, `Run the retrieval workflow: retrieve, ground the prompt, then answer. Always grounded.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)
@@ -1592,145 +891,37 @@ func settingsDraftUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings draft --body '{\n      \"baseRevision\": 4269460531566912513,\n      \"changes\": [\n         {\n            \"key\": \"vh\",\n            \"operation\": \"reset\",\n            \"value\": \"kac\"\n         },\n         {\n            \"key\": \"vh\",\n            \"operation\": \"reset\",\n            \"value\": \"kac\"\n         }\n      ],\n      \"reason\": \"489\",\n      \"target\": {\n         \"id\": 1109233879168230471,\n         \"kind\": \"enterprise\"\n      }\n   }' --cookie \"Ipsum aut hic quasi sint fugiat magnam.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant workflow --body '{\n      \"question\": \"t\"\n   }' --cookie \"Fugiat tenetur ipsum et.\"")
 }
 
-func settingsSchedulesUsage() {
+func assistantKnowledgeUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings schedules", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] assistant knowledge", os.Args[0])
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Schedules implements schedules.`)
+	fmt.Fprintln(os.Stderr, `List indexed knowledge documents for the current tenant.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings schedules --cookie \"Quisquam exercitationem excepturi nostrum reprehenderit.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant knowledge --cookie \"Voluptatem reprehenderit repudiandae vero dolorem.\"")
 }
 
-func settingsScheduleUsage() {
+func assistantIngestUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings schedule", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Schedule implements schedule.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings schedule --body '{\n      \"baseRevision\": 4726513019370131538,\n      \"proof\": \"Soluta quia saepe.\",\n      \"scheduledAt\": \"2007-04-16T20:21:03Z\"\n   }' --id 6586808327865351324 --cookie \"Quod et inventore autem eius.\"")
-}
-
-func settingsCancelScheduleUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings cancel-schedule", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `CancelSchedule implements cancel_schedule.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings cancel-schedule --id 4410979500098692002 --cookie \"Deleniti et corrupti neque incidunt ipsam.\"")
-}
-
-func settingsPublishUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings publish", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Publish implements publish.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings publish --body '{\n      \"baseRevision\": 5308805455053262561,\n      \"proof\": \"Expedita necessitatibus aut ut similique.\"\n   }' --id 4256167363290926549 --cookie \"Tenetur provident.\"")
-}
-
-func settingsRollbackUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings rollback", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Rollback implements rollback.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings rollback --body '{\n      \"baseRevision\": 7400257440964182062,\n      \"proof\": \"Alias adipisci deserunt quo sit iusto id.\",\n      \"reason\": \"euq\"\n   }' --id 1190464056001886422 --cookie \"Laboriosam illo.\"")
-}
-
-func settingsExportUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings export", os.Args[0])
-	fmt.Fprint(os.Stderr, " -target-kind STRING")
-	fmt.Fprint(os.Stderr, " -target-id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Export implements export.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -target-kind STRING: `)
-	fmt.Fprintln(os.Stderr, `    -target-id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings export --target-kind \"workspace\" --target-id 0 --cookie \"Autem sed odit veritatis facere maxime.\"")
-}
-
-func settingsReauthenticateUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] settings reauthenticate", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] assistant ingest", os.Args[0])
 	fmt.Fprint(os.Stderr, " -body JSON")
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Reauthenticate implements reauthenticate.`)
+	fmt.Fprintln(os.Stderr, `Index one knowledge document. Requires settings:update and is tenant scoped.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)
@@ -1738,99 +929,127 @@ func settingsReauthenticateUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "settings reauthenticate --body '{\n      \"operation\": \"settings.rollback\",\n      \"password\": \"x\",\n      \"resourceId\": 8635071431479924445,\n      \"revision\": 9167647834703295899\n   }' --cookie \"Odio cumque sit.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant ingest --body '{\n      \"content\": \"r\",\n      \"title\": \"b4\"\n   }' --cookie \"Aliquid voluptatem dolorum eveniet est repellat.\"")
 }
 
-// dictionariesUsage displays the usage of the dictionaries command and its
+// capabilityUsage displays the usage of the capability command and its
 // subcommands.
-func dictionariesUsage() {
-	fmt.Fprintln(os.Stderr, `Service is the dictionaries service interface.`)
-	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] dictionaries COMMAND [flags]\n\n", os.Args[0])
+func capabilityUsage() {
+	fmt.Fprintln(os.Stderr, `Capability catalog, invocation gateway, audit trail, business events and human approvals.`)
+	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] capability COMMAND [flags]\n\n", os.Args[0])
 	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    list: List implements list.`)
-	fmt.Fprintln(os.Stderr, `    get: Get implements get.`)
-	fmt.Fprintln(os.Stderr, `    draft: Draft implements draft.`)
-	fmt.Fprintln(os.Stderr, `    publish: Publish implements publish.`)
-	fmt.Fprintln(os.Stderr, `    rollback: Rollback implements rollback.`)
-	fmt.Fprintln(os.Stderr, `    remove: Remove implements remove.`)
-	fmt.Fprintln(os.Stderr, `    override: Override implements override.`)
-	fmt.Fprintln(os.Stderr, `    options: Options implements options.`)
-	fmt.Fprintln(os.Stderr, `    import: Import implements import.`)
-	fmt.Fprintln(os.Stderr, `    import-draft: ImportDraft implements import_draft.`)
-	fmt.Fprintln(os.Stderr, `    export: Export implements export.`)
+	fmt.Fprintln(os.Stderr, `    definitions: List the capabilities the caller may use, with their policy and contracts.`)
+	fmt.Fprintln(os.Stderr, `    invoke: Invoke one capability through the full gateway pipeline.`)
+	fmt.Fprintln(os.Stderr, `    invocations: List the caller's own capability invocations, newest first.`)
+	fmt.Fprintln(os.Stderr, `    invocation: Read one invocation owned by the caller.`)
+	fmt.Fprintln(os.Stderr, `    approvals: List pending confirmations for the caller, or every pending card for a reviewer.`)
+	fmt.Fprintln(os.Stderr, `    decide: Approve or reject a pending confirmation. Approval re-resolves the requester's authority.`)
+	fmt.Fprintln(os.Stderr, `    events: List business events the caller may see, with their AI trigger status.`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
-	fmt.Fprintf(os.Stderr, "    %s dictionaries COMMAND --help\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "    %s capability COMMAND --help\n", os.Args[0])
 }
-func dictionariesListUsage() {
+func capabilityDefinitionsUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries list", os.Args[0])
-	fmt.Fprint(os.Stderr, " -target-kind STRING")
-	fmt.Fprint(os.Stderr, " -target-id INT64")
+	fmt.Fprintf(os.Stderr, "%s [flags] capability definitions", os.Args[0])
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `List implements list.`)
+	fmt.Fprintln(os.Stderr, `List the capabilities the caller may use, with their policy and contracts.`)
 
 	// Flags list
-	fmt.Fprintln(os.Stderr, `    -target-kind STRING: `)
-	fmt.Fprintln(os.Stderr, `    -target-id INT64: `)
 	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries list --target-kind \"workspace\" --target-id 0 --cookie \"Provident et repellendus voluptatem ducimus est sit.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability definitions --cookie \"Minus rerum expedita.\"")
 }
 
-func dictionariesGetUsage() {
+func capabilityInvokeUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries get", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -target-kind STRING")
-	fmt.Fprint(os.Stderr, " -target-id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Get implements get.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -target-kind STRING: `)
-	fmt.Fprintln(os.Stderr, `    -target-id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries get --id 3454816803603325907 --target-kind \"workspace\" --target-id 0 --cookie \"Nihil ut earum corrupti ab.\"")
-}
-
-func dictionariesDraftUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries draft", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] capability invoke", os.Args[0])
 	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -name STRING")
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Draft implements draft.`)
+	fmt.Fprintln(os.Stderr, `Invoke one capability through the full gateway pipeline.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -name STRING: `)
 	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries draft --body '{\n      \"baseRevision\": 5399496201255471757,\n      \"document\": {\n         \"definition\": {\n            \"allowExtensions\": true,\n            \"category\": \"b6r\",\n            \"code\": \"ki\",\n            \"consumerPermission\": \"oen\",\n            \"description\": \"85y\",\n            \"id\": 7558361007495960891,\n            \"kind\": \"tree\",\n            \"nameEn\": \"gt\",\n            \"nameZh\": \"ig0\",\n            \"provider\": \"accounts\",\n            \"revision\": 7022397890607595052,\n            \"status\": \"active\",\n            \"target\": {\n               \"id\": 1109233879168230471,\n               \"kind\": \"enterprise\"\n            },\n            \"visibility\": \"management\"\n         },\n         \"items\": [\n            {\n               \"code\": \"k\",\n               \"color\": \"5ax\",\n               \"descriptionEn\": \"bsb\",\n               \"descriptionZh\": \"tb6\",\n               \"endsAt\": \"Deleniti dolores eveniet hic debitis.\",\n               \"icon\": \"zcp\",\n               \"id\": 9160184631916709740,\n               \"isDefault\": false,\n               \"labelEn\": \"5s\",\n               \"labelZh\": \"uu3\",\n               \"owner\": {\n                  \"id\": 1109233879168230471,\n                  \"kind\": \"enterprise\"\n               },\n               \"parentCode\": \"kls\",\n               \"sort\": 4699149926756490937,\n               \"startsAt\": \"Dolorem ducimus ut recusandae corrupti dolorem.\",\n               \"status\": \"archived\"\n            },\n            {\n               \"code\": \"k\",\n               \"color\": \"5ax\",\n               \"descriptionEn\": \"bsb\",\n               \"descriptionZh\": \"tb6\",\n               \"endsAt\": \"Deleniti dolores eveniet hic debitis.\",\n               \"icon\": \"zcp\",\n               \"id\": 9160184631916709740,\n               \"isDefault\": false,\n               \"labelEn\": \"5s\",\n               \"labelZh\": \"uu3\",\n               \"owner\": {\n                  \"id\": 1109233879168230471,\n                  \"kind\": \"enterprise\"\n               },\n               \"parentCode\": \"kls\",\n               \"sort\": 4699149926756490937,\n               \"startsAt\": \"Dolorem ducimus ut recusandae corrupti dolorem.\",\n               \"status\": \"archived\"\n            },\n            {\n               \"code\": \"k\",\n               \"color\": \"5ax\",\n               \"descriptionEn\": \"bsb\",\n               \"descriptionZh\": \"tb6\",\n               \"endsAt\": \"Deleniti dolores eveniet hic debitis.\",\n               \"icon\": \"zcp\",\n               \"id\": 9160184631916709740,\n               \"isDefault\": false,\n               \"labelEn\": \"5s\",\n               \"labelZh\": \"uu3\",\n               \"owner\": {\n                  \"id\": 1109233879168230471,\n                  \"kind\": \"enterprise\"\n               },\n               \"parentCode\": \"kls\",\n               \"sort\": 4699149926756490937,\n               \"startsAt\": \"Dolorem ducimus ut recusandae corrupti dolorem.\",\n               \"status\": \"archived\"\n            }\n         ]\n      },\n      \"reason\": \"ur7\"\n   }' --cookie \"Natus deleniti.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invoke --body '{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"version\": \"a58\"\n   }' --name \"0k\" --cookie \"Voluptatum aut culpa.\"")
 }
 
-func dictionariesPublishUsage() {
+func capabilityInvocationsUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries publish", os.Args[0])
+	fmt.Fprintf(os.Stderr, "%s [flags] capability invocations", os.Args[0])
+	fmt.Fprint(os.Stderr, " -limit INT")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `List the caller's own capability invocations, newest first.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -limit INT: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invocations --limit 97 --cookie \"Voluptas eos odio totam.\"")
+}
+
+func capabilityInvocationUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] capability invocation", os.Args[0])
+	fmt.Fprint(os.Stderr, " -invocation-id STRING")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Read one invocation owned by the caller.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -invocation-id STRING: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invocation --invocation-id \"7to\" --cookie \"Qui voluptatum omnis est iure.\"")
+}
+
+func capabilityApprovalsUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] capability approvals", os.Args[0])
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `List pending confirmations for the caller, or every pending card for a reviewer.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability approvals --cookie \"Architecto quidem id aut vero voluptatum sint.\"")
+}
+
+func capabilityDecideUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] capability decide", os.Args[0])
 	fmt.Fprint(os.Stderr, " -body JSON")
 	fmt.Fprint(os.Stderr, " -id INT64")
 	fmt.Fprint(os.Stderr, " -cookie STRING")
@@ -1838,71 +1057,7 @@ func dictionariesPublishUsage() {
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Publish implements publish.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries publish --body '{\n      \"baseRevision\": 5193978734506414690,\n      \"proof\": \"Architecto hic eum non.\"\n   }' --id 5237248826561151803 --cookie \"Incidunt ut ipsam nihil voluptatem qui.\"")
-}
-
-func dictionariesRollbackUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries rollback", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Rollback implements rollback.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries rollback --body '{\n      \"baseRevision\": 5283088386440845265,\n      \"proof\": \"Voluptatem qui sit dolorem neque dicta eaque.\",\n      \"reason\": \"k03\"\n   }' --id 7314477156766058853 --cookie \"Et occaecati ab non.\"")
-}
-
-func dictionariesRemoveUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries remove", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Remove implements remove.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries remove --id 7475506721718184150 --cookie \"Error consequatur.\"")
-}
-
-func dictionariesOverrideUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries override", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Override implements override.`)
+	fmt.Fprintln(os.Stderr, `Approve or reject a pending confirmation. Approval re-resolves the requester's authority.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)
@@ -1911,444 +1066,27 @@ func dictionariesOverrideUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries override --body '{\n      \"baseRevision\": 8344494894767535862,\n      \"extensions\": [\n         {\n            \"code\": \"k\",\n            \"color\": \"5ax\",\n            \"descriptionEn\": \"bsb\",\n            \"descriptionZh\": \"tb6\",\n            \"endsAt\": \"Deleniti dolores eveniet hic debitis.\",\n            \"icon\": \"zcp\",\n            \"id\": 9160184631916709740,\n            \"isDefault\": false,\n            \"labelEn\": \"5s\",\n            \"labelZh\": \"uu3\",\n            \"owner\": {\n               \"id\": 1109233879168230471,\n               \"kind\": \"enterprise\"\n            },\n            \"parentCode\": \"kls\",\n            \"sort\": 4699149926756490937,\n            \"startsAt\": \"Dolorem ducimus ut recusandae corrupti dolorem.\",\n            \"status\": \"archived\"\n         },\n         {\n            \"code\": \"k\",\n            \"color\": \"5ax\",\n            \"descriptionEn\": \"bsb\",\n            \"descriptionZh\": \"tb6\",\n            \"endsAt\": \"Deleniti dolores eveniet hic debitis.\",\n            \"icon\": \"zcp\",\n            \"id\": 9160184631916709740,\n            \"isDefault\": false,\n            \"labelEn\": \"5s\",\n            \"labelZh\": \"uu3\",\n            \"owner\": {\n               \"id\": 1109233879168230471,\n               \"kind\": \"enterprise\"\n            },\n            \"parentCode\": \"kls\",\n            \"sort\": 4699149926756490937,\n            \"startsAt\": \"Dolorem ducimus ut recusandae corrupti dolorem.\",\n            \"status\": \"archived\"\n         },\n         {\n            \"code\": \"k\",\n            \"color\": \"5ax\",\n            \"descriptionEn\": \"bsb\",\n            \"descriptionZh\": \"tb6\",\n            \"endsAt\": \"Deleniti dolores eveniet hic debitis.\",\n            \"icon\": \"zcp\",\n            \"id\": 9160184631916709740,\n            \"isDefault\": false,\n            \"labelEn\": \"5s\",\n            \"labelZh\": \"uu3\",\n            \"owner\": {\n               \"id\": 1109233879168230471,\n               \"kind\": \"enterprise\"\n            },\n            \"parentCode\": \"kls\",\n            \"sort\": 4699149926756490937,\n            \"startsAt\": \"Dolorem ducimus ut recusandae corrupti dolorem.\",\n            \"status\": \"archived\"\n         }\n      ],\n      \"overrides\": [\n         {\n            \"fields\": [\n               \"Officiis sunt modi.\",\n               \"Rerum molestiae.\",\n               \"Nihil ab consequatur et quibusdam nihil.\"\n            ],\n            \"isDefault\": false,\n            \"itemId\": 3557719740707829595,\n            \"labelEn\": \"j6t\",\n            \"labelZh\": \"3ey\",\n            \"reset\": false,\n            \"sort\": 3452866498757860030,\n            \"status\": \"active\"\n         },\n         {\n            \"fields\": [\n               \"Officiis sunt modi.\",\n               \"Rerum molestiae.\",\n               \"Nihil ab consequatur et quibusdam nihil.\"\n            ],\n            \"isDefault\": false,\n            \"itemId\": 3557719740707829595,\n            \"labelEn\": \"j6t\",\n            \"labelZh\": \"3ey\",\n            \"reset\": false,\n            \"sort\": 3452866498757860030,\n            \"status\": \"active\"\n         },\n         {\n            \"fields\": [\n               \"Officiis sunt modi.\",\n               \"Rerum molestiae.\",\n               \"Nihil ab consequatur et quibusdam nihil.\"\n            ],\n            \"isDefault\": false,\n            \"itemId\": 3557719740707829595,\n            \"labelEn\": \"j6t\",\n            \"labelZh\": \"3ey\",\n            \"reset\": false,\n            \"sort\": 3452866498757860030,\n            \"status\": \"active\"\n         }\n      ],\n      \"reason\": \"5fx\",\n      \"target\": {\n         \"id\": 1109233879168230471,\n         \"kind\": \"enterprise\"\n      }\n   }' --id 7408842748303797715 --cookie \"Eum error velit libero laboriosam.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability decide --body '{\n      \"approve\": false,\n      \"note\": \"afq\"\n   }' --id 7461141593857126586 --cookie \"Magni magnam et ipsam.\"")
 }
 
-func dictionariesOptionsUsage() {
+func capabilityEventsUsage() {
 	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries options", os.Args[0])
-	fmt.Fprint(os.Stderr, " -code STRING")
-	fmt.Fprint(os.Stderr, " -language STRING")
-	fmt.Fprint(os.Stderr, " -ids JSON")
-	fmt.Fprint(os.Stderr, " -search STRING")
+	fmt.Fprintf(os.Stderr, "%s [flags] capability events", os.Args[0])
+	fmt.Fprint(os.Stderr, " -limit INT")
 	fmt.Fprint(os.Stderr, " -cookie STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Options implements options.`)
+	fmt.Fprintln(os.Stderr, `List business events the caller may see, with their AI trigger status.`)
 
 	// Flags list
-	fmt.Fprintln(os.Stderr, `    -code STRING: `)
-	fmt.Fprintln(os.Stderr, `    -language STRING: `)
-	fmt.Fprintln(os.Stderr, `    -ids JSON: `)
-	fmt.Fprintln(os.Stderr, `    -search STRING: `)
+	fmt.Fprintln(os.Stderr, `    -limit INT: `)
 	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries options --code \"2\" --language \"en\" --ids '[\n      6207771047389349413,\n      8345272898503963395,\n      1281744946439490884\n   ]' --search \"92z\" --cookie \"Est est.\"")
-}
-
-func dictionariesImportUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries import", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Import implements import.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries import --body '{\n      \"content\": \"3ba\",\n      \"format\": \"json\"\n   }' --id 2896088529098786366 --cookie \"In a eum corrupti quod et.\"")
-}
-
-func dictionariesImportDraftUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries import-draft", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `ImportDraft implements import_draft.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries import-draft --body '{\n      \"baseRevision\": 2812281116319207304,\n      \"content\": \"yje\",\n      \"format\": \"json\",\n      \"reason\": \"hlr\"\n   }' --id 3919495835041775651 --cookie \"Dolor dignissimos quo.\"")
-}
-
-func dictionariesExportUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] dictionaries export", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -format STRING")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Export implements export.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -format STRING: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "dictionaries export --id 6033888104668253046 --format \"csv\" --cookie \"Suscipit ea mollitia.\"")
-}
-
-// filesUsage displays the usage of the files command and its subcommands.
-func filesUsage() {
-	fmt.Fprintln(os.Stderr, `Service is the files service interface.`)
-	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] files COMMAND [flags]\n\n", os.Args[0])
-	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    list: List implements list.`)
-	fmt.Fprintln(os.Stderr, `    drivers: Drivers implements drivers.`)
-	fmt.Fprintln(os.Stderr, `    upload: Upload implements upload.`)
-	fmt.Fprintln(os.Stderr, `    content: Content implements content.`)
-	fmt.Fprintln(os.Stderr, `    remove: Remove implements remove.`)
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Additional help:")
-	fmt.Fprintf(os.Stderr, "    %s files COMMAND --help\n", os.Args[0])
-}
-func filesListUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] files list", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `List implements list.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "files list --cookie \"Non ratione tempore aliquam et sint.\"")
-}
-
-func filesDriversUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] files drivers", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Drivers implements drivers.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "files drivers --cookie \"Quia dolores eveniet exercitationem.\"")
-}
-
-func filesUploadUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] files upload", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Upload implements upload.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "files upload --body '{\n      \"content\": \"aXdj\",\n      \"name\": \"p50\",\n      \"purpose\": \"logo\"\n   }' --cookie \"Quam quo et rerum.\"")
-}
-
-func filesContentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] files content", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Content implements content.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "files content --id 6733391293287390692 --cookie \"Optio eius eius natus doloribus.\"")
-}
-
-func filesRemoveUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] files remove", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Remove implements remove.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "files remove --id 201867068845272775 --cookie \"Soluta laborum vel nihil expedita beatae.\"")
-}
-
-// notificationsUsage displays the usage of the notifications command and its
-// subcommands.
-func notificationsUsage() {
-	fmt.Fprintln(os.Stderr, `Service is the notifications service interface.`)
-	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] notifications COMMAND [flags]\n\n", os.Args[0])
-	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    audience: Audience implements audience.`)
-	fmt.Fprintln(os.Stderr, `    preview: Preview implements preview.`)
-	fmt.Fprintln(os.Stderr, `    send: Send implements send.`)
-	fmt.Fprintln(os.Stderr, `    sent: Sent implements sent.`)
-	fmt.Fprintln(os.Stderr, `    attachment: Attachment implements attachment.`)
-	fmt.Fprintln(os.Stderr, `    message: Message implements message.`)
-	fmt.Fprintln(os.Stderr, `    inbox: Inbox implements inbox.`)
-	fmt.Fprintln(os.Stderr, `    read: Read implements read.`)
-	fmt.Fprintln(os.Stderr, `    deliveries: Deliveries implements deliveries.`)
-	fmt.Fprintln(os.Stderr, `    retry: Retry implements retry.`)
-	fmt.Fprintln(os.Stderr, `    test: Test implements test.`)
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Additional help:")
-	fmt.Fprintf(os.Stderr, "    %s notifications COMMAND --help\n", os.Args[0])
-}
-func notificationsAudienceUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications audience", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Audience implements audience.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications audience --cookie \"Quia quo tempora tempora sunt architecto accusantium.\"")
-}
-
-func notificationsPreviewUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications preview", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Preview implements preview.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications preview --body '{\n      \"targets\": [\n         {\n            \"id\": 7223407084284712886,\n            \"kind\": \"account\"\n         }\n      ]\n   }' --cookie \"Omnis occaecati mollitia quibusdam doloremque.\"")
-}
-
-func notificationsSendUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications send", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Send implements send.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications send --body '{\n      \"clientKey\": \"8cd66197-95ab-47b1-953d-9f7e2ba80443\",\n      \"email\": false,\n      \"fileIds\": [\n         715905300015929522,\n         4147591289277410435,\n         1856859335059748070\n      ],\n      \"markdown\": \"2a\",\n      \"targets\": [\n         {\n            \"id\": 7223407084284712886,\n            \"kind\": \"account\"\n         }\n      ],\n      \"title\": \"hlt\"\n   }' --cookie \"Laudantium fugiat placeat consequatur ad.\"")
-}
-
-func notificationsSentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications sent", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Sent implements sent.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications sent --cookie \"Quidem adipisci sunt et.\"")
-}
-
-func notificationsAttachmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications attachment", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -file-id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Attachment implements attachment.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -file-id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications attachment --id 6522581481169905405 --file-id 3368895427699307417 --cookie \"Aperiam exercitationem quod animi totam.\"")
-}
-
-func notificationsMessageUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications message", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Message implements message.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications message --id 2532479025282372956 --cookie \"Assumenda saepe tempora praesentium nemo facere.\"")
-}
-
-func notificationsInboxUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications inbox", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Inbox implements inbox.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications inbox --cookie \"Animi soluta odio unde dolores occaecati et.\"")
-}
-
-func notificationsReadUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications read", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Read implements read.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications read --id 6547272415685615210 --cookie \"Est veritatis eos itaque non minus.\"")
-}
-
-func notificationsDeliveriesUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications deliveries", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Deliveries implements deliveries.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications deliveries --cookie \"In non magnam harum ut.\"")
-}
-
-func notificationsRetryUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications retry", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Retry implements retry.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications retry --id 7779788087330335262 --cookie \"Voluptates ut sequi.\"")
-}
-
-func notificationsTestUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] notifications test", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Test implements test.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "notifications test --body '{\n      \"send\": true\n   }' --cookie \"Quos iste amet magni excepturi et autem.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability events --limit 3 --cookie \"Quidem omnis velit ut molestiae.\"")
 }
 
 // brandingUsage displays the usage of the branding command and its subcommands.
@@ -2394,165 +1132,6 @@ func brandingLogoUsage() {
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "branding logo")
 }
 
-// mcpManagementUsage displays the usage of the mcp-management command and its
-// subcommands.
-func mcpManagementUsage() {
-	fmt.Fprintln(os.Stderr, `Service is the mcp_management service interface.`)
-	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] mcp-management COMMAND [flags]\n\n", os.Args[0])
-	fmt.Fprintln(os.Stderr, "COMMAND:")
-	fmt.Fprintln(os.Stderr, `    create: Create implements create.`)
-	fmt.Fprintln(os.Stderr, `    list: List implements list.`)
-	fmt.Fprintln(os.Stderr, `    revoke: Revoke implements revoke.`)
-	fmt.Fprintln(os.Stderr, `    rotate: Rotate implements rotate.`)
-	fmt.Fprintln(os.Stderr, `    capabilities: Capabilities implements capabilities.`)
-	fmt.Fprintln(os.Stderr, `    admin-revoke: AdminRevoke implements admin_revoke.`)
-	fmt.Fprintln(os.Stderr, `    audit: Audit implements audit.`)
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Additional help:")
-	fmt.Fprintf(os.Stderr, "    %s mcp-management COMMAND --help\n", os.Args[0])
-}
-func mcpManagementCreateUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management create", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Create implements create.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management create --body '{\n      \"days\": 88,\n      \"departmentId\": 4959054971882152553,\n      \"name\": \"k9i\",\n      \"password\": \"6cs\",\n      \"tools\": [\n         \"Et ipsa.\",\n         \"Sed et in molestiae laboriosam.\"\n      ]\n   }' --cookie \"Expedita error ipsa sed deleniti voluptatem.\"")
-}
-
-func mcpManagementListUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management list", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `List implements list.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management list --cookie \"Repellat quisquam eos odit.\"")
-}
-
-func mcpManagementRevokeUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management revoke", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Revoke implements revoke.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management revoke --body '{\n      \"password\": \"7\"\n   }' --id 6913699775982178330 --cookie \"Consequatur est eum iure sint aliquam minima.\"")
-}
-
-func mcpManagementRotateUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management rotate", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Rotate implements rotate.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management rotate --body '{\n      \"password\": \"3\"\n   }' --id 2059930443494487771 --cookie \"Nam voluptates.\"")
-}
-
-func mcpManagementCapabilitiesUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management capabilities", os.Args[0])
-	fmt.Fprint(os.Stderr, " -department-id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Capabilities implements capabilities.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -department-id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management capabilities --department-id 8698749775231865064 --cookie \"Optio velit.\"")
-}
-
-func mcpManagementAdminRevokeUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management admin-revoke", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `AdminRevoke implements admin_revoke.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management admin-revoke --body '{\n      \"password\": \"i\"\n   }' --id 2521078975200357226 --cookie \"Occaecati velit quia qui temporibus sequi.\"")
-}
-
-func mcpManagementAuditUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] mcp-management audit", os.Args[0])
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Audit implements audit.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "mcp-management audit --cookie \"Accusantium atque dolor quia modi.\"")
-}
-
 // identityUsage displays the usage of the identity command and its subcommands.
 func identityUsage() {
 	fmt.Fprintln(os.Stderr, `Persistent account, organization, department and access administration`)
@@ -2568,18 +1147,6 @@ func identityUsage() {
 	fmt.Fprintln(os.Stderr, `    me: Me implements me.`)
 	fmt.Fprintln(os.Stderr, `    logout: Logout implements logout.`)
 	fmt.Fprintln(os.Stderr, `    snapshot: Snapshot implements snapshot.`)
-	fmt.Fprintln(os.Stderr, `    create-account: CreateAccount implements create_account.`)
-	fmt.Fprintln(os.Stderr, `    update-account: UpdateAccount implements update_account.`)
-	fmt.Fprintln(os.Stderr, `    delete-account: DeleteAccount implements delete_account.`)
-	fmt.Fprintln(os.Stderr, `    create-organization: CreateOrganization implements create_organization.`)
-	fmt.Fprintln(os.Stderr, `    update-organization: UpdateOrganization implements update_organization.`)
-	fmt.Fprintln(os.Stderr, `    delete-organization: DeleteOrganization implements delete_organization.`)
-	fmt.Fprintln(os.Stderr, `    create-department: CreateDepartment implements create_department.`)
-	fmt.Fprintln(os.Stderr, `    update-department: UpdateDepartment implements update_department.`)
-	fmt.Fprintln(os.Stderr, `    delete-department: DeleteDepartment implements delete_department.`)
-	fmt.Fprintln(os.Stderr, `    create-role: CreateRole implements create_role.`)
-	fmt.Fprintln(os.Stderr, `    update-role: UpdateRole implements update_role.`)
-	fmt.Fprintln(os.Stderr, `    delete-role: DeleteRole implements delete_role.`)
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s identity COMMAND --help\n", os.Args[0])
@@ -2774,252 +1341,4 @@ func identitySnapshotUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity snapshot --cookie \"Aliquid et soluta qui voluptas sit.\"")
-}
-
-func identityCreateAccountUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity create-account", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `CreateAccount implements create_account.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity create-account --body '{\n      \"departmentAccess\": {\n         \"memberships\": [\n            {\n               \"departmentId\": 2585307794152462020,\n               \"departmentName\": \"Magni enim sunt suscipit totam.\",\n               \"organizationId\": 2743205314980990393,\n               \"overrides\": [\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  }\n               ],\n               \"roleIds\": [\n                  1539301103444728010,\n                  6581501582753541319,\n                  5516521787758825415\n               ]\n            },\n            {\n               \"departmentId\": 2585307794152462020,\n               \"departmentName\": \"Magni enim sunt suscipit totam.\",\n               \"organizationId\": 2743205314980990393,\n               \"overrides\": [\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  }\n               ],\n               \"roleIds\": [\n                  1539301103444728010,\n                  6581501582753541319,\n                  5516521787758825415\n               ]\n            },\n            {\n               \"departmentId\": 2585307794152462020,\n               \"departmentName\": \"Magni enim sunt suscipit totam.\",\n               \"organizationId\": 2743205314980990393,\n               \"overrides\": [\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  }\n               ],\n               \"roleIds\": [\n                  1539301103444728010,\n                  6581501582753541319,\n                  5516521787758825415\n               ]\n            }\n         ]\n      },\n      \"departmentId\": 8375908202723339274,\n      \"email\": \"jnj\",\n      \"fullName\": \"33j\",\n      \"organizationId\": 3321385527589374183,\n      \"overrides\": [\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         }\n      ],\n      \"password\": \"6mf\",\n      \"roleIds\": [\n         3441083547280808148,\n         3938488675909405887,\n         7311272891979833153\n      ],\n      \"status\": \"active\",\n      \"username\": \"c7U\"\n   }' --cookie \"Aspernatur quis minus.\"")
-}
-
-func identityUpdateAccountUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity update-account", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `UpdateAccount implements update_account.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity update-account --body '{\n      \"departmentAccess\": {\n         \"memberships\": [\n            {\n               \"departmentId\": 2585307794152462020,\n               \"departmentName\": \"Magni enim sunt suscipit totam.\",\n               \"organizationId\": 2743205314980990393,\n               \"overrides\": [\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  }\n               ],\n               \"roleIds\": [\n                  1539301103444728010,\n                  6581501582753541319,\n                  5516521787758825415\n               ]\n            },\n            {\n               \"departmentId\": 2585307794152462020,\n               \"departmentName\": \"Magni enim sunt suscipit totam.\",\n               \"organizationId\": 2743205314980990393,\n               \"overrides\": [\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  }\n               ],\n               \"roleIds\": [\n                  1539301103444728010,\n                  6581501582753541319,\n                  5516521787758825415\n               ]\n            },\n            {\n               \"departmentId\": 2585307794152462020,\n               \"departmentName\": \"Magni enim sunt suscipit totam.\",\n               \"organizationId\": 2743205314980990393,\n               \"overrides\": [\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  },\n                  {\n                     \"departmentIds\": [\n                        639469963930456437,\n                        1095004963388317522,\n                        478438477003430476\n                     ],\n                     \"effect\": \"allow\",\n                     \"permission\": \"2k\",\n                     \"scope\": \"ORGANIZATION\"\n                  }\n               ],\n               \"roleIds\": [\n                  1539301103444728010,\n                  6581501582753541319,\n                  5516521787758825415\n               ]\n            }\n         ]\n      },\n      \"departmentId\": 4766090339651021864,\n      \"email\": \"7xt\",\n      \"fullName\": \"m7\",\n      \"organizationId\": 8735252235389066083,\n      \"overrides\": [\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         }\n      ],\n      \"password\": \"leu\",\n      \"roleIds\": [\n         4973589142721376585,\n         7872428028284600181,\n         8181667321751583303\n      ],\n      \"status\": \"inactive\",\n      \"username\": \"_gR\"\n   }' --id 6778939547466396995 --cookie \"Cumque natus impedit.\"")
-}
-
-func identityDeleteAccountUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity delete-account", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `DeleteAccount implements delete_account.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity delete-account --id 3403013386064234973 --cookie \"Sunt qui.\"")
-}
-
-func identityCreateOrganizationUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity create-organization", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `CreateOrganization implements create_organization.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity create-organization --body '{\n      \"code\": \"YoN\",\n      \"description\": \"c6w\",\n      \"kind\": \"company\",\n      \"name\": \"8nn\",\n      \"parentId\": 8942367976825922555,\n      \"status\": \"inactive\"\n   }' --cookie \"Et eius dolores commodi quia debitis.\"")
-}
-
-func identityUpdateOrganizationUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity update-organization", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `UpdateOrganization implements update_organization.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity update-organization --body '{\n      \"code\": \"3T123V\",\n      \"description\": \"7yk\",\n      \"kind\": \"company\",\n      \"name\": \"j\",\n      \"parentId\": 3736998285021908827,\n      \"status\": \"active\"\n   }' --id 4454153872793679324 --cookie \"Tempora qui suscipit ratione iure.\"")
-}
-
-func identityDeleteOrganizationUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity delete-organization", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `DeleteOrganization implements delete_organization.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity delete-organization --id 6609721916480218080 --cookie \"Officiis molestiae consectetur.\"")
-}
-
-func identityCreateDepartmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity create-department", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `CreateDepartment implements create_department.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity create-department --body '{\n      \"code\": \"RJs\",\n      \"description\": \"kke\",\n      \"manager\": \"xea\",\n      \"name\": \"h\",\n      \"organizationId\": 2389775798063368201,\n      \"parentId\": 7853762659487585696,\n      \"status\": \"inactive\"\n   }' --cookie \"Eos iusto quas corporis culpa fugiat.\"")
-}
-
-func identityUpdateDepartmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity update-department", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `UpdateDepartment implements update_department.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity update-department --body '{\n      \"code\": \"0kTAKw\",\n      \"description\": \"i9c\",\n      \"manager\": \"s27\",\n      \"name\": \"q\",\n      \"organizationId\": 382143316542502217,\n      \"parentId\": 4367093303963349115,\n      \"status\": \"inactive\"\n   }' --id 3687281783265785840 --cookie \"Quaerat repellat.\"")
-}
-
-func identityDeleteDepartmentUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity delete-department", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `DeleteDepartment implements delete_department.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity delete-department --id 4047921502880182295 --cookie \"Quibusdam nam consequatur quibusdam hic cupiditate porro.\"")
-}
-
-func identityCreateRoleUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity create-role", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `CreateRole implements create_role.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity create-role --body '{\n      \"code\": \"0vYpn\",\n      \"description\": \"xq8\",\n      \"grants\": [\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         }\n      ],\n      \"name\": \"ox\",\n      \"status\": \"active\"\n   }' --cookie \"Voluptates dignissimos.\"")
-}
-
-func identityUpdateRoleUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity update-role", os.Args[0])
-	fmt.Fprint(os.Stderr, " -body JSON")
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `UpdateRole implements update_role.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -body JSON: `)
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity update-role --body '{\n      \"code\": \"otfV_fOzM\",\n      \"description\": \"04i\",\n      \"grants\": [\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         },\n         {\n            \"departmentIds\": [\n               639469963930456437,\n               1095004963388317522,\n               478438477003430476\n            ],\n            \"effect\": \"allow\",\n            \"permission\": \"2k\",\n            \"scope\": \"ORGANIZATION\"\n         }\n      ],\n      \"name\": \"7\",\n      \"status\": \"active\"\n   }' --id 528043602860347227 --cookie \"Aut sed illum.\"")
-}
-
-func identityDeleteRoleUsage() {
-	// Header with flags
-	fmt.Fprintf(os.Stderr, "%s [flags] identity delete-role", os.Args[0])
-	fmt.Fprint(os.Stderr, " -id INT64")
-	fmt.Fprint(os.Stderr, " -cookie STRING")
-	fmt.Fprintln(os.Stderr)
-
-	// Description
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `DeleteRole implements delete_role.`)
-
-	// Flags list
-	fmt.Fprintln(os.Stderr, `    -id INT64: `)
-	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
-
-	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "identity delete-role --id 3008385955002118601 --cookie \"Dicta in itaque et omnis earum.\"")
 }

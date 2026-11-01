@@ -2,6 +2,8 @@
 
 继承根与前端规则；使用 baseline-quality-gates，先读 docs/testing.md。
 
+**E2E 暂停（现行指令）**：默认不启动浏览器验收。需要旁证时只跑改动模块对应的单个 spec（映射见 scripts/e2e-changed.mjs，用 `E2E_ARGS="e2e/<模块>.spec.ts"` 或 `make test-e2e-changed`）；映射未命中就不跑并在汇报里记未覆盖。完整集合（不带 `E2E_ARGS` 的 `make test-e2e`、`make test-e2e-parallel`、默认 `make ci`、远程 CI 浏览器阶段）必须先取得用户当轮明确授权；未授权写“E2E 未执行（按当前指示暂停）”。
+
 使用可提交的 Playwright 测试和真实 Go + 生产构建 preview；不能用 MCP 手动点击或截图目测替代。默认独立端口 5179/8099，禁止为了测试停止用户已有服务。
 
 日常只跑相关文件：`make test-e2e-changed` 按改动选文件（映射在 scripts/e2e-changed.mjs），`make test-e2e-smoke` 只跑标题带 `@smoke` 的用例；两者都不等于全量，交付时须写明选择与未覆盖集合。`@smoke` 只标记单文件内最便宜且真正跨层的用例，不改动断言强度。需要完整集合又不想等串行时用 `make test-e2e-parallel`，分组依据是各 spec 内写死的 Origin，新增 spec 先确认归属栈。

@@ -4,7 +4,7 @@
   "console": "Admin console",
   "nav": {
     "workspace": "Workspace",
-    "overview": "Overview",
+    "statistics": "Statistics",
     "management": "Administration",
     "accounts": "Accounts",
     "organizations": "Organizations",
@@ -71,8 +71,8 @@
     "shortcut": "K"
   },
   "overview": {
-    "eyebrow": "YOUR WORKSPACE AT A GLANCE",
-    "title": "Workspace overview",
+    "eyebrow": "OPERATIONS AT A GLANCE",
+    "title": "Data statistics",
     "subtitle": "A clear view of your people, structure and access.",
     "welcome": "Good to see you, {{name}}.",
     "tabOverview": "Overview",

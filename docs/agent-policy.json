@@ -60,6 +60,16 @@
       "name": "baseline-mcp-development",
       "file": ".agents/skills/baseline-mcp-development/SKILL.md",
       "kind": "project"
+    },
+    {
+      "name": "baseline-entity-model",
+      "file": ".agents/skills/baseline-entity-model/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-capability-composition",
+      "file": ".agents/skills/baseline-capability-composition/SKILL.md",
+      "kind": "project"
     }
   ],
   "references": [
@@ -79,7 +89,15 @@
     "docs/mcp-service-plan.md",
     "docs/decisions/011-remote-mcp.md",
     "docs/mcp-operations.md",
-    "docs/mcp-verification.md"
+    "docs/mcp-verification.md",
+    "docs/decisions/014-ai-native-platform.md",
+    "docs/decisions/015-capability-centric-platform.md",
+    "docs/capability-composition.md",
+    "docs/decisions/016-capability-taxonomy-and-orchestration.md",
+    "docs/orchestration-plan.md",
+    "docs/entity-model.md",
+    "docs/orchestration-example.md",
+    "docs/agent-generation-plan.md"
   ],
   "gates": {
     "rules": "check-rules",
@@ -92,14 +110,29 @@
     "e2e-parallel": "test-e2e-parallel",
     "complete": "ci",
     "generate": "generate",
-    "generated": "check-generated"
+    "generated": "check-generated",
+    "entities": "check-entities",
+    "workflows": "check-workflows",
+    "workflow-generate": "generate-workflows",
+    "workflow-example": "test-orchestration-example"
   },
   "tasks": [
     {
       "id": "feature",
-      "skills": ["baseline-feature-development", "baseline-quality-gates"],
+      "skills": [
+        "baseline-feature-development",
+        "baseline-capability-composition",
+        "baseline-quality-gates"
+      ],
       "instructions": ["AGENTS.md"],
-      "tools": ["Existing feature modules", "Cross-layer contracts"],
+      "tools": [
+        "Existing feature modules",
+        "Cross-layer contracts",
+        "Business states and conditional clarification",
+        "Capability and engine decisions",
+        "Schema sources and behavior evidence",
+        "Existing capability discovery and reuse"
+      ],
       "gates": ["fast", "complete"]
     },
     {
@@ -156,7 +189,7 @@
         "services/api/tests/AGENTS.md"
       ],
       "tools": ["PostgreSQL", "pgx", "sqlc", "Goose"],
-      "gates": ["generate", "generated", "integration", "fast"]
+      "gates": ["generate", "generated", "integration", "fast", "entities"]
     },
     {
       "id": "i18n",
@@ -211,6 +244,86 @@
         "Client onboarding"
       ],
       "gates": ["rules", "fast", "security", "generated", "e2e"]
+    },
+    {
+      "id": "capability",
+      "skills": [
+        "baseline-feature-development",
+        "baseline-capability-composition",
+        "baseline-security",
+        "goa-service-designer"
+      ],
+      "instructions": [
+        "AGENTS.md",
+        "services/api/AGENTS.md",
+        "services/api/design/AGENTS.md",
+        "services/api/internal/AGENTS.md",
+        "services/api/db/AGENTS.md"
+      ],
+      "tools": [
+        "Capability contracts",
+        "Invocation gateway",
+        "Transactional outbox",
+        "Event hub",
+        "AI trigger engine",
+        "Approval queue",
+        "Existing capability discovery and reuse"
+      ],
+      "gates": [
+        "rules",
+        "generate",
+        "generated",
+        "fast",
+        "security",
+        "integration",
+        "entities"
+      ]
+    },
+    {
+      "id": "entity",
+      "skills": ["baseline-entity-model", "baseline-database-change"],
+      "instructions": [
+        "services/api/internal/AGENTS.md",
+        "services/api/db/AGENTS.md"
+      ],
+      "tools": [
+        "Entity declarations",
+        "Migration schema parser",
+        "Entity checks",
+        "Entity i18n labels"
+      ],
+      "gates": ["entities", "fast"]
+    },
+    {
+      "id": "orchestration",
+      "skills": [
+        "baseline-feature-development",
+        "baseline-capability-composition",
+        "baseline-security",
+        "baseline-quality-gates"
+      ],
+      "instructions": [
+        "AGENTS.md",
+        "services/api/internal/AGENTS.md",
+        "services/api/tests/AGENTS.md"
+      ],
+      "tools": [
+        "Eino Workflow",
+        "Eino Graph",
+        "Eino ADK Runner",
+        "Generated JSON Schema",
+        "Shared capability catalog",
+        "Business human tasks versus risk approval",
+        "Explicit engine selection and resume evidence"
+      ],
+      "gates": [
+        "rules",
+        "workflows",
+        "generated",
+        "workflow-example",
+        "security",
+        "fast"
+      ]
     }
   ]
 }

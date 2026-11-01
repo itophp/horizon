@@ -134,6 +134,37 @@
   outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
+.assistant-modes {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+}
+.assistant-modes button {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) * 0.7);
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.assistant-modes button:hover {
+  color: var(--foreground);
+}
+.assistant-modes button[aria-pressed="true"] {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--foreground);
+  font-weight: 500;
+}
+.assistant-modes button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
 .assistant-log {
   flex: 1;
   min-height: 180px;

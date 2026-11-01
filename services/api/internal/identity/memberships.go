@@ -108,7 +108,7 @@ func (s *Service) SwitchDepartment(ctx context.Context, payload *genidentity.Swi
 
 // Membership replacement is a durable authorization change and requires formal authority
 // over every old and new placement, including account-wide changes from a secondary scope.
-func (s *Service) validateMembershipChange(ctx context.Context, p *Principal, scope Scope, id int64, payload *genidentity.CreateAccountPayload, old *genidentity.AccountRecord) error {
+func (s *Service) validateMembershipChange(ctx context.Context, p *Principal, scope Scope, id int64, payload *AccountInput, old *genidentity.AccountRecord) error {
 	if payload.DepartmentAccess == nil || (old == nil && len(payload.DepartmentAccess.Memberships) == 0) {
 		return nil
 	}

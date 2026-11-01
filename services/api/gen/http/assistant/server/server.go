@@ -18,9 +18,13 @@ import (
 
 // Server lists the assistant service endpoint HTTP handlers.
 type Server struct {
-	Mounts []*MountPoint
-	Status http.Handler
-	Chat   http.Handler
+	Mounts    []*MountPoint
+	Status    http.Handler
+	Chat      http.Handler
+	Agent     http.Handler
+	Workflow  http.Handler
+	Knowledge http.Handler
+	Ingest    http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -52,9 +56,17 @@ func New(
 		Mounts: []*MountPoint{
 			{"Status", "GET", "/api/assistant/status"},
 			{"Chat", "POST", "/api/assistant/chat"},
+			{"Agent", "POST", "/api/assistant/agent"},
+			{"Workflow", "POST", "/api/assistant/workflow"},
+			{"Knowledge", "GET", "/api/assistant/knowledge"},
+			{"Ingest", "POST", "/api/assistant/knowledge"},
 		},
-		Status: NewStatusHandler(e.Status, mux, decoder, encoder, errhandler, formatter),
-		Chat:   NewChatHandler(e.Chat, mux, decoder, encoder, errhandler, formatter),
+		Status:    NewStatusHandler(e.Status, mux, decoder, encoder, errhandler, formatter),
+		Chat:      NewChatHandler(e.Chat, mux, decoder, encoder, errhandler, formatter),
+		Agent:     NewAgentHandler(e.Agent, mux, decoder, encoder, errhandler, formatter),
+		Workflow:  NewWorkflowHandler(e.Workflow, mux, decoder, encoder, errhandler, formatter),
+		Knowledge: NewKnowledgeHandler(e.Knowledge, mux, decoder, encoder, errhandler, formatter),
+		Ingest:    NewIngestHandler(e.Ingest, mux, decoder, encoder, errhandler, formatter),
 	}
 }
 
@@ -65,6 +77,10 @@ func (s *Server) Service() string { return "assistant" }
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Status = m(s.Status)
 	s.Chat = m(s.Chat)
+	s.Agent = m(s.Agent)
+	s.Workflow = m(s.Workflow)
+	s.Knowledge = m(s.Knowledge)
+	s.Ingest = m(s.Ingest)
 }
 
 // MethodNames returns the methods served.
@@ -74,6 +90,10 @@ func (s *Server) MethodNames() []string { return assistant.MethodNames[:] }
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountStatusHandler(mux, h.Status)
 	MountChatHandler(mux, h.Chat)
+	MountAgentHandler(mux, h.Agent)
+	MountWorkflowHandler(mux, h.Workflow)
+	MountKnowledgeHandler(mux, h.Knowledge)
+	MountIngestHandler(mux, h.Ingest)
 }
 
 // Mount configures the mux to serve the assistant endpoints.
@@ -164,6 +184,218 @@ func NewChatHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "chat")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "assistant")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountAgentHandler configures the mux to serve the "assistant" service
+// "agent" endpoint.
+func MountAgentHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/api/assistant/agent", f)
+}
+
+// NewAgentHandler creates a HTTP handler which loads the HTTP request and
+// calls the "assistant" service "agent" endpoint.
+func NewAgentHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeAgentRequest(mux, decoder)
+		encodeResponse = EncodeAgentResponse(encoder)
+		encodeError    = EncodeAgentError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "agent")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "assistant")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountWorkflowHandler configures the mux to serve the "assistant" service
+// "workflow" endpoint.
+func MountWorkflowHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/api/assistant/workflow", f)
+}
+
+// NewWorkflowHandler creates a HTTP handler which loads the HTTP request and
+// calls the "assistant" service "workflow" endpoint.
+func NewWorkflowHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeWorkflowRequest(mux, decoder)
+		encodeResponse = EncodeWorkflowResponse(encoder)
+		encodeError    = EncodeWorkflowError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "workflow")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "assistant")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountKnowledgeHandler configures the mux to serve the "assistant" service
+// "knowledge" endpoint.
+func MountKnowledgeHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/api/assistant/knowledge", f)
+}
+
+// NewKnowledgeHandler creates a HTTP handler which loads the HTTP request and
+// calls the "assistant" service "knowledge" endpoint.
+func NewKnowledgeHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeKnowledgeRequest(mux, decoder)
+		encodeResponse = EncodeKnowledgeResponse(encoder)
+		encodeError    = EncodeKnowledgeError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "knowledge")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "assistant")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountIngestHandler configures the mux to serve the "assistant" service
+// "ingest" endpoint.
+func MountIngestHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/api/assistant/knowledge", f)
+}
+
+// NewIngestHandler creates a HTTP handler which loads the HTTP request and
+// calls the "assistant" service "ingest" endpoint.
+func NewIngestHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeIngestRequest(mux, decoder)
+		encodeResponse = EncodeIngestResponse(encoder)
+		encodeError    = EncodeIngestError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "ingest")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "assistant")
 		payload, err := decodeRequest(r)
 		if err != nil {

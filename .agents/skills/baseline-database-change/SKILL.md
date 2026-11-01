@@ -18,6 +18,8 @@ description: "Change PostgreSQL schema, Goose migrations, sqlc queries, pgx repo
 
 配置 TEST_DATABASE_URL 指向隔离本地/CI 数据库；make db-up 后执行 make test-integration。使用唯一 schema / 数据库并清理，验证迁移往返、约束、范围外 ID、跨租户读写删除及受影响的回滚/并发场景。数据库不可用时报告未通过，不换内存假库冒充 SQL 验证。
 
+加表或加列同步维护实体声明（`entity_<name>.go` 的 `Attribute`，改枚举/外键则同步 `Enum`/`Relation`），加载 [baseline-entity-model](../baseline-entity-model/SKILL.md)；`make check-entities` 是这条链路的门禁，漏声明会被 E2/E3 拦住。
+
 完成 make check-generated、Go 静态/单元检查；有 API/SDK 影响时再按矩阵检查前端与端到端。
 
 账号多部门变更遵循 [ADR 004](../../../docs/decisions/004-department-memberships.md)。主/附加归属均参与账号 SQL 范围，部门角色复合外键同租户、公司部门一致；成员统计按账号去重。归属/角色写入共用事务，删除归属使临时授权永久失效。修改权限 SQL 必须联动 baseline-security 和安全/目录规则，补跨租户、范围、回滚及上下文隔离回归。

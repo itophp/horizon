@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
 import { i18n, changeLanguage } from "@/i18n";
 import { ApiError } from "@/api/client/request";
-import type { MCPToken } from "@/api/generated/models";
+import type { MCPToken } from "@/api/types";
 import { RemoteMcpSection } from "./remote";
 
 const api = vi.hoisted(() => ({
@@ -18,19 +18,19 @@ const api = vi.hoisted(() => ({
   permissions: [] as string[],
 }));
 
-vi.mock("@/api/generated/baseline", async (original) => ({
-  ...(await original<typeof import("@/api/generated/baseline")>()),
+vi.mock("@/lib/capabilities", async (original) => ({
+  ...(await original<typeof import("@/lib/capabilities")>()),
   mcpManagementCreate: api.create,
   mcpManagementRotate: api.rotate,
   mcpManagementRevoke: api.revoke,
   mcpManagementAdminRevoke: api.adminRevoke,
-  useMcpManagementCapabilities: api.capabilities,
-  useMcpManagementList: () => api.list(),
-  useMcpManagementAudit: () => ({
-    data: { status: 200, data: [] },
-    refetch: vi.fn(),
+  mcpManagementCapabilities: api.capabilities,
+  mcpManagementList: api.list,
+  mcpManagementAudit: async () => ({
+    status: 200,
+    data: [],
+    headers: new Headers(),
   }),
-  getMcpManagementListQueryKey: () => ["/api/auth/mcp/tokens"],
 }));
 
 vi.mock("@/features/administration/auth", () => ({
@@ -97,16 +97,11 @@ beforeEach(async () => {
   api.capabilities.mockReset();
   api.list.mockReset();
   api.permissions = [];
-  api.list.mockReturnValue({
-    data: { status: 200, data: [] },
-    isPending: false,
-    isError: false,
-  });
-  api.capabilities.mockReturnValue({
-    data: {
-      status: 200,
-      data: ["context_get", "capabilities_list", "notifications_list"],
-    },
+  api.list.mockResolvedValue({ status: 200, data: [], headers: new Headers() });
+  api.capabilities.mockResolvedValue({
+    status: 200,
+    data: ["context_get", "capabilities_list", "notifications_list"],
+    headers: new Headers(),
   });
 });
 
@@ -158,7 +153,7 @@ it("keeps the password and the chosen tools when the server rejects the request"
 it("shows the secret once, then clears the password before the next token", async () => {
   const user = userEvent.setup();
   api.create.mockResolvedValue({
-    status: 201,
+    status: 200,
     data: { secret: "bmcp_secret", token: { id: 1 } },
   });
   show();
@@ -198,13 +193,13 @@ it("explains when the tool catalog cannot be loaded", async () => {
 
 it("confirms rotating a listed token with the password inside a dialog", async () => {
   const user = userEvent.setup();
-  api.list.mockReturnValue({
-    data: { status: 200, data: [token] },
-    isPending: false,
-    isError: false,
+  api.list.mockResolvedValue({
+    status: 200,
+    data: [token],
+    headers: new Headers(),
   });
   api.rotate.mockResolvedValue({
-    status: 201,
+    status: 200,
     data: { secret: "bmcp_rotated", token: { id: 7 } },
   });
   show();

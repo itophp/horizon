@@ -1,0 +1,3 @@
+interface:
+  display_name: "能力拆分与组合"
+  short_description: "Decide capability layers and how they call each other"

@@ -1,0 +1,808 @@
+/* Agent workbench. Every colour comes from the console tokens so the AI surfaces
+   match the rest of the administration UI in both themes. */
+
+.ai-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1180px) {
+  .ai-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ai-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+.ai-chat-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--app-line);
+}
+.ai-chat-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.ai-chat-heading strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--app-ink);
+}
+.ai-chat-heading small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--app-muted);
+}
+.ai-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--app-line);
+  border-radius: 9px;
+  background: var(--app-elevated);
+  color: var(--app-ink);
+}
+
+.ai-log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 320px;
+  max-height: 56vh;
+  padding: 16px;
+  overflow-y: auto;
+}
+.ai-empty {
+  margin: auto;
+  max-width: 380px;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 12px;
+}
+/* Shown instead of the composer's promise of work: the workspace has not
+   enabled the agent, so a send could only come back as a refusal. */
+.ai-empty-note {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: var(--app-wash);
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ai-empty-note a {
+  color: var(--app-accent, inherit);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.ai-suggestions button {
+  padding: 6px 10px;
+  border: 1px dashed var(--app-strong-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ai-suggestions button:hover {
+  border-style: solid;
+  background: var(--app-hover);
+  color: var(--app-ink);
+}
+
+.ai-turn {
+  display: flex;
+}
+.ai-turn.is-user {
+  justify-content: flex-end;
+}
+.ai-turn.is-user p {
+  max-width: 82%;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 12px 12px 4px 12px;
+  background: var(--app-elevated);
+  color: var(--app-ink);
+  font-size: 12.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ai-bubble {
+  max-width: 90%;
+  padding: 10px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 12px 12px 12px 4px;
+  background: var(--app-panel);
+}
+.ai-thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-muted);
+  font-size: 12px;
+}
+
+.ai-markdown {
+  color: var(--app-ink);
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.ai-markdown p,
+.ai-markdown ul,
+.ai-markdown ol,
+.ai-markdown table,
+.ai-markdown pre {
+  margin: 0 0 8px;
+}
+.ai-markdown > :last-child {
+  margin-bottom: 0;
+}
+.ai-markdown ul,
+.ai-markdown ol {
+  padding-left: 18px;
+}
+.ai-markdown a {
+  color: var(--app-ink);
+  text-decoration: underline;
+}
+.ai-markdown code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--app-elevated);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+}
+.ai-markdown pre {
+  overflow-x: auto;
+  padding: 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+}
+.ai-markdown pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.ai-run-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--app-line);
+  color: var(--app-muted);
+  font-size: 10px;
+}
+
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--app-line);
+  border-radius: 999px;
+  background: var(--app-elevated);
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ai-risk.is-medium {
+  border-color: color-mix(in oklab, var(--app-green) 45%, var(--app-line));
+  color: var(--app-green);
+}
+.ai-risk.is-high {
+  border-color: color-mix(in oklab, #d9a441 55%, var(--app-line));
+  background: color-mix(in oklab, #d9a441 14%, transparent);
+  color: var(--app-ink);
+}
+.ai-risk.is-critical {
+  border-color: color-mix(in oklab, #d2543f 55%, var(--app-line));
+  background: color-mix(in oklab, #d2543f 14%, transparent);
+  color: var(--app-ink);
+}
+.ai-status-completed {
+  color: var(--app-green);
+  border-color: color-mix(in oklab, var(--app-green) 40%, var(--app-line));
+}
+.ai-status-awaiting_approval {
+  color: var(--app-ink);
+  border-color: color-mix(in oklab, #d9a441 55%, var(--app-line));
+  background: color-mix(in oklab, #d9a441 14%, transparent);
+}
+.ai-status-failed {
+  color: color-mix(in oklab, #d2543f 75%, var(--app-ink));
+  border-color: color-mix(in oklab, #d2543f 45%, var(--app-line));
+}
+.ai-status-running {
+  color: var(--app-ink);
+}
+
+.ai-trace {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--app-line);
+}
+.ai-trace h4 {
+  margin: 0 0 6px;
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 550;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ai-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ai-step {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--app-ink);
+  font-size: 11px;
+}
+.ai-step-index {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: var(--app-elevated);
+  color: var(--app-muted);
+  font-size: 9px;
+}
+.ai-step-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.ai-step-body strong {
+  font-weight: 550;
+}
+.ai-step-body small {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.ai-step.is-failed .ai-step-body strong,
+.ai-step.is-denied .ai-step-body strong {
+  color: color-mix(in oklab, #d2543f 75%, var(--app-ink));
+}
+.ai-trace-meta {
+  margin: 8px 0 0;
+  color: var(--app-muted);
+  font-size: 10px;
+}
+
+.ai-approval {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 16px 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in oklab, #d9a441 45%, var(--app-line));
+  border-radius: 12px;
+  background: color-mix(in oklab, #d9a441 8%, var(--app-panel));
+}
+.ai-approval header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.ai-approval header > div {
+  flex: 1;
+  min-width: 0;
+}
+.ai-approval header strong {
+  display: block;
+  font-size: 12px;
+  color: var(--app-ink);
+}
+.ai-approval header small {
+  display: block;
+  margin-top: 2px;
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.ai-approval-arguments {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-panel);
+}
+.ai-approval-arguments div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
+}
+.ai-approval-arguments dt {
+  color: var(--app-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ai-approval-arguments dd {
+  margin: 0;
+  color: var(--app-ink);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.ai-approval-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--app-ink);
+  border-radius: 8px;
+  background: var(--app-ink);
+  color: var(--app-panel);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ai-button.is-ghost {
+  border-color: var(--app-line);
+  background: transparent;
+  color: var(--app-ink);
+}
+.ai-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ai-composer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--app-line);
+}
+.ai-composer textarea {
+  flex: 1;
+  padding: 9px 11px;
+  border: 1px solid var(--app-line);
+  border-radius: 10px;
+  background: var(--app-subtle);
+  color: var(--app-ink);
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.5;
+  resize: none;
+}
+.ai-composer textarea:focus-visible {
+  outline: 2px solid var(--app-strong-line);
+  outline-offset: 1px;
+}
+.ai-send {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--app-ink);
+  border-radius: 10px;
+  background: var(--app-ink);
+  color: var(--app-panel);
+  cursor: pointer;
+}
+.ai-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ai-side {
+  padding: 14px 16px;
+}
+.ai-side h3 {
+  margin: 0 0 10px;
+  color: var(--app-ink);
+  font-size: 12px;
+  font-weight: 560;
+}
+.ai-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.ai-pending li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 9px;
+  background: var(--app-subtle);
+}
+.ai-pending li > div {
+  flex: 1;
+  min-width: 0;
+}
+.ai-pending strong {
+  display: block;
+  font-size: 11px;
+  color: var(--app-ink);
+}
+.ai-pending small {
+  display: block;
+  margin-top: 2px;
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.ai-side-meta {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed var(--app-line);
+}
+.ai-side-meta div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+}
+.ai-side-meta dt {
+  color: var(--app-muted);
+}
+.ai-side-meta dd {
+  margin: 0;
+  color: var(--app-ink);
+}
+
+.ai-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--app-line);
+}
+.ai-search {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  align-items: center;
+  min-width: 180px;
+  padding: 6px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+  color: var(--app-muted);
+}
+.ai-search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--app-ink);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.ai-filter {
+  display: flex;
+  gap: 4px;
+}
+.ai-filter button {
+  padding: 5px 9px;
+  border: 1px solid var(--app-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+.ai-filter button[aria-pressed="true"] {
+  border-color: var(--app-ink);
+  background: var(--app-ink);
+  color: var(--app-panel);
+}
+.ai-count {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+
+.ai-cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ai-cell-stack strong {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--app-ink);
+}
+.ai-cell-stack small {
+  color: var(--app-muted);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.ai-cell-stack code,
+.ai-capabilities td code {
+  color: var(--app-muted);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+}
+
+.ai-schema summary {
+  color: var(--app-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.ai-schema pre {
+  max-width: 320px;
+  max-height: 220px;
+  margin: 8px 0 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+  color: var(--app-ink);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 10px;
+}
+
+.ai-history {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ai-history tr.is-selected td {
+  background: var(--app-elevated);
+}
+.ai-history-detail {
+  padding: 16px;
+}
+.ai-history-detail .ai-chat-heading {
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--app-line);
+}
+
+/* Two panes: the task list keeps every conversation one click away, the chat
+   keeps the current thread. The list scrolls on its own so a long history never
+   pushes the composer off screen. */
+.ai-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.ai-tasks {
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  background: var(--app-panel);
+  padding: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.ai-tasks-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.ai-task-new {
+  padding: 4px 8px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ai-task-new[aria-pressed="true"],
+.ai-task-new:hover {
+  border-color: var(--app-strong-line);
+  background: var(--app-hover);
+}
+.ai-tasks-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ai-task-views {
+  display: flex;
+  gap: 4px;
+}
+.ai-task-views button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ai-task-views button small {
+  color: inherit;
+  font-size: 10px;
+  opacity: 0.75;
+}
+.ai-task-views button:hover {
+  background: var(--app-hover);
+  color: var(--app-ink);
+}
+.ai-task-views button[aria-pressed="true"] {
+  border-color: var(--app-strong-line);
+  background: var(--app-hover);
+  color: var(--app-ink);
+}
+.ai-task-sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  color: var(--app-muted);
+  font-size: 11px;
+}
+.ai-task-sort select {
+  flex: 1;
+  padding: 3px 4px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-ink);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ai-task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-task-list li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+.ai-task-list li:hover,
+.ai-task-list li.is-active {
+  background: var(--app-hover);
+}
+.ai-task-list li.is-active {
+  border-color: var(--app-strong-line);
+}
+.ai-task-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ai-task-actions {
+  display: flex;
+  gap: 2px;
+  padding-right: 6px;
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+.ai-task-list li:hover .ai-task-actions,
+.ai-task-list li:focus-within .ai-task-actions {
+  opacity: 1;
+}
+.ai-task-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+}
+.ai-task-icon:hover:not(:disabled) {
+  border-color: var(--app-line);
+  color: var(--app-ink);
+  background: var(--app-panel);
+}
+.ai-task-icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ai-task-rename {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 6px;
+}
+.ai-task-rename input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--app-strong-line);
+  border-radius: 7px;
+  background: var(--app-panel);
+  color: var(--app-ink);
+  font: inherit;
+  font-size: 12px;
+}
+.ai-tasks li strong {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-tasks li small {
+  font-size: 11px;
+  color: var(--app-muted);
+}
+@media (hover: none) {
+  .ai-task-actions {
+    opacity: 1;
+  }
+}
+@media (max-width: 900px) {
+  .ai-layout {
+    grid-template-columns: 1fr;
+  }
+  .ai-tasks {
+    max-height: 30vh;
+  }
+}

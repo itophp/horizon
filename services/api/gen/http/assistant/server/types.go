@@ -21,12 +21,32 @@ type ChatRequestBody struct {
 	Tools    []*AssistantToolRequestBody    `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
 }
 
+// AgentRequestBody is the type of the "assistant" service "agent" endpoint
+// HTTP request body.
+type AgentRequestBody struct {
+	Question *string `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+}
+
+// WorkflowRequestBody is the type of the "assistant" service "workflow"
+// endpoint HTTP request body.
+type WorkflowRequestBody struct {
+	Question *string `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+}
+
+// IngestRequestBody is the type of the "assistant" service "ingest" endpoint
+// HTTP request body.
+type IngestRequestBody struct {
+	Title   *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	Content *string `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
+}
+
 // StatusResponseBody is the type of the "assistant" service "status" endpoint
 // HTTP response body.
 type StatusResponseBody struct {
-	Enabled    bool   `form:"enabled" json:"enabled" xml:"enabled"`
-	Configured bool   `form:"configured" json:"configured" xml:"configured"`
-	Model      string `form:"model" json:"model" xml:"model"`
+	Enabled      bool   `form:"enabled" json:"enabled" xml:"enabled"`
+	Configured   bool   `form:"configured" json:"configured" xml:"configured"`
+	AgentEnabled bool   `form:"agentEnabled" json:"agentEnabled" xml:"agentEnabled"`
+	Model        string `form:"model" json:"model" xml:"model"`
 }
 
 // ChatResponseBody is the type of the "assistant" service "chat" endpoint HTTP
@@ -35,6 +55,34 @@ type ChatResponseBody struct {
 	Content   string                           `form:"content" json:"content" xml:"content"`
 	ToolCalls []*AssistantToolCallResponseBody `form:"toolCalls" json:"toolCalls" xml:"toolCalls"`
 	Model     string                           `form:"model" json:"model" xml:"model"`
+}
+
+// AgentResponseBody is the type of the "assistant" service "agent" endpoint
+// HTTP response body.
+type AgentResponseBody struct {
+	Content string   `form:"content" json:"content" xml:"content"`
+	Tools   []string `form:"tools" json:"tools" xml:"tools"`
+	Model   string   `form:"model" json:"model" xml:"model"`
+	Mode    string   `form:"mode" json:"mode" xml:"mode"`
+}
+
+// WorkflowResponseBody is the type of the "assistant" service "workflow"
+// endpoint HTTP response body.
+type WorkflowResponseBody struct {
+	Content string   `form:"content" json:"content" xml:"content"`
+	Tools   []string `form:"tools" json:"tools" xml:"tools"`
+	Model   string   `form:"model" json:"model" xml:"model"`
+	Mode    string   `form:"mode" json:"mode" xml:"mode"`
+}
+
+// KnowledgeResponseBody is the type of the "assistant" service "knowledge"
+// endpoint HTTP response body.
+type KnowledgeResponseBody []*KnowledgeDocumentResponse
+
+// IngestResponseBody is the type of the "assistant" service "ingest" endpoint
+// HTTP response body.
+type IngestResponseBody struct {
+	ID int64 `form:"id" json:"id" xml:"id"`
 }
 
 // StatusUnauthenticatedResponseBody is the type of the "assistant" service
@@ -97,12 +145,141 @@ type ChatInternalResponseBody struct {
 	Code string `form:"code" json:"code" xml:"code"`
 }
 
+// AgentUnauthenticatedResponseBody is the type of the "assistant" service
+// "agent" endpoint HTTP response body for the "unauthenticated" error.
+type AgentUnauthenticatedResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// AgentForbiddenResponseBody is the type of the "assistant" service "agent"
+// endpoint HTTP response body for the "forbidden" error.
+type AgentForbiddenResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// AgentInvalidResponseBody is the type of the "assistant" service "agent"
+// endpoint HTTP response body for the "invalid" error.
+type AgentInvalidResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// AgentUnavailableResponseBody is the type of the "assistant" service "agent"
+// endpoint HTTP response body for the "unavailable" error.
+type AgentUnavailableResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// AgentInternalResponseBody is the type of the "assistant" service "agent"
+// endpoint HTTP response body for the "internal" error.
+type AgentInternalResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// WorkflowUnauthenticatedResponseBody is the type of the "assistant" service
+// "workflow" endpoint HTTP response body for the "unauthenticated" error.
+type WorkflowUnauthenticatedResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// WorkflowForbiddenResponseBody is the type of the "assistant" service
+// "workflow" endpoint HTTP response body for the "forbidden" error.
+type WorkflowForbiddenResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// WorkflowInvalidResponseBody is the type of the "assistant" service
+// "workflow" endpoint HTTP response body for the "invalid" error.
+type WorkflowInvalidResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// WorkflowUnavailableResponseBody is the type of the "assistant" service
+// "workflow" endpoint HTTP response body for the "unavailable" error.
+type WorkflowUnavailableResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// WorkflowInternalResponseBody is the type of the "assistant" service
+// "workflow" endpoint HTTP response body for the "internal" error.
+type WorkflowInternalResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// KnowledgeUnauthenticatedResponseBody is the type of the "assistant" service
+// "knowledge" endpoint HTTP response body for the "unauthenticated" error.
+type KnowledgeUnauthenticatedResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// KnowledgeForbiddenResponseBody is the type of the "assistant" service
+// "knowledge" endpoint HTTP response body for the "forbidden" error.
+type KnowledgeForbiddenResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// KnowledgeInvalidResponseBody is the type of the "assistant" service
+// "knowledge" endpoint HTTP response body for the "invalid" error.
+type KnowledgeInvalidResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// KnowledgeUnavailableResponseBody is the type of the "assistant" service
+// "knowledge" endpoint HTTP response body for the "unavailable" error.
+type KnowledgeUnavailableResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// KnowledgeInternalResponseBody is the type of the "assistant" service
+// "knowledge" endpoint HTTP response body for the "internal" error.
+type KnowledgeInternalResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// IngestUnauthenticatedResponseBody is the type of the "assistant" service
+// "ingest" endpoint HTTP response body for the "unauthenticated" error.
+type IngestUnauthenticatedResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// IngestForbiddenResponseBody is the type of the "assistant" service "ingest"
+// endpoint HTTP response body for the "forbidden" error.
+type IngestForbiddenResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// IngestInvalidResponseBody is the type of the "assistant" service "ingest"
+// endpoint HTTP response body for the "invalid" error.
+type IngestInvalidResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// IngestUnavailableResponseBody is the type of the "assistant" service
+// "ingest" endpoint HTTP response body for the "unavailable" error.
+type IngestUnavailableResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// IngestInternalResponseBody is the type of the "assistant" service "ingest"
+// endpoint HTTP response body for the "internal" error.
+type IngestInternalResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
 // AssistantToolCallResponseBody is used to define fields on response body
 // types.
 type AssistantToolCallResponseBody struct {
 	ID        string `form:"id" json:"id" xml:"id"`
 	Name      string `form:"name" json:"name" xml:"name"`
 	Arguments string `form:"arguments" json:"arguments" xml:"arguments"`
+}
+
+// KnowledgeDocumentResponse is used to define fields on response body types.
+type KnowledgeDocumentResponse struct {
+	ID        int64  `form:"id" json:"id" xml:"id"`
+	Title     string `form:"title" json:"title" xml:"title"`
+	Source    string `form:"source" json:"source" xml:"source"`
+	Chunks    int64  `form:"chunks" json:"chunks" xml:"chunks"`
+	CreatedAt string `form:"createdAt" json:"createdAt" xml:"createdAt"`
 }
 
 // AssistantMessageRequestBody is used to define fields on request body types.
@@ -131,9 +308,10 @@ type AssistantToolRequestBody struct {
 // "status" endpoint of the "assistant" service.
 func NewStatusResponseBody(res *assistant.AssistantStatus) *StatusResponseBody {
 	body := &StatusResponseBody{
-		Enabled:    res.Enabled,
-		Configured: res.Configured,
-		Model:      res.Model,
+		Enabled:      res.Enabled,
+		Configured:   res.Configured,
+		AgentEnabled: res.AgentEnabled,
+		Model:        res.Model,
 	}
 	return body
 }
@@ -156,6 +334,67 @@ func NewChatResponseBody(res *assistant.AssistantReply) *ChatResponseBody {
 		}
 	} else {
 		body.ToolCalls = []*AssistantToolCallResponseBody{}
+	}
+	return body
+}
+
+// NewAgentResponseBody builds the HTTP response body from the result of the
+// "agent" endpoint of the "assistant" service.
+func NewAgentResponseBody(res *assistant.AssistantAgentReply) *AgentResponseBody {
+	body := &AgentResponseBody{
+		Content: res.Content,
+		Model:   res.Model,
+		Mode:    res.Mode,
+	}
+	if res.Tools != nil {
+		body.Tools = make([]string, len(res.Tools))
+		for i, val := range res.Tools {
+			body.Tools[i] = val
+		}
+	} else {
+		body.Tools = []string{}
+	}
+	return body
+}
+
+// NewWorkflowResponseBody builds the HTTP response body from the result of the
+// "workflow" endpoint of the "assistant" service.
+func NewWorkflowResponseBody(res *assistant.AssistantAgentReply) *WorkflowResponseBody {
+	body := &WorkflowResponseBody{
+		Content: res.Content,
+		Model:   res.Model,
+		Mode:    res.Mode,
+	}
+	if res.Tools != nil {
+		body.Tools = make([]string, len(res.Tools))
+		for i, val := range res.Tools {
+			body.Tools[i] = val
+		}
+	} else {
+		body.Tools = []string{}
+	}
+	return body
+}
+
+// NewKnowledgeResponseBody builds the HTTP response body from the result of
+// the "knowledge" endpoint of the "assistant" service.
+func NewKnowledgeResponseBody(res []*assistant.KnowledgeDocument) []*KnowledgeDocumentResponse {
+	body := make([]*KnowledgeDocumentResponse, len(res))
+	for i, val := range res {
+		if val == nil {
+			body[i] = nil
+			continue
+		}
+		body[i] = marshalAssistantKnowledgeDocumentToKnowledgeDocumentResponse(val)
+	}
+	return body
+}
+
+// NewIngestResponseBody builds the HTTP response body from the result of the
+// "ingest" endpoint of the "assistant" service.
+func NewIngestResponseBody(res *assistant.KnowledgeIngested) *IngestResponseBody {
+	body := &IngestResponseBody{
+		ID: res.ID,
 	}
 	return body
 }
@@ -250,6 +489,186 @@ func NewChatInternalResponseBody(res *assistant.IAMProblem) *ChatInternalRespons
 	return body
 }
 
+// NewAgentUnauthenticatedResponseBody builds the HTTP response body from the
+// result of the "agent" endpoint of the "assistant" service.
+func NewAgentUnauthenticatedResponseBody(res *assistant.IAMProblem) *AgentUnauthenticatedResponseBody {
+	body := &AgentUnauthenticatedResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewAgentForbiddenResponseBody builds the HTTP response body from the result
+// of the "agent" endpoint of the "assistant" service.
+func NewAgentForbiddenResponseBody(res *assistant.IAMProblem) *AgentForbiddenResponseBody {
+	body := &AgentForbiddenResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewAgentInvalidResponseBody builds the HTTP response body from the result of
+// the "agent" endpoint of the "assistant" service.
+func NewAgentInvalidResponseBody(res *assistant.IAMProblem) *AgentInvalidResponseBody {
+	body := &AgentInvalidResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewAgentUnavailableResponseBody builds the HTTP response body from the
+// result of the "agent" endpoint of the "assistant" service.
+func NewAgentUnavailableResponseBody(res *assistant.IAMProblem) *AgentUnavailableResponseBody {
+	body := &AgentUnavailableResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewAgentInternalResponseBody builds the HTTP response body from the result
+// of the "agent" endpoint of the "assistant" service.
+func NewAgentInternalResponseBody(res *assistant.IAMProblem) *AgentInternalResponseBody {
+	body := &AgentInternalResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewWorkflowUnauthenticatedResponseBody builds the HTTP response body from
+// the result of the "workflow" endpoint of the "assistant" service.
+func NewWorkflowUnauthenticatedResponseBody(res *assistant.IAMProblem) *WorkflowUnauthenticatedResponseBody {
+	body := &WorkflowUnauthenticatedResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewWorkflowForbiddenResponseBody builds the HTTP response body from the
+// result of the "workflow" endpoint of the "assistant" service.
+func NewWorkflowForbiddenResponseBody(res *assistant.IAMProblem) *WorkflowForbiddenResponseBody {
+	body := &WorkflowForbiddenResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewWorkflowInvalidResponseBody builds the HTTP response body from the result
+// of the "workflow" endpoint of the "assistant" service.
+func NewWorkflowInvalidResponseBody(res *assistant.IAMProblem) *WorkflowInvalidResponseBody {
+	body := &WorkflowInvalidResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewWorkflowUnavailableResponseBody builds the HTTP response body from the
+// result of the "workflow" endpoint of the "assistant" service.
+func NewWorkflowUnavailableResponseBody(res *assistant.IAMProblem) *WorkflowUnavailableResponseBody {
+	body := &WorkflowUnavailableResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewWorkflowInternalResponseBody builds the HTTP response body from the
+// result of the "workflow" endpoint of the "assistant" service.
+func NewWorkflowInternalResponseBody(res *assistant.IAMProblem) *WorkflowInternalResponseBody {
+	body := &WorkflowInternalResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewKnowledgeUnauthenticatedResponseBody builds the HTTP response body from
+// the result of the "knowledge" endpoint of the "assistant" service.
+func NewKnowledgeUnauthenticatedResponseBody(res *assistant.IAMProblem) *KnowledgeUnauthenticatedResponseBody {
+	body := &KnowledgeUnauthenticatedResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewKnowledgeForbiddenResponseBody builds the HTTP response body from the
+// result of the "knowledge" endpoint of the "assistant" service.
+func NewKnowledgeForbiddenResponseBody(res *assistant.IAMProblem) *KnowledgeForbiddenResponseBody {
+	body := &KnowledgeForbiddenResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewKnowledgeInvalidResponseBody builds the HTTP response body from the
+// result of the "knowledge" endpoint of the "assistant" service.
+func NewKnowledgeInvalidResponseBody(res *assistant.IAMProblem) *KnowledgeInvalidResponseBody {
+	body := &KnowledgeInvalidResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewKnowledgeUnavailableResponseBody builds the HTTP response body from the
+// result of the "knowledge" endpoint of the "assistant" service.
+func NewKnowledgeUnavailableResponseBody(res *assistant.IAMProblem) *KnowledgeUnavailableResponseBody {
+	body := &KnowledgeUnavailableResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewKnowledgeInternalResponseBody builds the HTTP response body from the
+// result of the "knowledge" endpoint of the "assistant" service.
+func NewKnowledgeInternalResponseBody(res *assistant.IAMProblem) *KnowledgeInternalResponseBody {
+	body := &KnowledgeInternalResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewIngestUnauthenticatedResponseBody builds the HTTP response body from the
+// result of the "ingest" endpoint of the "assistant" service.
+func NewIngestUnauthenticatedResponseBody(res *assistant.IAMProblem) *IngestUnauthenticatedResponseBody {
+	body := &IngestUnauthenticatedResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewIngestForbiddenResponseBody builds the HTTP response body from the result
+// of the "ingest" endpoint of the "assistant" service.
+func NewIngestForbiddenResponseBody(res *assistant.IAMProblem) *IngestForbiddenResponseBody {
+	body := &IngestForbiddenResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewIngestInvalidResponseBody builds the HTTP response body from the result
+// of the "ingest" endpoint of the "assistant" service.
+func NewIngestInvalidResponseBody(res *assistant.IAMProblem) *IngestInvalidResponseBody {
+	body := &IngestInvalidResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewIngestUnavailableResponseBody builds the HTTP response body from the
+// result of the "ingest" endpoint of the "assistant" service.
+func NewIngestUnavailableResponseBody(res *assistant.IAMProblem) *IngestUnavailableResponseBody {
+	body := &IngestUnavailableResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewIngestInternalResponseBody builds the HTTP response body from the result
+// of the "ingest" endpoint of the "assistant" service.
+func NewIngestInternalResponseBody(res *assistant.IAMProblem) *IngestInternalResponseBody {
+	body := &IngestInternalResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
 // NewStatusPayload builds a assistant service status endpoint payload.
 func NewStatusPayload(cookie string) *assistant.StatusPayload {
 	v := &assistant.StatusPayload{}
@@ -284,6 +703,45 @@ func NewChatPayload(body *ChatRequestBody, cookie string) *assistant.ChatPayload
 	return v
 }
 
+// NewAgentPayload builds a assistant service agent endpoint payload.
+func NewAgentPayload(body *AgentRequestBody, cookie string) *assistant.AgentPayload {
+	v := &assistant.AgentPayload{
+		Question: *body.Question,
+	}
+	v.Cookie = cookie
+
+	return v
+}
+
+// NewWorkflowPayload builds a assistant service workflow endpoint payload.
+func NewWorkflowPayload(body *WorkflowRequestBody, cookie string) *assistant.WorkflowPayload {
+	v := &assistant.WorkflowPayload{
+		Question: *body.Question,
+	}
+	v.Cookie = cookie
+
+	return v
+}
+
+// NewKnowledgePayload builds a assistant service knowledge endpoint payload.
+func NewKnowledgePayload(cookie string) *assistant.KnowledgePayload {
+	v := &assistant.KnowledgePayload{}
+	v.Cookie = cookie
+
+	return v
+}
+
+// NewIngestPayload builds a assistant service ingest endpoint payload.
+func NewIngestPayload(body *IngestRequestBody, cookie string) *assistant.IngestPayload {
+	v := &assistant.IngestPayload{
+		Title:   *body.Title,
+		Content: *body.Content,
+	}
+	v.Cookie = cookie
+
+	return v
+}
+
 // ValidateChatRequestBody runs the validations defined on ChatRequestBody
 func ValidateChatRequestBody(body *ChatRequestBody) (err error) {
 	if body.Messages == nil {
@@ -310,6 +768,66 @@ func ValidateChatRequestBody(body *ChatRequestBody) (err error) {
 			if err2 := validateAssistantToolRequestBody(e, "body.tools[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
+		}
+	}
+	return
+}
+
+// ValidateAgentRequestBody runs the validations defined on AgentRequestBody
+func ValidateAgentRequestBody(body *AgentRequestBody) (err error) {
+	if body.Question == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("question", "body"))
+	}
+	if body.Question != nil {
+		if utf8.RuneCountInString(*body.Question) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Question) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 2000, false))
+		}
+	}
+	return
+}
+
+// ValidateWorkflowRequestBody runs the validations defined on
+// WorkflowRequestBody
+func ValidateWorkflowRequestBody(body *WorkflowRequestBody) (err error) {
+	if body.Question == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("question", "body"))
+	}
+	if body.Question != nil {
+		if utf8.RuneCountInString(*body.Question) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Question) > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 2000, false))
+		}
+	}
+	return
+}
+
+// ValidateIngestRequestBody runs the validations defined on IngestRequestBody
+func ValidateIngestRequestBody(body *IngestRequestBody) (err error) {
+	if body.Title == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("title", "body"))
+	}
+	if body.Content == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
+	}
+	if body.Title != nil {
+		if utf8.RuneCountInString(*body.Title) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", *body.Title, utf8.RuneCountInString(*body.Title), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Title) > 200 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", *body.Title, utf8.RuneCountInString(*body.Title), 200, false))
+		}
+	}
+	if body.Content != nil {
+		if utf8.RuneCountInString(*body.Content) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content", *body.Content, utf8.RuneCountInString(*body.Content), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Content) > 40000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content", *body.Content, utf8.RuneCountInString(*body.Content), 40000, false))
 		}
 	}
 	return

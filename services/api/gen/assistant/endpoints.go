@@ -16,8 +16,12 @@ import (
 
 // Endpoints wraps the "assistant" service endpoints.
 type Endpoints struct {
-	Status goa.Endpoint
-	Chat   goa.Endpoint
+	Status    goa.Endpoint
+	Chat      goa.Endpoint
+	Agent     goa.Endpoint
+	Workflow  goa.Endpoint
+	Knowledge goa.Endpoint
+	Ingest    goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "assistant" service with endpoints.
@@ -25,8 +29,12 @@ func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		Status: NewStatusEndpoint(s, a.APIKeyAuth),
-		Chat:   NewChatEndpoint(s, a.APIKeyAuth),
+		Status:    NewStatusEndpoint(s, a.APIKeyAuth),
+		Chat:      NewChatEndpoint(s, a.APIKeyAuth),
+		Agent:     NewAgentEndpoint(s, a.APIKeyAuth),
+		Workflow:  NewWorkflowEndpoint(s, a.APIKeyAuth),
+		Knowledge: NewKnowledgeEndpoint(s, a.APIKeyAuth),
+		Ingest:    NewIngestEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -34,6 +42,10 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Status = m(e.Status)
 	e.Chat = m(e.Chat)
+	e.Agent = m(e.Agent)
+	e.Workflow = m(e.Workflow)
+	e.Knowledge = m(e.Knowledge)
+	e.Ingest = m(e.Ingest)
 }
 
 // NewStatusEndpoint returns an endpoint function that calls the method
@@ -71,5 +83,81 @@ func NewChatEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoi
 			return nil, err
 		}
 		return s.Chat(ctx, p)
+	}
+}
+
+// NewAgentEndpoint returns an endpoint function that calls the method "agent"
+// of service "assistant".
+func NewAgentEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*AgentPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "browser_session",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, string(p.Cookie), &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.Agent(ctx, p)
+	}
+}
+
+// NewWorkflowEndpoint returns an endpoint function that calls the method
+// "workflow" of service "assistant".
+func NewWorkflowEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*WorkflowPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "browser_session",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, string(p.Cookie), &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.Workflow(ctx, p)
+	}
+}
+
+// NewKnowledgeEndpoint returns an endpoint function that calls the method
+// "knowledge" of service "assistant".
+func NewKnowledgeEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*KnowledgePayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "browser_session",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, string(p.Cookie), &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.Knowledge(ctx, p)
+	}
+}
+
+// NewIngestEndpoint returns an endpoint function that calls the method
+// "ingest" of service "assistant".
+func NewIngestEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*IngestPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "browser_session",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, string(p.Cookie), &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.Ingest(ctx, p)
 	}
 }

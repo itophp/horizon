@@ -5,14 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { i18n, changeLanguage } from "@/i18n";
-import type { InboxMessage, SentNotification } from "@/api/generated/models";
+import type { InboxMessage, SentNotification } from "@/api/types";
 import { NotificationMarkdown } from "./markdown";
 import { NotificationComposer } from "./notification-composer";
 import { NotificationsPage, NotificationDetailPage } from "./notifications";
 import { NotificationComposePage } from "./notification-compose";
 const mocks = vi.hoisted(() => ({
   preview: vi.fn(async () => ({ status: 200, data: { recipientCount: 1 } })),
-  send: vi.fn(async () => ({ status: 201, data: { id: 7 } })),
+  send: vi.fn(async () => ({ status: 200, data: { id: 7 } })),
   download: vi.fn(),
   attachment: vi.fn(async () => ({
     status: 200,
@@ -38,8 +38,8 @@ vi.mock("@/features/administration/auth", () => ({
     permissions: mocks.permissions,
   }),
 }));
-vi.mock("@/api/generated/baseline", async (original) => ({
-  ...(await original<typeof import("@/api/generated/baseline")>()),
+vi.mock("@/lib/capabilities", async (original) => ({
+  ...(await original<typeof import("@/lib/capabilities")>()),
   notificationsAudience: vi.fn(async () => ({
     status: 200,
     data: [

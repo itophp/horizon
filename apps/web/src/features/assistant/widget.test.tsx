@@ -10,6 +10,7 @@ import { AssistantLauncher } from "./widget";
 const mocks = vi.hoisted(() => ({
   status: vi.fn(),
   chat: vi.fn(),
+  agent: vi.fn(),
   invoke: vi.fn(),
   permissions: ["assistant:use"] as string[],
 }));
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/api/generated/baseline", () => ({
   assistantStatus: mocks.status,
   assistantChat: mocks.chat,
+  assistantAgent: mocks.agent,
 }));
 
 vi.mock("@/features/administration/auth", () => ({
@@ -75,7 +77,7 @@ it("stays hidden for accounts without the assistant grant", async () => {
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(mocks.status).not.toHaveBeenCalled();
   expect(
-    screen.queryByRole("button", { name: "Open assistant" }),
+    screen.queryByRole("button", { name: "Open agent" }),
   ).not.toBeInTheDocument();
 });
 
@@ -88,7 +90,7 @@ it("stays hidden while the workspace switch is off", async () => {
   renderAssistant();
   await waitFor(() => expect(mocks.status).toHaveBeenCalled());
   expect(
-    screen.queryByRole("button", { name: "Open assistant" }),
+    screen.queryByRole("button", { name: "Open agent" }),
   ).not.toBeInTheDocument();
 });
 
@@ -100,19 +102,19 @@ it("opens the floating panel and returns to the icon only when closed", async ()
   });
   renderAssistant();
   const user = userEvent.setup();
-  const trigger = await screen.findByRole("button", { name: "Open assistant" });
+  const trigger = await screen.findByRole("button", { name: "Open agent" });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
   await user.click(trigger);
   expect(
-    screen.getByRole("dialog", { name: "Workspace assistant" }),
+    screen.getByRole("dialog", { name: "Workspace agent" }),
   ).toBeInTheDocument();
   expect(screen.getByText("glm-5.3-flash")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Close assistant" }));
+  await user.click(screen.getByRole("button", { name: "Close agent" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Open assistant" }),
+    screen.getByRole("button", { name: "Open agent" }),
   ).toBeInTheDocument();
 });
 
@@ -124,9 +126,7 @@ it("closes the panel with Escape", async () => {
   });
   renderAssistant();
   const user = userEvent.setup();
-  await user.click(
-    await screen.findByRole("button", { name: "Open assistant" }),
-  );
+  await user.click(await screen.findByRole("button", { name: "Open agent" }));
   expect(screen.getByRole("dialog")).toBeInTheDocument();
   await user.keyboard("{Escape}");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -167,9 +167,7 @@ it("runs a requested page tool in the browser and returns the follow-up answer",
 
   renderAssistant();
   const user = userEvent.setup();
-  await user.click(
-    await screen.findByRole("button", { name: "Open assistant" }),
-  );
+  await user.click(await screen.findByRole("button", { name: "Open agent" }));
   await user.type(
     screen.getByRole("textbox", { name: "Ask about this page…" }),
     "Where am I?",
@@ -195,4 +193,47 @@ it("runs a requested page tool in the browser and returns the follow-up answer",
       parameters: { type: "object", properties: {} },
     },
   ]);
+});
+
+it("routes the question to the Eino agent when the workspace agent mode is picked", async () => {
+  await changeLanguage("en");
+  mocks.status.mockResolvedValue({
+    status: 200,
+    data: {
+      enabled: true,
+      configured: true,
+      agentEnabled: true,
+      model: "glm-5.3-flash",
+    },
+  });
+  mocks.agent.mockResolvedValue({
+    status: 200,
+    data: {
+      content: "密码至少 12 位（账号规范）。",
+      tools: ["knowledge_search"],
+      model: "glm-5.3-flash",
+      mode: "agent",
+    },
+  });
+  renderAssistant();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Open agent" }));
+  await user.click(screen.getByRole("button", { name: "Workspace agent" }));
+  await user.type(
+    screen.getByRole("textbox", { name: "Ask about this page…" }),
+    "密码要求是什么",
+  );
+  await user.click(screen.getByRole("button", { name: "Send" }));
+
+  await waitFor(() =>
+    expect(
+      screen.getByText("密码至少 12 位（账号规范）。"),
+    ).toBeInTheDocument(),
+  );
+  expect(mocks.agent).toHaveBeenCalledWith(
+    { question: "密码要求是什么" },
+    expect.objectContaining({ signal: expect.anything() }),
+  );
+  expect(mocks.chat).not.toHaveBeenCalled();
+  expect(screen.getByText("Requested knowledge_search")).toBeInTheDocument();
 });

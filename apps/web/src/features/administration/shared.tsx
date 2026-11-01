@@ -17,14 +17,16 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  useIdentitySnapshot,
   getIdentitySnapshotQueryKey,
   getIdentityMeQueryKey,
+  useIdentitySnapshot,
+} from "@/api/generated/baseline";
+import {
   identityDeleteAccount,
   identityDeleteOrganization,
   identityDeleteDepartment,
   identityDeleteRole,
-} from "@/api/generated/baseline";
+} from "@/lib/capabilities";
 import type { AdminSnapshot } from "@/api/generated/models";
 import { ApiError } from "@/api/client/request";
 import { Button } from "@/components/ui/button";

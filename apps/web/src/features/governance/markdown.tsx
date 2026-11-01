@@ -2,11 +2,8 @@ import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import {
-  filesContent,
-  notificationsAttachment,
-} from "@/api/generated/baseline";
-import type { NotificationAttachment } from "@/api/generated/models";
+import { filesContent, notificationsAttachment } from "@/lib/capabilities";
+import type { NotificationAttachment } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { useGovKey, useGovTask, downloadContent } from "./shared";
 import { ErrorBanner } from "@/features/administration/shared";

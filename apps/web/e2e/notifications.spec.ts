@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { LoginResult } from "../src/api/generated/models";
+import { invoke, resetPreferences } from "./helpers";
 
 // 通知通过接口落地（含私有附件），浏览器只验证通知中心的读取体验：
 // 列表只显示标题与时间、点击进入详情、已发送正文默认收起。
@@ -19,41 +20,24 @@ test("notification center lists title and time, opens the detail page and keeps 
   expect(login.ok()).toBeTruthy();
   const session: LoginResult = await login.json();
   const headers = { Origin: origin, "X-CSRF-Token": session.profile.csrfToken };
-  const reset = await request.put("/api/auth/preferences", {
-    headers,
-    data: {
-      changes: [
-        { key: "display.language", operation: "reset", value: "" },
-        { key: "display.theme", operation: "reset", value: "" },
-      ],
-    },
-  });
-  expect(reset.ok()).toBeTruthy();
+  await resetPreferences(request, headers);
   const unique = Date.now();
   const title = `Operations notice ${unique}`;
   const filename = `private-notice-${unique}.txt`;
-  const upload = await request.post("/api/admin/files", {
-    headers,
-    data: {
-      name: filename,
-      purpose: "attachment",
-      content: Buffer.from("Notification private file").toString("base64"),
-    },
+  const file = await invoke<{ id: number }>(request, headers, "file.upload", {
+    name: filename,
+    purpose: "attachment",
+    content: Buffer.from("Notification private file").toString("base64"),
   });
-  expect(upload.ok()).toBeTruthy();
-  const fileId = ((await upload.json()) as { id: number }).id;
-  const send = await request.post("/api/admin/notifications/send", {
-    headers,
-    data: {
-      clientKey: crypto.randomUUID(),
-      title,
-      markdown: `## Service notice\n\n**Private file** for our team.\n\n| Window | State |\n| --- | --- |\n| Today | Ready |\n\n[Download](file:${fileId})`,
-      fileIds: [fileId],
-      email: false,
-      targets: [{ kind: "account", id: session.profile.account.id }],
-    },
+  const fileId = file.id;
+  await invoke(request, headers, "notification.send", {
+    clientKey: crypto.randomUUID(),
+    title,
+    markdown: `## Service notice\n\n**Private file** for our team.\n\n| Window | State |\n| --- | --- |\n| Today | Ready |\n\n[Download](file:${fileId})`,
+    fileIds: [fileId],
+    email: false,
+    targets: [{ kind: "account", id: session.profile.account.id }],
   });
-  expect(send.ok()).toBeTruthy();
   await page.addInitScript(() =>
     localStorage.setItem("baseline.language", "en"),
   );

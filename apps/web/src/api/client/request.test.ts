@@ -1,5 +1,5 @@
 import { it, expect, vi } from "vitest";
-import { request, ApiError, setCSRFToken } from "./request";
+import { request, requestTimeout, ApiError, setCSRFToken } from "./request";
 it("maps internal server errors to stable codes", async () => {
   vi.stubGlobal(
     "fetch",
@@ -24,7 +24,9 @@ it("supplies an in-memory CSRF nonce only to mutations and clears it on logout",
   vi.stubGlobal("fetch", fetch);
   try {
     setCSRFToken("verified-nonce");
-    await request("/api/admin/accounts", { method: "POST" });
+    await request("/api/capabilities/identity.account.create/invocations", {
+      method: "POST",
+    });
     expect(fetch.mock.calls[0][1].headers.get("X-CSRF-Token")).toBe(
       "verified-nonce",
     );
@@ -52,4 +54,15 @@ it("accepts a successful empty response such as cookie-only logout", async () =>
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it("keeps the interactive timeout off agent tasks", () => {
+  // A planning turn can take tens of seconds; cutting it at the read budget
+  // cancels the request server-side and surfaces as a generic failure.
+  expect(requestTimeout("/api/ai/runs")).toBe(180000);
+  expect(requestTimeout("/api/assistant/chat")).toBe(180000);
+  expect(requestTimeout("/api/capabilities/file.upload/invocations")).toBe(
+    180000,
+  );
+  expect(requestTimeout("/api/admin/snapshot")).toBe(10000);
 });

@@ -7,10 +7,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  settingsEffective,
-  settingsPreferences,
-} from "@/api/generated/baseline";
+import { settingsEffective, settingsPreferences } from "@/lib/capabilities";
 import type { ConfigEntry } from "@/api/generated/models";
 import { useAuth } from "@/features/administration/auth";
 import { changeLanguage } from "@/i18n";

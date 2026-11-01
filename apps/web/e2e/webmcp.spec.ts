@@ -18,7 +18,7 @@ test("real WebMCP connection follows routes, limits account tools and revokes on
   expect(login.ok()).toBe(true);
   await page.goto("/webmcp");
   await expect(
-    page.getByRole("heading", { name: "MCP & WebSkills" }),
+    page.getByRole("heading", { name: "Agent collaboration" }),
   ).toBeVisible();
   // The legacy /webmcp entry redirects into the WebMCP tab of the unified page.
   await expect(
@@ -167,7 +167,7 @@ test("real WebMCP connection follows routes, limits account tools and revokes on
       arguments: { path: "/webmcp" },
     });
     await expect(
-      page.getByRole("heading", { name: "MCP & WebSkills" }),
+      page.getByRole("heading", { name: "Agent collaboration" }),
     ).toBeVisible();
     await expect
       .poll(async () =>

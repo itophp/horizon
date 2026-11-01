@@ -28,6 +28,7 @@ func buildRegistry() []Definition {
 	add := func(key, group, kind, def string, scopes []string, sensitive, secret, ui bool, min, max int64, choices ...string) {
 		out = append(out, Definition{key, group, kind, def, scopes, choices, sensitive, secret, min, max, ui})
 	}
+	add("articles.blockedWords", "security", "string", `""`, workspace, true, false, true, 0, 10000)
 	add("branding.name", "branding", "string", `"Horizon"`, branding, false, false, true, 1, 100)
 	add("branding.tagline", "branding", "string", `"Administration workspace"`, branding, false, false, true, 0, 200)
 	add("branding.loginTitle", "branding", "string", `""`, branding, false, false, true, 0, 200)
@@ -88,6 +89,19 @@ func buildRegistry() []Definition {
 	add("assistant.baseUrl", "assistant", "string", `"https://open.bigmodel.cn/api/v1"`, assistantScope, false, false, true, 8, 500)
 	add("assistant.model", "assistant", "string", `"glm-5.3-flash"`, assistantScope, false, false, true, 1, 100)
 	add("assistant.token", "assistant", "secret", `""`, assistantScope, true, true, true, 0, 500)
+	// The Eino agent speaks the Chat Completion protocol, so it carries its own
+	// endpoint; the model and credential are shared with the in-page assistant.
+	add("agent.enabled", "assistant", "boolean", `false`, assistantScope, false, false, true, 0, 0)
+	add("agent.baseUrl", "assistant", "string", `"https://open.bigmodel.cn/api/coding/paas/v4"`, assistantScope, false, false, true, 8, 500)
+	// Knowledge retrieval runs on Eino components: the embedder turns text into
+	// vectors, the vector store holds them. Both are deployment settings, and the
+	// credential is sealed at rest like every other secret.
+	add("knowledge.embedding.baseUrl", "knowledge", "string", `"https://open.bigmodel.cn/api/paas/v4"`, assistantScope, false, false, true, 8, 500)
+	add("knowledge.embedding.model", "knowledge", "string", `"embedding-3"`, assistantScope, false, false, true, 1, 100)
+	add("knowledge.embedding.dimensions", "knowledge", "integer", `2048`, assistantScope, false, false, true, 1, 8192)
+	add("knowledge.embedding.token", "knowledge", "secret", `""`, assistantScope, true, true, true, 0, 500)
+	add("knowledge.vector.url", "knowledge", "string", `"redis://127.0.0.1:63790"`, assistantScope, false, false, true, 8, 500)
+	add("knowledge.vector.index", "knowledge", "string", `"kb_chunks"`, assistantScope, false, false, true, 1, 100)
 	limits := []string{"workspace"}
 	add("files.maxBytes", "files", "integer", `20971520`, limits, false, false, false, 1024, 20971520)
 	add("files.logoMaxBytes", "files", "integer", `2097152`, limits, false, false, false, 1024, 2097152)
@@ -151,7 +165,7 @@ func (d Definition) Validate(raw string) error {
 				return Problem("invalid")
 			}
 		}
-		if d.Key == "assistant.baseUrl" {
+		if d.Key == "assistant.baseUrl" || d.Key == "agent.baseUrl" || d.Key == "knowledge.embedding.baseUrl" {
 			u, err := url.Parse(v)
 			if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" || strings.ContainsAny(v, "\r\n\x00\t ") {
 				return Problem("invalid")

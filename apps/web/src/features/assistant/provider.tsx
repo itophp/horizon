@@ -9,7 +9,11 @@ import {
   type PropsWithChildren,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { assistantChat, assistantStatus } from "@/api/generated/baseline";
+import {
+  assistantAgent,
+  assistantChat,
+  assistantStatus,
+} from "@/api/generated/baseline";
 import type {
   AssistantMessage,
   AssistantTool,
@@ -19,11 +23,14 @@ import { ApiError } from "@/api/client/request";
 import { useWebMcp } from "@/features/webmcp/provider";
 import { useSession } from "@/features/administration/auth";
 
+export type AssistantMode = "page" | "agent";
+
 export interface AssistantTurn {
   id: string;
   role: "user" | "assistant" | "tool";
   content: string;
   toolCalls?: AssistantReply["toolCalls"];
+  tools?: string[];
   toolCallId?: string;
   toolName?: string;
   status?: "pending" | "failed";
@@ -37,6 +44,9 @@ export interface AssistantContextValue {
   ready: boolean;
   configured: boolean;
   toolCount: number;
+  mode: AssistantMode;
+  agentEnabled: boolean;
+  setMode: (mode: AssistantMode) => void;
   send: (text: string) => Promise<void>;
   stop: () => void;
   clear: () => void;
@@ -85,6 +95,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
   const session = useSession();
   const allowed = session.permissions.includes("assistant:use");
   const [messages, setMessages] = useState<AssistantTurn[]>([]);
+  const [mode, setMode] = useState<AssistantMode>("page");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -109,6 +120,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
   const snapshot = status.data?.status === 200 ? status.data.data : undefined;
   const ready = allowed && Boolean(snapshot?.enabled);
   const configured = Boolean(snapshot?.configured);
+  const agentEnabled = Boolean(snapshot?.agentEnabled);
   const model = snapshot?.model ?? "";
 
   // Page tools reach the model only when the workspace switch is on and a model is
@@ -160,6 +172,29 @@ export function AssistantProvider({ children }: PropsWithChildren) {
       ];
       setMessages(history);
       try {
+        if (mode === "agent") {
+          // The Eino agent runs the whole tool loop on the server; the browser only
+          // sends the question and renders the grounded answer.
+          const result = await assistantAgent(
+            { question },
+            { signal: abort.signal },
+          );
+          if (abort.signal.aborted) return;
+          if (result.status !== 200) {
+            throw new ApiError("unavailable", result.status);
+          }
+          if (!mounted.current) return;
+          setMessages([
+            ...history,
+            {
+              id: identifier(),
+              role: "assistant",
+              content: result.data.content,
+              tools: result.data.tools,
+            },
+          ]);
+          return;
+        }
         for (let round = 0; round < maximumRounds; round += 1) {
           const result = await assistantChat(
             {
@@ -248,7 +283,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
         }
       }
     },
-    [busy, connection, messages, tools],
+    [busy, connection, messages, mode, tools],
   );
 
   const value = useMemo<AssistantContextValue>(
@@ -260,6 +295,9 @@ export function AssistantProvider({ children }: PropsWithChildren) {
       ready,
       configured,
       toolCount,
+      mode,
+      agentEnabled,
+      setMode,
       send,
       stop,
       clear,
@@ -272,6 +310,9 @@ export function AssistantProvider({ children }: PropsWithChildren) {
       ready,
       configured,
       toolCount,
+      mode,
+      agentEnabled,
+      setMode,
       send,
       stop,
       clear,

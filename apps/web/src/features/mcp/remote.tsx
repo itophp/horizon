@@ -11,19 +11,18 @@ import { Plus, ShieldAlert } from "lucide-react";
 import { useController, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
   mcpManagementCreate,
   mcpManagementAdminRevoke,
   mcpManagementRotate,
-  useMcpManagementCapabilities,
-  useMcpManagementAudit,
+  mcpManagementCapabilities,
+  mcpManagementAudit,
   mcpManagementRevoke,
-  useMcpManagementList,
-  getMcpManagementListQueryKey,
-} from "@/api/generated/baseline";
+  mcpManagementList,
+} from "@/lib/capabilities";
 import { ApiError } from "@/api/client/request";
 import { useAuth } from "@/features/administration/auth";
 import { DataTable, EditorDialog } from "@/features/administration/shared";
@@ -94,9 +93,17 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 export function RemoteMcpSection() {
   const { t, i18n } = useTranslation("mcp");
   const auth = useAuth();
-  const query = useMcpManagementList();
-
-  const audit = useMcpManagementAudit();
+  const tokenKey = ["mcp", "tokens"];
+  const query = useQuery({
+    queryKey: tokenKey,
+    queryFn: mcpManagementList,
+    retry: false,
+  });
+  const audit = useQuery({
+    queryKey: ["mcp", "audit"],
+    queryFn: mcpManagementAudit,
+    retry: false,
+  });
   const client = useQueryClient();
   const [secret, setSecret] = useState("");
   const [catalogBlocked, setCatalogBlocked] = useState(false);
@@ -121,20 +128,25 @@ export function RemoteMcpSection() {
       tools: ["context_get", "capabilities_list"],
     },
   });
-  const capabilities = useMcpManagementCapabilities({
-    departmentId: useWatch({ control: form.control, name: "departmentId" }),
+  const departmentId = useWatch({
+    control: form.control,
+    name: "departmentId",
+  });
+  const capabilities = useQuery({
+    queryKey: ["mcp", "capabilities", departmentId],
+    queryFn: () => mcpManagementCapabilities({ departmentId }),
+    retry: false,
   });
   const availableTools =
     capabilities.data?.status === 200 ? capabilities.data.data : [];
   // Selections survive a reload of the tool catalog: a catalog that is refetching,
   // empty or unavailable must not silently drop what the operator already chose.
   const tools = useController({ control: form.control, name: "tools" });
-  const refresh = () =>
-    client.invalidateQueries({ queryKey: getMcpManagementListQueryKey() });
+  const refresh = () => client.invalidateQueries({ queryKey: tokenKey });
   const create = useMutation({
     mutationFn: (value: z.infer<typeof schema>) => mcpManagementCreate(value),
     onSuccess: async (result) => {
-      if (result.status === 201) {
+      if (result.status === 200) {
         setSecret(result.data.secret);
         setCreating(false);
       }
@@ -150,7 +162,7 @@ export function RemoteMcpSection() {
     mutationFn: ({ id, password }: { id: number; password: string }) =>
       mcpManagementRotate(id, { password }),
     onSuccess: async (result) => {
-      if (result.status === 201) setSecret(result.data.secret);
+      if (result.status === 200) setSecret(result.data.secret);
       setConfirming(null);
       confirmForm.reset();
       await refresh();

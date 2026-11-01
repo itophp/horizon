@@ -2,18 +2,13 @@ package server
 
 import (
 	"baseline/services/api/internal/app"
-	"baseline/services/api/internal/auth"
-	"baseline/services/api/internal/authorization"
 	"baseline/services/api/internal/config"
-	"baseline/services/api/internal/dataaccess"
-	"baseline/services/api/internal/files"
 	"baseline/services/api/internal/governance"
 	"baseline/services/api/internal/identity"
-	"baseline/services/api/internal/mcp"
-	"baseline/services/api/internal/notifications"
-	"baseline/services/api/internal/repository"
-	"baseline/services/api/internal/repository/dbgen"
-	"baseline/services/api/internal/settings"
+	"baseline/services/api/internal/modules/files"
+	"baseline/services/api/internal/modules/mcp"
+	"baseline/services/api/internal/modules/notifications"
+	"baseline/services/api/internal/modules/settings"
 	"baseline/services/api/internal/transport"
 	"context"
 	"errors"
@@ -24,7 +19,6 @@ import (
 )
 
 func Run(ctx context.Context, c config.Config) error {
-	var store app.RecordStore
 	var identityPool *pgxpool.Pool
 	if c.DatabaseURL != "" {
 		dbctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -37,12 +31,7 @@ func Run(ctx context.Context, c config.Config) error {
 		if err = pool.Ping(dbctx); err != nil {
 			return errors.New("database connection failed")
 		}
-		store = repository.Records{Queries: dbgen.New(pool)}
 		identityPool = pool
-	}
-	engine, err := authorization.New()
-	if err != nil {
-		return err
 	}
 	workerCtx, cancelWorkers := context.WithCancel(ctx)
 	defer cancelWorkers()
@@ -73,7 +62,11 @@ func Run(ctx context.Context, c config.Config) error {
 			}
 		}()
 	}
-	server := &http.Server{Addr: c.Address, Handler: transport.HandlerWithCore(app.System{}, app.Demo{Store: store, Scopes: dataaccess.OwnResolver{}}, auth.DevelopmentToken{Token: c.DemoToken}, engine, core, iam), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 120 * time.Second, WriteTimeout: 120 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
+	handler, start := transport.HandlerWithRuntime(app.System{}, core, iam)
+	if identityPool != nil {
+		go start(workerCtx)
+	}
+	server := &http.Server{Addr: c.Address, Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 120 * time.Second, WriteTimeout: 120 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	done := make(chan error, 1)
 	go func() { slog.Info("api starting", "address", c.Address); done <- server.ListenAndServe() }()
 	select {

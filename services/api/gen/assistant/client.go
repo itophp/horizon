@@ -15,15 +15,23 @@ import (
 
 // Client is the "assistant" service client.
 type Client struct {
-	StatusEndpoint goa.Endpoint
-	ChatEndpoint   goa.Endpoint
+	StatusEndpoint    goa.Endpoint
+	ChatEndpoint      goa.Endpoint
+	AgentEndpoint     goa.Endpoint
+	WorkflowEndpoint  goa.Endpoint
+	KnowledgeEndpoint goa.Endpoint
+	IngestEndpoint    goa.Endpoint
 }
 
 // NewClient initializes a "assistant" service client given the endpoints.
-func NewClient(status, chat goa.Endpoint) *Client {
+func NewClient(status, chat, agent, workflow, knowledge, ingest goa.Endpoint) *Client {
 	return &Client{
-		StatusEndpoint: status,
-		ChatEndpoint:   chat,
+		StatusEndpoint:    status,
+		ChatEndpoint:      chat,
+		AgentEndpoint:     agent,
+		WorkflowEndpoint:  workflow,
+		KnowledgeEndpoint: knowledge,
+		IngestEndpoint:    ingest,
 	}
 }
 
@@ -59,4 +67,72 @@ func (c *Client) Chat(ctx context.Context, p *ChatPayload) (res *AssistantReply,
 		return
 	}
 	return ires.(*AssistantReply), nil
+}
+
+// Agent calls the "agent" endpoint of the "assistant" service.
+// Agent may return the following errors:
+//   - "unauthenticated" (type *IAMProblem)
+//   - "forbidden" (type *IAMProblem)
+//   - "invalid" (type *IAMProblem)
+//   - "unavailable" (type *IAMProblem)
+//   - "internal" (type *IAMProblem)
+//   - error: internal error
+func (c *Client) Agent(ctx context.Context, p *AgentPayload) (res *AssistantAgentReply, err error) {
+	var ires any
+	ires, err = c.AgentEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*AssistantAgentReply), nil
+}
+
+// Workflow calls the "workflow" endpoint of the "assistant" service.
+// Workflow may return the following errors:
+//   - "unauthenticated" (type *IAMProblem)
+//   - "forbidden" (type *IAMProblem)
+//   - "invalid" (type *IAMProblem)
+//   - "unavailable" (type *IAMProblem)
+//   - "internal" (type *IAMProblem)
+//   - error: internal error
+func (c *Client) Workflow(ctx context.Context, p *WorkflowPayload) (res *AssistantAgentReply, err error) {
+	var ires any
+	ires, err = c.WorkflowEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*AssistantAgentReply), nil
+}
+
+// Knowledge calls the "knowledge" endpoint of the "assistant" service.
+// Knowledge may return the following errors:
+//   - "unauthenticated" (type *IAMProblem)
+//   - "forbidden" (type *IAMProblem)
+//   - "invalid" (type *IAMProblem)
+//   - "unavailable" (type *IAMProblem)
+//   - "internal" (type *IAMProblem)
+//   - error: internal error
+func (c *Client) Knowledge(ctx context.Context, p *KnowledgePayload) (res []*KnowledgeDocument, err error) {
+	var ires any
+	ires, err = c.KnowledgeEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]*KnowledgeDocument), nil
+}
+
+// Ingest calls the "ingest" endpoint of the "assistant" service.
+// Ingest may return the following errors:
+//   - "unauthenticated" (type *IAMProblem)
+//   - "forbidden" (type *IAMProblem)
+//   - "invalid" (type *IAMProblem)
+//   - "unavailable" (type *IAMProblem)
+//   - "internal" (type *IAMProblem)
+//   - error: internal error
+func (c *Client) Ingest(ctx context.Context, p *IngestPayload) (res *KnowledgeIngested, err error) {
+	var ires any
+	ires, err = c.IngestEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*KnowledgeIngested), nil
 }

@@ -7,7 +7,7 @@ import { I18nextProvider } from "react-i18next";
 import { i18n, changeLanguage } from "@/i18n";
 import { SettingsPage } from "./settings";
 const mocks = vi.hoisted(() => ({
-  draft: vi.fn(async () => ({ status: 201, data: { id: 1 } })),
+  draft: vi.fn(async () => ({ status: 200, data: { id: 1 } })),
 }));
 vi.mock("@/features/administration/auth", () => ({
   useSession: () => ({
@@ -25,8 +25,8 @@ vi.mock("@/features/administration/shared", async (original) => {
     useAdminData: () => ({ data: { organizations: [], departments: [] } }),
   };
 });
-vi.mock("@/api/generated/baseline", async (original) => {
-  const actual = await original<typeof import("@/api/generated/baseline")>();
+vi.mock("@/lib/capabilities", async (original) => {
+  const actual = await original<typeof import("@/lib/capabilities")>();
   return {
     ...actual,
     settingsDraft: mocks.draft,

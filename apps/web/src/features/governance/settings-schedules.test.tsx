@@ -4,12 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
 import { i18n, changeLanguage } from "@/i18n";
-import type { ChangeRecord, SettingSchedule } from "@/api/generated/models";
+import type { ChangeRecord, SettingSchedule } from "@/api/types";
 import { ChangeHistory } from "./shared";
 import { localScheduleTime, scheduleInstant } from "./schedule-time";
 const mocks = vi.hoisted(() => ({
   jobs: vi.fn(async () => ({ status: 200, data: [] as SettingSchedule[] })),
-  schedule: vi.fn(async () => ({ status: 201, data: { id: 10 } })),
+  schedule: vi.fn(async () => ({ status: 200, data: { id: 10 } })),
   cancel: vi.fn(async () => ({ status: 204 })),
   reauth: vi.fn(async () => ({
     status: 200,
@@ -24,8 +24,8 @@ vi.mock("@/features/administration/auth", () => ({
     permissions: ["settings:read", "settings:publish"],
   }),
 }));
-vi.mock("@/api/generated/baseline", async (original) => ({
-  ...(await original<typeof import("@/api/generated/baseline")>()),
+vi.mock("@/lib/capabilities", async (original) => ({
+  ...(await original<typeof import("@/lib/capabilities")>()),
   settingsSchedules: mocks.jobs,
   settingsSchedule: mocks.schedule,
   settingsCancelSchedule: mocks.cancel,

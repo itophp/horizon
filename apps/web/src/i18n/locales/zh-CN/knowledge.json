@@ -1,0 +1,42 @@
+{
+  "nav": "知识库",
+  "title": "知识库",
+  "subtitle": "智能体可以引用的资料。回答只在这些材料范围内，并注明引用了哪一段。",
+  "count": "{{count}} 份文档",
+  "create": {
+    "title": "新增文档",
+    "name": "标题",
+    "namePlaceholder": "远程访问管理办法",
+    "content": "正文",
+    "contentPlaceholder": "粘贴正文。系统会切成互相重叠的片段，跨边界的句子也能被检索到。",
+    "submit": "建立索引",
+    "busy": "正在建立索引…",
+    "hint": "正文按约 600 字切分、相邻片段重叠 80 字；不会覆盖同名文档。"
+  },
+  "list": {
+    "title": "已建索引的文档",
+    "empty": "还没有文档。先加一份，回答才有据可引。",
+    "chunks": "{{count}} 个片段",
+    "source": {
+      "manual": "粘贴",
+      "file": "上传"
+    },
+    "created": "索引于 {{time}}",
+    "loading": "正在读取文档…",
+    "meta": "{{chunks}} · {{source}} · {{created}}"
+  },
+  "delete": {
+    "label": "删除",
+    "confirm": "删除「{{title}}」及其所有片段？回答将不再引用它。"
+  },
+  "errors": {
+    "forbidden": "你没有管理知识库的权限。",
+    "failed": "知识库没有接受这次修改。"
+  },
+  "reindex": {
+    "label": "重建向量",
+    "busy": "正在重建…",
+    "done": "已重建 {{count}} 份文档"
+  },
+  "notConfigured": "嵌入模型尚未配置，文档无法建立索引也无法检索。管理员可在「系统设置 → knowledge」中补全。"
+}

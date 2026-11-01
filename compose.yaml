@@ -15,5 +15,19 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+  # Vector store behind the Eino retriever/indexer components. Redis Stack ships
+  # RediSearch, which is what the official eino-ext Redis retriever queries.
+  redis:
+    image: redis/redis-stack-server:7.4.0-v3
+    ports:
+      - "127.0.0.1:63790:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 volumes:
   postgres-data:
+  redis-data:

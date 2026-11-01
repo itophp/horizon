@@ -1,51 +1,94 @@
-# 项目长期开发规则
+# 项目长期开发规则（Capability-Centric AI-Native）
 
-本仓库是通用应用工程框架。按用户当前需求持续开发功能；规则不限制开发阶段，不擅自添加未请求的行业业务或替换既有技术栈。原始需求保留在 docs/source-specification.md 供溯源；其中历史执行范围不能覆盖最新用户要求。
+本仓库是通用企业信息化底座。**业务能力（Capability）是系统唯一契约**：React 按钮、Agent Tool、Workflow 节点、外部 API 和事件触发都必须经过同一个 Capability Gateway 执行；能力成功后在同一事务写入 Outbox，事件经 Event Hub 驱动 AI Trigger，Agent 再调用能力形成闭环。
+
+```
+Business Capability → Business Event → AI Behavior → Business Capability
+```
+
+规则不限制开发阶段，也不替代用户最新要求；用户明确指令优先于历史文档。
 
 ## 开始任务与规则发现
 
-1. 检查工作区、Git 状态和目标模块，保留用户已有变更。
-2. 修改文件前，读取根目录到目标文件父目录沿途所有 AGENTS.md；从仓库根启动时也必须主动检查目标子目录，不能假定它们全部预加载。
-3. 功能开发先使用 [baseline-feature-development](.agents/skills/baseline-feature-development/SKILL.md)，按 [任务工具矩阵](docs/agent-tooling.md) 选择相关 Skill 和测试；只读/文档任务只加载相关规则。
-4. 使用锁文件中的版本；升级或新增依赖先核对官方 API、兼容性与许可证，记录于 docs/versions.md / docs/decisions。不要通过安装 latest 绕过本项目已确认的兼容组合。
+1. 检查 Git 状态、目标模块与未提交变更，保留用户已有修改。
+2. 改文件前读取根到目标文件父目录沿途所有 AGENTS.md；从根启动也要主动检查子目录规则。
+3. 功能开发先用 [baseline-feature-development](.agents/skills/baseline-feature-development/SKILL.md)，按 [任务工具矩阵](docs/agent-tooling.md) 选择 Skill。
+4. 使用锁文件版本；升级/新增依赖先核对官方 API、兼容性与许可证，记录于 docs/versions.md / docs/decisions。
+5. 涉及 MCP 暴露面时使用 [baseline-mcp-development](.agents/skills/baseline-mcp-development/SKILL.md) 并确认读写与授权范围。
 
-功能开发或需求变动时，先按 [MCP 开发 Skill](.agents/skills/baseline-mcp-development/SKILL.md) 集中询问是否接入 MCP、接入哪些操作、目标客户端与读写/确认范围；沿用已明确选择，未回答不默认开放能力，继续独立工作。已有 MCP 工具受变更影响时必须同步兼容性与授权。远程服务方案见 [实现方案](docs/mcp-service-plan.md)。
+## 不可违反的架构边界
 
-## 不可遗漏的全局边界
+- **单一能力契约**：能力定义只注册一次，且只由业务模块自己提供：`internal/modules/*` 的 `Entries()`（settings、dictionaries、files、notifications、mcp、example）与 `internal/identity` 的身份管理能力。每项必须声明名称、版本、输入/输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段，以及编排元数据 `Layer`（必填）/`Kind`/`Reads`/`Writes`/`Effect`/`RetrySafe`（其余项有保守推导默认值，见 [ADR 016](docs/decisions/016-capability-taxonomy-and-orchestration.md)）。禁止为 UI、Agent、Workflow 各写一套业务逻辑。
+- **可独立执行的动作必须成为能力**：能被单独触发的动作（HTTP 接口、页面动作、定时任务、事件消费、Agent/MCP 动作）必须注册进 `Entries()`，不允许只以 service 方法、HTTP handler 或后台 goroutine 的形式存在。判据与命名见 [能力拆分与组合](docs/capability-composition.md)。
+- **能力之间只经 Gateway 互调**：编排能力调用数据能力必须走 `gateway.Invoke`，禁止 `registry.Resolve` 后直接调 handler，也禁止绕过能力直接访问 `dbgen`/`pool`/领域服务。内层 `Origin` 由 Gateway 强制为 `OriginCapability`、深度 +1、写能力用确定性幂等键；`TxExecutor` 内禁止再调 Gateway，能力边界即事务边界。
+- **实体模型是能力的对象视图**：业务对象在 `internal/modules/*/entity_<name>.go` 声明（字段分类、关系、状态转移），由 `internal/platform/metadata` 对照迁移校验；`make check-entities` 已进 `ci-fast`。新增表/列、新增能力、改状态列都必须同步，禁止手抄列清单或为通过校验删声明。跨实体写用 `Definition.Entities`，主实体必须在其中；改状态的能力必须绑定 `Transition`。详见 [实体模型](docs/entity-model.md)。
+- **Gateway 是唯一运行时入口**：`internal/platform/capability/gateway` 负责身份、权限、Schema、风险、审批、幂等、执行、Outbox 与审计。`/api/capabilities/{name}/invocations` 是唯一业务写入口；业务模块不再暴露自己的 REST 端点。页面按钮只通过 `apps/web/src/lib/capabilities.ts` 调用，不得裸 fetch。
+- **事务与事件**：新模块的原子业务写能力必须实现 `TxExecutor`，业务数据与 `cap_outbox` 在同一事务提交。同步组合使用非事务 Executor；编排受理可用仅写运行状态的基础设施事务，事务内不执行业务节点。已迁移模块仍由领域服务自持事务，事件在成功提交后写入 Outbox；这是已知的 best effort 边界，必须保持可追踪，不得声称原子。
+- **Policy 确定性**：权限、风险等级、审批和深度限制是代码规则。人类点击可执行 high；Agent/Workflow/Event/API 的 high 必须人工确认；critical 对自动化关闭且人类调用需第二人审批。模型输出、Tool Schema、页面注册都不能替代服务端授权。
+- **审批不放大权限**：审批通过后必须用 `PrincipalForTask` 重建申请人身份执行；决策是条件更新，重复/过期/跨租户一律冲突或不可见。
+- **AI 任务独立生命周期**：`ai_runs` 记录 AI 任务，`cap_invocations` 记录业务调用，二者用 correlation id 关联；AI 失败不得把已成功的业务动作标记为失败。
+- **防循环**：事件带 `correlationId`、`causationId`、`triggerDepth`；Trigger 必须去重（policy+event 唯一）并受 `maxDepth` 限制。Agent 再次调用能力仍走完整 Gateway。
+- **Outbox 至少一次**：消费端按 `(tenant_id, event_id)` 去重；不得假设 exactly-once。
+- **租户与范围**：租户、账号、部门来自可信 Principal；查询强制租户条件，详情强制账号条件；事件/审批只投影本人或具备审批权限者可见的数据。
+- **敏感字段**：`cap_invocations.input` 只落 `Loggable` 白名单；审批 API 只返回脱敏投影；凭证、正文、个人信息不得进入日志、错误、导出或 trace。
+- **生成代码禁区**：传输信封/会话/公开投影契约源为 `services/api/design`，业务动作契约源为模块 Definition；SQL 源为 `db/migrations` 与 `db/query`。禁止手改 `services/api/gen`、`internal/repository/dbgen`、`apps/web/src/api/generated`。修改源后 `make generate`、`make check-generated`。
+- **前端**：页面按钮调用生成的 capability SDK；不得裸 fetch 或复制 DTO。TanStack Query 管远程状态，React Hook Form + Zod 管表单，TanStack Table 管常规表格。
+- **国际化**：所有用户可见文案、状态、辅助名称走 i18next，`en`/`zh-CN` 键集合一致；不拼句、不渲染翻译 HTML。
+- 禁止显式 TypeScript `any`、关闭检查、吞异常、删除断言或伪造测试结果。
 
-- 唯一 API 契约源为 services/api/design；SQL 源为 db/migrations 与 db/query。禁止手工编辑 services/api/gen、services/api/internal/repository/dbgen、apps/web/src/api/generated。修改源后 make generate、make check-generated。
-- 前端使用生成 SDK，不复制 API DTO；TanStack Query 管远程状态，局部状态管理界面交互，React Hook Form + Zod 管表单，TanStack Table 管常规表格。具体选择见矩阵。
-- shadcn 组件源码归项目维护，不是禁止修改的 API 生成代码；统一使用既有组件与 design tokens，修改公共组件检查全部调用方。新建、扩展或改版页面必须延续当前已确认的界面风格，按 [前端一致性规则](apps/web/AGENTS.md#界面风格一致性) 和 [设计系统](docs/design-system.md) 执行；用户最新的明确设计要求优先。
-- 所有用户可见文案与辅助名称走 i18next 资源，同步 en / zh-CN，使用统一语言切换入口和 Intl 格式化；不拼句、不直接渲染翻译 HTML。
-- 受保护 API 必须声明 resource/action/可信 DataScope，后端认证、Casbin 操作授权及 Repository/SQL 数据范围缺一不可；不能信任客户端租户、组织、owner 字段。新增公开端点需明确公开理由。
-- 列表、详情、修改、删除、导出、批量、后台任务、聚合、关联与下载保持相同租户/范围约束；新字段必须评估后端读写投影，尤其是凭证、个人信息、金额及内部备注。
-- 权限策略、身份或范围解析失败一律拒绝；禁止在不同 Handler 中暗建权限规则。敏感信息不能进入 DTO、前端日志、异常正文或审计明文。
-- SQL 参数化；已应用迁移只追加版本；真实密钥不提交，环境变量文档化；测试仅连接隔离本地/CI 数据库。基本安全细则见 [security.md](docs/security.md)。
-- 禁止显式 TypeScript any、关闭检查、吞异常、删除断言或伪造测试结果。Go 生成器的 any 是语言/工具输出，不用手改生成代码清除它。
+## 目录
 
-- 任何认证、权限控制或数据范围行为变更，必须同步维护权限控制相关的 Skill、目录 AGENTS.md 和安全/架构规则，并补齐受影响的允许与拒绝测试；交付说明列出同步位置，不允许只改代码。
+```text
+services/api/internal/
+├── platform/
+│   ├── capability/{contracts,registry,gateway}
+│   ├── policy/ approval/ audit/ outbox/ eventhub/
+│   ├── metadata/       # 实体模型：迁移解析、能力派生、E1–E10 校验
+├── identity/            # 会话、授权代理与身份管理能力
+├── governance/          # 配置内核（策略、范围、版本链）
+├── ai/
+│   ├── harness/         # Eino ADK + AI 任务
+│   ├── tools/           # 能力 → Eino Tool 适配
+│   ├── triggers/        # 事件 → AI 策略、去重、深度
+│   ├── context/ knowledge/ workflow/ orchestration/ evaluation/
+├── modules/
+│   ├── settings/ dictionaries/ files/ notifications/ mcp/   # 领域服务 + Entries()
+│   └── example/         # 参考业务模块（查询/创建/归档 + 事件）
+└── transport/           # Goa 传输装配与后台 starter
+```
 
 ## 任务路由
 
 | 变更 | 使用的 Skill | 规则入口 |
 |---|---|---|
-| 功能 MCP 工具设计、创建、变更和暴露评估 | [baseline-mcp-development](.agents/skills/baseline-mcp-development/SKILL.md) | docs/mcp-service-plan.md |
-| 设置项/字典选项/上传读取下载/通知接入 | [baseline-shared-capabilities](.agents/skills/baseline-shared-capabilities/SKILL.md) | docs/shared-capabilities.md |
-| 页面/表单/表格/SDK 消费 | [baseline-web-development](.agents/skills/baseline-web-development/SKILL.md) | apps/web/AGENTS.md |
-| HTTP/DTO/验证/错误/安全契约 | [goa-service-designer](.agents/skills/goa-service-designer/SKILL.md) | services/api/design/AGENTS.md |
-| 迁移/查询/事务/范围过滤 | [baseline-database-change](.agents/skills/baseline-database-change/SKILL.md) | services/api/db/AGENTS.md |
-| 文案/语言/格式化 | [baseline-internationalization](.agents/skills/baseline-internationalization/SKILL.md) | apps/web/src/i18n/AGENTS.md |
-| 认证/授权/字段/跨租户/敏感入口 | [baseline-security](.agents/skills/baseline-security/SKILL.md) | services/api/internal/AGENTS.md |
-| 测试/失败修复/交付门禁 | [baseline-quality-gates](.agents/skills/baseline-quality-gates/SKILL.md) | docs/testing.md |
+| 新增/修改业务能力、审批、审计 | baseline-feature-development + baseline-security；只有会话/系统契约变更才需要 goa-service-designer | 本文件、[ADR 015](docs/decisions/015-capability-centric-platform.md)、`services/api/internal/AGENTS.md` |
+| 决定拆几个能力、能力互调、发现业务层绕过 Gateway | baseline-capability-composition | [能力拆分与组合](docs/capability-composition.md)、ADR 015 |
+| 持久化流程、Graph、ADK、流程 Schema | baseline-capability-composition + baseline-security | [完整示例](docs/orchestration-example.md)、[Schema 路线](docs/agent-generation-plan.md) |
+| 新增事件、Trigger 策略、去重/深度 | baseline-feature-development + baseline-security + baseline-database-change | ADR 015、`db/AGENTS.md` |
+| 页面/表单/表格/SDK 消费 | baseline-web-development | `apps/web/AGENTS.md` |
+| 会话/系统/公开投影契约 | goa-service-designer | `services/api/design/AGENTS.md` |
+| 新增/修改表结构、实体声明、状态流转 | baseline-entity-model + baseline-database-change | [实体模型](docs/entity-model.md)、`services/api/internal/AGENTS.md`、`services/api/db/AGENTS.md` |
+| 迁移/查询/事务/范围过滤 | baseline-database-change | `services/api/db/AGENTS.md` |
+| 文案/语言/格式化 | baseline-internationalization | `apps/web/src/i18n/AGENTS.md` |
+| 认证/授权/字段/跨租户 | baseline-security | `services/api/internal/AGENTS.md` |
+| 测试/交付门禁 | baseline-quality-gates | `docs/testing.md` |
+| MCP 暴露面 | baseline-mcp-development | `docs/mcp-service-plan.md` |
+
+## 流程规格与生成
+
+流程运行源为 Go Definition/Step；`docs/generated/workflows` 的标准 Schema 与示例从源生成，禁止手改。候选 JSON 先经 workflowcheck -file 校验，再审查注册；离线检查不执行、不授权。`make check-workflows` + `check-generated` 拦截结构错误与生成漂移；完整示例用 `make test-orchestration-example`。能力装配统一使用 app.CapabilityModules，运行时和离线工具不得复制不同目录。Schema、静态检查与行为测试互补，不能替代 Gateway 或 SQL 范围校验。
 
 ## 验证与交付
 
-- 测试按变更批次集中执行，不因单个功能完成、进度汇报或聊天结束自动运行测试。普通连续开发累计受影响模块与待验项；明确阶段验收、准备提交/PR 时统一运行一次 make ci-fast，并按风险追加相关数据库/安全/浏览器检查。完整 make ci 用于发布候选、用户明确要求全量验收或 CI，不作为每个功能的收尾动作。文档/规则批次仅运行 make check-rules。高风险定向验证、结果复用和具体命令见 [testing.md](docs/testing.md#测试执行节奏)。
-- 浏览器验收分档：日常改动只跑相关文件（make test-e2e-changed，或 make test-e2e-smoke 快速旁证），完整集合才用 make test-e2e / make test-e2e-parallel。只跑子集必须报告选中的文件与未覆盖集合，不能宣称全量通过；不要为每轮文件变动重跑整套浏览器测试。
-- 代码生成检查与浏览器验收串行，避免生成产物更新干扰应用。不要把缺失数据库/浏览器运行时导致的跳过报告为通过。
-- 读取完整失败结果，修复源代码或夹具，重跑失败集再跑模块集。同一根因连续三轮无解时停止该部分盲改，报告证据和选项；不弱化检查。
-- 汇报：行为和文件变化、使用的框架/Skill、实际命令与结果、生成影响、国际化/安全影响、未执行检查和剩余风险。未经执行不得宣称通过；本地验证和远程 CI 分开报告。
+- **E2E 暂停（现行指令，优先于下述历史描述）**：默认不启动任何浏览器验收，包括 `make test-e2e`（无 `E2E_ARGS`）、`make test-e2e-parallel`、`make test-webmcp-e2e`、`make test-mcp-e2e`、`make test-mcp-native-e2e` 和默认 `make ci`。远程 CI 的 workflow 未改，仍是全量 E2E，因此推送/开 PR 等于触发全量，必须先取得授权。
+- **只跑对应模块**：确需浏览器旁证时，按 `scripts/e2e-changed.mjs` 的映射（`features/<模块>` → 同名 spec；共享 `src/{api,i18n,app,lib,components}`、`design/`、`internal/*` → foundation）选出改动模块对应的 spec，用 `E2E_ARGS="<spec>"` 只跑这些文件；映射未命中（如纯迁移 SQL）就不跑浏览器，在汇报里记未覆盖。一次只跑单个模块文件，不顺手扩大到同栈其它 spec。
+- **全量需授权**：完整浏览器集合（`make test-e2e` 不带 `E2E_ARGS`、`test-e2e-parallel`、默认 `make ci`、推送触发远程 CI）必须在当轮得到用户明确授权后才执行；没有授权就写"E2E 未执行（按当前指示暂停）"，不得含糊成"未发现风险"。
+- 测试按变更批次集中执行：普通连续开发累计受影响模块；阶段验收/提交/PR 跑一次 `make ci-fast`；触及表结构加 `make test-integration`。
+- 浏览器验收优先相关文件；只跑子集必须报告选中文件与未覆盖集合，不能宣称全量通过。
+- 代码生成与浏览器验收串行，避免生成产物干扰 Vite。不要把缺少数据库/浏览器导致的跳过报告为通过。
+- 同一根因连续三轮无解时停止盲改，报告证据与选项。
+- 汇报：行为与文件变化、使用的框架/Skill、实际命令与结果、生成影响、i18n/安全影响、未执行检查与剩余风险。本地通过与远程 CI 分开报告。
 
-## Code Review Rules
+## Code Review 重点
 
-优先报告：绕过授权/租户条件、新入口漏用 scope、敏感字段泄露、生成代码手改、源契约与 SDK 漂移、硬编码文案、服务端状态重复缓存、缺失负向用例，以及被跳过却报告通过的检查。格式与静态问题由 CI 执行，不用重复的人工作业代替门禁。
+优先报告：绕过 Gateway 直接执行能力、实体声明与迁移漂移（加列不声明、状态转移绑不到能力、跨实体能力漏 `Entities`）、缺失租户/账号条件、审批后未重建申请人身份、事件与业务不同事务却声称原子、缺少去重/深度限制、敏感字段进入 trace/DTO、生成代码手改、源契约与 SDK 漂移、硬编码文案、缺失负向用例、被跳过却报告通过的检查。

@@ -14,8 +14,8 @@ vi.mock("@/features/administration/auth", () => ({
     profile: { tenantId: "runtime", account: { id: 1 }, activeDepartmentId: 2 },
   }),
 }));
-vi.mock("@/api/generated/baseline", async (original) => {
-  const actual = await original<typeof import("@/api/generated/baseline")>();
+vi.mock("@/lib/capabilities", async (original) => {
+  const actual = await original<typeof import("@/lib/capabilities")>();
   return {
     ...actual,
     settingsPreferences: fixture.preferences,

@@ -1,0 +1,91 @@
+{
+  "account": {
+    "label": "账号"
+  },
+  "session": {
+    "label": "登录会话"
+  },
+  "organization": {
+    "label": "组织"
+  },
+  "department": {
+    "label": "部门"
+  },
+  "role": {
+    "label": "角色"
+  },
+  "example_record": {
+    "label": "示例记录",
+    "states": {
+      "draft": "草稿",
+      "active": "生效中",
+      "archived": "已归档"
+    }
+  },
+  "announcement": {
+    "label": "公告"
+  },
+  "notification": {
+    "label": "通知"
+  },
+  "notification_delivery": {
+    "label": "通知投递",
+    "states": {
+      "pending": "待发送",
+      "processing": "发送中",
+      "sent": "已发送",
+      "failed": "发送失败",
+      "skipped": "已跳过"
+    }
+  },
+  "file": {
+    "label": "文件"
+  },
+  "dictionary": {
+    "label": "字典"
+  },
+  "dictionary_item": {
+    "label": "字典条目"
+  },
+  "settings": {
+    "label": "系统设置"
+  },
+  "settings_draft": {
+    "label": "设置草稿",
+    "states": {
+      "draft": "草稿",
+      "published": "已发布"
+    }
+  },
+  "settings_schedule": {
+    "label": "发布排期",
+    "states": {
+      "pending": "待发布",
+      "published": "已发布",
+      "cancelled": "已取消",
+      "failed": "发布失败"
+    }
+  },
+  "settings_version": {
+    "label": "设置版本"
+  },
+  "mcp_token": {
+    "label": "MCP 令牌"
+  },
+  "mcp_audit": {
+    "label": "MCP 调用审计"
+  },
+  "orchestration_checkpoint": {
+    "label": "流程运行状态"
+  },
+  "article": {
+    "label": "文章",
+    "states": {
+      "draft": "草稿",
+      "pending_ai": "等待 AI 评审",
+      "pending_review": "待人工审核",
+      "published": "已发布",
+      "rejected": "已驳回"
+    }
+  }
+}
