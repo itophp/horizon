@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/horizon-cover-simple.png" alt="Horizon：现代应用，连接人与 Agent" width="100%" />
+  <img src="docs/assets/horizon-cover-ai-native.png" alt="Horizon AI-Native：人与 Agent 共享业务能力" width="100%" />
 </p>
 
 <h1 align="center">Horizon</h1>
