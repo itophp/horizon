@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="690" viewBox="0 0 1440 690" role="img" aria-labelledby="title desc"><title id="title">从意图到事实，再回到行动</title><desc id="desc">TASK LOOP  /  目标、上下文与可验证的业务反馈</desc>
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f7faf9"/><stop offset="1" stop-color="#f0f5f3"/></linearGradient><filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#193f36" flood-opacity="0.055"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6b9384"/></marker></defs>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#21483d}.title{font-size:32px;font-weight:650;letter-spacing:0.3px}.sub{font-size:21px;fill:#638074}.cardtitle{font-size:26px;font-weight:600}.body{font-size:22px;fill:#49695d}.label{font-size:20px;fill:#56796a}.num{font-size:17px;font-weight:650;fill:#598273;letter-spacing:2px}.arrow{fill:none;stroke:#6b9384;stroke-width:2.3;stroke-linejoin:round;marker-end:url(#arrow)}.lane{stroke:#c4d6cd;stroke-width:1.5;stroke-dasharray:5 7}</style>
+<rect width="1440" height="690" rx="24" fill="url(#paper)"/><rect x="1" y="1" width="1438" height="688" rx="24" fill="none" stroke="#dce7e1"/>
+<text x="64" y="63" class="title" text-anchor="start">从意图到事实，再回到行动</text>
+<text x="64" y="103" class="sub" text-anchor="start">TASK LOOP  /  目标、上下文与可验证的业务反馈</text>
+<rect x="64" y="160" width="400" height="145" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="88" y="192" class="num" text-anchor="start">01 / INTENT</text>
+<text x="88" y="229" class="cardtitle" text-anchor="start">理解工作目标</text>
+<text x="88" y="265" class="body" text-anchor="start">人的意图 · 事件触发</text>
+<rect x="520" y="160" width="400" height="145" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="544" y="192" class="num" text-anchor="start">02 / CONTEXT</text>
+<text x="544" y="229" class="cardtitle" text-anchor="start">建立可信上下文</text>
+<text x="544" y="265" class="body" text-anchor="start">对象 · 规则 · 授权知识</text>
+<rect x="976" y="160" width="400" height="145" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="1000" y="192" class="num" text-anchor="start">03 / DECISION</text>
+<text x="1000" y="229" class="cardtitle" text-anchor="start">组织下一步行动</text>
+<text x="1000" y="265" class="body" text-anchor="start">Agent 判断 · 流程推进</text>
+<path d="M464 232H520" class="arrow"/>
+<path d="M920 232H976" class="arrow"/>
+<path d="M1176 305V440" class="arrow"/>
+<text x="1196" y="383" class="label" text-anchor="start">按规则行动</text>
+<rect x="976" y="440" width="400" height="145" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="1000" y="472" class="num" text-anchor="start">04 / EXECUTION</text>
+<text x="1000" y="509" class="cardtitle" text-anchor="start">治理并执行能力</text>
+<text x="1000" y="545" class="body" text-anchor="start">Gateway · 业务边界</text>
+<rect x="520" y="440" width="400" height="145" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="544" y="472" class="num" text-anchor="start">05 / FACT</text>
+<text x="544" y="509" class="cardtitle" text-anchor="start">形成真实业务结果</text>
+<text x="544" y="545" class="body" text-anchor="start">数据状态 · 事件 · 执行记录</text>
+<rect x="64" y="440" width="400" height="145" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="88" y="472" class="num" text-anchor="start">06 / OUTCOME</text>
+<text x="88" y="509" class="cardtitle" text-anchor="start">核对目标并反馈</text>
+<text x="88" y="545" class="body" text-anchor="start">进度 · 结果 · 下一步</text>
+<path d="M976 512H920" class="arrow"/>
+<path d="M520 512H464" class="arrow"/>
+<path d="M720 440V305" class="arrow" stroke-dasharray="7 6"/>
+<text x="740" y="383" class="label" text-anchor="start">事实刷新上下文</text>
+<text x="64" y="660" class="label" text-anchor="start">必要时交给人判断；失败、不确定与已受理分别表达，不以模型回答替代业务完成。</text>
+</svg>

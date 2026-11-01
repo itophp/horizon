@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1110" viewBox="0 0 1440 1110" role="img" aria-labelledby="title desc"><title id="title">从一次判断，到一次受治理的行动</title><desc id="desc">HARNESS × GATEWAY  /  需要人工风险确认的工具调用示例</desc>
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f7faf9"/><stop offset="1" stop-color="#f0f5f3"/></linearGradient><filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#193f36" flood-opacity="0.055"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6b9384"/></marker></defs>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#21483d}.title{font-size:32px;font-weight:650;letter-spacing:0.3px}.sub{font-size:21px;fill:#638074}.cardtitle{font-size:26px;font-weight:600}.body{font-size:22px;fill:#49695d}.label{font-size:20px;fill:#56796a}.num{font-size:17px;font-weight:650;fill:#598273;letter-spacing:2px}.arrow{fill:none;stroke:#6b9384;stroke-width:2.3;stroke-linejoin:round;marker-end:url(#arrow)}.lane{stroke:#c4d6cd;stroke-width:1.5;stroke-dasharray:5 7}</style>
+<rect width="1440" height="1110" rx="24" fill="url(#paper)"/><rect x="1" y="1" width="1438" height="1108" rx="24" fill="none" stroke="#dce7e1"/>
+<text x="64" y="63" class="title" text-anchor="start">从一次判断，到一次受治理的行动</text>
+<text x="64" y="103" class="sub" text-anchor="start">HARNESS × GATEWAY  /  需要人工风险确认的工具调用示例</text>
+<rect x="76" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4"/>
+<text x="202" y="184" class="cardtitle" text-anchor="middle">人</text>
+<text x="202" y="216" class="label" text-anchor="middle">目标与人工决定</text>
+<path d="M202 247V1015" class="lane"/>
+<rect x="421" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4"/>
+<text x="547" y="184" class="cardtitle" text-anchor="middle">Harness / Agent</text>
+<text x="547" y="216" class="label" text-anchor="middle">上下文与行动选择</text>
+<path d="M547 247V1015" class="lane"/>
+<rect x="766" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4"/>
+<text x="892" y="184" class="cardtitle" text-anchor="middle">Gateway</text>
+<text x="892" y="216" class="label" text-anchor="middle">准入与执行治理</text>
+<path d="M892 247V1015" class="lane"/>
+<rect x="1111" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4"/>
+<text x="1237" y="184" class="cardtitle" text-anchor="middle">业务执行</text>
+<text x="1237" y="216" class="label" text-anchor="middle">规则与业务事实</text>
+<path d="M1237 247V1015" class="lane"/>
+<text x="374.5" y="277" class="label" text-anchor="middle">01  提出目标与完成条件</text>
+<path d="M202 295H547" class="arrow"/>
+<text x="719.5" y="377" class="label" text-anchor="middle">02  基于授权上下文与契约提出调用</text>
+<path d="M547 395H892" class="arrow"/>
+<text x="547.0" y="477" class="label" text-anchor="middle">03  需要风险确认：返回待审批</text>
+<path d="M892 495H202" class="arrow" stroke-dasharray="7 6"/>
+<text x="547.0" y="577" class="label" text-anchor="middle">04  批准或拒绝；批准后重新授权</text>
+<path d="M202 595H892" class="arrow"/>
+<text x="1064.5" y="677" class="label" text-anchor="middle">05  满足条件后执行原动作</text>
+<path d="M892 695H1237" class="arrow"/>
+<text x="1064.5" y="777" class="label" text-anchor="middle">06  返回真实业务结果</text>
+<path d="M1237 795H892" class="arrow" stroke-dasharray="7 6"/>
+<text x="719.5" y="877" class="label" text-anchor="middle">07  读取原调用结果或终止状态</text>
+<path d="M892 895H547" class="arrow" stroke-dasharray="7 6"/>
+<text x="374.5" y="977" class="label" text-anchor="middle">08  根据事实反馈任务进度</text>
+<path d="M547 995H202" class="arrow" stroke-dasharray="7 6"/>
+<text x="64" y="1080" class="label" text-anchor="start">允许时可直接执行；拒绝则终止。业务人工审核具有独立的角色、版本与状态语义。</text>
+</svg>

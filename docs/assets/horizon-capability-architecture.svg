@@ -32,11 +32,11 @@
 <text x="730" y="655" class="body" text-anchor="middle">身份 · 权限 · 输入契约 · 幂等 · 风险与审批 · 事件 · 审计</text>
 <path d="M730 690V730" class="line"/>
 <rect x="100" y="730" width="1260" height="205" rx="18" fill="#e3f3ed" stroke="#70a18e" stroke-width="1.5"/>
-<text x="126" y="774" class="section" text-anchor="start">能力体系 · 可理解、可发现、可组合、可触发</text>
+<text x="126" y="774" class="section" text-anchor="start">能力体系 · 实体语义与 Schema 契约，让能力可理解、可组合</text>
 <rect x="126" y="795" width="388" height="112" rx="18" fill="#f5fbf8" stroke="#9cbcad" stroke-width="1.5"/>
-<text x="320" y="831" class="section" text-anchor="middle">能力模型</text>
-<text x="320" y="864" class="small" text-anchor="middle">描述对象、动作与契约</text>
-<text x="320" y="895" class="small" text-anchor="middle">定义边界、结果与风险</text>
+<text x="320" y="831" class="section" text-anchor="middle">实体与能力模型</text>
+<text x="320" y="864" class="small" text-anchor="middle">Entity：字段 / 关系 / 状态</text>
+<text x="320" y="895" class="small" text-anchor="middle">Schema：输入 / 输出 / 边界</text>
 <rect x="536" y="795" width="388" height="112" rx="18" fill="#f5fbf8" stroke="#9cbcad" stroke-width="1.5"/>
 <text x="730" y="831" class="section" text-anchor="middle">能力注册</text>
 <text x="730" y="864" class="small" text-anchor="middle">形成可发现的业务目录</text>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="850" viewBox="0 0 1440 850" role="img" aria-labelledby="title desc"><title id="title">Entity × Schema × Capability</title><desc id="desc">SEMANTIC FOUNDATION  /  业务对象、结构契约与可执行动作</desc>
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f7faf9"/><stop offset="1" stop-color="#f0f5f3"/></linearGradient><filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#193f36" flood-opacity="0.055"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6b9384"/></marker></defs>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#21483d}.title{font-size:32px;font-weight:650;letter-spacing:0.3px}.sub{font-size:21px;fill:#638074}.cardtitle{font-size:26px;font-weight:600}.body{font-size:22px;fill:#49695d}.label{font-size:20px;fill:#56796a}.num{font-size:17px;font-weight:650;fill:#598273;letter-spacing:2px}.arrow{fill:none;stroke:#6b9384;stroke-width:2.3;stroke-linejoin:round;marker-end:url(#arrow)}.lane{stroke:#c4d6cd;stroke-width:1.5;stroke-dasharray:5 7}</style>
+<rect width="1440" height="850" rx="24" fill="url(#paper)"/><rect x="1" y="1" width="1438" height="848" rx="24" fill="none" stroke="#dce7e1"/>
+<text x="64" y="63" class="title" text-anchor="start">Entity × Schema × Capability</text>
+<text x="64" y="103" class="sub" text-anchor="start">SEMANTIC FOUNDATION  /  业务对象、结构契约与可执行动作</text>
+<rect x="64" y="158" width="620" height="186" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="88" y="190" class="num" text-anchor="start">01 / ENTITY</text>
+<text x="88" y="227" class="cardtitle" text-anchor="start">业务对象与状态</text>
+<text x="88" y="263" class="body" text-anchor="start">字段含义 · 对象关系 · 状态转移</text>
+<text x="88" y="294" class="body" text-anchor="start">哪些可编辑、由系统维护或属于敏感信息</text>
+<rect x="756" y="158" width="620" height="186" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="780" y="190" class="num" text-anchor="start">02 / SCHEMA</text>
+<text x="780" y="227" class="cardtitle" text-anchor="start">信息如何表达与交换</text>
+<text x="780" y="263" class="body" text-anchor="start">类型 · 必填项 · 取值边界 · 契约版本</text>
+<text x="780" y="294" class="body" text-anchor="start">按动作描述参数与结果，不暴露对象全字段</text>
+<path d="M374 344V385H600V420" class="arrow"/>
+<path d="M1066 344V385H840V420" class="arrow"/>
+<rect x="420" y="420" width="600" height="156" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="444" y="452" class="num" text-anchor="start">03 / CAPABILITY</text>
+<text x="444" y="489" class="cardtitle" text-anchor="start">有边界的业务动作</text>
+<text x="444" y="525" class="body" text-anchor="start">关联实体 · 明确输入输出 · 声明权限与风险</text>
+<path d="M720 576V621H264V657" class="arrow"/>
+<rect x="64" y="657" width="400" height="134" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="88" y="689" class="num" text-anchor="start">DISCOVER</text>
+<text x="88" y="726" class="cardtitle" text-anchor="start">能力目录与工具适配</text>
+<text x="88" y="762" class="body" text-anchor="start">显式开放 · 当前权限</text>
+<rect x="520" y="657" width="400" height="134" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="544" y="689" class="num" text-anchor="start">GOVERN</text>
+<text x="544" y="726" class="cardtitle" text-anchor="start">Gateway 与业务执行</text>
+<text x="544" y="762" class="body" text-anchor="start">准入校验 · 领域约束</text>
+<rect x="976" y="657" width="400" height="134" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="1000" y="689" class="num" text-anchor="start">RESULT</text>
+<text x="1000" y="726" class="cardtitle" text-anchor="start">结果与对象状态</text>
+<text x="1000" y="762" class="body" text-anchor="start">业务事实 · 可追踪结果</text>
+<path d="M464 724H520" class="arrow"/>
+<path d="M920 724H976" class="arrow"/>
+<text x="64" y="820" class="label" text-anchor="start">实体对照数据事实校验；Schema 约束结构；授权与状态规则始终由应用执行。</text>
+</svg>

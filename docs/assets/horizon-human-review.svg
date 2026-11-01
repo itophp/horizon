@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-labelledby="title desc"><title id="title">让 Agent 与人，共同推进一次发布</title><desc id="desc">HUMAN IN THE LOOP  /  目标流程示例，实际接入进度见架构文档</desc>
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f7faf9"/><stop offset="1" stop-color="#f0f5f3"/></linearGradient><filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#193f36" flood-opacity="0.055"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6b9384"/></marker></defs>
+<style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#21483d}.title{font-size:32px;font-weight:650;letter-spacing:0.3px}.sub{font-size:21px;fill:#638074}.cardtitle{font-size:26px;font-weight:600}.body{font-size:22px;fill:#49695d}.label{font-size:20px;fill:#56796a}.num{font-size:17px;font-weight:650;fill:#598273;letter-spacing:2px}.arrow{fill:none;stroke:#6b9384;stroke-width:2.3;stroke-linejoin:round;marker-end:url(#arrow)}.lane{stroke:#c4d6cd;stroke-width:1.5;stroke-dasharray:5 7}</style>
+<rect width="1440" height="820" rx="24" fill="url(#paper)"/><rect x="1" y="1" width="1438" height="818" rx="24" fill="none" stroke="#dce7e1"/>
+<text x="64" y="63" class="title" text-anchor="start">让 Agent 与人，共同推进一次发布</text>
+<text x="64" y="103" class="sub" text-anchor="start">HUMAN IN THE LOOP  /  目标流程示例，实际接入进度见架构文档</text>
+<rect x="64" y="165" width="310" height="145" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="88" y="197" class="num" text-anchor="start">01 / SUBMIT</text>
+<text x="88" y="234" class="cardtitle" text-anchor="start">提交指定版本</text>
+<text x="88" y="270" class="body" text-anchor="start">作者发起发布申请</text>
+<rect x="434" y="165" width="310" height="145" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)"/>
+<text x="458" y="197" class="num" text-anchor="start">02 / REVIEW</text>
+<text x="458" y="234" class="cardtitle" text-anchor="start">Agent 评审</text>
+<text x="458" y="270" class="body" text-anchor="start">规则与授权材料</text>
+<rect x="804" y="165" width="572" height="145" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="828" y="197" class="num" text-anchor="start">03 / VALIDATE</text>
+<text x="828" y="234" class="cardtitle" text-anchor="start">服务端校验结论与版本</text>
+<text x="828" y="270" class="body" text-anchor="start">无问题且满足发布规则，才允许发布</text>
+<path d="M374 237H434" class="arrow"/>
+<path d="M744 237H804" class="arrow"/>
+<rect x="1060" y="397" width="316" height="145" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)"/>
+<text x="1084" y="429" class="num" text-anchor="start">PUBLISHED</text>
+<text x="1084" y="466" class="cardtitle" text-anchor="start">已发布</text>
+<text x="1084" y="502" class="body" text-anchor="start">形成业务事实</text>
+<path d="M1218 310V397" class="arrow"/>
+<text x="1238" y="365" class="label" text-anchor="start">满足规则</text>
+<rect x="434" y="470" width="500" height="166" rx="18" fill="#faf0df" stroke="#ddc7a2" filter="url(#shadow)"/>
+<text x="458" y="502" class="num" text-anchor="start">HUMAN REVIEW</text>
+<text x="458" y="539" class="cardtitle" text-anchor="start">待人工审核</text>
+<text x="458" y="575" class="body" text-anchor="start">有权且非作者的审核人作决定</text>
+<text x="458" y="606" class="body" text-anchor="start">决定绑定对象版本与审核原因</text>
+<path d="M900 310V371H684V470" class="arrow"/>
+<text x="476" y="409" class="label" text-anchor="start">有问题 / 不确定 / 评审不可用</text>
+<path d="M934 510H998V469H1060" class="arrow"/>
+<text x="949" y="487" class="label" text-anchor="start">通过</text>
+<rect x="1060" y="641" width="316" height="130" rx="18" fill="#faf0df" stroke="#ddc7a2" filter="url(#shadow)"/>
+<text x="1084" y="673" class="num" text-anchor="start">REJECTED</text>
+<text x="1084" y="710" class="cardtitle" text-anchor="start">审核不通过</text>
+<text x="1084" y="746" class="body" text-anchor="start">向作者展示原因</text>
+<path d="M934 594H998V706H1060" class="arrow"/>
+<text x="945" y="670" class="label" text-anchor="start">不通过</text>
+<text x="64" y="790" class="label" text-anchor="start">审核前尚未公开；模型结论不替代权限、业务规则与必要的人工决定。</text>
+</svg>
