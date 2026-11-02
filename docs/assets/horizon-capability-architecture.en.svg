@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-labelledby="title desc" xml:lang="en">
+<title id="title">Horizon AI-Native Conceptual Architecture</title><desc id="desc">Triggers enter task orchestration. Workflow, Graph and ADK organize actions; every business call passes through the Capability Gateway and reuses capability models, registration and triggers. Execution produces business facts and events that drive subsequent actions. Simple actions can enter the Gateway directly.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#688078" /></marker></defs>
+<rect width="1600" height="1600" rx="24" fill="#f7f9f8" />
+<style>text{font-family:"Segoe UI",Arial,sans-serif;fill:#17483e}.title{font-size:34px;font-weight:700}.section{font-size:27px;font-weight:650}.body{font-size:23px}.small{font-size:21px;fill:#436e63}.note{font-size:19px;fill:#59776e}.blue{fill:#214e7f}.line{fill:none;stroke:#688078;stroke-width:2.4;marker-end:url(#arrow)}</style>
+<text x="100" y="65" class="title" text-anchor="start" style="font-size:34px">Horizon · AI-Native Application Architecture</text>
+<text x="100" y="103" class="small" text-anchor="start" style="font-size:21px">One capability system connects human intent, agent decisions and real business actions</text>
+<rect x="100" y="140" width="1260" height="105" rx="18" fill="#e3f3ed" stroke="#70a18e" stroke-width="1.5" />
+<text x="730" y="182" class="section" text-anchor="middle" style="font-size:27px">Interaction &amp; Triggers</text>
+<text x="730" y="221" class="body" text-anchor="middle" style="font-size:22px">Page actions · Agents · Business events · External APIs · Workflow triggers</text>
+<path d="M730 245V285" class="line" />
+<rect x="100" y="285" width="1260" height="210" rx="18" fill="#e8f0fc" stroke="#779fce" stroke-width="1.5" />
+<text x="126" y="329" class="section blue" text-anchor="start" style="font-size:27px">Tasks &amp; Orchestration · Goals, steps and intelligent decisions</text>
+<rect x="126" y="350" width="388" height="118" rx="18" fill="#d4e4f8" stroke="#82a5cf" stroke-width="1.5" />
+<text x="320" y="387" class="section blue" text-anchor="middle" style="font-size:27px">Workflow Backbone</text>
+<text x="320" y="423" class="small" text-anchor="middle" style="font-size:21px">Steps &amp; dependencies · Collaboration</text>
+<text x="320" y="453" class="small" text-anchor="middle" style="font-size:21px">Wait · Interrupt · Resume</text>
+<rect x="536" y="350" width="388" height="118" rx="18" fill="#d4e4f8" stroke="#82a5cf" stroke-width="1.5" />
+<text x="730" y="387" class="section blue" text-anchor="middle" style="font-size:27px">Graph Subgraphs</text>
+<text x="730" y="423" class="small" text-anchor="middle" style="font-size:21px">Local loops · Checks &amp; reviews</text>
+<text x="730" y="453" class="small" text-anchor="middle" style="font-size:21px">Bounded retries · Explicit exits</text>
+<rect x="946" y="350" width="388" height="118" rx="18" fill="#d4e4f8" stroke="#82a5cf" stroke-width="1.5" />
+<text x="1140" y="387" class="section blue" text-anchor="middle" style="font-size:27px">ADK Agent Nodes</text>
+<text x="1140" y="423" class="small" text-anchor="middle" style="font-size:21px">Understand context · Select tools</text>
+<text x="1140" y="453" class="small" text-anchor="middle" style="font-size:21px">Bounded decisions · Return results</text>
+<path d="M730 495V560" class="line" />
+<text x="750" y="535" class="note" text-anchor="start" style="font-size:19px">Every business node and tool passes through the Gateway</text>
+<path d="M100 190H52V625H99" class="line" stroke-dasharray="7 6" />
+<text x="35" y="500" class="note" transform="rotate(-90 35 500)" style="font-size:17px">Simple actions can invoke capabilities directly</text>
+<rect x="100" y="560" width="1260" height="130" rx="18" fill="#d9eee4" stroke="#5b927c" stroke-width="1.5" />
+<text x="730" y="609" class="section" text-anchor="middle" style="font-size:27px">Capability Gateway · Shared business execution boundary</text>
+<text x="730" y="655" class="body" text-anchor="middle" style="font-size:22px">Identity · Permissions · Input contracts · Idempotency · Risk &amp; approval · Events · Audit</text>
+<path d="M730 690V730" class="line" />
+<rect x="100" y="730" width="1260" height="205" rx="18" fill="#e3f3ed" stroke="#70a18e" stroke-width="1.5" />
+<text x="126" y="774" class="section" text-anchor="start" style="font-size:27px">Capability System · Entity semantics and Schema contracts enable understanding and composition</text>
+<rect x="126" y="795" width="388" height="112" rx="18" fill="#f5fbf8" stroke="#9cbcad" stroke-width="1.5" />
+<text x="320" y="831" class="section" text-anchor="middle" style="font-size:27px">Entity &amp; Capability Model</text>
+<text x="320" y="864" class="small" text-anchor="middle" style="font-size:21px">Entity: fields / relations / states</text>
+<text x="320" y="895" class="small" text-anchor="middle" style="font-size:21px">Schema: inputs / outputs / bounds</text>
+<rect x="536" y="795" width="388" height="112" rx="18" fill="#f5fbf8" stroke="#9cbcad" stroke-width="1.5" />
+<text x="730" y="831" class="section" text-anchor="middle" style="font-size:27px">Capability Registration</text>
+<text x="730" y="864" class="small" text-anchor="middle" style="font-size:21px">A discoverable business catalog</text>
+<text x="730" y="895" class="small" text-anchor="middle" style="font-size:21px">Versioning, reuse and composition</text>
+<rect x="946" y="795" width="388" height="112" rx="18" fill="#f5fbf8" stroke="#9cbcad" stroke-width="1.5" />
+<text x="1140" y="831" class="section" text-anchor="middle" style="font-size:27px">Capability Invocation</text>
+<text x="1140" y="864" class="small" text-anchor="middle" style="font-size:21px">Resolve actions by contract</text>
+<text x="1140" y="895" class="small" text-anchor="middle" style="font-size:21px">Connect intent to execution</text>
+<path d="M730 935V975" class="line" />
+<rect x="100" y="975" width="1260" height="130" rx="18" fill="#e3f3ed" stroke="#70a18e" stroke-width="1.5" />
+<text x="730" y="1022" class="section" text-anchor="middle" style="font-size:27px">Business Execution · Authorized actions produce real results</text>
+<text x="730" y="1069" class="body" text-anchor="middle" style="font-size:22px">Domain rules &amp; state · Data operations · External integrations · Result validation</text>
+<path d="M730 1105V1145" class="line" />
+<rect x="100" y="1145" width="1260" height="130" rx="18" fill="#efeee8" stroke="#a29e8c" stroke-width="1.5" />
+<text x="730" y="1191" class="section" text-anchor="middle" style="font-size:27px">Business Facts &amp; Runtime Memory</text>
+<text x="730" y="1238" class="body" text-anchor="middle" style="font-size:22px">Business data · Task progress · Human decisions · Execution records · Recovery context</text>
+<path d="M730 1275V1315" class="line" />
+<rect x="100" y="1315" width="1260" height="130" rx="18" fill="#fbefdc" stroke="#c8a573" stroke-width="1.5" />
+<text x="730" y="1362" class="section" text-anchor="middle" style="font-size:27px">Events &amp; Feedback · Established facts initiate the next actions</text>
+<text x="730" y="1409" class="body" text-anchor="middle" style="font-size:22px">Business events → Trigger policies → AI / Human / System follow-up</text>
+<path d="M1360 1380H1490V193H1361" class="line" stroke-dasharray="7 6" />
+<text x="1525" y="1080" class="note" transform="rotate(-90 1525 1080)" style="font-size:19px">Events drive follow-up work; every new business call passes through the Gateway</text>
+<path d="M1360 1045H1438V193H1361" class="line" stroke-dasharray="7 6" />
+<text x="1418" y="985" class="note" transform="rotate(-90 1418 985)" style="font-size:19px">Results return to callers; long tasks distinguish acceptance from completion</text>
+<text x="100" y="1490" class="small" text-anchor="start" style="font-size:21px">Collaboration: Skills &amp; Schemas · Trusted identity &amp; knowledge · Human participation · Tracing &amp; behavior checks</text>
+<text x="100" y="1530" class="note" text-anchor="start" style="font-size:19px">Conceptual view: orchestration organizes work; the Gateway governs workflow starts and node execution. Use components as needed.</text>
+<text x="100" y="1563" class="note" text-anchor="start" style="font-size:19px">See the architecture docs for current support. Dependencies are explicit; registration does not grant authorization.</text>
+</svg>

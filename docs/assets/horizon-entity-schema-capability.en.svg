@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="850" viewBox="0 0 1440 850" role="img" aria-labelledby="title desc" xml:lang="en"><title id="title">Entity × Schema × Capability</title><desc id="desc">SEMANTIC FOUNDATION  /  Business objects, structural contracts and executable actions</desc>
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f7faf9" /><stop offset="1" stop-color="#f0f5f3" /></linearGradient><filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#193f36" flood-opacity="0.055" /></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6b9384" /></marker></defs>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;fill:#21483d}.title{font-size:32px;font-weight:650;letter-spacing:0.3px}.sub{font-size:21px;fill:#638074}.cardtitle{font-size:26px;font-weight:600}.body{font-size:22px;fill:#49695d}.label{font-size:20px;fill:#56796a}.num{font-size:17px;font-weight:650;fill:#598273;letter-spacing:2px}.arrow{fill:none;stroke:#6b9384;stroke-width:2.3;stroke-linejoin:round;marker-end:url(#arrow)}.lane{stroke:#c4d6cd;stroke-width:1.5;stroke-dasharray:5 7}</style>
+<rect width="1440" height="850" rx="24" fill="url(#paper)" /><rect x="1" y="1" width="1438" height="848" rx="24" fill="none" stroke="#dce7e1" />
+<text x="64" y="63" class="title" text-anchor="start" style="font-size:32px">Entity × Schema × Capability</text>
+<text x="64" y="103" class="sub" text-anchor="start" style="font-size:21px">SEMANTIC FOUNDATION  /  Business objects, structural contracts and executable actions</text>
+<rect x="64" y="158" width="620" height="186" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)" />
+<text x="88" y="190" class="num" text-anchor="start" style="font-size:17px">01 / ENTITY</text>
+<text x="88" y="227" class="cardtitle" text-anchor="start" style="font-size:26px">Business Objects &amp; State</text>
+<text x="88" y="263" class="body" text-anchor="start" style="font-size:22px">Field semantics · Object relations · State transitions</text>
+<text x="88" y="294" class="body" text-anchor="start" style="font-size:22px">Distinguish editable, system-managed and sensitive fields</text>
+<rect x="756" y="158" width="620" height="186" rx="18" fill="#eaf1fa" stroke="#b9cde4" filter="url(#shadow)" />
+<text x="780" y="190" class="num" text-anchor="start" style="font-size:17px">02 / SCHEMA</text>
+<text x="780" y="227" class="cardtitle" text-anchor="start" style="font-size:26px">Represent &amp; Exchange Information</text>
+<text x="780" y="263" class="body" text-anchor="start" style="font-size:22px">Types · Required fields · Value bounds · Contract versions</text>
+<text x="780" y="294" class="body" text-anchor="start" style="font-size:22px">Action-specific inputs and results, not every entity field</text>
+<path d="M374 344V385H600V420" class="arrow" />
+<path d="M1066 344V385H840V420" class="arrow" />
+<rect x="420" y="420" width="600" height="156" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)" />
+<text x="444" y="452" class="num" text-anchor="start" style="font-size:17px">03 / CAPABILITY</text>
+<text x="444" y="489" class="cardtitle" text-anchor="start" style="font-size:26px">Bounded Business Actions</text>
+<text x="444" y="525" class="body" text-anchor="start" style="font-size:20px">Linked entities · Explicit inputs &amp; outputs · Permissions &amp; risk</text>
+<path d="M720 576V621H264V657" class="arrow" />
+<rect x="64" y="657" width="400" height="134" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)" />
+<text x="88" y="689" class="num" text-anchor="start" style="font-size:17px">DISCOVER</text>
+<text x="88" y="726" class="cardtitle" text-anchor="start" style="font-size:26px">Catalog &amp; Tool Adapters</text>
+<text x="88" y="762" class="body" text-anchor="start" style="font-size:20px">Explicit exposure · Current permissions</text>
+<rect x="520" y="657" width="400" height="134" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)" />
+<text x="544" y="689" class="num" text-anchor="start" style="font-size:17px">GOVERN</text>
+<text x="544" y="726" class="cardtitle" text-anchor="start" style="font-size:26px">Gateway &amp; Execution</text>
+<text x="544" y="762" class="body" text-anchor="start" style="font-size:20px">Admission checks · Domain constraints</text>
+<rect x="976" y="657" width="400" height="134" rx="18" fill="#e5f2ea" stroke="#b6d1c0" filter="url(#shadow)" />
+<text x="1000" y="689" class="num" text-anchor="start" style="font-size:17px">RESULT</text>
+<text x="1000" y="726" class="cardtitle" text-anchor="start" style="font-size:26px">Results &amp; Object State</text>
+<text x="1000" y="762" class="body" text-anchor="start" style="font-size:22px">Business facts · Traceable results</text>
+<path d="M464 724H520" class="arrow" />
+<path d="M920 724H976" class="arrow" />
+<text x="64" y="820" class="label" text-anchor="start" style="font-size:20px">Entities are checked against real data; Schemas constrain structure; the application enforces authorization and state rules.</text>
+</svg>

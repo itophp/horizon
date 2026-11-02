@@ -5,6 +5,7 @@
 <h1 align="center">Horizon</h1>
 <p align="center"><strong>让人和 Agent，围绕同一套业务能力协作。</strong></p>
 <p align="center">AI-Native Application Framework</p>
+<p align="center"><strong>简体中文</strong> · <a href="README.en.md">English</a></p>
 
 Horizon 是面向企业应用的 AI 原生框架。它把业务实体、Schema 契约、可执行能力、智能决策、流程编排、人工参与和业务事件组织成一个整体，让 Agent 能够在明确的权限与业务边界内理解任务、调用工具、推进工作，并根据真实结果继续行动。
 

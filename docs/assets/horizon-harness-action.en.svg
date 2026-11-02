@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1110" viewBox="0 0 1440 1110" role="img" aria-labelledby="title desc" xml:lang="en"><title id="title">From a Decision to a Governed Action</title><desc id="desc">HARNESS × GATEWAY  /  A tool call requiring human risk confirmation</desc>
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#f7faf9" /><stop offset="1" stop-color="#f0f5f3" /></linearGradient><filter id="shadow" x="-10%" y="-15%" width="120%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#193f36" flood-opacity="0.055" /></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6b9384" /></marker></defs>
+<style>text{font-family:"Segoe UI",Arial,sans-serif;fill:#21483d}.title{font-size:32px;font-weight:650;letter-spacing:0.3px}.sub{font-size:21px;fill:#638074}.cardtitle{font-size:26px;font-weight:600}.body{font-size:22px;fill:#49695d}.label{font-size:20px;fill:#56796a}.num{font-size:17px;font-weight:650;fill:#598273;letter-spacing:2px}.arrow{fill:none;stroke:#6b9384;stroke-width:2.3;stroke-linejoin:round;marker-end:url(#arrow)}.lane{stroke:#c4d6cd;stroke-width:1.5;stroke-dasharray:5 7}</style>
+<rect width="1440" height="1110" rx="24" fill="url(#paper)" /><rect x="1" y="1" width="1438" height="1108" rx="24" fill="none" stroke="#dce7e1" />
+<text x="64" y="63" class="title" text-anchor="start" style="font-size:32px">From a Decision to a Governed Action</text>
+<text x="64" y="103" class="sub" text-anchor="start" style="font-size:21px">HARNESS × GATEWAY  /  A tool call requiring human risk confirmation</text>
+<rect x="76" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4" />
+<text x="202" y="184" class="cardtitle" text-anchor="middle" style="font-size:26px">Human</text>
+<text x="202" y="216" class="label" text-anchor="middle" style="font-size:20px">Goals &amp; decisions</text>
+<path d="M202 247V1015" class="lane" />
+<rect x="421" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4" />
+<text x="547" y="184" class="cardtitle" text-anchor="middle" style="font-size:26px">Harness / Agent</text>
+<text x="547" y="216" class="label" text-anchor="middle" style="font-size:18px">Context &amp; action selection</text>
+<path d="M547 247V1015" class="lane" />
+<rect x="766" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4" />
+<text x="892" y="184" class="cardtitle" text-anchor="middle" style="font-size:26px">Gateway</text>
+<text x="892" y="216" class="label" text-anchor="middle" style="font-size:19px">Admission &amp; governance</text>
+<path d="M892 247V1015" class="lane" />
+<rect x="1111" y="145" width="252" height="88" rx="18" fill="#eaf1fa" stroke="#c0d2e4" />
+<text x="1237" y="184" class="cardtitle" text-anchor="middle" style="font-size:25px">Business Execution</text>
+<text x="1237" y="216" class="label" text-anchor="middle" style="font-size:20px">Rules &amp; business facts</text>
+<path d="M1237 247V1015" class="lane" />
+<text x="374.5" y="277" class="label" text-anchor="middle" style="font-size:20px">01  Set goals and completion criteria</text>
+<path d="M202 295H547" class="arrow" />
+<text x="719.5" y="377" class="label" text-anchor="middle" style="font-size:20px">02  Request a permitted tool call</text>
+<path d="M547 395H892" class="arrow" />
+<text x="547.0" y="477" class="label" text-anchor="middle" style="font-size:20px">03  Risk confirmation required: await approval</text>
+<path d="M892 495H202" class="arrow" stroke-dasharray="7 6" />
+<text x="547.0" y="577" class="label" text-anchor="middle" style="font-size:20px">04  Approve or reject; reauthorize on approval</text>
+<path d="M202 595H892" class="arrow" />
+<text x="1064.5" y="677" class="label" text-anchor="middle" style="font-size:20px">05  Execute the authorized action</text>
+<path d="M892 695H1237" class="arrow" />
+<text x="1064.5" y="777" class="label" text-anchor="middle" style="font-size:20px">06  Return real business results</text>
+<path d="M1237 795H892" class="arrow" stroke-dasharray="7 6" />
+<text x="719.5" y="877" class="label" text-anchor="middle" style="font-size:20px">07  Read result or terminal state</text>
+<path d="M892 895H547" class="arrow" stroke-dasharray="7 6" />
+<text x="374.5" y="977" class="label" text-anchor="middle" style="font-size:20px">08  Report fact-based task progress</text>
+<path d="M547 995H202" class="arrow" stroke-dasharray="7 6" />
+<text x="64" y="1080" class="label" text-anchor="start" style="font-size:20px">Execute directly when permitted; stop on rejection. Human business review has its own roles, revisions and state rules.</text>
+</svg>
