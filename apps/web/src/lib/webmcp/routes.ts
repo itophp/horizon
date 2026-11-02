@@ -28,6 +28,15 @@ export const webMcpRoutes = [
     permission: "example:read",
     connected: true,
   },
+  // Orchestration is a read-only console surface: it publishes no page tools,
+  // so entering it disconnects page-scoped tools instead of silently reusing
+  // another module's inventory.
+  {
+    path: "/orchestration",
+    module: "orchestration",
+    permission: "orchestration:read",
+    connected: false,
+  },
   {
     path: "/ai",
     module: "ai",

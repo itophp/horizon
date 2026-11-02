@@ -1,7 +1,7 @@
 {
   "heading": "Articles",
-  "description": "Write, submit and review articles before publishing.",
-  "policy": "Configure and publish blocked words in System settings → Security. Matches, suspected matches and unavailable AI require another reviewer. Published articles are immutable.",
+  "description": "Write an article, then let the review flow publish or reject it.",
+  "policy": "Submitting starts the article-publish flow: the article enters review, an agent reviews this exact revision, then exactly one branch runs — publish or reject. Even an approved review waits for a human confirmation before content becomes public. A published blocked-word list overrides the model: a match can never be approved for publishing. Published articles are immutable.",
   "title": "Title",
   "body": "Body",
   "status": "Status",
@@ -10,8 +10,8 @@
   "open": "Open",
   "new": "New article",
   "save": "Save draft",
-  "submit": "Submit for publishing",
-  "assess": "Retry AI review",
+  "submit": "Submit and start review",
+  "retryReview": "Run review again",
   "approve": "Approve and publish",
   "reject": "Reject",
   "loading": "Loading…",
@@ -20,7 +20,7 @@
   "denied": "You do not have article access.",
   "states": {
     "draft": "Draft",
-    "pending_ai": "AI review pending",
+    "pending_ai": "Under review",
     "pending_review": "Human review pending",
     "published": "Published",
     "rejected": "Rejected"
@@ -28,7 +28,7 @@
   "codes": {
     "safe": "AI: safe",
     "blocked": "Blocked word match",
-    "suspected": "Suspected blocked word",
+    "suspected": "AI review inconclusive",
     "unavailable": "AI or word list unavailable",
     "human_review": "Human review completed"
   }

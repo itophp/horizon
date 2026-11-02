@@ -141,6 +141,7 @@
   "fileLimit": "The selected file exceeds the size limit.",
   "fileReadFailed": "Unable to read the selected file.",
   "groups": {
+    "articles": "Article moderation",
     "branding": "Branding",
     "display": "Display & locale",
     "security": "Account security",

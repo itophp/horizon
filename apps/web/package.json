@@ -20,6 +20,9 @@
     "lint:rules": "node --test lint-rules.test.mjs"
   },
   "dependencies": {
+    "@antv/layout": "2.0.0",
+    "@antv/x6": "3.1.8",
+    "@antv/x6-react-shape": "3.0.1",
     "@base-ui/react": "1.9.0",
     "@fontsource-variable/geist": "5.3.0",
     "@hookform/resolvers": "6.0.2",

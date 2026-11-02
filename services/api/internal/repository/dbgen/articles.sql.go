@@ -147,27 +147,77 @@ func (q *Queries) ArticleList(ctx context.Context, arg ArticleListParams) ([]Art
 	return items, nil
 }
 
-const articleModerate = `-- name: ArticleModerate :execrows
-UPDATE articles SET status=$5,review_code=$6,updated_at=now() WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND revision=$4 AND status='pending_ai'
+const articlePublish = `-- name: ArticlePublish :execrows
+UPDATE articles SET status='published',updated_at=now()
+WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND revision=$4 AND status='pending_ai' AND review_code='safe'
 `
 
-type ArticleModerateParams struct {
-	TenantID   string
-	ID         int64
-	CreatedBy  int64
-	Revision   int64
-	Status     string
-	ReviewCode string
+type ArticlePublishParams struct {
+	TenantID  string
+	ID        int64
+	CreatedBy int64
+	Revision  int64
 }
 
-func (q *Queries) ArticleModerate(ctx context.Context, arg ArticleModerateParams) (int64, error) {
-	result, err := q.db.Exec(ctx, articleModerate,
+// Publishing is conditional on the verdict already recorded by the review step.
+func (q *Queries) ArticlePublish(ctx context.Context, arg ArticlePublishParams) (int64, error) {
+	result, err := q.db.Exec(ctx, articlePublish,
 		arg.TenantID,
 		arg.ID,
 		arg.CreatedBy,
 		arg.Revision,
-		arg.Status,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const articleRecordReview = `-- name: ArticleRecordReview :execrows
+UPDATE articles SET review_code=$4,updated_at=now()
+WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND revision=$5 AND status='pending_ai'
+`
+
+type ArticleRecordReviewParams struct {
+	TenantID   string
+	ID         int64
+	CreatedBy  int64
+	ReviewCode string
+	Revision   int64
+}
+
+func (q *Queries) ArticleRecordReview(ctx context.Context, arg ArticleRecordReviewParams) (int64, error) {
+	result, err := q.db.Exec(ctx, articleRecordReview,
+		arg.TenantID,
+		arg.ID,
+		arg.CreatedBy,
 		arg.ReviewCode,
+		arg.Revision,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const articleReject = `-- name: ArticleReject :execrows
+UPDATE articles SET status='rejected',updated_at=now()
+WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND revision=$4 AND status='pending_ai' AND review_code IN ('blocked','suspected')
+`
+
+type ArticleRejectParams struct {
+	TenantID  string
+	ID        int64
+	CreatedBy int64
+	Revision  int64
+}
+
+func (q *Queries) ArticleReject(ctx context.Context, arg ArticleRejectParams) (int64, error) {
+	result, err := q.db.Exec(ctx, articleReject,
+		arg.TenantID,
+		arg.ID,
+		arg.CreatedBy,
+		arg.Revision,
 	)
 	if err != nil {
 		return 0, err
@@ -176,7 +226,8 @@ func (q *Queries) ArticleModerate(ctx context.Context, arg ArticleModerateParams
 }
 
 const articleSubmit = `-- name: ArticleSubmit :execrows
-UPDATE articles SET status='pending_ai',updated_at=now() WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND revision=$4 AND status='draft'
+UPDATE articles SET status='pending_ai',review_code='',updated_at=now()
+WHERE tenant_id=$1 AND id=$2 AND created_by=$3 AND revision=$4 AND status IN ('draft','pending_ai')
 `
 
 type ArticleSubmitParams struct {
@@ -186,6 +237,8 @@ type ArticleSubmitParams struct {
 	Revision  int64
 }
 
+// Submit enters review and clears any previous verdict, so a retried run never
+// reuses the conclusion of an earlier attempt.
 func (q *Queries) ArticleSubmit(ctx context.Context, arg ArticleSubmitParams) (int64, error) {
 	result, err := q.db.Exec(ctx, articleSubmit,
 		arg.TenantID,

@@ -52,7 +52,7 @@
       "completed": "AI 已评审",
       "failed": "AI 失败",
       "skipped": "AI 已跳过",
-      "none": "未匹配策略"
+      "none": "无 AI 触发"
     },
     "meta": "{{time}} · {{depth}}{{policy}}",
     "policySuffix": " · {{policy}}"

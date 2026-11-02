@@ -1,7 +1,7 @@
 {
   "heading": "文章管理",
-  "description": "编写文章，提交 AI 评审并处理人工审核。",
-  "policy": "请在系统设置 → 安全策略中维护并发布屏蔽词。命中、疑似命中或 AI 不可用时需由其他审核人审核；已发布文章不可修改。",
+  "description": "编写文章后由评审流程自动发布或驳回。",
+  "policy": "提交即启动 article-publish 流程：文章进入审核中，Agent 评审当前版本，然后只走一条分支——发布或驳回。评审通过后还需人工在审批队列确认才会公开；已配置的屏蔽词优先于模型，命中时不能按通过发布。已发布文章不可修改。",
   "title": "标题",
   "body": "正文",
   "status": "状态",
@@ -10,8 +10,8 @@
   "open": "查看 / 编辑",
   "new": "新建文章",
   "save": "保存草稿",
-  "submit": "提交审核并发布",
-  "assess": "重试 AI 评审",
+  "submit": "提交并开始评审",
+  "retryReview": "重新发起评审",
   "approve": "审核通过并发布",
   "reject": "驳回",
   "loading": "加载中…",
@@ -20,7 +20,7 @@
   "denied": "没有文章访问权限。",
   "states": {
     "draft": "草稿",
-    "pending_ai": "等待 AI 评审",
+    "pending_ai": "审核中",
     "pending_review": "待人工审核",
     "published": "已发布",
     "rejected": "已驳回"
@@ -28,7 +28,7 @@
   "codes": {
     "safe": "AI 评审安全",
     "blocked": "命中屏蔽词",
-    "suspected": "疑似涉及屏蔽词",
+    "suspected": "AI 评审存疑",
     "unavailable": "AI 或词库不可用",
     "human_review": "人工审核完成"
   }

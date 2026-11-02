@@ -21,8 +21,7 @@ import {
   articleGet,
   articlesList,
   articleSave,
-  articleSubmit,
-  articleAssess,
+  articlePublish,
   articleDecide,
   type Article,
 } from "@/lib/capabilities";
@@ -194,7 +193,7 @@ export function ArticlesPage() {
               disabled={mutation.isPending || form.formState.isDirty}
               onClick={() =>
                 mutation.mutate(async () => {
-                  await articleSubmit(selected.id, selected.revision);
+                  await articlePublish(selected.id, selected.revision);
                   setSelected(null);
                   form.reset();
                 })
@@ -208,12 +207,12 @@ export function ArticlesPage() {
               disabled={mutation.isPending}
               onClick={() =>
                 mutation.mutate(async () => {
-                  await articleAssess(selected.id);
+                  await articlePublish(selected.id, selected.revision);
                   setSelected(null);
                 })
               }
             >
-              {t("assess")}
+              {t("retryReview")}
             </Button>
           )}
           {canReview && selected.status === "pending_review" && (

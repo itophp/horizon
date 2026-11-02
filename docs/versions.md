@@ -20,6 +20,9 @@
 | i18next | 26.5.11 | [来源](https://registry.npmjs.org/i18next/latest) |
 | react-i18next | 17.1.9 | [来源](https://registry.npmjs.org/react-i18next/latest) |
 | lucide-react | 1.63.0 | [来源](https://registry.npmjs.org/lucide-react/latest) |
+| @antv/x6 | 3.1.8 | [来源](https://registry.npmjs.org/@antv/x6/latest) |
+| @antv/x6-react-shape | 3.0.1 | [来源](https://registry.npmjs.org/@antv/x6-react-shape/latest) |
+| @antv/layout | 2.0.0 | [来源](https://registry.npmjs.org/@antv/layout/latest) |
 | vitest | 5.0.5 | [来源](https://registry.npmjs.org/vitest/latest) |
 | @playwright/test | 1.64.1 | [来源](https://registry.npmjs.org/@playwright/test/latest) |
 | @testing-library/react | 16.3.3 | [来源](https://registry.npmjs.org/@testing-library/react/latest) |

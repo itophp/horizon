@@ -36,6 +36,7 @@ import {
   Settings2,
   Sparkles,
   Boxes,
+  Workflow,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -147,11 +148,12 @@ export function AdminLayout() {
       icon: Boxes,
       permissions: ["example:read"],
     },
+    // 知识库菜单暂时隐藏：/knowledge 路由仍然保留，可直接由 URL 访问。
     {
-      to: "/knowledge",
-      label: t("knowledge:nav"),
-      icon: BookOpen,
-      permissions: ["knowledge:read"],
+      to: "/orchestration",
+      label: t("orchestration:nav"),
+      icon: Workflow,
+      permissions: ["orchestration:read"],
     },
     {
       to: "/accounts",

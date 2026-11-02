@@ -1,0 +1,480 @@
+.orchestration-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1080px) {
+  .orchestration-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.orchestration-detail {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.orchestration-list {
+  padding: 16px;
+}
+.orchestration-items {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.orchestration-items button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--app-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.orchestration-items button:hover {
+  background: var(--app-hover);
+}
+.orchestration-items button.is-active {
+  border-color: var(--app-strong-line);
+  background: var(--app-elevated);
+}
+.orchestration-items strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.orchestration-items small {
+  color: var(--app-muted);
+  font-size: 12px;
+}
+
+/* The canvas is X6 in read-only mode: dagre (via @antv/layout) owns ranking,
+   manhattan routing keeps edges off the cards, and the panel keeps the same
+   border and radius as every other admin surface. */
+.orchestration-canvas {
+  position: relative;
+  height: 380px;
+  margin: 4px 0 16px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+  overflow: hidden;
+}
+.orchestration-graph {
+  position: absolute;
+  inset: 0;
+}
+.orchestration-canvas .x6-graph {
+  background: transparent;
+}
+.orchestration-fit {
+  padding: 3px 9px;
+  border: 1px solid var(--app-line);
+  border-radius: 6px;
+  background: var(--app-panel);
+  color: var(--app-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.orchestration-fit:hover {
+  background: var(--app-hover);
+  color: var(--app-ink);
+}
+.orchestration-hint {
+  position: absolute;
+  bottom: 6px;
+  left: 10px;
+  z-index: 2;
+  color: var(--app-muted);
+  font-size: 10px;
+  pointer-events: none;
+}
+.orchestration-node {
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid var(--app-strong-line);
+  border-radius: 8px;
+  background: var(--app-panel);
+  color: var(--app-ink);
+  text-align: left;
+  cursor: default;
+  overflow: hidden;
+}
+.orchestration-node-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.orchestration-node-head strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.orchestration-node-kind {
+  flex-shrink: 0;
+  color: var(--app-muted);
+  font-size: 11px;
+}
+.orchestration-node small {
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.orchestration-node.is-start,
+.orchestration-node.is-end {
+  background: var(--app-elevated);
+}
+.orchestration-node.is-agent,
+.orchestration-node.is-poll {
+  border-style: dashed;
+}
+.orchestration-node.is-done {
+  border-color: var(--app-green);
+  border-width: 1.5px;
+}
+.orchestration-node.is-declared {
+  opacity: 0.6;
+}
+/* Edge colours are set when the edge is created: SVG marker fills cannot read
+   CSS variables, so a theme-driven stroke would leave a mismatched arrowhead.
+   The class still rides on the path for a later theme pass. */
+.orchestration-canvas .x6-edge path.orchestration-edge {
+  shape-rendering: geometricPrecision;
+}
+
+.orchestration-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.orchestration-field textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-subtle);
+  color: var(--app-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+.orchestration-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.orchestration-run-id {
+  color: var(--app-muted);
+  font-size: 12px;
+}
+.orchestration-problem {
+  margin: 8px 0 0;
+  color: var(--app-danger, #b42318);
+  font-size: 12px;
+}
+.orchestration-trace {
+  margin-top: 16px;
+  border-top: 1px solid var(--app-line);
+  padding-top: 12px;
+  font-size: 12px;
+}
+.orchestration-trace ul {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.orchestration-trace li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.orchestration-trace small {
+  margin-left: auto;
+  color: var(--app-muted);
+}
+.orchestration-empty {
+  margin: 8px 0 0;
+  color: var(--app-muted);
+  font-size: 12px;
+}
+.orchestration-toolbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100% - 20px);
+  gap: 6px;
+  z-index: 2;
+}
+.orchestration-directions {
+  display: flex;
+  gap: 4px;
+}
+.orchestration-fit[aria-pressed="true"] {
+  background: var(--app-elevated);
+  color: var(--app-ink);
+  border-color: var(--app-strong-line);
+}
+.workflow-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  margin-top: 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.workflow-workbench .orchestration-canvas {
+  height: 520px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background-image: radial-gradient(var(--app-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.workflow-inspector {
+  padding: 16px;
+  border-left: 1px solid var(--app-line);
+  max-height: 520px;
+  overflow: auto;
+  font-size: 12px;
+}
+.workflow-inspector dl {
+  margin: 16px 0 0;
+}
+.workflow-inspector dt {
+  color: var(--app-muted);
+  margin-top: 14px;
+}
+.workflow-inspector dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.workflow-inspector dd code {
+  display: block;
+}
+.workflow-inspector ul {
+  padding: 0;
+  list-style: none;
+}
+.workflow-inspector li {
+  margin: 8px 0;
+}
+.workflow-inspector small {
+  color: var(--app-muted);
+}
+.workflow-connection {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.workflow-connection:focus-visible {
+  outline: 2px solid var(--app-ink);
+  outline-offset: 2px;
+}
+.orchestration-canvas .orchestration-edge-label {
+  fill: var(--app-ink);
+}
+.orchestration-canvas .orchestration-edge-label-body {
+  fill: var(--app-panel);
+  stroke: var(--app-line);
+}
+.orchestration-canvas .orchestration-edge.is-selected {
+  stroke: var(--app-ink);
+}
+.workflow-inspector pre {
+  white-space: pre-wrap;
+}
+.orchestration-search,
+.workflow-inspector select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--app-line);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--app-ink);
+  background: var(--app-panel);
+}
+.orchestration-search {
+  margin-top: 12px;
+}
+.orchestration-node.is-selected {
+  outline: 2px solid var(--app-ink);
+  outline-offset: 3px;
+}
+.orchestration-node:focus-visible {
+  outline: 2px solid var(--app-ink);
+  outline-offset: 3px;
+}
+.orchestration-node {
+  cursor: pointer;
+}
+.workflow-schema {
+  max-height: 520px;
+  overflow: auto;
+  padding: 16px;
+  background: var(--app-subtle);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.workflow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 0;
+  color: var(--app-muted);
+  font-size: 11px;
+}
+.workflow-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.workflow-legend i {
+  display: block;
+  width: 24px;
+  border-top: 2px solid currentColor;
+}
+.workflow-legend .is-data {
+  border-top-style: dotted;
+}
+.workflow-legend .is-branch {
+  border-top-style: dashed;
+}
+.orchestration-step-table {
+  margin-top: 16px;
+}
+.orchestration-step-table summary {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 8px 0;
+}
+.workflow-draft-notice {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 6px;
+  background: var(--app-subtle);
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.workflow-add-tool {
+  cursor: pointer;
+}
+.workflow-node-shell {
+  position: relative;
+}
+.workflow-node-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--app-strong-line);
+  border-radius: 50%;
+  background: var(--app-panel);
+  color: var(--app-ink);
+  opacity: 0;
+  cursor: pointer;
+}
+.workflow-node-shell:hover .workflow-node-remove,
+.workflow-node-shell:focus-within .workflow-node-remove {
+  opacity: 1;
+}
+.workflow-node-remove:focus-visible {
+  outline: 2px solid var(--app-ink);
+  outline-offset: 2px;
+}
+.workflow-add-circle {
+  fill: var(--app-panel);
+  stroke: var(--app-strong-line);
+  stroke-width: 1.5px;
+}
+.workflow-add-plus {
+  stroke: var(--app-ink);
+}
+.workflow-add-tool.is-side .workflow-add-circle,
+.workflow-add-tool.is-side .workflow-add-plus {
+  opacity: 0;
+}
+.workflow-add-tool.is-side:hover .workflow-add-circle,
+.workflow-add-tool.is-side:hover .workflow-add-plus {
+  opacity: 1;
+}
+.workflow-node-form {
+  display: grid;
+  gap: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.workflow-node-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+.workflow-node-form input,
+.workflow-node-form select,
+.workflow-node-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--app-line);
+  border-radius: 6px;
+  background: var(--app-panel);
+  color: var(--app-ink);
+}
+.workflow-node-form textarea {
+  font-family: ui-monospace, monospace;
+  resize: vertical;
+}
+.workflow-node-form small {
+  color: var(--app-muted);
+}
+.workflow-node-form fieldset {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--app-line);
+  border-radius: 6px;
+  padding: 12px;
+}
+@media (max-width: 1280px) {
+  .workflow-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workflow-inspector {
+    border-left: 0;
+    border-top: 1px solid var(--app-line);
+    max-height: 320px;
+  }
+}

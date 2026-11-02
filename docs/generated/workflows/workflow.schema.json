@@ -58,6 +58,20 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 20
+        },
+        "output": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/CapabilitySchema"
+            },
+            {
+              "properties": {
+                "type": {
+                  "const": "object"
+                }
+              }
+            }
+          ]
         }
       },
       "required": [
@@ -298,6 +312,13 @@
             "object"
           ],
           "$ref": "#/$defs/Agent"
+        },
+        "when": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "$ref": "#/$defs/When"
         }
       },
       "required": [
@@ -363,6 +384,26 @@
           }
         }
       }
+    },
+    "When": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "equals": true
+      },
+      "required": [
+        "from",
+        "field",
+        "equals"
+      ],
+      "additionalProperties": false
     }
   },
   "title": "Baseline workflow definition v1",

@@ -51,4 +51,4 @@ Capability-Centric 平台按 [ADR 015](../../../docs/decisions/015-capability-ce
 
 编排使用 Eino Workflow/Graph/ADK，业务节点仍经 Gateway。嵌套来源强制 OriginCapability，继承父调用/深度，事务内互调拒绝。恢复及节点前重建原账号/部门身份；Agent 工具固定版本白名单与当前权限取交集，禁止递归编排。run/read/cancel 权限独立，查询/取消强制 tenant+account；MCP Token 不自动获得新工具。检查点加密绑定 tenant/run/key，不进入明文审计或运行摘要。取消撤销尚未执行的流程审批，已在执行/已提交动作不回滚；审批恢复读取原 invocation，独立动作不因载荷相同共用审批。详情见 docs/orchestration-plan.md（从仓库根解析）。
 
-文章审核遵循 docs/security.md 的文章评审规则：正文不落调用/AI 审计，article.apply 仅接收内部可信结果，人工审核禁止自动化与作者自审；修改正文或版本不得沿用旧审核。
+文章审核遵循 docs/security.md 的文章评审规则：正文不落调用/AI 审计；评审结论由 article.record-review 落库并归一化为 decision（只接受 OriginWorkflow），发布声明 high + confirm，必须人工确认（多人部署可切 four-eyes），article.reject 只接受 OriginWorkflow|OriginApproval，且都要求 review_code 与状态、版本同时匹配；人工审核禁止自动化与作者自审；修改正文或版本不得沿用旧审核。条件分叉用 Step 的 when 声明，禁止用"两个都跑、内部判空"的方式伪造分支。

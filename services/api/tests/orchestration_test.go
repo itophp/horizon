@@ -6,6 +6,7 @@ import (
 	runtime "baseline/services/api/internal/ai/orchestration"
 	"baseline/services/api/internal/governance"
 	"baseline/services/api/internal/identity"
+	"baseline/services/api/internal/modules/articles"
 	"baseline/services/api/internal/modules/example"
 	orchmodule "baseline/services/api/internal/modules/orchestration"
 	"baseline/services/api/internal/platform/approval"
@@ -67,6 +68,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	e := runtime.New(core, definitions)
 	entries := append(example.New(pool).Entries(), (&orchmodule.Module{Engine: e}).Entries()...)
 	entries = append(entries, pollEntry)
+	entries = append(entries, (&articles.Module{Pool: pool}).Entries()...)
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
 		t.Fatal(err)

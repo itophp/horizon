@@ -11,10 +11,10 @@ import (
 
 // compensate builds another Eino Workflow in reverse dependency order. This is
 // a saga, not transaction rollback: every undo is a separately authorized action.
-func (e *Engine) compensate(ctx context.Context, d Definition) (bool, error) {
+func (e *Engine) compensate(ctx context.Context, d Definition) (bool, []string, error) {
 	state, err := current(ctx)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 	byID := map[string]Step{}
 	for _, s := range d.Steps {
@@ -42,6 +42,9 @@ func (e *Engine) compensate(ctx context.Context, d Definition) (bool, error) {
 		visit(s)
 	}
 	store := checkpointStore{core: e.Core, q: dbgen.New(e.Core.Pool)}
+	// Steps whose effects already committed but that declare no undo. They are
+	// reported instead of replacing the business failure with a generic code.
+	uncompensated := []string{}
 	compensation := Definition{Name: "compensate", Version: d.Version, Input: &contracts.Schema{Type: "object", AdditionalProperties: true}}
 	input := map[string]any{}
 	previous := ""
@@ -52,7 +55,8 @@ func (e *Engine) compensate(ctx context.Context, d Definition) (bool, error) {
 				tool, version, _ := strings.Cut(name, "@")
 				entry, _ := e.registry.Resolve(tool, version)
 				if !entry.Definition.ReadOnly {
-					return false, contracts.Problem("manual_recovery_required")
+					// An agent that may write leaves effects nobody can enumerate.
+					uncompensated = append(uncompensated, s.ID)
 				}
 			}
 			continue
@@ -66,20 +70,21 @@ func (e *Engine) compensate(ctx context.Context, d Definition) (bool, error) {
 		}
 		raw, ok, err := store.Get(ctx, "node:"+s.ID+":0")
 		if err != nil {
-			return false, err
+			return false, uncompensated, err
 		}
 		if !ok {
 			continue
 		}
 		var saved receipt
 		if json.Unmarshal(raw, &saved) != nil {
-			return false, contracts.Problem("invalid")
+			return false, uncompensated, contracts.Problem("invalid")
 		}
 		if saved.Status != "succeeded" {
 			continue
 		}
 		if s.Compensation == nil {
-			return false, contracts.Problem("manual_recovery_required")
+			uncompensated = append(uncompensated, s.ID)
+			continue
 		}
 		id := "comp_" + contracts.Digest(contracts.Input{"step": s.ID})[:16]
 		c := Step{ID: id, Capability: s.Compensation.Capability, Version: s.Compensation.Version, Constants: s.Compensation.Constants, Input: map[string]Mapping{}}
@@ -93,7 +98,7 @@ func (e *Engine) compensate(ctx context.Context, d Definition) (bool, error) {
 			}
 			value, ok := source[m.Field]
 			if !ok {
-				return false, contracts.Problem("invalid")
+				return false, uncompensated, contracts.Problem("invalid")
 			}
 			key := id + "_" + field
 			input[key] = value
@@ -103,15 +108,15 @@ func (e *Engine) compensate(ctx context.Context, d Definition) (bool, error) {
 		previous = id
 	}
 	if len(compensation.Steps) == 0 {
-		return false, nil
+		return false, uncompensated, nil
 	}
 	r, err := e.compile(ctx, compensation)
 	if err != nil {
-		return false, err
+		return false, uncompensated, err
 	}
 	_, err = r.Invoke(ctx, map[string]any{"input": input}, compose.WithCheckPointID("compensation"))
 	if _, ok := compose.ExtractInterruptInfo(err); ok {
-		return true, nil
+		return true, uncompensated, nil
 	}
-	return false, err
+	return false, uncompensated, err
 }

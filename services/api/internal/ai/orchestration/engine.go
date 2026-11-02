@@ -26,12 +26,15 @@ type Engine struct {
 	definitions map[string]Definition
 	mu          sync.Mutex
 	cache       map[string]compose.Runnable[map[string]any, map[string]any]
-	AgentModel  ModelFactory
-	err         error
+	// infos keeps the compiled graph of each definition for the read-only
+	// diagram view. It never feeds execution.
+	infos      map[string]*compose.GraphInfo
+	AgentModel ModelFactory
+	err        error
 }
 
 func New(core *governance.Core, definitions []Definition) *Engine {
-	e := &Engine{Core: core, definitions: map[string]Definition{}, cache: map[string]compose.Runnable[map[string]any, map[string]any]{}}
+	e := &Engine{Core: core, definitions: map[string]Definition{}, cache: map[string]compose.Runnable[map[string]any, map[string]any]{}, infos: map[string]*compose.GraphInfo{}}
 	for _, d := range definitions {
 		key := d.Name + "@" + d.Version
 		if _, exists := e.definitions[key]; exists {
@@ -59,7 +62,7 @@ func (e *Engine) Attach(g *gateway.Gateway, r *registry.Registry) error {
 	e.gateway = g
 	e.registry = r
 	for _, d := range e.definitions {
-		if _, err := e.compile(context.Background(), d); err != nil {
+		if _, _, err := e.compileWithGraph(context.Background(), d, true); err != nil {
 			return err
 		}
 	}
@@ -293,12 +296,18 @@ func (e *Engine) execute(ctx context.Context, row dbgen.OrchCandidatesRow) error
 		if ctx.Err() != nil {
 			return nil
 		} // lease expiry retries from durable receipts
-		waiting, compensationErr := e.compensate(ctx, m.Definition)
+		waiting, uncompensated, compensationErr := e.compensate(ctx, m.Definition)
 		if waiting {
 			return status("awaiting_approval", "")
 		}
+		// Only a compensation that actually ran and failed makes the original
+		// error unactionable on its own. Steps that simply declare no undo are
+		// reported, so the operator still sees what the node really said.
 		if compensationErr != nil {
 			return status("failed", "manual_recovery_required")
+		}
+		if len(uncompensated) > 0 {
+			slog.Warn("orchestration committed steps have no compensation", "run", row.ID, "steps", uncompensated, "cause", contracts.Code(err))
 		}
 		return status("failed", contracts.Code(err))
 	}

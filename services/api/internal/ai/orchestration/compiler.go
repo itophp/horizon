@@ -14,13 +14,22 @@ import (
 )
 
 func (e *Engine) compile(ctx context.Context, d Definition) (compose.Runnable[map[string]any, map[string]any], error) {
+	r, _, err := e.compileWithGraph(ctx, d, false)
+	return r, err
+}
+
+// compileWithGraph compiles a definition and optionally keeps the graph Eino
+// actually built. Only the read-only diagram view asks for it, so execution pays
+// no extra cost and the cached runnable stays the single execution path.
+func (e *Engine) compileWithGraph(ctx context.Context, d Definition, withGraph bool) (compose.Runnable[map[string]any, map[string]any], *compose.GraphInfo, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if r, ok := e.cache[d.Hash()]; ok {
-		return r, nil
+	hash := d.Hash()
+	if r, ok := e.cache[hash]; ok {
+		return r, e.infos[hash], nil
 	}
 	if err := d.Validate(e.registry); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	wf := compose.NewWorkflow[map[string]any, map[string]any]()
 	for _, step := range d.Steps {
@@ -30,7 +39,7 @@ func (e *Engine) compile(ctx context.Context, d Definition) (compose.Runnable[ma
 		if s.Poll != nil || s.MaxAttempts > 1 {
 			graph, err := e.loop(s)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			max := s.MaxAttempts
 			if s.Poll != nil {
@@ -41,7 +50,14 @@ func (e *Engine) compile(ctx context.Context, d Definition) (compose.Runnable[ma
 			n = wf.AddLambdaNode(s.ID, lambda)
 		}
 
-		n.AddInput(compose.START, compose.MapFields("input", "input")) // retains root input; only explicit edges order work
+		if s.When != nil {
+			// A branch target must not depend on anything but its branch, so the
+			// root input is attached as data only. A control dependency here would
+			// keep the node runnable and bypass the branch's skip decision.
+			n.AddInputWithOptions(compose.START, []*compose.FieldMapping{compose.MapFields("input", "input")}, compose.WithNoDirectDependency())
+		} else {
+			n.AddInput(compose.START, compose.MapFields("input", "input")) // retains root input; only explicit edges order work
+		}
 		deps := map[string]bool{}
 		for _, dep := range s.DependsOn {
 			deps[dep] = true
@@ -51,19 +67,55 @@ func (e *Engine) compile(ctx context.Context, d Definition) (compose.Runnable[ma
 				deps[m.From] = true
 			}
 		}
+		if s.When != nil {
+			// The branch source is the target's only control predecessor: Eino
+			// reports it as skipped to the nodes the branch did not select.
+			deps[s.When.From] = true
+		}
 		for dep := range deps {
 			n.AddInput(dep, compose.ToField(dep))
 		}
 		wf.End().AddInput(s.ID, compose.ToField(s.ID))
 	}
-	r, err := wf.Compile(ctx, compose.WithCheckPointStore(checkpointStore{core: e.Core, q: dbgen.New(e.Core.Pool), prefix: "eino:"}))
+	// One branch per mutually exclusive group: Eino selects at most one target,
+	// reports the others as skipped and propagates that state to END.
+	for _, group := range d.Branches() {
+		cases := group.Cases
+		targets := map[string]bool{}
+		for _, c := range cases {
+			targets[c.Step] = true
+		}
+		field := group.Field
+		wf.AddBranch(group.From, compose.NewGraphBranch(func(_ context.Context, out map[string]any) (string, error) {
+			for _, c := range cases {
+				if sameValue(out[field], c.Equals) {
+					return c.Step, nil
+				}
+			}
+			// No declared case covers the observed value. Finishing quietly would
+			// report success for a decision nobody made.
+			return "", contracts.Problem("branch_unmatched")
+		}, targets))
+	}
+	var info *compose.GraphInfo
+	options := []compose.GraphCompileOption{
+		compose.WithCheckPointStore(checkpointStore{core: e.Core, q: dbgen.New(e.Core.Pool), prefix: "eino:"}),
+	}
+	if withGraph {
+		options = append(options, compose.WithGraphCompileCallbacks(diagramCapture{set: func(captured *compose.GraphInfo) { info = captured }}))
+	}
+	r, err := wf.Compile(ctx, options...)
 	if err == nil {
 		if len(e.cache) >= 128 {
 			clear(e.cache)
+			clear(e.infos)
 		}
-		e.cache[d.Hash()] = r
+		e.cache[hash] = r
+		if info != nil {
+			e.infos[hash] = info
+		}
 	}
-	return r, err
+	return r, info, err
 }
 
 type receipt struct {
@@ -216,6 +268,20 @@ func object(v any) (map[string]any, error) {
 		return nil, contracts.Problem("invalid")
 	}
 	return out, nil
+}
+
+// sameValue compares a declared branch case with an observed field value in
+// their JSON form, so decoded numbers and Go literals compare as authored.
+func sameValue(observed, declared any) bool {
+	a, err := json.Marshal(observed)
+	if err != nil {
+		return false
+	}
+	b, err := json.Marshal(declared)
+	if err != nil {
+		return false
+	}
+	return string(a) == string(b)
 }
 
 func timeExpired(t time.Time) bool { return time.Since(t) > gateway.ApprovalTTL }

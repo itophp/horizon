@@ -109,6 +109,24 @@
     "source": "https://registry.npmjs.org/lucide-react/latest",
     "selectedVersion": "1.63.0"
   },
+  "@antv/x6": {
+    "version": "3.1.8",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@antv/x6/latest",
+    "selectedVersion": "3.1.8"
+  },
+  "@antv/x6-react-shape": {
+    "version": "3.0.1",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@antv/x6-react-shape/latest",
+    "selectedVersion": "3.0.1"
+  },
+  "@antv/layout": {
+    "version": "2.0.0",
+    "engines": {},
+    "source": "https://registry.npmjs.org/@antv/layout/latest",
+    "selectedVersion": "2.0.0"
+  },
   "vitest": {
     "version": "5.0.5",
     "engines": {

@@ -78,3 +78,24 @@ TEST_DATABASE_URL='<本机隔离 PostgreSQL URL>' make test-orchestration-exampl
 5. 同一事件交付两次只产生一次 AI 运行，AI 的查询仍经过 Gateway。
 
 取消、补偿、Graph 重试/上限、账号撤销、MCP 启动/取消审批等使用现有 TestOrchestration* 用例覆盖。阶段验收运行 ci-fast 和 test-security；浏览器与原生客户端专项按现行规则另行执行。
+
+## 条件分叉参考：article-publish
+
+`article-publish@1.0.0` 演示条件分叉，源文件同为 `spec/examples.go` 的 ArticlePublish，导出见 `docs/generated/workflows/article-publish.workflow.json`。
+
+```text
+save: article.submit（草稿 → 审核中，清空旧结论）
+  → review: ADK，工具仅 article.get@1.0.0，输出 {"code": safe|blocked|suspected}
+  → record: article.record-review，落库 verdict 并返回归一化 decision
+      ├─ when decision=approve → article.publish
+      │     高风险人工确认：流程停在待审批，人批准后才公开
+      └─ when decision=reject  → article.reject
+```
+
+分叉在编译期变成 `compose.Workflow.AddBranch`，未选中节点被 Eino 标记 skipped，不会产生任何能力调用；一个都不命中则运行失败（`branch_unmatched`），不会静默完成。分叉读的是落库后归一化的结论，模型不能自己选分支。分支目标也可以是高风险能力：`article.publish` 返回 awaiting_approval 时 Eino 中断并保存检查点，审批通过后从原 invocation 结果继续，不需要模型重跑。验证：
+
+```bash
+TEST_DATABASE_URL='<隔离 PostgreSQL URL>' ./scripts/go.sh test -tags=integration -count=1 -run TestArticlePublishFlow -v ./tests
+```
+
+断言包括：通过分支只调用 publish、驳回分支只调用 reject；评审通过后文章仍停在审核中，直到人工确认才发布；命中屏蔽词或词库不可用时运行失败且文章留在审核中；绕过流程直接调用 publish 无法发布；人工决定不接受自动化来源。

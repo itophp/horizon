@@ -13,6 +13,9 @@ type Mapping = spec.Mapping
 type Poll = spec.Poll
 type Agent = spec.Agent
 type Compensation = spec.Compensation
+type When = spec.When
+type BranchGroup = spec.BranchGroup
+type BranchCase = spec.BranchCase
 
 const (
 	IdentifierPattern  = spec.IdentifierPattern

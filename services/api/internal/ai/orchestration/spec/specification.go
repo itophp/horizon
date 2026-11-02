@@ -17,7 +17,7 @@ func SpecificationSchema() (*js.Schema, error) {
 	refs := map[reflect.Type]*js.Schema{}
 	types := map[string]reflect.Type{
 		"Mapping": reflect.TypeFor[Mapping](), "Poll": reflect.TypeFor[Poll](), "Agent": reflect.TypeFor[Agent](),
-		"Compensation": reflect.TypeFor[Compensation](), "Step": reflect.TypeFor[Step](),
+		"Compensation": reflect.TypeFor[Compensation](), "Step": reflect.TypeFor[Step](), "When": reflect.TypeFor[When](),
 	}
 	for name, t := range types {
 		refs[t] = &js.Schema{Type: "object", Ref: "#/$defs/" + name}
@@ -104,6 +104,10 @@ func SpecificationSchema() (*js.Schema, error) {
 	agent.Properties["tools"].Items.Pattern = `^[^@\s]+@[^@\s]+$`
 	agent.Properties["maxIterations"].Minimum = number(1)
 	agent.Properties["maxIterations"].Maximum = number(MaxAgentIterations)
+	agent.Properties["output"] = &js.Schema{AllOf: []*js.Schema{{Ref: "#/$defs/CapabilitySchema"}, {Properties: map[string]*js.Schema{"type": {Const: constant("object")}}}}}
+	when := root.Defs["When"]
+	when.Properties["from"].MinLength = integer(1)
+	when.Properties["field"].MinLength = integer(1)
 	compensation := root.Defs["Compensation"]
 	boundedText(compensation.Properties["capability"], 1, 80)
 	boundedText(compensation.Properties["version"], 1, MaxVersionLength)

@@ -19,8 +19,9 @@ func articleEntity() contracts.Entity {
 		{From: []string{}, To: "draft", Capability: "article.create"},
 		{From: []string{"draft", "rejected"}, To: "draft", Capability: "article.update"},
 		{From: []string{"draft"}, To: "pending_ai", Capability: "article.submit"},
-		{From: []string{"pending_ai"}, To: "pending_review", Capability: "article.apply"},
-		{From: []string{"pending_ai"}, To: "published", Capability: "article.apply"},
+		{From: []string{"pending_ai"}, To: "pending_ai", Capability: "article.submit"},
+		{From: []string{"pending_ai"}, To: "published", Capability: "article.publish"},
+		{From: []string{"pending_ai"}, To: "rejected", Capability: "article.reject"},
 		{From: []string{"pending_review"}, To: "published", Capability: "article.decide"},
 		{From: []string{"pending_review"}, To: "rejected", Capability: "article.decide"},
 	}}

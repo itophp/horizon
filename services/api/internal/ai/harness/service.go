@@ -136,9 +136,6 @@ func (s *Service) Run(ctx context.Context, in RunInput) (*Run, error) {
 // RunTrigger executes an event initiated task. The caller principal is the
 // account that produced the event, re-resolved by the trigger engine.
 func (s *Service) RunTrigger(ctx context.Context, in TriggerInput) (*Run, error) {
-	if in.Event.Type == "article.submitted" && in.PolicyID == "article-moderation" && in.Event.Depth < gateway.MaxDepth {
-		return s.articleTrigger(ctx, in)
-	}
 	p, err := s.authorize(ctx)
 	if err != nil {
 		return nil, err

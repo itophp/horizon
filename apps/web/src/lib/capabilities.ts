@@ -337,9 +337,13 @@ export const articleSave = (value: {
     value.id ? "article.update" : "article.create",
     body(value),
   );
-export const articleSubmit = (id: number, revision: number) =>
-  invoke<{ id: number }>("article.submit", { id, revision });
-export const articleAssess = (id: number) =>
-  invoke<{ id: number }>("article.assess", { id });
+// Publishing is one durable flow: save into review, agent review, then exactly
+// one of publish or reject. The page only starts the run and reads the state.
+export const articlePublish = (id: number, revision: number) =>
+  invoke<{ runId: number; status: string }>("orchestration.workflow.run", {
+    flow: "article-publish",
+    version: "1.0.0",
+    input: { id, revision },
+  });
 export const articleDecide = (id: number, revision: number, approve: boolean) =>
   invoke<{ id: number }>("article.decide", { id, revision, approve });

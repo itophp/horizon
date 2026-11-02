@@ -16,11 +16,13 @@ import (
 	"baseline/services/api/internal/ai/triggers"
 	"baseline/services/api/internal/app"
 	"baseline/services/api/internal/governance"
+	"baseline/services/api/internal/identity"
 	"baseline/services/api/internal/modules/articles"
 	"baseline/services/api/internal/modules/files"
 	"baseline/services/api/internal/modules/mcp"
 	"baseline/services/api/internal/platform/approval"
 	"baseline/services/api/internal/platform/audit"
+	"baseline/services/api/internal/platform/capability/contracts"
 	"baseline/services/api/internal/platform/capability/gateway"
 	"baseline/services/api/internal/platform/capability/registry"
 	"baseline/services/api/internal/platform/eventhub"
@@ -28,6 +30,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	goahttp "goa.design/goa/v3/http"
 )
@@ -61,6 +64,23 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, onError func(cont
 
 	orchestrator := orchestrationruntime.New(core, orchestrationruntime.Builtins())
 	articleModule := &articles.Module{Pool: core.Pool}
+	articleModule.Blocked = func(ctx context.Context, p *identity.Principal, content string) (bool, bool, error) {
+		raw, err := core.Setting(ctx, p, "articles.blockedWords")
+		if err != nil {
+			// Absent configuration is not a broken one: with the approval gate in
+			// place there is no automatic publish left to protect. Storage errors
+			// still surface so a broken settings read cannot pass silently.
+			if contracts.Code(err) == "invalid" {
+				return false, false, nil
+			}
+			return false, false, err
+		}
+		words, err := governance.String(raw)
+		if err != nil || strings.TrimSpace(words) == "" {
+			return false, false, nil
+		}
+		return articles.ContainsBlocked(content, words), true, nil
+	}
 	entries := (app.CapabilityModules{Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService}).Entries()
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
@@ -80,8 +100,6 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, onError func(cont
 	}
 	mcpService.AttachGateway(dispatcher)
 	agentService := harness.New(core, catalog, dispatcher, runs, auditStore, documents)
-	articleModule.Gateway = dispatcher
-	articleModule.Classify = agentService.ClassifyArticle
 	orchestrator.AgentModel = agentService.WorkflowModel
 	engine := triggers.NewEngine(triggers.NewStore(core.Pool), hub, agentService, core.Identity)
 	relay := outbox.NewRelay(core.Pool, hub)

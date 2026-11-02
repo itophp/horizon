@@ -81,6 +81,6 @@ SMTP 主机由部署白名单约束、证书验证不关闭，测试发送仅本
 
 ## 文章评审
 
-文章通过 article.* 能力管理。articles:read/write 仅访问本人文章，articles:review 可读取本租户待审核内容并决定发布；审核仅限直接人类页面调用，禁止作者自审。发布后内容不可变，草稿/驳回修改递增 revision；所有评审落库按 revision 与原状态条件更新。article.apply 只接受 article.assess 注入的进程内可信判定，外部无法传 verdict。AI 没有工具，正文仅作为不可信分类数据。正文不进入事件、调用输入审计、调用结果或 AI 轨迹。敏感读取使用 TransientResult，禁用幂等结果重放并省略持久化数据。
+文章通过 article.* 能力管理。articles:read/write 仅访问本人文章，articles:review 可读取本租户待审核内容并决定发布；人工审核仅限直接人类页面调用，禁止作者自审。发布后内容不可变，草稿/驳回修改递增 revision；所有评审落库按 revision 与原状态条件更新。article.record-review 只在 pending_ai 下写入 verdict、只接受 OriginWorkflow，并返回归一化 decision 供流程分叉；article.publish 声明 high + confirm，自动化来源只能产生审批卡，必须由人在审批队列确认后才公开（多人部署可换成 four-eyes，要求另一名具备 capability:approve 的账号批准）；article.reject 只接受 OriginWorkflow 或 OriginApproval 且要求 review_code 为 blocked|suspected。两者都要求 review_code 与状态、版本同时匹配，页面、Agent、API、MCP 直接调用无法绕过。Agent 只能读取正文（article.get 工具），正文作为不可信数据。正文不进入事件、调用输入审计、调用结果或 AI 轨迹。敏感读取使用 TransientResult，禁用幂等结果重放并省略持久化数据。
 
-articles.blockedWords 为工作空间安全设置，以换行或逗号分词，复用设置草稿/发布/审计；空词库、配置失败、模型失败或无效输出全部转人工。评审使用投稿时的当前正文版本及评审时已发布词库，不追溯已发布文章。投稿事务写 Outbox，article-moderation Trigger 去重并限制深度；事件身份重新授权。待 AI 状态可由作者重试评审。AI 运行独立记录，失败不会回滚投稿。远程 MCP 显式开放文章列表、详情、创建草稿与投稿；Token 固化工具集合与当前 articles 权限取交集，不开放人工审核和内部结果写入。页面 Agent 工具未开放。
+articles.blockedWords 为工作空间设置（系统设置 → 文章审核分组），以换行或逗号分词，复用设置草稿/发布/审计。已发布词库是确定性的：命中而结论不是 blocked 时 record-review 冲突失败，任何模型转述都不能覆盖。未配置或空词库视为"没有确定性规则"——发布仍由另一名审批人放行，因此不再阻断流程；设置读取失败按 unavailable 失败而不是静默跳过。评审使用投稿时的当前正文版本及评审时已发布词库，不追溯已发布文章。投稿事务写 Outbox；旧的 article-moderation 事件策略已移除，评审只由 article-publish 流程执行，避免同一次投稿被两条路径重复评审。待 AI 状态可由作者重新发起流程。AI 运行独立记录，失败不会回滚投稿。远程 MCP 显式开放文章列表、详情、创建草稿与投稿；Token 固化工具集合与当前 articles 权限取交集，不开放人工审核、评审结论写入与发布分支。页面 Agent 工具未开放。

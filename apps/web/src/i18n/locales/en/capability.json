@@ -52,7 +52,7 @@
       "completed": "AI reviewed",
       "failed": "AI failed",
       "skipped": "AI skipped",
-      "none": "No AI policy"
+      "none": "No AI trigger"
     },
     "meta": "{{time}} · {{depth}}{{policy}}",
     "policySuffix": " · {{policy}}"

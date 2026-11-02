@@ -8,7 +8,6 @@ import (
 	"baseline/services/api/internal/platform/capability/registry"
 	"baseline/services/api/internal/repository/dbgen"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,15 +16,28 @@ import (
 )
 
 type Module struct {
-	Pool     *pgxpool.Pool
-	Gateway  *gateway.Gateway
-	Classify func(context.Context, string) (string, error)
+	Pool *pgxpool.Pool
+	// Blocked reports whether the tenant's published blocked-word policy matches
+	// the content, and whether that policy is usable at all. Injecting it keeps
+	// this module independent of the settings subsystem.
+	Blocked func(context.Context, *identity.Principal, string) (bool, bool, error)
 }
-type verdictKey struct{}
+
+// events names the fact each write capability produces. A single map keeps the
+// declaration and the executor from drifting into "article.rejectd" style typos.
+var events = map[string]string{
+	"create":        "article.created",
+	"update":        "article.updated",
+	"submit":        "article.submitted",
+	"record-review": "article.reviewed",
+	"publish":       "article.published",
+	"reject":        "article.rejected",
+	"decide":        "article.decided",
+}
 
 func (m *Module) Entries() []registry.Entry {
 	entries := []registry.Entry{}
-	for _, action := range []string{"list", "get", "create", "update", "submit", "assess", "apply", "decide"} {
+	for _, action := range []string{"list", "get", "create", "update", "submit", "record-review", "publish", "reject", "decide"} {
 		d := definition(action)
 		h := contracts.Handler{}
 		switch action {
@@ -33,8 +45,6 @@ func (m *Module) Entries() []registry.Entry {
 			h.Execute = m.list
 		case "get":
 			h.Execute = m.get
-		case "assess":
-			h.Execute = m.assess
 		default:
 			a := action
 			h.ExecuteTx = func(ctx context.Context, tx pgx.Tx, in contracts.Input) (contracts.Output, error) {
@@ -56,16 +66,19 @@ func definition(a string) contracts.Definition {
 		input["id"] = contracts.Int(1, 1<<53)
 		required = append(required, "id")
 	}
-	if a == "update" || a == "submit" || a == "apply" || a == "decide" {
+	if a == "update" || a == "submit" || a == "record-review" || a == "publish" || a == "reject" || a == "decide" {
 		input["revision"] = contracts.Int(1, 1<<53)
 		required = append(required, "revision")
 	}
-	if a == "create" || a == "update" {
+	switch a {
+	case "create", "update":
 		input["title"] = str(200)
 		input["body"] = str(20000)
 		required = append(required, "title", "body")
-	}
-	if a == "decide" {
+	case "record-review":
+		input["code"] = &contracts.Schema{Type: "string", Enum: []string{"safe", "blocked", "suspected"}}
+		required = append(required, "code")
+	case "decide":
 		input["approve"] = &contracts.Schema{Type: "boolean"}
 		required = append(required, "approve")
 	}
@@ -83,15 +96,7 @@ func definition(a string) contracts.Definition {
 	}
 	if !ro {
 		d.Idempotency = contracts.Idempotency{Required: true, Scope: "tenant+operation+key"}
-	}
-	if a == "assess" {
-		d.Layer = contracts.LayerOrchestration
-		d.SuccessEvents = []string{"article.assessed"}
-	} else if !ro {
-		d.SuccessEvents = []string{"article." + a + "d"}
-		if a == "submit" {
-			d.SuccessEvents = []string{"article.submitted"}
-		}
+		d.SuccessEvents = []string{events[a]}
 	}
 	row := map[string]*contracts.Schema{"id": {Type: "integer"}, "title": {Type: "string"}, "status": {Type: "string"}, "revision": {Type: "integer"}, "reviewCode": {Type: "string"}}
 	if a == "list" {
@@ -101,6 +106,20 @@ func definition(a string) contracts.Definition {
 		d.Output = contracts.Object(row, "id", "title", "body", "status", "revision", "reviewCode")
 	} else {
 		d.Output = contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer"}}, "id")
+	}
+	if a == "record-review" {
+		// The recorded verdict, not the model answer, is what a branch reads.
+		d.Output = contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer"}, "decision": {Type: "string", Enum: []string{"approve", "reject"}}}, "id", "decision")
+	}
+	if a == "publish" {
+		// Publishing is public and irreversible, so an automated flow may only
+		// propose it: the card waits for a human. ApprovalConfirm is the policy
+		// for high-risk automation; switch to ApprovalFourEyes in deployments
+		// that have a second approver and want separation of duties.
+		d.Title = "Article publish (human approved)"
+		d.Description = "Publish an approved article. High risk: a workflow stops for human confirmation before content becomes public."
+		d.Risk = contracts.RiskHigh
+		d.Approval = contracts.ApprovalConfirm
 	}
 	return d
 }
@@ -153,9 +172,23 @@ func (m *Module) write(ctx context.Context, tx pgx.Tx, in contracts.Input, a str
 	var n int64
 	title, _ := in["title"].(string)
 	body, _ := in["body"].(string)
+	code, _ := in["code"].(string)
 	if a == "create" || a == "update" {
 		if strings.TrimSpace(title) == "" || strings.TrimSpace(body) == "" {
 			return contracts.Output{}, contracts.Problem("invalid")
+		}
+	}
+	meta, _ := gateway.CurrentInvocation(ctx)
+	// The verdict may only come from the pinned review flow, and publishing may
+	// only come from that flow or from the approval that resumes it. A page,
+	// tool or API call cannot claim that a review already happened, and a human
+	// cannot hand-record a verdict to skip the review.
+	if a == "record-review" && meta.Origin != contracts.OriginWorkflow {
+		return contracts.Output{}, contracts.Problem("forbidden")
+	}
+	if a == "publish" || a == "reject" {
+		if meta.Origin != contracts.OriginWorkflow && meta.Origin != contracts.OriginApproval {
+			return contracts.Output{}, contracts.Problem("forbidden")
 		}
 	}
 	switch a {
@@ -166,19 +199,20 @@ func (m *Module) write(ctx context.Context, tx pgx.Tx, in contracts.Input, a str
 		n, e = q.ArticleUpdate(ctx, dbgen.ArticleUpdateParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, Title: title, Body: body, Revision: rev})
 	case "submit":
 		n, e = q.ArticleSubmit(ctx, dbgen.ArticleSubmitParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, Revision: rev})
-	case "apply":
-		code, ok := ctx.Value(verdictKey{}).(string)
-		if !ok {
-			return contracts.Output{}, contracts.Problem("forbidden")
+	case "record-review":
+		if !reviewCode(code) {
+			return contracts.Output{}, contracts.Problem("invalid")
 		}
-		status := "pending_review"
-		if code == "safe" {
-			status = "published"
+		if e = m.checkPolicy(ctx, q, p, id, rev, code); e != nil {
+			return contracts.Output{}, e
 		}
-		n, e = q.ArticleModerate(ctx, dbgen.ArticleModerateParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, Revision: rev, Status: status, ReviewCode: code})
+		n, e = q.ArticleRecordReview(ctx, dbgen.ArticleRecordReviewParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, ReviewCode: code, Revision: rev})
+	case "publish":
+		n, e = q.ArticlePublish(ctx, dbgen.ArticlePublishParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, Revision: rev})
+	case "reject":
+		n, e = q.ArticleReject(ctx, dbgen.ArticleRejectParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, Revision: rev})
 	case "decide":
-		meta, ok := gateway.CurrentInvocation(ctx)
-		if !ok || meta.Origin != contracts.OriginHumanUI {
+		if meta.Origin != contracts.OriginHumanUI {
 			return contracts.Output{}, contracts.Problem("forbidden")
 		}
 		status := "rejected"
@@ -193,51 +227,44 @@ func (m *Module) write(ctx context.Context, tx pgx.Tx, in contracts.Input, a str
 	if n != 1 {
 		return contracts.Output{}, contracts.Problem("conflict")
 	}
-	event := "article." + a + "d"
-	if a == "submit" {
-		event = "article.submitted"
-	}
-	return contracts.Output{Data: map[string]any{"id": id}, Summary: fmt.Sprintf("article=%d", id), Events: []contracts.Event{{Type: event, AggregateType: "article", AggregateID: fmt.Sprint(id), Payload: map[string]any{"id": id}}}}, nil
-}
-func (m *Module) assess(ctx context.Context, in contracts.Input) (contracts.Output, error) {
-	if m.Gateway == nil {
-		return contracts.Output{}, contracts.Problem("unavailable")
-	}
-	r, e := m.Gateway.Invoke(ctx, gateway.Request{Name: "article.get", Input: in})
-	if e != nil {
-		return contracts.Output{}, e
-	}
-	if r.Status != contracts.StatusSucceeded {
-		return contracts.Output{}, contracts.Problem("conflict")
-	}
-	raw, _ := json.Marshal(r.Data)
-	var record struct {
-		ID       int64  `json:"id"`
-		Revision int64  `json:"revision"`
-		Title    string `json:"title"`
-		Body     string `json:"body"`
-		Status   string `json:"status"`
-	}
-	if e = json.Unmarshal(raw, &record); e != nil {
-		return contracts.Output{}, e
-	}
-	if record.Status != "pending_ai" {
-		return contracts.Output{}, contracts.Problem("conflict")
-	}
-	code := "unavailable"
-	if m.Classify != nil {
-		if v, err := m.Classify(ctx, record.Title+"\n"+record.Body); err == nil && (v == "safe" || v == "blocked" || v == "suspected") {
-			code = v
+	data := map[string]any{"id": id}
+	if a == "record-review" {
+		// Only a persisted 'safe' verdict maps to approve; every other recorded
+		// code is a rejection reason, so a flow never needs to inspect the model
+		// answer to choose a branch.
+		data["decision"] = "reject"
+		if code == "safe" {
+			data["decision"] = "approve"
 		}
 	}
-	result, e := m.Gateway.Invoke(context.WithValue(ctx, verdictKey{}, code), gateway.Request{Name: "article.apply", Input: contracts.Input{"id": record.ID, "revision": record.Revision}, IdempotencyKey: gateway.ChildKey(ctx, "apply")})
-	if e != nil {
-		return contracts.Output{}, e
+	return contracts.Output{Data: data, Summary: fmt.Sprintf("article=%d", id), Events: []contracts.Event{{Type: events[a], AggregateType: "article", AggregateID: fmt.Sprint(id), Payload: map[string]any{"id": id}}}}, nil
+}
+
+// reviewCode is the closed set of AI verdicts. A model failure never widens it.
+func reviewCode(code string) bool {
+	return code == "safe" || code == "blocked" || code == "suspected"
+}
+
+// checkPolicy keeps a configured blocked-word rule authoritative over the model.
+// A verdict that clears content the published policy matches is refused. An
+// absent or empty word list means there is no deterministic rule to apply: the
+// publish still needs another human, so it does not block the flow by itself.
+func (m *Module) checkPolicy(ctx context.Context, q *dbgen.Queries, p *identity.Principal, id, revision int64, code string) error {
+	if m.Blocked == nil {
+		return contracts.Problem("unavailable")
 	}
-	if result.Status != contracts.StatusSucceeded {
-		return contracts.Output{}, contracts.Problem("conflict")
+	record, err := q.ArticleGet(ctx, dbgen.ArticleGetParams{TenantID: p.TenantID, ID: id, CreatedBy: p.Account.ID, CanReview: false})
+	if err != nil || record.Revision != revision {
+		return contracts.Problem("conflict")
 	}
-	return contracts.Output{Data: result.Data, Events: []contracts.Event{{Type: "article.assessed", AggregateType: "article", AggregateID: fmt.Sprint(record.ID), Payload: map[string]any{"id": record.ID}}}}, nil
+	blocked, configured, err := m.Blocked(ctx, p, record.Title+"\n"+record.Body)
+	if err != nil {
+		return contracts.Problem("unavailable")
+	}
+	if configured && blocked && code != "blocked" {
+		return contracts.Problem("conflict")
+	}
+	return nil
 }
 
 // Normalize catches case, punctuation, whitespace and zero-width obfuscation.

@@ -12,8 +12,10 @@ import enGovernance from "./locales/en/governance.json";
 import zhGovernance from "./locales/zh-CN/governance.json";
 import enAssistant from "./locales/en/assistant.json";
 import enKnowledge from "./locales/en/knowledge.json";
+import enOrchestration from "./locales/en/orchestration.json";
 import zhAssistant from "./locales/zh-CN/assistant.json";
 import zhKnowledge from "./locales/zh-CN/knowledge.json";
+import zhOrchestration from "./locales/zh-CN/orchestration.json";
 import enAdmin from "./locales/en/admin.json";
 import zhAdmin from "./locales/zh-CN/admin.json";
 import enCommon from "./locales/en/common.json";
@@ -35,6 +37,7 @@ export const resources = {
     governance: enGovernance,
     assistant: enAssistant,
     knowledge: enKnowledge,
+    orchestration: enOrchestration,
     common: enCommon,
     entity: enEntity,
     navigation: enNavigation,
@@ -50,6 +53,7 @@ export const resources = {
     governance: zhGovernance,
     assistant: zhAssistant,
     knowledge: zhKnowledge,
+    orchestration: zhOrchestration,
     common: zhCommon,
     entity: zhEntity,
     navigation: zhNavigation,

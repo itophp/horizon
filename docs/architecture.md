@@ -128,9 +128,9 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 
 框架已提供版本化 Workflow、Graph、ADK、操作审批中断恢复、补偿、流程规格生成和完整生命周期参考；实际装配见 `internal/transport/governance.go` 和共享 `app.CapabilityModules`。支持这些机制不等于所有业务已使用它们。
 
-文章管理当前为投稿事件 → article.assess → 规则/直接模型分类 → article.apply；人工决定是独立能力。文章 Workflow/ADK、业务人工任务页面和完整驳回原因链仍是目标，相关安全审查缺口也尚需修复。目标流程与验收见 [文章示例](agent-workflow.md#文章发布评审目标设计示例)。
+文章管理已改为持久化流程 `article-publish@1.0.0`：投稿进入审核中 → 受限 ADK 结构化评审 → 记录结论 → 按结论分叉到 article.publish 或 article.reject，未选中的分支不产生任何能力调用。发布声明 high + confirm，流程会停在待审批，人工确认后才公开；人工决定（article.decide / pending_review）保留给需要更细人工兜底的部署。实现与验收见 [文章示例](agent-workflow.md#文章发布评审已实现的流程)。
 
-当前不提供远程任意流程上传/发布、通用可视化设计器、任意 SQL/命令执行器或 exactly-once 保证。业务人工任务、外部信号、条件分支及结构化 ADK 输出必须逐项验证或扩展，不能仅按目标图宣称支持。
+当前不提供远程任意流程上传/发布、通用可视化设计器、任意 SQL/命令执行器或 exactly-once 保证。业务人工任务与外部信号仍须逐项验证或扩展；条件分支与结构化 ADK 输出已由 `when` / `agent.output` 支持，不能仅按目标图宣称其余能力。
 
 ## 8. 验证与运维边界
 

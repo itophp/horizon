@@ -88,6 +88,7 @@ async function discover(root, subdir = "") {
   return found;
 }
 function sameFiles(actual, expected, label) {
+  actual = actual.map((name) => name.split(sep).join("/"));
   const missing = expected.filter((name) => !actual.includes(name));
   const unregistered = actual.filter((name) => !expected.includes(name));
   requireValue(

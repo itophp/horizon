@@ -25,9 +25,18 @@ import {
   PermissionsPage,
 } from "@/features/administration/pages";
 import { createBrowserRouter, Navigate } from "react-router";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
+import { Loading } from "@/features/administration/shared";
 import { Shell } from "../layouts/shell";
 import { Overview } from "@/features/example/overview";
+// The graph canvas pulls in React Flow and dagre, so the orchestration page is
+// split out instead of inflating the first screen bundle.
+const OrchestrationPage = lazy(() =>
+  import("@/features/orchestration/page").then((module) => ({
+    default: module.OrchestrationPage,
+  })),
+);
 function Architecture() {
   const { t } = useTranslation();
   return (
@@ -69,6 +78,14 @@ export const router = createBrowserRouter([
               { path: "/", element: <DefaultWorkspace /> },
               { path: "/analytics", element: <DashboardPage /> },
               { path: "/capabilities", element: <CapabilityPage /> },
+              {
+                path: "/orchestration",
+                element: (
+                  <Suspense fallback={<Loading />}>
+                    <OrchestrationPage />
+                  </Suspense>
+                ),
+              },
               { path: "/ai", element: <AiPage /> },
               { path: "/articles", element: <ArticlesPage /> },
               { path: "/knowledge", element: <KnowledgePage /> },

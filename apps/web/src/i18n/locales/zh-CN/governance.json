@@ -141,6 +141,7 @@
   "fileLimit": "所选文件超过大小限制。",
   "fileReadFailed": "无法读取所选文件。",
   "groups": {
+    "articles": "文章审核",
     "branding": "基础品牌",
     "display": "显示与国际化",
     "security": "账号安全",

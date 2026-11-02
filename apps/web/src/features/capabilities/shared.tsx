@@ -42,7 +42,9 @@ export function InvocationStatus({ status }: { status: string }) {
 export function AiStatusBadge({ status }: { status: string }) {
   const { t } = useTranslation("capability");
   if (!status) {
-    return <span className="ai-badge">{t("events.aiStatus.none")}</span>;
+    // No AI status means no trigger policy consumed this event. Events produced
+    // by a workflow land here by design, so a badge would read as a fault.
+    return null;
   }
   const tone =
     status === "completed"
