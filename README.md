@@ -172,4 +172,10 @@ Skills 保存做事的方法，Schema 描述可交换的结构，Gateway 约束�
 
 ## 开源协议
 
-本项目采用 [MIT License](LICENSE)。第三方依赖及随附的第三方内容保留各自的许可证与版权声明。
+Copyright (C) 2026 Horizon contributors
+
+本项目采用 [GNU General Public License v3.0 or later](LICENSE)（GPL-3.0-or-later）。
+
+这意味着：你可以自由使用、修改和分发本项目，但**分发衍生作品时必须同样以 GPLv3 开源**，并提供完整对应源码。将本项目作为网络服务对外提供时，GPLv3 不要求向你服务的使用者开放源码；如需覆盖这一场景，应改用 AGPL-3.0。
+
+第三方依赖及随附的第三方内容保留各自的许可证与版权声明。其中 Eino、MCP Go SDK 等为 Apache-2.0，Goa、shadcn、MDXEditor 等为 MIT，均与 GPLv3 兼容（这也是本项目不采用 GPLv2 的原因：Apache-2.0 与 GPLv2 不兼容）。

@@ -1,7 +1,7 @@
 {
   "name": "xxh-baseline",
   "private": true,
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "pnpm --filter @baseline/web dev",
