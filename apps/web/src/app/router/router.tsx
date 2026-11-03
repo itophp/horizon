@@ -1,4 +1,5 @@
 import { ArticlesPage } from "@/features/articles/page";
+import { ProjectDetailPage } from "@/features/projects/detail";
 import { ProjectsPage } from "@/features/projects/page";
 import { McpHubPage } from "@/features/mcp/hub";
 import { AiPage } from "@/features/ai/page";
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
               { path: "/ai", element: <AiPage /> },
               { path: "/articles", element: <ArticlesPage /> },
               { path: "/projects", element: <ProjectsPage /> },
+              { path: "/projects/:id", element: <ProjectDetailPage /> },
               { path: "/knowledge", element: <KnowledgePage /> },
               { path: "/accounts", element: <AccountsPage /> },
               { path: "/organizations", element: <OrganizationsPage /> },

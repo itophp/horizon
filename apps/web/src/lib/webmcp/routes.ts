@@ -17,6 +17,12 @@ export const webMcpRoutes = [
     permission: "projects:read",
     connected: false,
   },
+  {
+    path: "/projects/:id",
+    module: "projects",
+    permission: "projects:read",
+    connected: false,
+  },
   { path: "/mcp", module: "development", permission: "", connected: true },
   // Legacy entry points redirect to the unified page; kept so older links and
   // agent instructions still resolve.
@@ -162,6 +168,8 @@ export function findWebMcpRoute(path: string) {
     webMcpRoutes.find((route) => route.path === path) ??
     (/^\/files\/[^/]+$/.test(path)
       ? webMcpRoutes.find((route) => route.path === "/files/:id")
-      : undefined)
+      : /^\/projects\/[^/]+$/.test(path)
+        ? webMcpRoutes.find((route) => route.path === "/projects/:id")
+        : undefined)
   );
 }

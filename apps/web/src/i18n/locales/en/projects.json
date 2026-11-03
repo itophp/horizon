@@ -56,7 +56,11 @@
     "makeOwner": "Make owner",
     "ownerBadge": "Owner",
     "noResult": "No matching account",
-    "count": "Current members"
+    "count": "Current members",
+    "email": "Email",
+    "role": "Role",
+    "memberBadge": "Member",
+    "alreadyMember": "That account is already a member."
   },
   "plans": {
     "heading": "Plans",
@@ -112,6 +116,24 @@
       "done": "Finish",
       "todo": "Reopen",
       "cancelled": "Cancel"
-    }
+    },
+    "assignConflict": "Assignment did not apply: the task already has this assignee."
+  },
+  "back": "Back to projects",
+  "notFound": "This project does not exist, or you are not a member.",
+  "searchHint": "Search by code or name",
+  "tabs": {
+    "overview": "Overview",
+    "plans": "Plans",
+    "tasks": "Tasks",
+    "members": "Members"
+  },
+  "dialog": {
+    "projectHint": "The code cannot change after creation. The creator becomes the owner.",
+    "projectEditHint": "Change the name, priority and planned end date only.",
+    "planHint": "The body is Markdown. The responsible member must belong to the project.",
+    "taskHint": "The task belongs to this project. The assignee must be a member.",
+    "taskDetailHint": "Read-only detail, including the AI brief.",
+    "memberHint": "Search tenant accounts by name or email."
   }
 }

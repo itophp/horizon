@@ -56,7 +56,11 @@
     "makeOwner": "设为负责人",
     "ownerBadge": "负责人",
     "noResult": "没有匹配的账号",
-    "count": "当前成员"
+    "count": "当前成员",
+    "email": "邮箱",
+    "role": "角色",
+    "memberBadge": "成员",
+    "alreadyMember": "该账号已经是成员。"
   },
   "plans": {
     "heading": "项目计划",
@@ -112,6 +116,24 @@
       "done": "完成",
       "todo": "重开",
       "cancelled": "取消"
-    }
+    },
+    "assignConflict": "指派未生效：该任务已指派给此成员。"
+  },
+  "back": "返回项目列表",
+  "notFound": "项目不存在，或你不是该项目成员。",
+  "searchHint": "按编号或名称搜索",
+  "tabs": {
+    "overview": "概览",
+    "plans": "计划",
+    "tasks": "任务",
+    "members": "成员"
+  },
+  "dialog": {
+    "projectHint": "编号创建后不可修改，创建者自动成为负责人。",
+    "projectEditHint": "只调整名称、优先级与预计结束时间。",
+    "planHint": "正文支持 Markdown，负责人必须是项目成员。",
+    "taskHint": "任务归属于当前项目，负责人必须是项目成员。",
+    "taskDetailHint": "只读详情，包含 AI 简报。",
+    "memberHint": "按姓名或邮箱搜索本租户账号。"
   }
 }
