@@ -8,6 +8,7 @@ description: "Build or modify React pages, navigation, shared UI, forms, tables,
 先读 [前端规则](../../../apps/web/AGENTS.md)，公共 UI 变更再读 [组件规则](../../../apps/web/src/components/ui/AGENTS.md)。
 
 - 页面进 features/<feature>，路由/布局/Provider 进 app。跨功能复用才进入 shared；领域逻辑不放入 UI 原语。
+- 页面结构按 [前端规则](../../../apps/web/AGENTS.md#页面结构与交互密度)：列表与详情分路由，多个业务对象用页内标签或独立页面，增删改走 `EditorDialog`；不把列表、详情和常驻表单堆在同一页，单文件接近 300 行就拆分。设置页是表单即主体的特例，不作业务列表参照。
 - React Router 管理 URL 和页面导航；可分享的筛选条件优先放 URL，不复制为多份全局状态。
 - 查询和写操作通过 Orval 生成 SDK / TanStack Query 接入，更新后失效相关 query key；跨用户/租户切换需清理或隔离缓存。组件不用裸 fetch 或自建 API DTO。
 - TanStack Query 保存服务端状态；React 局部状态保存临时交互。不要为了表单或接口结果引入 Zustand。
