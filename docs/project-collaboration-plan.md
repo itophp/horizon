@@ -2,7 +2,7 @@
 
 状态：已实现（2026-11-03）
 分支：`feat/project-management-example`
-模块：`services/api/internal/modules/projects`（Domain `projects`，能力前缀 `project.`）
+模块：`services/applications/projects`（Domain `projects`，能力前缀 `project.`）
 涉及层：迁移、sqlc 查询、实体声明、能力目录、权限目录、AI Trigger、前端页面
 
 本文档最初是实施前的契约，现已按 P0–P3 落地。§15 记录实际实现与验证结果，§6、§11 中两处语义修正也在那里说明。
@@ -45,7 +45,7 @@
 
 权限点决定「能不能做这个动作」，成员/负责人身份决定「能对哪个项目做」。两者同时校验，任一不满足即拒绝。
 
-新增权限点（登记到 `internal/identity/catalog.go`）：
+新增权限点（登记到 `system/identity/catalog.go`）：
 
 | 权限 | 作用 | 说明 |
 |---|---|---|
@@ -461,13 +461,13 @@ P2 与 P3 可并行，但 P3 依赖 P0 的能力契约。
 
 | 层 | 文件 |
 |---|---|
-| 迁移 | `services/api/db/migrations/00024_projects.sql`（四张业务表 + 简报 + trigger policy） |
-| 查询 | `services/api/db/query/projects.sql` → `internal/repository/dbgen/projects.sql.go`（sqlc） |
-| 实体 | `internal/modules/projects/{entities,entity_project,entity_project_member,entity_project_plan,entity_project_task,entity_project_task_brief}.go` |
-| 能力 | `internal/modules/projects/{module,schemas,project,plan,task}.go`（22 个原子能力） |
-| 装配 | `internal/identity/catalog.go`（3 个权限点）、`internal/app/{capabilities,entities}.go` |
+| 迁移 | `services/db/migrations/00024_projects.sql`（四张业务表 + 简报 + trigger policy） |
+| 查询 | `services/db/query/projects.sql` → `internal/repository/dbgen/projects.sql.go`（sqlc） |
+| 实体 | `applications/projects/{entities,entity_project,entity_project_member,entity_project_plan,entity_project_task,entity_project_task_brief}.go` |
+| 能力 | `applications/projects/{module,schemas,project,plan,task}.go`（22 个原子能力） |
+| 装配 | `system/identity/catalog.go`（3 个权限点）、`runtime/app/{capabilities,entities}.go` |
 | 前端 | `apps/web/src/features/projects/{page,fields,members,plans,tasks}.tsx`、`lib/capabilities.ts`、路由、菜单、`i18n/locales/*/projects.json`、`entity.json`、`lib/webmcp/routes.ts` |
-| 测试 | `services/api/tests/projects_test.go`（5 个集成用例） |
+| 测试 | `services/tests/projects_test.go`（5 个集成用例） |
 
 ### 两处语义修正（与初稿不同）
 
@@ -483,7 +483,7 @@ P2 与 P3 可并行，但 P3 依赖 P0 的能力契约。
 | 生成同步 | `node scripts/check-generated.mjs` | 通过 |
 | 后端构建 | `./scripts/go.sh build ./...` | 通过 |
 | 后端 vet | `./scripts/go.sh vet ./...` | 通过 |
-| 后端单测 | `./scripts/go.sh test ./...` | 除 `internal/modules/files` 的符号链接用例（Windows 无权限创建 symlink，与本次无关）外全部通过 |
+| 后端单测 | `./scripts/go.sh test ./...` | 除 `system/files` 的符号链接用例（Windows 无权限创建 symlink，与本次无关）外全部通过 |
 | 集成测试 | `TEST_DATABASE_URL=… ./scripts/go.sh test -tags=integration ./tests` | 全绿，含 `TestProjectCollaborationLifecycle`、`TestProjectMembershipRules`、`TestProjectConcurrencyAndReplay`、`TestProjectBriefSourceIsRestricted`、`TestProjectAssignmentIsTriggerable` |
 | 前端类型 | `pnpm --filter @baseline/web typecheck` | 通过 |
 | 前端单测 | `pnpm --filter @baseline/web test` | 112 通过（含 WebMCP 路由清单比对） |

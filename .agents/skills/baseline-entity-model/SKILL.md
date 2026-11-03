@@ -7,7 +7,7 @@ description: "Declare or change the business entity model (fields, relations, st
 
 实体模型描述业务对象（有哪些字段、和谁关联、状态怎么变），由 `make check-entities` 对照迁移强制校验。它是能力目录的对象视图，不是第二套 schema，也不是第二个执行入口。
 
-先读 [实体模型](../../../docs/entity-model.md) 与 [服务实现规则](../../../services/api/internal/AGENTS.md)。
+先读 [实体模型](../../../docs/entity-model.md) 与 [服务实现规则](../../../services/AGENTS.md)。
 
 ## 什么时候必须动它
 
@@ -25,12 +25,12 @@ description: "Declare or change the business entity model (fields, relations, st
 一实体一文件，聚合器只做汇总：
 
 ```text
-internal/<module>/entity_<name>.go   # 一个 contracts.Entity 的完整声明
-internal/<module>/entities.go        # func Entities() []contracts.Entity{...}
-internal/app/entities.go             # 汇总所有模块，供 CLI 与 transport 共用
+system/<module>/entity_<name>.go 或 applications/<module>/entity_<name>.go   # 一个 contracts.Entity 的完整声明
+system/<module>/entities.go 或 applications/<module>/entities.go        # func Entities() []contracts.Entity{...}
+runtime/app/entities.go             # 汇总所有模块，供 CLI 与 transport 共用
 ```
 
-`internal/platform/metadata` 负责另一半：`schema.go` 从 embed 的 goose 迁移解析表/列/外键，`entity.go` 从能力目录派生 `Capabilities`/`Events`，`validate.go` 与 `transitions.go` 是 E1–E10。
+`kernel/metadata` 负责另一半：`schema.go` 从 embed 的 goose 迁移解析表/列/外键，`entity.go` 从能力目录派生 `Capabilities`/`Events`，`validate.go` 与 `transitions.go` 是 E1–E10。
 
 实体声明是纯数据，写包级函数（`func exampleRecordEntity() contracts.Entity`），不要挂在 `*Service` 上——检查链路不该构造服务实例。
 
@@ -48,8 +48,8 @@ internal/app/entities.go             # 汇总所有模块，供 CLI 与 transpor
 
 ```bash
 make check-entities                        # 门禁：E1–E8、E10，已接入 ci-fast
-ENTITY_DUMP=1 ./scripts/go.sh test ./internal/platform/metadata -run TestDumpSchema -v   # 表与列
-FK_DUMP=1 ./scripts/go.sh test ./internal/platform/metadata -run TestDumpForeignKeys -v  # 外键
+ENTITY_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpSchema -v   # 表与列
+FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 外键
 ```
 
 输出里的三类信息要区别对待：`schema issues` 与 `declaration problems` 是错误，必须修；`hints` 是“真实但没有键或能力强制”的事实，如果它描述的确实是设计意图，就保持并说明原因；`accepted gaps` 是同表不同行的实体故意不重复建模，新增时要给出理由。

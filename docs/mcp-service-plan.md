@@ -47,9 +47,9 @@
 
 建议调用链：客户端 → HTTPS `/mcp` → MCP Token 验证 → 实时 Principal/部门重建 → 工具注册表 → 原应用服务授权 → 原 Repository/sqlc 范围查询。
 
-在 `services/api/internal/mcp` 增加协议适配、注册表和 Token 用例，传输入口在现有 Go 进程挂载；业务逻辑仍留在 identity/governance 等原服务中，MCP 不能直接调用裸 dbgen 或绕过用例。业务写入、审计和幂等复用原事务边界。
+在 `services/internal/mcp` 增加协议适配、注册表和 Token 用例，传输入口在现有 Go 进程挂载；业务逻辑仍留在 identity/governance 等原服务中，MCP 不能直接调用裸 dbgen 或绕过用例。业务写入、审计和幂等复用原事务边界。
 
-唯一业务与 Token 管理 API 源仍为 `services/api/design`。新增 `design/mcp.go` 定义本人 Token 创建/元数据列表/撤销/轮换、工具目录和诊断等管理契约，生成前端 SDK；建议路径 `/api/mcp/tokens`、`/api/mcp/capabilities`，具体按现有 Goa 路由风格确定。轮换默认原子撤销旧 Token 并创建新 Token；需无中断交接时显式签发第二个 Token，不能暗设无限宽限。
+唯一业务与 Token 管理 API 源仍为 `services/design`。新增 `design/mcp.go` 定义本人 Token 创建/元数据列表/撤销/轮换、工具目录和诊断等管理契约，生成前端 SDK；建议路径 `/api/mcp/tokens`、`/api/mcp/capabilities`，具体按现有 Goa 路由风格确定。轮换默认原子撤销旧 Token 并创建新 Token；需无中断交接时显式签发第二个 Token，不能暗设无限宽限。
 
 MCP 协议消息由官方 SDK 实现，是独立传输适配，不另造业务 DTO。工具注册表仅维护工具名/说明/版本、对应 Goa 用例、输入输出 schema 映射、resource/action、风险、幂等和限制；通过转换或生成复用源类型，并用契约测试防漂移。`/mcp` 不能被误当普通 OpenAPI CRUD 自动生成；新增协议契约文件必须明确它与 Goa 业务源的边界。
 

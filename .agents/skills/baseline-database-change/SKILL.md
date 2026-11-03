@@ -5,7 +5,7 @@ description: "Change PostgreSQL schema, Goose migrations, sqlc queries, pgx repo
 
 # 数据库变更
 
-先读 [数据库目录规则](../../../services/api/db/AGENTS.md) 和 [数据库约定](../../../docs/database-conventions.md)。
+先读 [数据库目录规则](../../../services/db/AGENTS.md) 和 [数据库约定](../../../docs/database-conventions.md)。
 
 修改前检查已有迁移与 query，明确数据生命周期、约束、租户归属、拥有者语义、查询范围和字段投影。新业务表由实际需求驱动，技术示例表不能直接冒充正式模型。
 

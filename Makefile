@@ -29,16 +29,16 @@ migrate:
 generate:
 	$(MAKE) generate-workflows
 	./scripts/go.sh run goa.design/goa/v3/cmd/goa gen baseline/services/api/design
-	cd services/api && ../../.tools/bin/sqlc generate
+	cd services && ../.tools/bin/sqlc generate
 	pnpm --filter @baseline/web generate
 	pnpm --filter @baseline/web exec prettier --write src/api/generated
 
 generate-workflows:
-	./scripts/go.sh run ./cmd/workflowspec -out ../../docs/generated/workflows
+	./scripts/go.sh run ./cmd/workflowspec -out ../docs/generated/workflows
 
 check-workflows:
-	./scripts/go.sh test ./internal/ai/orchestration ./cmd/workflowspec ./cmd/workflowcheck
-	./scripts/go.sh run ./cmd/workflowcheck -file ../../docs/generated/workflows/example-lifecycle.workflow.json
+	./scripts/go.sh test ./kernel/workflow ./cmd/workflowspec ./cmd/workflowcheck
+	./scripts/go.sh run ./cmd/workflowcheck -file ../docs/generated/workflows/example-lifecycle.workflow.json
 
 # No browser or live model: real Eino engines and isolated PostgreSQL.
 test-orchestration-example:
@@ -105,7 +105,7 @@ ci-fast:
 	$(MAKE) check-rules format-check lint typecheck test check-generated check-entities check-workflows build
 
 test-security:
-	./scripts/go.sh test ./internal/config ./internal/identity ./internal/platform/capability/... ./internal/platform/policy ./internal/modules/mcp ./internal/transport
+	./scripts/go.sh test ./runtime/config ./system/identity ./kernel/capability/... ./kernel/policy ./integrations/mcp ./runtime/transport
 	$(MAKE) test-integration
 
 ci:
@@ -115,7 +115,7 @@ ci:
 # Remote business MCP: protocol/database security and isolated browser chain.
 test-mcp:
 	pnpm mcp:test
-	./scripts/go.sh test ./internal/modules/mcp
+	./scripts/go.sh test ./integrations/mcp
 	./scripts/go.sh test -tags=integration -count=1 -run MCP ./tests/...
 
 test-mcp-e2e:

@@ -33,8 +33,8 @@ jobs:
           cache: pnpm
       - uses: actions/setup-go@v5
         with:
-          go-version-file: services/api/go.mod
-          cache-dependency-path: services/api/go.sum
+          go-version-file: services/go.mod
+          cache-dependency-path: services/go.sum
       - run: pnpm install --frozen-lockfile
       - run: make tools
       - name: Fast gates, contracts and builds

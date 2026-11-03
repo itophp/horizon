@@ -64,7 +64,7 @@ description: "决定一个功能拆成哪些能力、以及能力之间如何互
 1. 列动作清单，按上表定层次与命名，写进 `Definition`（名称、版本、输入输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段、`Entity`）。
 2. 数据能力先实现并单独验证：范围过滤、跨租户、拒绝路径。
 3. 入口能力只做编排，`Data` 二次投影；不声明内层事件。
-4. 两层权限都进 `internal/identity/catalog.go`，en / zh-CN 文案同步。
+4. 两层权限都进 `system/identity/catalog.go`，en / zh-CN 文案同步。
 5. 补负向用例：内层权限不足、跨租户、深度超限、幂等重放。
 
 ## 先判定运行方式，再写编排代码
@@ -91,7 +91,7 @@ Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapa
 先阅读 [完整示例](../../../docs/orchestration-example.md) 和 [Schema 路线](../../../docs/agent-generation-plan.md)。`docs/generated/workflows/workflow.schema.json`、`*.workflow.json` 从纯规格包 ai/orchestration/spec 的 Go Definition/Step 与共享常量生成，禁止手改导出文件。
 
 1. 先选原子动作与权限边界；字段、版本、依赖使用当前能力目录，不猜能力名称。
-2. 候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件>` 校验（脚本工作目录 services/api）。它不执行也不注册定义；结构合法不代表授权、SQL 范围或业务顺序正确。
+2. 候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件>` 校验（脚本工作目录 services）。它不执行也不注册定义；结构合法不代表授权、SQL 范围或业务顺序正确。
 3. 流程运行源仍是 Go Definition；编辑源后 `make generate-workflows`。字段映射/DependsOn 决定顺序，Reads/Writes 检查冲突，不自动猜顺序。
 4. `make check-workflows` 校验结构/目录/依赖/预算，`make check-generated` 拦截漂移。阶段验收 ci-fast；完整参考的数据库验收用 `make test-orchestration-example`。
 5. 参数类型、Schema、目录、语义和 Gateway 各守一层；禁止生成第二份权限/审批策略或新的任意 JSON 执行入口。

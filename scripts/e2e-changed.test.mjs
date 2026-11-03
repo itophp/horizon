@@ -32,29 +32,36 @@ test("keeps documentation and rule batches out of the browser", () => {
 
 test("reports backend paths that have no browser route instead of guessing", () => {
   const { specs, unmapped } = selectSpecs([
-    "services/api/db/migrations/0001_init.sql",
+    "services/db/migrations/0001_init.sql",
   ]);
   assert.deepEqual(specs, []);
-  assert.deepEqual(unmapped, ["services/api/db/migrations/0001_init.sql"]);
+  assert.deepEqual(unmapped, ["services/db/migrations/0001_init.sql"]);
 });
 
 test("routes backend modules to the feature they back", () => {
+  assert.deepEqual(selectSpecs(["services/kernel/workflow/engine.go"]).specs, [
+    "ai",
+  ]);
   assert.deepEqual(
-    selectSpecs(["services/api/internal/modules/notifications/service.go"])
-      .specs,
+    selectSpecs(["services/system/orchestration/module.go"]).specs,
+    ["capabilities"],
+  );
+  assert.deepEqual(
+    selectSpecs(["services/runtime/app/capabilities.go"]).specs,
+    ["foundation"],
+  );
+  assert.deepEqual(
+    selectSpecs(["services/system/notifications/service.go"]).specs,
     ["notifications"],
   );
   assert.deepEqual(
-    selectSpecs(["services/api/internal/modules/mcp/registry.go"]).specs,
+    selectSpecs(["services/integrations/mcp/registry.go"]).specs,
     ["mcp"],
   );
-  assert.deepEqual(selectSpecs(["services/api/db/query/mcp.sql"]).specs, [
-    "mcp",
+  assert.deepEqual(selectSpecs(["services/db/query/mcp.sql"]).specs, ["mcp"]);
+  assert.deepEqual(selectSpecs(["services/system/identity/catalog.go"]).specs, [
+    "administration",
   ]);
-  assert.deepEqual(
-    selectSpecs(["services/api/internal/identity/catalog.go"]).specs,
-    ["administration"],
-  );
 });
 
 test("keeps harness and dependency edits out of the browser run", () => {
@@ -63,7 +70,7 @@ test("keeps harness and dependency edits out of the browser run", () => {
     "package.json",
     "apps/web/playwright.config.ts",
     "apps/web/vite.config.ts",
-    "services/api/go.mod",
+    "services/go.mod",
     "_tmp_24989_06f42f13d4a08dea5389387a78935a0e",
   ]);
   assert.deepEqual(specs, []);

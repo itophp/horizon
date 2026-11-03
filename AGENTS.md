@@ -18,11 +18,11 @@ Business Capability → Business Event → AI Behavior → Business Capability
 
 ## 不可违反的架构边界
 
-- **单一能力契约**：能力定义只注册一次，且只由业务模块自己提供：`internal/modules/*` 的 `Entries()`（settings、dictionaries、files、notifications、mcp、example）与 `internal/identity` 的身份管理能力。每项必须声明名称、版本、输入/输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段，以及编排元数据 `Layer`（必填）/`Kind`/`Reads`/`Writes`/`Effect`/`RetrySafe`（其余项有保守推导默认值，见 [ADR 016](docs/decisions/016-capability-taxonomy-and-orchestration.md)）。禁止为 UI、Agent、Workflow 各写一套业务逻辑。
+- **单一能力契约**：能力定义只注册一次，且只由业务模块自己提供：`system/*、applications/* 与 integrations/*` 的 `Entries()`（settings、dictionaries、files、notifications、mcp、example）与 `system/identity` 的身份管理能力。每项必须声明名称、版本、输入/输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段，以及编排元数据 `Layer`（必填）/`Kind`/`Reads`/`Writes`/`Effect`/`RetrySafe`（其余项有保守推导默认值，见 [ADR 016](docs/decisions/016-capability-taxonomy-and-orchestration.md)）。禁止为 UI、Agent、Workflow 各写一套业务逻辑。
 - **可独立执行的动作必须成为能力**：能被单独触发的动作（HTTP 接口、页面动作、定时任务、事件消费、Agent/MCP 动作）必须注册进 `Entries()`，不允许只以 service 方法、HTTP handler 或后台 goroutine 的形式存在。判据与命名见 [能力拆分与组合](docs/capability-composition.md)。
 - **能力之间只经 Gateway 互调**：编排能力调用数据能力必须走 `gateway.Invoke`，禁止 `registry.Resolve` 后直接调 handler，也禁止绕过能力直接访问 `dbgen`/`pool`/领域服务。内层 `Origin` 由 Gateway 强制为 `OriginCapability`、深度 +1、写能力用确定性幂等键；`TxExecutor` 内禁止再调 Gateway，能力边界即事务边界。
-- **实体模型是能力的对象视图**：业务对象在 `internal/modules/*/entity_<name>.go` 声明（字段分类、关系、状态转移），由 `internal/platform/metadata` 对照迁移校验；`make check-entities` 已进 `ci-fast`。新增表/列、新增能力、改状态列都必须同步，禁止手抄列清单或为通过校验删声明。跨实体写用 `Definition.Entities`，主实体必须在其中；改状态的能力必须绑定 `Transition`。详见 [实体模型](docs/entity-model.md)。
-- **Gateway 是唯一运行时入口**：`internal/platform/capability/gateway` 负责身份、权限、Schema、风险、审批、幂等、执行、Outbox 与审计。`/api/capabilities/{name}/invocations` 是唯一业务写入口；业务模块不再暴露自己的 REST 端点。页面按钮只通过 `apps/web/src/lib/capabilities.ts` 调用，不得裸 fetch。
+- **实体模型是能力的对象视图**：业务对象在 `system/*/entity_<name>.go 或 applications/*/entity_<name>.go` 声明（字段分类、关系、状态转移），由 `kernel/metadata` 对照迁移校验；`make check-entities` 已进 `ci-fast`。新增表/列、新增能力、改状态列都必须同步，禁止手抄列清单或为通过校验删声明。跨实体写用 `Definition.Entities`，主实体必须在其中；改状态的能力必须绑定 `Transition`。详见 [实体模型](docs/entity-model.md)。
+- **Gateway 是唯一运行时入口**：`kernel/capability/gateway` 负责身份、权限、Schema、风险、审批、幂等、执行、Outbox 与审计。`/api/capabilities/{name}/invocations` 是唯一业务写入口；业务模块不再暴露自己的 REST 端点。页面按钮只通过 `apps/web/src/lib/capabilities.ts` 调用，不得裸 fetch。
 - **事务与事件**：新模块的原子业务写能力必须实现 `TxExecutor`，业务数据与 `cap_outbox` 在同一事务提交。同步组合使用非事务 Executor；编排受理可用仅写运行状态的基础设施事务，事务内不执行业务节点。已迁移模块仍由领域服务自持事务，事件在成功提交后写入 Outbox；这是已知的 best effort 边界，必须保持可追踪，不得声称原子。
 - **Policy 确定性**：权限、风险等级、审批和深度限制是代码规则。人类点击可执行 high；Agent/Workflow/Event/API 的 high 必须人工确认；critical 对自动化关闭且人类调用需第二人审批。模型输出、Tool Schema、页面注册都不能替代服务端授权。
 - **审批不放大权限**：审批通过后必须用 `PrincipalForTask` 重建申请人身份执行；决策是条件更新，重复/过期/跨租户一律冲突或不可见。
@@ -31,7 +31,7 @@ Business Capability → Business Event → AI Behavior → Business Capability
 - **Outbox 至少一次**：消费端按 `(tenant_id, event_id)` 去重；不得假设 exactly-once。
 - **租户与范围**：租户、账号、部门来自可信 Principal；查询强制租户条件，详情强制账号条件；事件/审批只投影本人或具备审批权限者可见的数据。
 - **敏感字段**：`cap_invocations.input` 只落 `Loggable` 白名单；审批 API 只返回脱敏投影；凭证、正文、个人信息不得进入日志、错误、导出或 trace。
-- **生成代码禁区**：传输信封/会话/公开投影契约源为 `services/api/design`，业务动作契约源为模块 Definition；SQL 源为 `db/migrations` 与 `db/query`。禁止手改 `services/api/gen`、`internal/repository/dbgen`、`apps/web/src/api/generated`。修改源后 `make generate`、`make check-generated`。
+- **生成代码禁区**：传输信封/会话/公开投影契约源为 `services/design`，业务动作契约源为模块 Definition；SQL 源为 `db/migrations` 与 `db/query`。禁止手改 `services/gen`、`internal/repository/dbgen`、`apps/web/src/api/generated`。修改源后 `make generate`、`make check-generated`。
 - **前端**：页面按钮调用生成的 capability SDK；不得裸 fetch 或复制 DTO。TanStack Query 管远程状态，React Hook Form + Zod 管表单，TanStack Table 管常规表格。
 - **国际化**：所有用户可见文案、状态、辅助名称走 i18next，`en`/`zh-CN` 键集合一致；不拼句、不渲染翻译 HTML。
 - 禁止显式 TypeScript `any`、关闭检查、吞异常、删除断言或伪造测试结果。
@@ -39,38 +39,31 @@ Business Capability → Business Event → AI Behavior → Business Capability
 ## 目录
 
 ```text
-services/api/internal/
-├── platform/
-│   ├── capability/{contracts,registry,gateway}
-│   ├── policy/ approval/ audit/ outbox/ eventhub/
-│   ├── metadata/       # 实体模型：迁移解析、能力派生、E1–E10 校验
-├── identity/            # 会话、授权代理与身份管理能力
-├── governance/          # 配置内核（策略、范围、版本链）
-├── ai/
-│   ├── harness/         # Eino ADK + AI 任务
-│   ├── tools/           # 能力 → Eino Tool 适配
-│   ├── triggers/        # 事件 → AI 策略、去重、深度
-│   ├── context/ knowledge/ workflow/ orchestration/ evaluation/
-├── modules/
-│   ├── settings/ dictionaries/ files/ notifications/ mcp/   # 领域服务 + Entries()
-│   └── example/         # 参考业务模块（查询/创建/归档 + 事件）
-└── transport/           # Goa 传输装配与后台 starter
+services/
+├── kernel/               # 能力 Gateway、注册中心、策略、事件、元数据和流程引擎
+├── system/               # 身份、组织、治理、设置、字典、文件和通知
+├── ai/                   # 助手、Agent、工具、知识和触发器
+├── applications/         # 项目、文章和示例业务模块
+├── integrations/         # MCP 等集成
+├── runtime/              # 应用装配、配置、服务和传输
+├── cmd/ db/ design/ gen/ # 入口、SQL、契约与生成代码
+└── internal/repository/  # sqlc 生成的数据访问代码
 ```
 
 ## 任务路由
 
 | 变更 | 使用的 Skill | 规则入口 |
 |---|---|---|
-| 新增/修改业务能力、审批、审计 | baseline-feature-development + baseline-security；只有会话/系统契约变更才需要 goa-service-designer | 本文件、[ADR 015](docs/decisions/015-capability-centric-platform.md)、`services/api/internal/AGENTS.md` |
+| 新增/修改业务能力、审批、审计 | baseline-feature-development + baseline-security；只有会话/系统契约变更才需要 goa-service-designer | 本文件、[ADR 015](docs/decisions/015-capability-centric-platform.md)、`services/AGENTS.md` |
 | 决定拆几个能力、能力互调、发现业务层绕过 Gateway | baseline-capability-composition | [能力拆分与组合](docs/capability-composition.md)、ADR 015 |
 | 持久化流程、Graph、ADK、流程 Schema | baseline-capability-composition + baseline-security | [完整示例](docs/orchestration-example.md)、[Schema 路线](docs/agent-generation-plan.md) |
 | 新增事件、Trigger 策略、去重/深度 | baseline-feature-development + baseline-security + baseline-database-change | ADR 015、`db/AGENTS.md` |
 | 页面/表单/表格/SDK 消费 | baseline-web-development | `apps/web/AGENTS.md` |
-| 会话/系统/公开投影契约 | goa-service-designer | `services/api/design/AGENTS.md` |
-| 新增/修改表结构、实体声明、状态流转 | baseline-entity-model + baseline-database-change | [实体模型](docs/entity-model.md)、`services/api/internal/AGENTS.md`、`services/api/db/AGENTS.md` |
-| 迁移/查询/事务/范围过滤 | baseline-database-change | `services/api/db/AGENTS.md` |
+| 会话/系统/公开投影契约 | goa-service-designer | `services/design/AGENTS.md` |
+| 新增/修改表结构、实体声明、状态流转 | baseline-entity-model + baseline-database-change | [实体模型](docs/entity-model.md)、`services/AGENTS.md`、`services/db/AGENTS.md` |
+| 迁移/查询/事务/范围过滤 | baseline-database-change | `services/db/AGENTS.md` |
 | 文案/语言/格式化 | baseline-internationalization | `apps/web/src/i18n/AGENTS.md` |
-| 认证/授权/字段/跨租户 | baseline-security | `services/api/internal/AGENTS.md` |
+| 认证/授权/字段/跨租户 | baseline-security | `services/AGENTS.md` |
 | 测试/交付门禁 | baseline-quality-gates | `docs/testing.md` |
 | MCP 暴露面 | baseline-security + baseline-quality-gates | `docs/mcp-service-plan.md` |
 

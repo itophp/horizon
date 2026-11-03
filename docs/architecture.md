@@ -68,15 +68,15 @@ flowchart TD
 
 | 流程层 | 子流程与职责 | 当前代码位置 |
 |---|---|---|
-| 01 访问与触发入口 | 页面/SDK、助手工具、远程 MCP、页面 WebMCP、事件与流程节点将意图转成能力请求；传输层不复制业务逻辑。 | `apps/web/src/features`、`internal/transport`、`internal/modules/mcp` |
-| 02 Gateway 统一入口 | 建立可信身份与调用链；使用契约完成权限、Schema、幂等、风险策略；允许则分派，拒绝则结束，需确认则持久化后返回。 | `internal/platform/capability/gateway`、`internal/identity`、`policy`、`approval` |
+| 01 访问与触发入口 | 页面/SDK、助手工具、远程 MCP、页面 WebMCP、事件与流程节点将意图转成能力请求；传输层不复制业务逻辑。 | `apps/web/src/features`、`runtime/transport`、`integrations/mcp` |
+| 02 Gateway 统一入口 | 建立可信身份与调用链；使用契约完成权限、Schema、幂等、风险策略；允许则分派，拒绝则结束，需确认则持久化后返回。 | `kernel/capability/gateway`、`system/identity`、`policy`、`approval` |
 | 03 能力模型 | 声明名称/版本、输入输出、权限/风险、幂等、成功事件和日志白名单；关联实体与编排元数据。属于设计/代码声明过程。 | `contracts`、模块 `Definition`、`entity_*.go` |
-| 03 能力注册 | 模块 `Entries()` 汇总定义与 Handler，经共享装配、启动校验和 Registry 注册，形成可发现目录。属于启动过程。 | 模块 `Entries()`、`internal/app/capabilities.go`、`registry` |
+| 03 能力注册 | 模块 `Entries()` 汇总定义与 Handler，经共享装配、启动校验和 Registry 注册，形成可发现目录。属于启动过程。 | 模块 `Entries()`、`runtime/app/capabilities.go`、`registry` |
 | 03 能力触发解析 | Gateway 用请求名称/版本定位已注册契约，校验输入和执行政策后取得分派结果；不重新注册，也不直接绕过 Gateway 调 Handler。 | `Gateway.Invoke`、`Registry.Resolve`、工具/事件适配器 |
-| 04 执行分支 | 原子能力执行业务约束与 SQL；同步组合经 Gateway 互调；Eino Workflow 管持久化步骤，Graph/ADK 按需承接循环与工具决策，节点仍回到 Gateway。 | `internal/modules/*`、`internal/identity`、`internal/ai/{orchestration,harness,tools}` |
+| 04 执行分支 | 原子能力执行业务约束与 SQL；同步组合经 Gateway 互调；Eino Workflow 管持久化步骤，Graph/ADK 按需承接循环与工具决策，节点仍回到 Gateway。 | `system/*`、`applications/*`、`integrations/*`、`system/identity`、`kernel/workflow`、`ai/{harness,tools}` |
 | 05 数据与执行记录 | 原子能力读写业务数据；调用治理保存调用/审批/审计；AI/编排保存独立运行和加密恢复状态。不同记录由对应执行者维护，不是组合能力直接访问业务表。 | PostgreSQL、sqlc/pgx、`audit`、`ai_runs`、`orch_checkpoints` |
 | 06 返回与当前调用结束 | 返回稳定错误、业务结果、待审批或 runId；当前请求结束与长期流程完成分别表达，审批/重启后可继续原运行。 | Gateway Result、统一传输信封、SDK / Query / 页面状态 |
-| 07 提交后异步分支 | Outbox → Relay → Event Hub → Trigger；至少一次、去重、深度和身份重建后进入下一轮能力调用。并非所有请求都有事件。 | `internal/platform/{outbox,eventhub}`、`internal/ai/triggers` |
+| 07 提交后异步分支 | Outbox → Relay → Event Hub → Trigger；至少一次、去重、深度和身份重建后进入下一轮能力调用。并非所有请求都有事件。 | `kernel/{outbox,eventhub}`、`ai/triggers` |
 
 能力“触发解析”指请求进入能力执行过程；事件“AI Trigger”指已提交事实引起的新行为，两者不是同一个阶段。工具发现只读取允许的目录，也不等于触发了业务执行。
 
@@ -114,7 +114,7 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 
 | 唯一事实源 | 作用 | 生成 / 验证 |
 |---|---|---|
-| Goa `services/api/design` | 会话、系统、公开投影、能力/AI 传输信封 | Goa/OpenAPI/Orval |
+| Goa `services/design` | 会话、系统、公开投影、能力/AI 传输信封 | Goa/OpenAPI/Orval |
 | 模块 Definition/Entries | 业务输入输出与执行政策 | Schema 校验、Registry、工具适配；对外允许集另行维护 |
 | SQL migrations/query | 物理结构与范围查询 | Goose、sqlc、隔离 PostgreSQL 测试 |
 | 模块 entity_*.go | 字段分类、关系与状态语义 | metadata 对照迁移和能力做 E1–E10 校验 |
@@ -126,7 +126,7 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 
 ## 7. 当前能力与待完成项
 
-框架已提供版本化 Workflow、Graph、ADK、操作审批中断恢复、补偿、流程规格生成和完整生命周期参考；实际装配见 `internal/transport/governance.go` 和共享 `app.CapabilityModules`。支持这些机制不等于所有业务已使用它们。
+框架已提供版本化 Workflow、Graph、ADK、操作审批中断恢复、补偿、流程规格生成和完整生命周期参考；实际装配见 `runtime/transport/governance.go` 和共享 `app.CapabilityModules`。支持这些机制不等于所有业务已使用它们。
 
 文章管理已改为持久化流程 `article-publish@1.0.0`：投稿进入审核中 → 受限 ADK 结构化评审 → 记录结论 → 按结论分叉到 article.publish 或 article.reject，未选中的分支不产生任何能力调用。发布声明 high + confirm，流程会停在待审批，人工确认后才公开；人工决定（article.decide / pending_review）保留给需要更细人工兜底的部署。实现与验收见 [文章示例](agent-workflow.md#文章发布评审已实现的流程)。
 

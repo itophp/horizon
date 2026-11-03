@@ -7,11 +7,10 @@
     "apps/web/src/components/ui/AGENTS.md",
     "apps/web/src/i18n/AGENTS.md",
     "apps/web/e2e/AGENTS.md",
-    "services/api/AGENTS.md",
-    "services/api/design/AGENTS.md",
-    "services/api/db/AGENTS.md",
-    "services/api/internal/AGENTS.md",
-    "services/api/tests/AGENTS.md",
+    "services/AGENTS.md",
+    "services/design/AGENTS.md",
+    "services/db/AGENTS.md",
+    "services/tests/AGENTS.md",
     "scripts/AGENTS.md",
     "docs/AGENTS.md"
   ],
@@ -133,11 +132,7 @@
     {
       "id": "shared-capabilities",
       "skills": ["baseline-shared-capabilities", "baseline-security"],
-      "instructions": [
-        "AGENTS.md",
-        "apps/web/AGENTS.md",
-        "services/api/internal/AGENTS.md"
-      ],
+      "instructions": ["AGENTS.md", "apps/web/AGENTS.md", "services/AGENTS.md"],
       "tools": [
         "Registered settings",
         "Dictionary options and references",
@@ -168,10 +163,7 @@
     {
       "id": "api",
       "skills": ["goa-service-designer"],
-      "instructions": [
-        "services/api/AGENTS.md",
-        "services/api/design/AGENTS.md"
-      ],
+      "instructions": ["services/AGENTS.md", "services/design/AGENTS.md"],
       "tools": ["Goa", "OpenAPI", "Orval", "httptest"],
       "gates": ["generate", "generated", "fast"]
     },
@@ -179,9 +171,9 @@
       "id": "database",
       "skills": ["baseline-database-change"],
       "instructions": [
-        "services/api/db/AGENTS.md",
-        "services/api/internal/AGENTS.md",
-        "services/api/tests/AGENTS.md"
+        "services/db/AGENTS.md",
+        "services/AGENTS.md",
+        "services/tests/AGENTS.md"
       ],
       "tools": ["PostgreSQL", "pgx", "sqlc", "Goose"],
       "gates": ["generate", "generated", "integration", "fast", "entities"]
@@ -196,20 +188,14 @@
     {
       "id": "security",
       "skills": ["baseline-security"],
-      "instructions": [
-        "services/api/internal/AGENTS.md",
-        "services/api/tests/AGENTS.md"
-      ],
+      "instructions": ["services/AGENTS.md", "services/tests/AGENTS.md"],
       "tools": ["Principal", "Casbin", "DataScope", "Scoped SQL"],
       "gates": ["security", "fast"]
     },
     {
       "id": "testing",
       "skills": ["baseline-quality-gates"],
-      "instructions": [
-        "apps/web/e2e/AGENTS.md",
-        "services/api/tests/AGENTS.md"
-      ],
+      "instructions": ["apps/web/e2e/AGENTS.md", "services/tests/AGENTS.md"],
       "tools": ["Vitest", "React Testing Library", "Go testing", "Playwright"],
       "gates": ["fast", "integration", "e2e-changed", "e2e"]
     },
@@ -226,11 +212,8 @@
     },
     {
       "id": "mcp",
-      "skills": [
-        "baseline-security",
-        "baseline-quality-gates"
-      ],
-      "instructions": ["AGENTS.md", "services/api/internal/AGENTS.md"],
+      "skills": ["baseline-security", "baseline-quality-gates"],
+      "instructions": ["AGENTS.md", "services/AGENTS.md"],
       "tools": [
         "MCP protocol adapter",
         "Personal token lifecycle",
@@ -249,10 +232,9 @@
       ],
       "instructions": [
         "AGENTS.md",
-        "services/api/AGENTS.md",
-        "services/api/design/AGENTS.md",
-        "services/api/internal/AGENTS.md",
-        "services/api/db/AGENTS.md"
+        "services/AGENTS.md",
+        "services/design/AGENTS.md",
+        "services/db/AGENTS.md"
       ],
       "tools": [
         "Capability contracts",
@@ -276,10 +258,7 @@
     {
       "id": "entity",
       "skills": ["baseline-entity-model", "baseline-database-change"],
-      "instructions": [
-        "services/api/internal/AGENTS.md",
-        "services/api/db/AGENTS.md"
-      ],
+      "instructions": ["services/AGENTS.md", "services/db/AGENTS.md"],
       "tools": [
         "Entity declarations",
         "Migration schema parser",
@@ -298,8 +277,8 @@
       ],
       "instructions": [
         "AGENTS.md",
-        "services/api/internal/AGENTS.md",
-        "services/api/tests/AGENTS.md"
+        "services/AGENTS.md",
+        "services/tests/AGENTS.md"
       ],
       "tools": [
         "Eino Workflow",

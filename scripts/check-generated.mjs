@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 const roots = [
   "docs/generated/workflows",
-  "services/api/gen",
-  "services/api/internal/repository/dbgen",
+  "services/gen",
+  "services/internal/repository/dbgen",
   "apps/web/src/api/generated",
 ];
 async function snapshot() {

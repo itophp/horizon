@@ -3,7 +3,7 @@
 1. 阅读 design/design.go、当前生成接口及实现。
 2. 修改 Goa DSL 的 Payload / Result / HTTP / Errors，字段 Required 与 Validation 必须明确。
 3. make generate：相同模块图中的 Goa → OpenAPI；锁定 sqlc 生成 SQL；锁定 Orval 输出 hooks 与模型，最后统一格式化生成 SDK。
-4. 在 internal/app / internal/identity、Repository 和 internal/transport 实现逻辑，在前端使用生成的 hooks。
+4. 在 runtime/app / system/identity、Repository 和 runtime/transport 实现逻辑，在前端使用生成的 hooks。
 5. make check-generated、make lint、make typecheck、make test、make build；改数据库时额外 test-integration，完成流程后 test-e2e。
 6. 审查生成差异。删除字段、缩窄输入、改变授权范围都要报告兼容性影响。
 

@@ -2,7 +2,7 @@ import { defineConfig, defineTransformer } from "orval";
 export default defineConfig({
   baseline: {
     input: {
-      target: "../../services/api/gen/http/openapi3.json",
+      target: "../../services/gen/http/openapi3.json",
       // Goa JSON bytes are base64 strings. Orval otherwise models format:binary as Blob.
       override: {
         transformer: defineTransformer((spec) => {

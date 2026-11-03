@@ -53,7 +53,7 @@ make test-security     # 认证/授权/配置 + 真实数据库范围负向用�
 make ci                # 所有门禁，含 DB 和 E2E
 ```
 
-Go 命令可通过 `scripts/go.sh fmt ./...`、`scripts/go.sh vet ./...`、`scripts/go.sh test ./...` 执行；它们的工作目录为 services/api，工具链与缓存隔离在 .tools。使用系统 Go 时也可在 services/api 直接执行 gofmt / go vet / go test。
+Go 命令可通过 `scripts/go.sh fmt ./...`、`scripts/go.sh vet ./...`、`scripts/go.sh test ./...` 执行；它们的工作目录为 services，工具链与缓存隔离在 .tools。使用系统 Go 时也可在 services 直接执行 gofmt / go vet / go test。
 
 `.env` 由 Make 读取并导出；直接使用 pnpm 或脚本不会自动加载它。CI 为测试显式配置环境变量。`make db-down` 只停止容器；开发数据卷不会被删除。
 

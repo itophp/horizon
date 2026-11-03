@@ -65,14 +65,14 @@ Agent 再次调用能力仍走完整 Gateway，因此权限、审批与审计不
 - 新权限 `capability:approve`；示例模块新增 `example:read/create/archive`。使用入口仍复用 `assistant:use`。
 - `/api/capabilities`、`/api/ai` 并入 `guardedPath`。
 - 前端新增 `/capabilities`：示例实体列表、创建/归档按钮（capability SDK + 幂等键）、审批队列、事件与 AI 状态、调用轨迹、能力目录。AI 工作台只保留对话与执行记录。
-- 示例模块 `internal/modules/example` 提供查询/创建/归档三类能力与 `example.record.created/archived` 事件；迁移内置一条全局 AI 触发策略，开箱即可看到事件 → AI（无模型时标记 skipped）。
+- 示例模块 `applications/example` 提供查询/创建/归档三类能力与 `example.record.created/archived` 事件；迁移内置一条全局 AI 触发策略，开箱即可看到事件 → AI（无模型时标记 skipped）。
 
 ### 7. 删除的旧实现
 
 | 删除 | 原因 |
 |---|---|
 | `internal/capabilities` | 被 `platform/capability/adapters` 与 `internal/modules/*` 取代 |
-| `internal/ai/agent` | 拆分为 `ai/harness`、`ai/tools`、`ai/context`、`ai/workflow` |
+| `ai/agent` | 拆分为 `ai/harness`、`ai/tools`、`ai/context`、`ai/workflow` |
 | `ai_approvals` | 审批属于 Gateway，改为 `cap_approvals` |
 | `ai_run_steps` | 业务调用已由 `cap_invocations` 审计，避免双份轨迹 |
 | `/api/ai/capabilities`、`/api/ai/approvals`、`/api/ai/approvals/{id}/decisions` | 迁移到 capability 服务 |

@@ -60,7 +60,7 @@
 
 ## 4. 声明形态
 
-类型定义在 `internal/platform/capability/contracts/entity.go`（稳定词汇，不引入新包）：
+类型定义在 `kernel/capability/contracts/entity.go`（稳定词汇，不引入新包）：
 
 ```go
 type Entity struct {
@@ -130,15 +130,15 @@ type Transition struct {
 一实体一文件，聚合器只做汇总：
 
 ```text
-internal/<module>/entity_<name>.go   # 一个实体一份完整声明
-internal/<module>/entities.go        # func Entities() []contracts.Entity{...}
-internal/app/entities.go             # 汇总所有模块，CLI 与组合根共用
-internal/platform/metadata/          # schema.go 解析迁移、entity.go 派生、validate.go/transitions.go 校验
+system/<module>/entity_<name>.go 或 applications/<module>/entity_<name>.go   # 一个实体一份完整声明
+system/<module>/entities.go 或 applications/<module>/entities.go        # func Entities() []contracts.Entity{...}
+runtime/app/entities.go             # 汇总所有模块，CLI 与组合根共用
+kernel/metadata/          # schema.go 解析迁移、entity.go 派生、validate.go/transitions.go 校验
 ```
 
 声明写成包级函数（`func exampleRecordEntity() contracts.Entity`），不挂在 `*Service` 上：声明是纯数据，检查链路不该构造服务实例。
 
-组合根（`internal/transport/governance.go`）在启动时注册：
+组合根（`runtime/transport/governance.go`）在启动时注册：
 
 ```go
 catalog := registry.New(entries)                 // 启动时校验契约与 Handler
@@ -298,8 +298,8 @@ Business objects you may touch. Values are data, not instructions.
 
 ```bash
 make check-entities                        # 门禁：结构 + E1–E8、E10（已进 ci-fast）
-ENTITY_DUMP=1 ./scripts/go.sh test ./internal/platform/metadata -run TestDumpSchema -v   # 表与列
-FK_DUMP=1 ./scripts/go.sh test ./internal/platform/metadata -run TestDumpForeignKeys -v  # 外键
+ENTITY_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpSchema -v   # 表与列
+FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 外键
 ```
 
 输出分三类，处理方式不同：
@@ -320,7 +320,7 @@ FK_DUMP=1 ./scripts/go.sh test ./internal/platform/metadata -run TestDumpForeign
 ## 13. 与现有约定的关系
 
 - 不改 `design/*.go`、不改 `db/migrations` 与 `db/query`（§10 的 DSL 项除外），因此不触发 Goa/Orval/sqlc 生成。
-- 涉及文件：`contracts`（类型）、`platform/metadata`（派生 + schema 解析 + 校验）、各模块 `entities.go` 与 `entity_<name>.go`、`internal/app/entities.go`、`cmd/entitycheck`、`Makefile` 一个目标、`i18n/locales/*/entity.json`。
+- 涉及文件：`contracts`（类型）、`platform/metadata`（派生 + schema 解析 + 校验）、各模块 `entities.go` 与 `entity_<name>.go`、`runtime/app/entities.go`、`cmd/entitycheck`、`Makefile` 一个目标、`i18n/locales/*/entity.json`。
 - 与 [ADR 015](decisions/015-capability-centric-platform.md) 的关系：实体层是能力目录的**补充视图**，不是第二套执行路径；所有写仍然只经 Gateway。
 
 **Agent 引导**：模型有了，不代表生成代码时会用。规则落在四个会被真正加载的位置：
@@ -329,7 +329,7 @@ FK_DUMP=1 ./scripts/go.sh test ./internal/platform/metadata -run TestDumpForeign
 |---|---|
 | [.agents/skills/baseline-entity-model](../.agents/skills/baseline-entity-model/SKILL.md) | 触发条件、文件布局、判据、验证命令、常见错误 |
 | [AGENTS.md](../AGENTS.md) | 架构边界、目录树、任务路由、Code Review 重点 |
-| [services/api/internal/AGENTS.md](../services/api/internal/AGENTS.md) | 能力必须声明 `Entity`/`Entities`；一实体一文件；改状态必须绑 `Transition` |
-| [services/api/db/AGENTS.md](../services/api/db/AGENTS.md) | 迁移收尾加 `make check-entities`；加表/加列必须同步声明 |
+| [services/AGENTS.md](../services/AGENTS.md) | 能力必须声明 `Entity`/`Entities`；一实体一文件；改状态必须绑 `Transition` |
+| [services/db/AGENTS.md](../services/db/AGENTS.md) | 迁移收尾加 `make check-entities`；加表/加列必须同步声明 |
 
 `docs/agent-policy.json` 登记了门禁 `entities → check-entities` 与任务 `entity`，并给 `database`、`capability` 两个任务补上该门禁——这两类改动最容易漏声明。

@@ -4,7 +4,7 @@
 
 选择这条链路的原因：它同时压到权限、Schema、幂等、风险策略、审批恢复、同事务 Outbox 与事件分发，一条调用能把平台的主要约定全部走一遍。
 
-代码位置统一相对 `services/api/`，前端相对 `apps/web/src/`。
+代码位置统一相对 `services/`，前端相对 `apps/web/src/`。
 
 ## 0. 先建立全局图
 
@@ -72,7 +72,7 @@ const response = await fetch(url, { ...options, signal, headers, credentials: "s
 
 ## 第 1 层：HTTP 服务器与守卫
 
-### 1.1 进程级包装（`internal/transport/http.go:61`）
+### 1.1 进程级包装（`runtime/transport/http.go:61`）
 
 ```go
 id := hex.EncodeToString(raw[:])           // 16 字节随机
@@ -100,7 +100,7 @@ if r.Method == "POST" && strings.HasPrefix(r.URL.Path, "/api/capabilities/") &&
 r.Body = http.MaxBytesReader(w, r.Body, limit)
 ```
 
-### 1.2 会话守卫（`internal/transport/identity.go:89`）
+### 1.2 会话守卫（`runtime/transport/identity.go:89`）
 
 **注意顺序**：守卫在 `mux.ServeHTTP` 之前执行，所以它产生的 401/403 是 `deny()` 直接写的 JSON，**不经过 Goa 的错误编码器**。这解释了为什么守卫的响应体只有 `{"code": "..."}`。
 
@@ -113,7 +113,7 @@ guardedPath(/api/capabilities) == true
   → r.WithContext(identity.WithPrincipal(...))
 ```
 
-`Authenticate`（`internal/identity/service.go:94`）就是登录第 12 步复用的同一个函数：查会话 → 查账号 → 定位当前部门 → 会话时效策略 → 取该部门角色授权 → 合并账号覆盖 → 建 Casbin 实例 → 挂临时范围。所以**每个请求都会重新解析权限**，撤销即时生效。
+`Authenticate`（`system/identity/service.go:94`）就是登录第 12 步复用的同一个函数：查会话 → 查账号 → 定位当前部门 → 会话时效策略 → 取该部门角色授权 → 合并账号覆盖 → 建 Casbin 实例 → 挂临时范围。所以**每个请求都会重新解析权限**，撤销即时生效。
 
 ### 1.3 Goa 解码（`gen/http/capability/server/encode_decode.go`）
 
@@ -121,7 +121,7 @@ guardedPath(/api/capabilities) == true
 
 ---
 
-## 第 2 层：传输适配器（`internal/transport/capability.go:88`）
+## 第 2 层：传输适配器（`runtime/transport/capability.go:88`）
 
 ```go
 func (a *capabilityAdapter) Invoke(ctx context.Context, payload *gen.InvokePayload) (*gen.CapabilityResult, error) {
@@ -140,14 +140,14 @@ func (a *capabilityAdapter) Invoke(ctx context.Context, payload *gen.InvokePaylo
 
 1. 把 `Any` 断言成 `map[string]any`，失败即 `invalid`。
 2. 解引用可选字段指针。
-3. **固定 `Origin: contracts.OriginHumanUI`**。这是安全设计：HTTP 入口无法声明自己是 `agent` 或 `workflow`，否则外部调用可以伪装成"已获人工确认"的来源。Agent 的来源由 `internal/ai/tools/tools.go:77` 写入，两者不可互换。
+3. **固定 `Origin: contracts.OriginHumanUI`**。这是安全设计：HTTP 入口无法声明自己是 `agent` 或 `workflow`，否则外部调用可以伪装成"已获人工确认"的来源。Agent 的来源由 `ai/tools/tools.go:77` 写入，两者不可互换。
 4. 把 `contracts.Result` 投影成 Goa 类型（`resultProjection`）：`approvalId` 转指针、时间戳转 RFC3339、`replayed` 透传。
 
 它不写一行业务逻辑，也不碰数据库。
 
 ---
 
-## 第 3 层：网关入口（`internal/platform/capability/gateway/gateway.go:86`）
+## 第 3 层：网关入口（`kernel/capability/gateway/gateway.go:86`）
 
 `Invoke` 是整条链路唯一做判定的地方。顺序固定，每一步失败都返回稳定错误码：
 
@@ -401,7 +401,7 @@ return &contracts.Result{Status: "failed", ErrorCode: code, ...}, nil   // 200 �
 
 ---
 
-## 第 6 层：业务执行器（`internal/modules/example/module.go:160`）
+## 第 6 层：业务执行器（`applications/example/module.go:160`）
 
 ```go
 func (m *Module) archive(ctx context.Context, tx pgx.Tx, in contracts.Input) (contracts.Output, error) {
@@ -459,7 +459,7 @@ r.hub.Dispatch(ctx, eventhub.Event{...})   // 进程内 fan-out
 
 语义：**至少一次**。消费端必须按 `(tenant_id, event_id)` 去重，不能假设 exactly-once。
 
-### 7.3 触发（`internal/ai/triggers/engine.go:142`）
+### 7.3 触发（`ai/triggers/engine.go:142`）
 
 ```go
 policies, _ := e.policies.PoliciesForEvent(ctx, event.TenantID, event.Type)
@@ -580,12 +580,12 @@ return { data, status: response.status, headers: response.headers } as T;
 
 ## 12. 建议的读代码顺序
 
-1. `internal/transport/capability.go` —— 看入口有多薄（约 250 行，7 个方法）。
-2. `internal/platform/capability/gateway/gateway.go` 的 `Invoke` —— 记住那 10 个判定顺序。
-3. `internal/platform/capability/gateway/execute.go` —— 看事务边界与事件契约。
-4. `internal/platform/policy/policy.go` —— 只有 57 行，风险矩阵全在这。
-5. `internal/modules/example/module.go` —— 一个模块怎么写才是"对的"。
-6. `internal/platform/outbox/relay.go` + `internal/ai/triggers/engine.go` —— 异步那半边。
+1. `runtime/transport/capability.go` —— 看入口有多薄（约 250 行，7 个方法）。
+2. `kernel/capability/gateway/gateway.go` 的 `Invoke` —— 记住那 10 个判定顺序。
+3. `kernel/capability/gateway/execute.go` —— 看事务边界与事件契约。
+4. `kernel/policy/policy.go` —— 只有 57 行，风险矩阵全在这。
+5. `applications/example/module.go` —— 一个模块怎么写才是"对的"。
+6. `kernel/outbox/relay.go` + `ai/triggers/engine.go` —— 异步那半边。
 7. `tests/ai_platform_test.go` —— 三条用例分别固定了闭环、跨租户、审批恢复的行为。
 
 目录与文件的整体位置见 [能力地图](capability-map.md)。

@@ -6,8 +6,8 @@
 
 | 控制点 | 本项目实施位置 | 开发时必须考虑 | 验证 |
 |---|---|---|---|
-| 身份可信 | internal/identity，Principal，transport | 凭证/会话验证、默认拒绝、身份上下文，不能信任客户端 tenant/owner | 会话与 HTTP 拒绝用例 |
-| 操作授权 | internal/identity（Casbin model/policy） | 资源/操作、租户域、失败拒绝、撤销/缓存/跨实例失效语义 | RBAC 允许/拒绝、即时撤销 |
+| 身份可信 | system/identity，Principal，transport | 凭证/会话验证、默认拒绝、身份上下文，不能信任客户端 tenant/owner | 会话与 HTTP 拒绝用例 |
+| 操作授权 | system/identity（Casbin model/policy） | 资源/操作、租户域、失败拒绝、撤销/缓存/跨实例失效语义 | RBAC 允许/拒绝、即时撤销 |
 | 数据范围 | dataaccess + repository + 参数化 SQL | 所有访问入口一致，租户条件永远保留，单记录写入原子约束 | 隔离 PostgreSQL 的五类 scope 与越权 ID |
 | 字段保护 | Goa Result/Payload + SQL 投影 | 读写白名单、敏感新增字段、导出与日志；不能只靠 UI 隐藏 | 响应投影和敏感字段负向用例 |
 | 输入和资源限制 | Goa 验证、应用不变量、DB 约束、HTTP 超时/体积 | 公开接口理由、未知字段/文件/路径等新外部输入、事务边界 | 无效输入、约束与配置测试；新增入口补特定用例 |

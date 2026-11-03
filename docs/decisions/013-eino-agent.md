@@ -61,12 +61,12 @@ ADR 012 的内嵌助手是「浏览器内工具循环 + 服务端单轮模型网
 
 | 职责 | 位置 |
 |---|---|
-| 表与查询 | `services/api/db/migrations/00013_knowledge.sql`、`db/query/knowledge.sql` |
-| 模型与设置解析 | `services/api/internal/agent/config.go` |
-| 切分、检索、工具 | `services/api/internal/agent/knowledge.go` |
-| 工作流图 | `services/api/internal/agent/workflow.go` |
-| 智能体与写入 | `services/api/internal/agent/agent.go` |
-| 接口契约 | `services/api/design/assistant.go` |
-| 服务装配 | `services/api/internal/transport/assistant.go` |
+| 表与查询 | `services/db/migrations/00013_knowledge.sql`、`db/query/knowledge.sql` |
+| 模型与设置解析 | `services/internal/agent/config.go` |
+| 切分、检索、工具 | `services/internal/agent/knowledge.go` |
+| 工作流图 | `services/internal/agent/workflow.go` |
+| 智能体与写入 | `services/internal/agent/agent.go` |
+| 接口契约 | `services/design/assistant.go` |
+| 服务装配 | `services/runtime/transport/assistant.go` |
 | 前端模式切换 | `apps/web/src/features/assistant/provider.tsx`、`widget.tsx` |
 | 依赖与选型 | `docs/versions.md` |

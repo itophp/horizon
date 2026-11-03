@@ -35,7 +35,7 @@
 
 `test-e2e-changed`、`test-e2e-smoke` 与 `test-e2e-parallel` 只为缩短等待，不等于全量：只有 `make test-e2e` 和 `make ci` 代表完整浏览器集合。用前两个交付时必须写明选中的文件、未重跑的集合和理由，不能宣称全量通过。在 E2E 暂停期内只有 `test-e2e-changed` 默认可用，`test-e2e-smoke` 需要理由，`test-e2e-parallel` 与 `make test-e2e` 需要授权。
 
-- 映射表在 `scripts/e2e-changed.mjs`：`features/<模块>` 对应同名 spec，`src/{api,i18n,app,lib,components}`、`design/` 与 `internal/server` 对应 foundation，改了 spec 就跑该 spec；无映射的路径（如迁移 SQL）会被列出并退回 `@smoke`，不会静默扩成全集。暂停期内退回 `@smoke` 视为映射未命中，不跑浏览器，在汇报中记未覆盖。`node scripts/e2e-changed.mjs --dry-run` 只打印选择结果。
+- 映射表在 `scripts/e2e-changed.mjs`：`features/<模块>` 对应同名 spec，`src/{api,i18n,app,lib,components}`、`design/` 与 `runtime/server` 对应 foundation，改了 spec 就跑该 spec；无映射的路径（如迁移 SQL）会被列出并退回 `@smoke`，不会静默扩成全集。暂停期内退回 `@smoke` 视为映射未命中，不跑浏览器，在汇报中记未覆盖。`node scripts/e2e-changed.mjs --dry-run` 只打印选择结果。
 - `@smoke` 用 Playwright 标题后缀标记，选择标准是“单文件内最便宜且真的跨层”，不把慢用例塞进快速集。
 - `test-e2e-parallel` 按端口分组：默认栈（5179/8099/WebMCP 18794）跑 administration、foundation、mcp、webmcp；governance 栈（5183/8101）跑 governance、notifications、settings-schedules。分组由 spec 内写死的 Origin 决定，新增 spec 必须先确认它连哪个栈才能改分组。
 - `E2E_WORKERS` 可提高单进程 worker 数，但所有用例共用一套 Go 服务与隔离 schema，只有所选文件互不写全局设置时才安全；默认 1。

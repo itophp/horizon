@@ -22,7 +22,7 @@ description: "Integrate shared system settings, dictionaries, private file uploa
 
 ## 设置项
 
-1. 搜索 `internal/governance/registry.go` 与已有消费者，复用同义键；新增稳定命名空间键时声明类型、默认值、校验/上下界、敏感性和消费者。
+1. 搜索 `system/governance/registry.go` 与已有消费者，复用同义键；新增稳定命名空间键时声明类型、默认值、校验/上下界、敏感性和消费者。
 2. 系统设置、字典是当前工作空间公共能力，不关联企业/公司/部门配置范围。仅明确允许的展示/通知键可由本人偏好覆盖；公共不等于跨租户或免权限。
 3. 后端注入现有共享 Core，用 `Setting(ctx, principal, key)` 读取有效值，再以 `governance.String/Number/Bool` 解码；业务校验必须在后端执行。前端非敏感展示值使用 `useConfiguration`，不要把管理接口当普通页面初始化接口。
 4. 新键同时实现真实消费者和 en/zh-CN 标签；必要时更新分组、个人白名单及运行时投影。系统公共配置修改经过既有草稿/发布/版本/审计流程；敏感发布和回退保留单次重新认证。

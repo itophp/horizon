@@ -43,8 +43,8 @@
 
 ## 关键代码
 
-- 契约与生成：`services/api/design/assistant.go` → Goa / Orval。
-- Agent 与加密检查点：`services/api/internal/ai/harness/browser.go`。
-- 单次恢复 SQL：`services/api/db/query/ai.sql`。
-- 会话适配：`services/api/internal/transport/assistant.go`。
+- 契约与生成：`services/design/assistant.go` → Goa / Orval。
+- Agent 与加密检查点：`services/ai/harness/browser.go`。
+- 单次恢复 SQL：`services/db/query/ai.sql`。
+- 会话适配：`services/runtime/transport/assistant.go`。
 - 浮动面板与 WebMCP 执行：`apps/web/src/features/assistant/provider.tsx`、`widget.tsx`。

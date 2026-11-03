@@ -124,7 +124,7 @@ SDK 与 x/time 是应用直接依赖，其余由 SDK 引入；全部由 go.mod/g
 - 只以插件形式启用标题（1–3 级）、列表、引用、分隔线、链接与表格，工具栏按需裁剪；不安装 image、code-block、diff-source 插件，因此编辑器内没有“上传并插入文件”和源码/差异/预览浏览入口，编辑区即所见即所得结果。
 - `suppressHtmlProcessing` 关闭原始 HTML 处理，`linkPlugin.validateUrl` 只放行 http(s)/mailto，与 NotificationMarkdown 的 URL 策略一致。
 - 样式按后台 tokens 覆盖（`--base*` / `--accent*` 映射到 `--app-*`），浅暗主题共用；不引入第二套视觉体系，也不改第三方包源码。
-- 传递依赖（lexical 0.48、codemirror 6、radix 原语等）由 pnpm-lock.yaml 固定，未使用 latest 安装，未修改 `services/api/gen` 与 `apps/web/src/api/generated`。
+- 传递依赖（lexical 0.48、codemirror 6、radix 原语等）由 pnpm-lock.yaml 固定，未使用 latest 安装，未修改 `services/gen` 与 `apps/web/src/api/generated`。
 
 ## 2026-10-31 Eino 智能体运行时
 

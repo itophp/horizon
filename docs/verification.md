@@ -143,7 +143,7 @@ Playwright 1.64.1 配套 Chromium 下载缓慢，已中止；本地使用已安�
 - system 一级模块及设置/字典/文件/通知二级功能，目录共 40 个权限；管理写与发布等要求正式权限，旧角色不因目录扩展自动扩权。个人偏好/消息使用本人入口；权限矩阵保留一级 rowSpan 并显示扩展操作。
 - 追加 00005/00006 迁移，保留原有账号/会话。删除账号清理个人配置，不删除共享历史/附件；gov_identity_refs 保存历史 ID 并保留跨租户复合外键。共享配置按自身拥有范围授权，不能套用账号任意部门可见规则。
 
-规则同步：六个 baseline 项目 Skill、apps/web/AGENTS.md、services/api/internal/AGENTS.md、services/api/db/AGENTS.md、安全、架构、测试、设计系统、工具矩阵与版本说明。六个 Skill 均通过官方 quick_validate.py；前端 Skill 额外记录 Base UI 表单提交按钮需显式 type="submit"。上游 Goa Skill 未改动。
+规则同步：六个 baseline 项目 Skill、apps/web/AGENTS.md、services/AGENTS.md、services/db/AGENTS.md、安全、架构、测试、设计系统、工具矩阵与版本说明。六个 Skill 均通过官方 quick_validate.py；前端 Skill 额外记录 Base UI 表单提交按钮需显式 type="submit"。上游 Goa Skill 未改动。
 
 实际本地验证：
 

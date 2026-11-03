@@ -20,13 +20,13 @@
 ## 1. 一句话分层
 
 ```
-契约层   services/api/design（Goa DSL）      → 唯一 API 源，生成 gen/ 与前端 SDK
-数据层   services/api/db（migrations/query） → 唯一 schema 与 SQL 源，生成 dbgen/
-运行时   services/api/internal/platform/capability（contracts → registry → gateway）
-业务层   services/api/internal/{identity,modules/*,ai/*}  → 只在 registry 注册能力
-传输层   services/api/internal/transport     → 装配路由、会话、限流、中间件
+契约层   services/design（Goa DSL）      → 唯一 API 源，生成 gen/ 与前端 SDK
+数据层   services/db（migrations/query） → 唯一 schema 与 SQL 源，生成 dbgen/
+运行时   services/kernel/capability（contracts → registry → gateway）
+业务层   services/internal/{identity,modules/*,ai/*}  → 只在 registry 注册能力
+传输层   services/runtime/transport     → 装配路由、会话、限流、中间件
 交付面   apps/web/src/features/*             → 按钮通过 capability SDK 调 Gateway
-验证面   services/api/tests、apps/web/e2e、scripts/*.mjs → 门禁与真实链路验收
+验证面   services/tests、apps/web/e2e、scripts/*.mjs → 门禁与真实链路验收
 ```
 
 四条不变量贯穿全部文件：
@@ -41,7 +41,7 @@
 ```
 xxh-baseline/
 ├── apps/web/                  React 控制台（Vite + TS + shadcn）
-├── services/api/              Go 单体服务（Goa + sqlc + PostgreSQL）
+├── services/              Go 单体服务（Goa + sqlc + PostgreSQL）
 ├── .agents/skills/            工程侧 Skill：Agent 开发时要加载的方法
 ├── webskills/                 运行时侧 Skill：分发给 MCP 客户端的页面/业务使用说明
 ├── scripts/                   门禁、代码生成校验、WebMCP/远程 MCP 本机服务
@@ -123,7 +123,7 @@ xxh-baseline/
 
 两者互不替代：`.agents/skills` 约束怎么写代码，`webskills` 约束客户端怎么用应用。
 
-## 6. services/api
+## 6. services
 
 ### 6.1 分层
 
@@ -131,18 +131,18 @@ xxh-baseline/
 |---|---|
 | `design/` | Goa DSL 契约源。Payload/Result/Error/HTTP/Security 只在这里声明。 |
 | `cmd/` | 四个进程入口，只做装配与生命周期。 |
-| `internal/platform/capability/` | 能力契约、定义中心与唯一执行网关。 |
-| `internal/platform/{policy,approval,audit,outbox,eventhub,metadata}/` | 确定性策略、审批队列、审计读模型、事务 Outbox、事件日志；`metadata` 是实体模型（解析迁移 + 派生 + E1–E10 校验），见 [实体模型](entity-model.md)。 |
-| `internal/{identity,governance,auth,authorization,dataaccess}/` | 身份后台、系统治理、演示认证、Casbin 授权、数据范围解析。 |
-| `internal/modules/*` | 业务模块，各自注册能力并实现 Executor。 |
-| `internal/ai/*` | Eino Agent、工具适配、事件触发、上下文、知识库、工作流、评估。 |
-| `internal/transport/` | 路由装配、会话守卫、限流、中间件、运行时组合根。 |
-| `internal/{app,server,config,repository}/` | 技术示例服务、进程装配、配置校验、sqlc 生成仓储。 |
+| `kernel/capability/` | 能力契约、定义中心与唯一执行网关。 |
+| `kernel/{policy,approval,audit,outbox,eventhub,metadata}/` | 确定性策略、审批队列、审计读模型、事务 Outbox、事件日志；`metadata` 是实体模型（解析迁移 + 派生 + E1–E10 校验），见 [实体模型](entity-model.md)。 |
+| `system/{identity,governance}/` | 身份后台、系统治理、演示认证、Casbin 授权、数据范围解析。 |
+| `system/*`、`applications/*`、`integrations/*` | 业务模块，各自注册能力并实现 Executor。 |
+| `ai/*` | Eino Agent、工具适配、事件触发、上下文、知识库、工作流、评估。 |
+| `runtime/transport/` | 路由装配、会话守卫、限流、中间件、运行时组合根。 |
+| `runtime/{app,server,config}/`、`internal/repository/` | 技术示例服务、进程装配、配置校验、sqlc 生成仓储。 |
 | `db/` | 迁移与 SQL 查询源。 |
 | `gen/`、`internal/repository/dbgen/` | 生成代码，禁止手改。 |
 | `tests/` | 真实 PostgreSQL 集成测试。 |
 
-规则文件：`AGENTS.md`（服务总则）、`internal/AGENTS.md`（安全与数据访问）、`db/AGENTS.md`、`design/AGENTS.md`、`tests/AGENTS.md`。
+规则文件：`AGENTS.md`（服务总则）、`services/AGENTS.md`（安全与数据访问）、`db/AGENTS.md`、`design/AGENTS.md`、`tests/AGENTS.md`。
 
 ### 6.2 design/ — API 契约源
 
@@ -197,7 +197,7 @@ xxh-baseline/
 | `platform/metadata/transitions.go` | E8：状态转移与能力目录的双向核对。 |
 | `cmd/entitycheck/` | `make check-entities` 入口：结构问题、契约问题、schema 问题、hint 与 accepted gaps 分列输出。 |
 
-### 6.6 internal/identity — 身份与权限后台
+### 6.6 system/identity — 身份与权限后台
 
 | 文件 | 作用 |
 |---|---|
@@ -231,12 +231,12 @@ xxh-baseline/
 | `config/config.go` | 环境变量加载与集中校验：非法安全配置直接启动失败。 |
 | `config/config_test.go` | 演示令牌限 loopback、生产必须 HTTPS 原点。 |
 | `governance/core.go` | 治理 `Core`：连接池、`Q`、身份、文件存储、加密（设置/字典/通知共用）。 |
-| `governance/registry.go` | 配置项/字典定义的注册表：所有者、层级、校验、消费者声明。 |
+| `system/governance/registry.go` | 配置项/字典定义的注册表：所有者、层级、校验、消费者声明。 |
 | `governance/core_test.go` | 加密绑定租户与密钥、注册项拒绝不安全输入。 |
 | `app/system.go` | 技术示例服务 `System`：`Health`、`Echo`（无敏感数据）。 |
 | `server/server.go` | 进程装配：建池、构造 identity/governance/各模块、启动通知与排期 worker、MCP 保留期清理、HTTP 超时与优雅关闭。 |
 
-### 6.8 internal/transport — 传输与组合根
+### 6.8 runtime/transport — 传输与组合根
 
 | 文件 | 作用 |
 |---|---|
@@ -248,7 +248,7 @@ xxh-baseline/
 | `governance.go` | **运行时组合根**：MCP `/mcp` 端点、知识库、harness、trigger engine、Outbox relay、能力目录装配、Gateway 构造、branding 投影、后台 starter。 |
 | `http_test.go` | 每个受保护面都被会话守卫覆盖、HTTP 边界行为。 |
 
-### 6.9 internal/modules — 业务模块
+### 6.9 system、applications 与 integrations — 业务模块
 
 | 文件 | 作用 |
 |---|---|
@@ -282,7 +282,7 @@ xxh-baseline/
 | `mcp/maintenance.go` | 令牌与审计的保留期清理。 |
 | `mcp/http_test.go` / `registry_test.go` | 缺失凭证/跨域拒绝；工具 Schema 缺参拒绝、限流独立、字典边界与契约一致。 |
 
-### 6.10 internal/ai — Agent 运行时
+### 6.10 ai — Agent 运行时
 
 | 文件 | 作用 |
 |---|---|
@@ -343,8 +343,8 @@ xxh-baseline/
 
 | 目录 | 生成器 | 说明 |
 |---|---|---|
-| `services/api/gen/` | Goa | 服务接口、端点、HTTP client/server 编解码、OpenAPI（3.0 给 Orval，3.2 留作产物）、CLI。 |
-| `services/api/internal/repository/dbgen/` | sqlc | 每个查询源一个 `*.sql.go`，另有 `db.go`（`Queries`/事务）与 `models.go`。 |
+| `services/gen/` | Goa | 服务接口、端点、HTTP client/server 编解码、OpenAPI（3.0 给 Orval，3.2 留作产物）、CLI。 |
+| `services/internal/repository/dbgen/` | sqlc | 每个查询源一个 `*.sql.go`，另有 `db.go`（`Queries`/事务）与 `models.go`。 |
 | `apps/web/src/api/generated/` | Orval | `baseline.ts`（react-query hooks）与 `models/*`（DTO）。 |
 
 `sqlc.yaml` 定义 sqlc 的输入输出与命名规则；`go.mod`/`go.sum` 锁定 Go 依赖。
@@ -498,7 +498,7 @@ xxh-baseline/
 
 | 文件 | 作用 |
 |---|---|
-| `go.sh` | 用 `.tools/go` 与项目 `GOMODCACHE`/`GOCACHE` 在 `services/api` 下执行 Go 命令。 |
+| `go.sh` | 用 `.tools/go` 与项目 `GOMODCACHE`/`GOCACHE` 在 `services` 下执行 Go 命令。 |
 | `check-gofmt.sh` | 检查（或 `--write`）全目录格式，含 integration build tag 文件。 |
 | `check-generated.mjs` | 对 `gen`、`dbgen`、`api/generated` 做 hash 快照，重新生成后比对，发现手改即失败。 |
 | `check-i18n.mjs` | 校验语言目录与命名空间文件一致、key 集合一致。 |
@@ -546,7 +546,7 @@ xxh-baseline/
 
 ## 10. 能力清单
 
-共 65 个已注册能力，全部在 `internal/modules/*`、`internal/identity`、`internal/ai/knowledge` 的 `Entries()` 中注册一次。业务模块不再有各自的 REST 端点。风险与审批来自契约声明；实际是否放行由 `platform/policy` 按「风险 × 来源」决定。
+共 65 个已注册能力，全部在 `system/*`、`applications/*`、`integrations/*`、`system/identity`、`ai/knowledge` 的 `Entries()` 中注册一次。业务模块不再有各自的 REST 端点。风险与审批来自契约声明；实际是否放行由 `platform/policy` 按「风险 × 来源」决定。
 
 **身份（12，全部 high + 需确认，均声明成功事件）**
 
@@ -665,14 +665,14 @@ settings.schedule.create → gov_settings_schedules(pending)
 
 | 要改的东西 | 主要文件 |
 |---|---|
-| 新增业务能力 | `internal/modules/<模块>/capability.go`（契约 + 注册）、service 里实现 Executor、必要时 `db/migrations` + `db/query`、`tests/capability_modules_test.go` |
-| 新增会话/系统端点 | `design/*.go` → `make generate` → `internal/transport/*.go` 适配 → `guardedPath` 与 `tests` |
-| 改权限/角色/范围 | `internal/identity/{catalog,policy,governance}.go`、`authorization/*`、`dataaccess/scope.go`、`tests/identity_test.go`、前端 `permission-matrix.tsx` |
-| 改临时权限 | `internal/identity/temporary.go`、`db/query/temporary_access.sql`、`temporary-access.tsx`、`tests/temporary_access_test.go` |
-| 改设置/字典 | `internal/modules/{settings,dictionaries}`、`governance/registry.go`、`gov_*` 迁移、`features/governance/*` |
-| 改通知/附件 | `internal/modules/{notifications,files}`、`gov_announcements`/`gov_files`、`notification-*.tsx`、`files.tsx` |
-| 改 Agent/触发/工具 | `internal/ai/*`、`internal/platform/{eventhub,outbox}`、`ai/page.tsx`、`tests/ai_platform_test.go` |
-| 改远程 MCP | `internal/modules/mcp/*`、`db/query/mcp.sql`、`mcp/remote.tsx`、`scripts/mcp-business-*`、`webskills/baseline-business` |
+| 新增业务能力 | `system/<模块>/capability.go` 或 `applications/<模块>/module.go`（契约 + 注册）、service 里实现 Executor、必要时 `db/migrations` + `db/query`、`tests/capability_modules_test.go` |
+| 新增会话/系统端点 | `design/*.go` → `make generate` → `runtime/transport/*.go` 适配 → `guardedPath` 与 `tests` |
+| 改权限/角色/范围 | `system/identity/{catalog,policy,governance}.go`、`authorization/*`、`dataaccess/scope.go`、`tests/identity_test.go`、前端 `permission-matrix.tsx` |
+| 改临时权限 | `system/identity/temporary.go`、`db/query/temporary_access.sql`、`temporary-access.tsx`、`tests/temporary_access_test.go` |
+| 改设置/字典 | `system/{settings,dictionaries}`、`system/governance/registry.go`、`gov_*` 迁移、`features/governance/*` |
+| 改通知/附件 | `system/{notifications,files}`、`gov_announcements`/`gov_files`、`notification-*.tsx`、`files.tsx` |
+| 改 Agent/触发/工具 | `ai/*`、`kernel/{eventhub,outbox}`、`ai/page.tsx`、`tests/ai_platform_test.go` |
+| 改远程 MCP | `integrations/mcp/*`、`db/query/mcp.sql`、`mcp/remote.tsx`、`scripts/mcp-business-*`、`webskills/baseline-business` |
 | 改页面工具 | `features/webmcp/*`、`lib/webmcp/{runtime,routes}.ts`、`e2e/webmcp.spec.ts`、`webskills/baseline-web-*` |
 | 加文案 | `i18n/locales/{en,zh-CN}/<namespace>.json`（两侧同步） |
 | 加门禁/脚本 | `scripts/*.mjs` + 自身测试、`Makefile`、`docs/agent-policy.json`、`ci.yml` |
@@ -681,9 +681,9 @@ settings.schedule.create → gov_settings_schedules(pending)
 
 | 源（可改） | 生成物（禁止手改） |
 |---|---|
-| `services/api/design/*.go` | `services/api/gen/**` |
-| `services/api/db/migrations/*.sql`、`db/query/*.sql` | `services/api/internal/repository/dbgen/**` |
-| `services/api/gen/http/openapi3.json`（间接） | `apps/web/src/api/generated/**` |
+| `services/design/*.go` | `services/gen/**` |
+| `services/db/migrations/*.sql`、`db/query/*.sql` | `services/internal/repository/dbgen/**` |
+| `services/gen/http/openapi3.json`（间接） | `apps/web/src/api/generated/**` |
 
 - 改源之后必须 `make generate`，再 `make check-generated`；生成失败时用正确 Node（`/usr/local/opt/node@22/bin`）重新生成，不手写生成文件。
 - `components/ui/*` 是可维护的 shadcn 源码，与生成目录性质不同，不适用"禁改"。

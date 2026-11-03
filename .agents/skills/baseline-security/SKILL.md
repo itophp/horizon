@@ -5,7 +5,7 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 
 # 认证、授权与基础安全
 
-先读 [安全约定](../../../docs/security.md) 及 [后端实现规则](../../../services/api/internal/AGENTS.md)。涉及 SQL 时还要使用 baseline-database-change。
+先读 [安全约定](../../../docs/security.md) 及 [后端实现规则](../../../services/AGENTS.md)。涉及 SQL 时还要使用 baseline-database-change。
 
 为变更说明：身份来源、resource/action、可信租户、适用 DataScope、输入边界、字段读写投影、日志信息及所有访问入口。未知权限与解析失败默认拒绝。
 

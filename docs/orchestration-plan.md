@@ -20,7 +20,7 @@
 
 ## 2. 能力入口
 
-定义由 `internal/modules/orchestration` 的 Entries 自持，运行时位于 `internal/ai/orchestration`，现有 grounded answering 的 `ai/workflow` 保留。
+定义由 `system/orchestration` 的 Entries 自持，运行时位于 `ai/orchestration`，现有 grounded answering 的 `ai/workflow` 保留。
 
 | 能力 | 权限 | 语义 |
 |---|---|---|
