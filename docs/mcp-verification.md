@@ -17,7 +17,7 @@
 | Codex 原生调用与撤销拒绝 | 实际 codex-cli 0.165.0-alpha.1.2 app-server，独立临时配置；不启动模型 turn | 已验 |
 | WorkBuddy 原生连接/发现与撤销拒绝 | 腾讯 WorkBuddy 5.8.2 随附 CLI 使用隔离配置执行真实 MCP health；撤销后不能连接 | 已验 |
 | WorkBuddy 桌面端工具调用 | 用户明确选择稍后手动验收；没有改动其当前任务或配置 | 用户待验，不记通过 |
-| 工程 Skill 与长期路由 | baseline-mcp-development 专注未来业务工具创建/变更；安全/目录规则/ADR/工具矩阵同步；官方作者验证器已运行 | 已完成 |
+| 工程 Skill 与长期路由 | 当时的 MCP 工程 Skill 专注业务工具创建/变更（该 Skill 后已移除）；安全/目录规则/ADR/工具矩阵同步；官方作者验证器已运行 | 已完成 |
 
 ## 已执行检查
 
@@ -26,7 +26,7 @@
 - `make test-mcp`：通过，新增临时授权、通知入口范围与并发/过期/归属失效专项随后单独完成模块回归。
 - `WORKBUDDY_CLI=本机随附CLI路径 make test-mcp-native`：通过；Codex 原生工具调用、WorkBuddy 原生连接及两者撤销后的拒绝，均未触及用户客户端配置。
 - `PLAYWRIGHT_CHANNEL=chrome WORKBUDDY_CLI=本机随附CLI路径 make test-mcp-native-e2e`：通过，真实浏览器、Go、数据库、安装助手、原生客户端及安装后的 stdio 桥链路。
-- 官方 `quick_validate.py`：baseline-mcp-development 与同步的 baseline-security 均通过；使用临时隔离 PyYAML 环境，没有改全局 Python。
+- 官方 `quick_validate.py`：当时的 MCP 工程 Skill 与同步的 baseline-security 均通过；使用临时隔离 PyYAML 环境，没有改全局 Python。
 
 最终相关浏览器回归的具体结果在交付时补充。未运行发布候选完整 `make ci`；未执行生产迁移/部署或远程 CI。
 

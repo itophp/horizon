@@ -32,4 +32,4 @@ IP 限制只使用 RemoteAddr，不信任客户端转发头；进程内有界限
 
 `make test-mcp` 覆盖本机助手、协议与真实 PostgreSQL；`make test-mcp-e2e` 覆盖浏览器、代理、诊断、WorkBuddy 配置及已安装 stdio 的独立调用；`make test-mcp-native` 和 test-mcp-native-e2e 显式启用真实 Codex app-server 与 WorkBuddy CLI 验收。桌面实际调用由用户接回手动验收，不能用 CLI health 代替。代码生成检查与浏览器串行；阶段 ci-fast，权限 test-security，原 WebMCP 回归继续保留。
 
-以后功能新增和变动使用 baseline-mcp-development，按用例选择操作，维护工具名/版本、输入输出、Goa 映射、权限/范围、风险/幂等和测试。独立业务 MCP 工具不要触发修改全局凭证、安装客户端或新增基础服务。客户端运行时指南位于 webskills/baseline-business。
+功能新增和变动遵循能力契约与 Gateway，维护工具发现、输入输出、权限/范围、风险/幂等和测试。独立业务 MCP 工具不要触发修改全局凭证、安装客户端或新增基础服务。客户端运行时指南位于 webskills/baseline-business。

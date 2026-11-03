@@ -10,7 +10,7 @@
 
 | 任务 | 重点框架/工具与职责 | 使用的 Skill | 读取的目录规则 | 必要验证 |
 |---|---|---|---|---|
-| 功能对应 MCP 工具设计、开发及变更 | 功能用例映射工具契约、复用业务授权 | baseline-mcp-development；按层路由 | docs/mcp-service-plan.md、目标目录规则 | 分阶段协议/安全/客户端互通；规则批次 check-rules |
+| 功能对应 MCP 工具设计、开发及变更 | 功能用例映射工具契约、复用业务授权 | baseline-security、baseline-quality-gates；按层路由 | docs/mcp-service-plan.md、目标目录规则 | 分阶段协议/安全/客户端互通；规则批次 check-rules |
 | 业务能力、Gateway、审批与调用审计 | Capability Registry 出契约，Gateway 统一鉴权/Schema/幂等/审批/Outbox/审计，业务执行仍回领域服务 | baseline-feature-development + baseline-security；契约变更加 goa-service-designer | [ADR 015](decisions/015-capability-centric-platform.md)、目标目录规则 | 契约/策略单测、`tests/capability_modules_test.go` 与 `TestCapability*`（模块闭环、幂等并发、跨租户、审批恢复）、两个语言文案 |
 | 能力分层与互调：一个接口拆几个能力、能力调能力 | 数据能力持有业务规则与 SQL；入口能力只做协议投影；互调经 Gateway 并重受策略约束 | baseline-capability-composition | [能力拆分与组合](capability-composition.md)、[ADR 015](decisions/015-capability-centric-platform.md) | 负向用例（内层权限、跨租户、深度、幂等重放）、check-entities |
 | 柔性编排：流程编排、循环子图、Agent 自主决策、Schema | Workflow 是唯一主干（节点为能力，依赖由显式映射/DependsOn 确定，Reads/Writes 检查冲突），Graph 只做循环子图，ADK 只做决策；叶子统一经 Gateway | baseline-capability-composition | [柔性编排方案](orchestration-plan.md)、[ADR 016](decisions/016-capability-taxonomy-and-orchestration.md) | check-workflows、check-generated、test-orchestration-example；依赖冲突、审批恢复、循环上限、深度保护 |

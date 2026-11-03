@@ -57,11 +57,6 @@
       "kind": "upstream"
     },
     {
-      "name": "baseline-mcp-development",
-      "file": ".agents/skills/baseline-mcp-development/SKILL.md",
-      "kind": "project"
-    },
-    {
       "name": "baseline-entity-model",
       "file": ".agents/skills/baseline-entity-model/SKILL.md",
       "kind": "project"
@@ -232,7 +227,6 @@
     {
       "id": "mcp",
       "skills": [
-        "baseline-mcp-development",
         "baseline-security",
         "baseline-quality-gates"
       ],

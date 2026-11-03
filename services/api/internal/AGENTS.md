@@ -26,7 +26,7 @@
 设置排期按 [ADR 010](../../../docs/decisions/010-settings-schedules.md)：排期时正式 publish/ALL，敏感证明绑定 settings.schedule；到期重建原部门 Principal 并重查正式权限、草稿摘要、版本及依赖。共用发布事务并与完成状态原子提交，保存失败码。不能用旧会话/临时权限或后台特权绕过授权；读取验证共用事务，避免跨池/单连接死锁。
 
 
-账号级远程 MCP 见 [需求与实现方案](../../../docs/mcp-service-plan.md)（首阶段开发实现，验收状态见交付记录）。开发使用 baseline-mcp-development，功能变动主动确认暴露范围；账号 Token 与本机 WebMCP 配对分离。实施复用可信 Principal、Casbin、SQL 范围及字段投影，Token 固化工具集合与当前正式权限取交集，撤销/禁用实时生效，秘密仅一次显示且不进入日志/配置包。实现入口为 internal/modules/mcp；协议端点 `/mcp` 保留，令牌管理已改为 `mcp.token.*` 能力。
+账号级远程 MCP 见 [需求与实现方案](../../../docs/mcp-service-plan.md)（首阶段开发实现，验收状态见交付记录）。功能变动核对能力的暴露及授权范围；账号 Token 与本机 WebMCP 配对分离。实施复用可信 Principal、Casbin、SQL 范围及字段投影，Token 固化工具集合与当前正式权限取交集，撤销/禁用实时生效，秘密仅一次显示且不进入日志/配置包。实现入口为 internal/modules/mcp；协议端点 `/mcp` 保留，令牌管理已改为 `mcp.token.*` 能力。
 
 账号远程 MCP 按 [ADR 011](../../../docs/decisions/011-remote-mcp.md)：工具复用原授权用例，凭证绑定本人/部门和固化集合；敏感管理操作重新认证，身份变更撤销与延迟归属检查、客户端配对/备份及协议专项测试同步维护。禁止将安装状态当连接成功。
 

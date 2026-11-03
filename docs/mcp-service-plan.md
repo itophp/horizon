@@ -90,7 +90,7 @@ bearer_token_env_var = "BASELINE_MCP_TOKEN"
 
 WorkBuddy 推荐生成官方连接器结构：`connector-meta.json`、`mcp.json`、`token-schema.json`、图标及运行时 Skill。采用 `auth_mode: token`，模板通过 Authorization header 引用表单字段；私有部署地址需 HTTPS 校验。所用字段与最低客户端版本实施时再次核对。现有 `.workbuddy/mcp.json` 本机合并只作为已测试版本的助手路径，不能冒充官方通用 deeplink。未查证平台安装协议前不编造 URL scheme；客户端升级后重新兼容验收。
 
-面向未来功能开发的工具设计与维护 Skill 在 `.agents/skills/baseline-mcp-development`；它指导按业务用例创建工具、处理需求变更和验证权限，不以实施 MCP 基础服务为主要用途。面向客户端使用的运行时 Skill 应单独打包，说明工具用途、分页、授权错误、读写风险和确认流程，不能把工程规则作为运行时操作说明直接分发。
+业务能力及 MCP 暴露遵循能力契约、Gateway 和安全规则。面向客户端使用的运行时 Skill 应单独打包，说明工具用途、分页、授权错误、读写风险和确认流程，不能把工程规则作为运行时操作说明直接分发。
 
 ## 功能开发与需求变动流程
 

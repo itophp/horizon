@@ -106,7 +106,6 @@ xxh-baseline/
 | `baseline-security` | 认证、授权、租户/范围、敏感字段、公开端点、文件/导出/批量、临时权限。 |
 | `baseline-shared-capabilities` | 复用共享设置、字典、私有文件、通知，而不是重写配置/文件基础设施。 |
 | `baseline-internationalization` | 文案、语言、校验错误、locale 相关格式化。 |
-| `baseline-mcp-development` | 功能对应的 MCP 工具设计、暴露面评估与变更。 |
 | `baseline-quality-gates` | 选择并执行检查、诊断失败测试、准备评审。 |
 | `goa-service-designer` | Goa DSL 契约变更（上游安装，禁止手改；附 4 篇参考：建模校验、传输错误拦截器、生成代码与实现、排错）。 |
 | `AGENTS.md` | Skill 本身的维护规则：命名、元数据、清单同步。 |

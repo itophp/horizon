@@ -14,7 +14,7 @@ Business Capability → Business Event → AI Behavior → Business Capability
 2. 改文件前读取根到目标文件父目录沿途所有 AGENTS.md；从根启动也要主动检查子目录规则。
 3. 功能开发先用 [baseline-feature-development](.agents/skills/baseline-feature-development/SKILL.md)，按 [任务工具矩阵](docs/agent-tooling.md) 选择 Skill。
 4. 使用锁文件版本；升级/新增依赖先核对官方 API、兼容性与许可证，记录于 docs/versions.md / docs/decisions。
-5. 涉及 MCP 暴露面时使用 [baseline-mcp-development](.agents/skills/baseline-mcp-development/SKILL.md) 并确认读写与授权范围。
+5. 涉及 MCP 暴露面时按能力契约与安全规则确认读写和授权范围。
 
 ## 不可违反的架构边界
 
@@ -72,7 +72,7 @@ services/api/internal/
 | 文案/语言/格式化 | baseline-internationalization | `apps/web/src/i18n/AGENTS.md` |
 | 认证/授权/字段/跨租户 | baseline-security | `services/api/internal/AGENTS.md` |
 | 测试/交付门禁 | baseline-quality-gates | `docs/testing.md` |
-| MCP 暴露面 | baseline-mcp-development | `docs/mcp-service-plan.md` |
+| MCP 暴露面 | baseline-security + baseline-quality-gates | `docs/mcp-service-plan.md` |
 
 ## 流程规格与生成
 

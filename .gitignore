@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .tools/
+.idea/
 .env
 .env.*
 !.env.example

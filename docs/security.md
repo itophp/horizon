@@ -66,7 +66,7 @@ SMTP 主机由部署白名单约束、证书验证不关闭，测试发送仅本
 设置定时发布按 [ADR 010](decisions/010-settings-schedules.md)：排期/取消复用正式 settings:publish 与 ALL，敏感项排期时消费绑定会话/部门/草稿/版本的 settings.schedule 单次证明。到期重建原账号/部门的可信身份并重新校验正式权限、范围、草稿摘要、类型/依赖和版本；不用旧会话/临时权限执行。发布及排期完成同事务，失败不覆盖当前配置；DTO/日志不含证明、密文或底层错误。
 
 
-账号级远程 MCP 见 [需求与实现方案](mcp-service-plan.md)（首阶段开发实现，验收状态见交付记录）。开发使用 baseline-mcp-development，功能变动主动确认暴露范围；账号 Token 与本机 WebMCP 配对分离。实施复用可信 Principal、Casbin、SQL 范围及字段投影，Token 固化工具集合与当前正式权限取交集，撤销/禁用实时生效，秘密仅一次显示且不进入日志/配置包。实现入口为 internal/mcp，协议、数据库和客户端验收须分别记录。
+账号级远程 MCP 见 [需求与实现方案](mcp-service-plan.md)（首阶段开发实现，验收状态见交付记录）。功能变动核对能力的暴露及授权范围；账号 Token 与本机 WebMCP 配对分离。实施复用可信 Principal、Casbin、SQL 范围及字段投影，Token 固化工具集合与当前正式权限取交集，撤销/禁用实时生效，秘密仅一次显示且不进入日志/配置包。实现入口为 internal/mcp，协议、数据库和客户端验收须分别记录。
 
 远程 MCP 当前开发实现位于 internal/mcp：浏览器 Token 管理继承已有会话/Origin/CSRF，MCP 使用独立 Bearer；绑定账号/部门每请求重建正式身份，不加载临时权。数据库只保存摘要，管理 SQL 按租户与本人过滤。此实现仍待真实数据库安全与客户端验收，不视为可发布。
 
