@@ -31,5 +31,15 @@
     "suspected": "AI 评审存疑",
     "unavailable": "AI 或词库不可用",
     "human_review": "人工审核完成"
+  },
+  "dash": "—",
+  "article": {
+    "details": "查看",
+    "edit": "编辑",
+    "total": "共 {{count}} 篇文章",
+    "dialogHint": "保存草稿后提交评审，评审流程读取当前版本。",
+    "noReview": "尚无评审结论",
+    "markdownHint": "正文支持 Markdown；保存草稿不会公开，提交评审后才进入流程。",
+    "revision": "版本"
   }
 }

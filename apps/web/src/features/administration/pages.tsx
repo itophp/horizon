@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { usePageTools } from "@/features/webmcp/provider";
 import { pageTool } from "@/lib/webmcp/runtime";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
   Plus,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Eye,
@@ -31,12 +30,6 @@ import type {
   RoleRecord,
 } from "@/api/generated/models";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { useSession } from "./auth";
 import {
   DataTable,
@@ -53,6 +46,7 @@ import {
   EmptyState,
   initials,
   useAdminData,
+  RowActions,
   type AdminColumn,
 } from "./shared";
 import {
@@ -68,41 +62,6 @@ function withQuery(value: string) {
     else next.delete("q");
     return next;
   };
-}
-function RowActions({
-  actions,
-}: {
-  actions: {
-    label: string;
-    icon: ReactNode;
-    onClick: () => void;
-    danger?: boolean;
-  }[];
-}) {
-  const { t } = useTranslation();
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <button className="row-more" aria-label={t("admin:fields.actions")}>
-            <MoreHorizontal size={18} />
-          </button>
-        }
-      />
-      <DropdownMenuContent align="end">
-        {actions.map((action) => (
-          <DropdownMenuItem
-            key={action.label}
-            className={action.danger ? "destructive-menu-item" : ""}
-            onClick={action.onClick}
-          >
-            {action.icon}
-            {action.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
 }
 function NoAccess() {
   const { t } = useTranslation();

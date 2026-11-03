@@ -337,14 +337,14 @@ in_progress → cancelled     project.task.status.change
 
 | 路由 | 形态 |
 |---|---|
-| `/projects` | 列表页：筛选、表格；「新建项目」为弹窗，创建成功跳转详情 |
+| `/projects` | 列表页：工具栏（搜索 + 状态筛选 + 总数 + 卡片/列表切换 + 新建），默认卡片视图，可切列表；行/卡片操作走溢出菜单 |
 | `/projects/:id` | 详情页：概览 / 计划 / 任务 / 成员四个 Tab；编辑项目、新建与编辑计划、新建与编辑任务、任务详情（含 AI 简报与指派）、添加成员均为弹窗 |
 
 详情页内各 Tab 的内容：
 
 | 区域 | 内容 |
 |---|---|
-| 项目列表 | 编号、名称、负责人、优先级、预计结束、状态、任务进度、逾期数；按状态筛选，关键字搜编号+名称 |
+| 项目列表 | 卡片显示名称、编号·负责人、状态与优先级标签、计划数/任务进度/逾期、截止日；列表视图显示同样字段的表格；按状态筛选，关键字搜编号+名称+负责人 |
 | 概览 | 只读字段清单；「编辑」弹窗改名称/优先级/预计结束；状态流转按钮按当前状态列出合法目标 |
 | 计划 | 计划列表（类型、标题、负责人、完成时间、状态）；弹窗内编辑标题、类型、Markdown 正文、优先级、截止日、负责人 |
 | 任务 | 任务列表（标题、计划、负责人、截止日、状态）；行内改状态；「详情」弹窗展示 Markdown 描述、AI 简报与指派操作 |
@@ -510,3 +510,18 @@ P2 与 P3 可并行，但 P3 依赖 P0 的能力契约。
 - `lib/webmcp/routes.ts` 同步登记 `/projects/:id`，并在 `findWebMcpRoute` 中按 `/files/:id` 的方式做前缀匹配
 
 验证：`typecheck`、`lint`（0 error）、`test`（112 通过，含路由清单比对）、`i18n:check` 均通过；未启动浏览器验收。
+
+### 按账号/组织/角色管理范式重写（同日第二次返工）
+
+第一次返工只做了「列表 + 详情 + Tab + 弹窗」，但仍然自造了 `section + Table + 自定义筛选`，与账号管理、组织管理、角色管理的既有写法不一致。设置页是特例（配置项密度高），不应作为业务列表的参照。
+
+统一到成熟范式后：
+
+- 通过 `shared.tsx` 的 `DataTable`（内置分页、空态）、`ListSearch`、`RowActions`、`EditorDialog`、`SuccessNotice`、`ErrorBanner`、`Loading` 组列表
+- 工具栏使用 `standalone-toolbar` / `toolbar-right` / `toolbar-select`，筛选状态写进 URL 查询参数（`q`、`status`），可刷新、可分享
+- 详情与编辑复用同一个 `EditorDialog`，用来源区分标题；表单用 `entity-form` + `editor-grid` + `FormField` + `editor-footer`
+- 项目列表按角色管理增加**卡片 / 列表切换**（`view-toggle`），卡片复用 `role-card` 的解剖结构，两种视图共享同一套命令（`RowActions`）
+- 文章页同步重写：工具栏 + 表格 + 溢出菜单 + 详情/编辑弹窗，评审动作（提交、重试、通过、驳回）按状态出现在行菜单与详情弹窗里
+- 把 `RowActions`、`StateBadge`、`stateTone` 上移到 `administration/shared.tsx`，避免各 feature 复制
+
+`features/projects/fields.tsx` 现在只剩 `EnumSelect` 与 `targets` 两个真共享件。

@@ -135,5 +135,9 @@
     "taskHint": "The task belongs to this project. The assignee must be a member.",
     "taskDetailHint": "Read-only detail, including the AI brief.",
     "memberHint": "Search tenant accounts by name or email."
-  }
+  },
+  "total": "{{count}} projects",
+  "plansCount": "{{count}} plans",
+  "selfLabel": "(me)",
+  "cardMeta": "{{code}} · {{owner}}"
 }

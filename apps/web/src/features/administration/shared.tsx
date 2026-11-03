@@ -15,6 +15,7 @@ import {
   Check,
   X,
   Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   getIdentitySnapshotQueryKey,
@@ -30,6 +31,12 @@ import {
 import type { AdminSnapshot } from "@/api/generated/models";
 import { ApiError } from "@/api/client/request";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -146,6 +153,28 @@ export function StatusBadge({ status }: { status: string }) {
     </span>
   );
 }
+/**
+ * StateBadge shows a business state with the same pill as StatusBadge. The
+ * caller passes the translated label because each module owns its state names.
+ */
+export function StateBadge({ label, tone }: { label: string; tone: string }) {
+  return (
+    <span
+      className={`entity-status ${tone === "active" ? "is-active" : "is-inactive"}`}
+    >
+      <i />
+      {label}
+    </span>
+  );
+}
+
+/** stateTone maps a business state onto the two tones the pill supports. */
+export function stateTone(status: string): string {
+  return ["active", "in_progress", "done", "completed"].includes(status)
+    ? "active"
+    : "inactive";
+}
+
 export function ScopeLabel({ scope }: { scope: string }) {
   const { t } = useTranslation();
   const values: Record<string, string> = {
@@ -237,6 +266,46 @@ export function Loading() {
       <LoaderCircle size={22} className="animate-spin" />
       {t("admin:feedback.loading")}
     </div>
+  );
+}
+/**
+ * RowActions is the one place a table row exposes its commands. Keeping it here
+ * means every list — accounts, organizations, projects, articles — shows the
+ * same overflow menu instead of a row of buttons.
+ */
+export function RowActions({
+  actions,
+}: {
+  actions: {
+    label: string;
+    icon: ReactNode;
+    onClick: () => void;
+    danger?: boolean;
+  }[];
+}) {
+  const { t } = useTranslation();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button className="row-more" aria-label={t("admin:fields.actions")}>
+            <MoreHorizontal size={18} />
+          </button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        {actions.map((action) => (
+          <DropdownMenuItem
+            key={action.label}
+            className={action.danger ? "destructive-menu-item" : ""}
+            onClick={action.onClick}
+          >
+            {action.icon}
+            {action.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 export function EmptyState() {

@@ -31,5 +31,15 @@
     "suspected": "AI review inconclusive",
     "unavailable": "AI or word list unavailable",
     "human_review": "Human review completed"
+  },
+  "dash": "—",
+  "article": {
+    "details": "View",
+    "edit": "Edit",
+    "total": "{{count}} articles",
+    "dialogHint": "Submit after saving: the review flow reads the current revision.",
+    "noReview": "No verdict yet",
+    "markdownHint": "The body is Markdown. Saving a draft does not publish it; submitting starts the review flow.",
+    "revision": "Revision"
   }
 }

@@ -515,6 +515,102 @@ body {
   min-width: 0;
   box-shadow: 0 2px 3px #00000004;
 }
+/* Detail header fields and the object tabs under a project. The grid keeps the
+   overview readable without turning the page into a form. */
+.detail-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+  flex: 1;
+}
+.detail-grid dt {
+  color: var(--app-muted);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+.detail-grid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.object-tabs {
+  margin-top: 18px;
+}
+.object-tabs .admin-panel {
+  margin-top: 10px;
+}
+.editor-textarea {
+  width: 100%;
+  min-height: 150px;
+  border: 1px solid var(--app-line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--app-panel);
+  color: inherit;
+}
+.member-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.member-search [data-slot="input"] {
+  flex: 1;
+}
+.member-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--app-line);
+  border-radius: 7px;
+}
+.member-result strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.member-result small {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.brief-block {
+  display: block;
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  background: var(--app-bg);
+  font-size: 12px;
+  line-height: 1.75;
+}
+.brief-block strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.brief-block small {
+  display: block;
+  margin-top: 6px;
+  color: var(--app-muted);
+  font-size: 10px;
+}
 .muted-text {
   color: var(--app-muted);
   font-size: 10px;

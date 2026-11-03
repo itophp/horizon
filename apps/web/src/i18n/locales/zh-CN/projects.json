@@ -135,5 +135,9 @@
     "taskHint": "任务归属于当前项目，负责人必须是项目成员。",
     "taskDetailHint": "只读详情，包含 AI 简报。",
     "memberHint": "按姓名或邮箱搜索本租户账号。"
-  }
+  },
+  "total": "共 {{count}} 个项目",
+  "plansCount": "{{count}} 项计划",
+  "selfLabel": "（我）",
+  "cardMeta": "{{code}} · {{owner}}"
 }
