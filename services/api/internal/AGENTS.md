@@ -30,7 +30,7 @@
 
 账号远程 MCP 按 [ADR 011](../../../docs/decisions/011-remote-mcp.md)：工具复用原授权用例，凭证绑定本人/部门和固化集合；敏感管理操作重新认证，身份变更撤销与延迟归属检查、客户端配对/备份及协议专项测试同步维护。禁止将安装状态当连接成功。
 
-内嵌助手按 [ADR 012](../../../docs/decisions/012-embedded-assistant.md)：页面工具在浏览器执行，模型/端点/Token 只在服务端解析。Agent 模式已改为能力驱动，业务动作一律经 Gateway。
+内嵌助手按 [ADR 012](../../../docs/decisions/012-embedded-assistant.md)：页面工具在浏览器执行，模型/端点/Token 只在服务端解析。浮动面板统一使用 Eino 工作区 Agent；浏览器工具使用原生中断和加密检查点交接结果，恢复必须绑定租户、账号、部门及单次凭证。业务动作一律经 Gateway，不信任浏览器工具结果授予权限。
 
 Capability-Centric 平台按 [ADR 015](../../../docs/decisions/015-capability-centric-platform.md)：
 

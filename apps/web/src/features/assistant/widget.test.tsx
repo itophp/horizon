@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   agent: vi.fn(),
   invoke: vi.fn(),
   permissions: ["assistant:use"] as string[],
+  toolsAvailable: true,
 }));
 
 vi.mock("@/api/generated/baseline", () => ({
@@ -32,13 +33,16 @@ vi.mock("@/features/webmcp/provider", () => ({
     connection: {
       ensureLocalTools: async () => undefined,
       registry: {
-        list: () => [
-          {
-            name: "baseline_page_context",
-            description: "Read current route",
-            inputSchema: { type: "object", properties: {} },
-          },
-        ],
+        list: () =>
+          mocks.toolsAvailable
+            ? [
+                {
+                  name: "baseline_page_context",
+                  description: "Read current route",
+                  inputSchema: { type: "object", properties: {} },
+                },
+              ]
+            : [],
         invoke: mocks.invoke,
       },
     },
@@ -49,6 +53,65 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   mocks.permissions = ["assistant:use"];
+  mocks.toolsAvailable = true;
+});
+
+it("does not execute a page tool that disappeared while the agent was planning", async () => {
+  await changeLanguage("en");
+  mocks.status.mockResolvedValue({
+    status: 200,
+    data: {
+      enabled: true,
+      configured: true,
+      agentEnabled: true,
+      model: "test",
+    },
+  });
+  mocks.agent
+    .mockImplementationOnce(async () => {
+      mocks.toolsAvailable = false;
+      return {
+        status: 200,
+        data: {
+          content: "",
+          tools: [],
+          mode: "agent",
+          model: "test",
+          runId: 7,
+          resumeToken: "single-use",
+          pageCall: {
+            id: "call-revoked",
+            name: "baseline_page_context",
+            arguments: "{}",
+          },
+        },
+      };
+    })
+    .mockResolvedValueOnce({
+      status: 200,
+      data: {
+        content: "The page tool is no longer available.",
+        tools: [],
+        mode: "agent",
+        model: "test",
+        runId: 7,
+      },
+    });
+  renderAssistant();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Open agent" }));
+  await user.type(
+    screen.getByRole("textbox", { name: "Ask the workspace agent…" }),
+    "Read this page",
+  );
+  await user.click(screen.getByRole("button", { name: "Send" }));
+  await screen.findByText("The page tool is no longer available.");
+  expect(mocks.invoke).not.toHaveBeenCalled();
+  const resumed = mocks.agent.mock.calls[1][0];
+  expect(JSON.parse(resumed.toolResult)).toEqual({
+    content: '{"code":"tool_unavailable"}',
+    isError: true,
+  });
 });
 
 function renderAssistant() {
@@ -71,7 +134,12 @@ it("stays hidden for accounts without the assistant grant", async () => {
   mocks.permissions = [];
   mocks.status.mockResolvedValue({
     status: 200,
-    data: { enabled: true, configured: true, model: "glm-5.3-flash" },
+    data: {
+      enabled: true,
+      configured: true,
+      agentEnabled: true,
+      model: "glm-5.3-flash",
+    },
   });
   renderAssistant();
   await new Promise((resolve) => setTimeout(resolve, 20));
@@ -98,7 +166,12 @@ it("opens the floating panel and returns to the icon only when closed", async ()
   await changeLanguage("en");
   mocks.status.mockResolvedValue({
     status: 200,
-    data: { enabled: true, configured: true, model: "glm-5.3-flash" },
+    data: {
+      enabled: true,
+      configured: true,
+      agentEnabled: true,
+      model: "glm-5.3-flash",
+    },
   });
   renderAssistant();
   const user = userEvent.setup();
@@ -122,7 +195,12 @@ it("closes the panel with Escape", async () => {
   await changeLanguage("en");
   mocks.status.mockResolvedValue({
     status: 200,
-    data: { enabled: true, configured: true, model: "glm-5.3-flash" },
+    data: {
+      enabled: true,
+      configured: true,
+      agentEnabled: true,
+      model: "glm-5.3-flash",
+    },
   });
   renderAssistant();
   const user = userEvent.setup();
@@ -132,70 +210,91 @@ it("closes the panel with Escape", async () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-it("runs a requested page tool in the browser and returns the follow-up answer", async () => {
-  await changeLanguage("en");
-  mocks.status.mockResolvedValue({
-    status: 200,
-    data: { enabled: true, configured: true, model: "glm-5.3-flash" },
-  });
-  mocks.invoke.mockResolvedValue({
-    content: [{ type: "text", text: '{"route":"/accounts"}' }],
-  });
-  mocks.chat
-    .mockResolvedValueOnce({
+it.each([false, true])(
+  "returns the WebMCP tool result to the workspace agent (isError=%s)",
+  async (isError) => {
+    await changeLanguage("en");
+    mocks.status.mockResolvedValue({
       status: 200,
       data: {
-        content: "",
+        enabled: true,
+        configured: true,
+        agentEnabled: true,
         model: "glm-5.3-flash",
-        toolCalls: [
-          {
+      },
+    });
+    mocks.invoke.mockResolvedValue({
+      isError,
+      content: [{ type: "text", text: '{"route":"/accounts"}' }],
+    });
+    mocks.agent
+      .mockResolvedValueOnce({
+        status: 200,
+        data: {
+          content: "",
+          model: "glm-5.3-flash",
+          mode: "agent",
+          tools: [],
+          runId: 42,
+          resumeToken: "once",
+          pageCall: {
             id: "call_1",
             name: "baseline_page_context",
             arguments: "{}",
           },
-        ],
-      },
-    })
-    .mockResolvedValueOnce({
-      status: 200,
-      data: {
-        content: "You are on the accounts page.",
-        model: "glm-5.3-flash",
-        toolCalls: [],
-      },
+        },
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        data: {
+          content: "You are on the accounts page.",
+          model: "glm-5.3-flash",
+          mode: "agent",
+          tools: [],
+          runId: 42,
+          resumeToken: "once",
+        },
+      });
+
+    renderAssistant();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Open agent" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "Ask the workspace agent…" }),
+      "Where am I?",
+    );
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("You are on the accounts page."),
+      ).toBeInTheDocument(),
+    );
+    expect(mocks.invoke).toHaveBeenCalledWith("baseline_page_context", {});
+    const first = mocks.agent.mock.calls[0][0];
+    const second = mocks.agent.mock.calls[1][0];
+    expect(second).toMatchObject({
+      runId: 42,
+      resumeToken: "once",
+      toolCallId: "call_1",
+      sessionId: first.sessionId,
     });
+    expect(JSON.parse(second.toolResult)).toEqual({
+      content: '{"route":"/accounts"}',
+      isError,
+    });
+    expect(first.tools).toEqual([
+      {
+        name: "baseline_page_context",
+        description: "Read current route",
+        parameters: { type: "object", properties: {} },
+      },
+    ]);
+    expect(mocks.chat).not.toHaveBeenCalled();
+  },
+);
 
-  renderAssistant();
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Open agent" }));
-  await user.type(
-    screen.getByRole("textbox", { name: "Ask about this page…" }),
-    "Where am I?",
-  );
-  await user.click(screen.getByRole("button", { name: "Send" }));
-
-  await waitFor(() =>
-    expect(
-      screen.getByText("You are on the accounts page."),
-    ).toBeInTheDocument(),
-  );
-  expect(mocks.invoke).toHaveBeenCalledWith("baseline_page_context", {});
-  const second = mocks.chat.mock.calls[1][0];
-  expect(second.messages.at(-1)).toMatchObject({
-    role: "tool",
-    toolCallId: "call_1",
-    content: '{"route":"/accounts"}',
-  });
-  expect(second.tools).toEqual([
-    {
-      name: "baseline_page_context",
-      description: "Read current route",
-      parameters: { type: "object", properties: {} },
-    },
-  ]);
-});
-
-it("routes the question to the Eino agent when the workspace agent mode is picked", async () => {
+it("uses the workspace agent directly without a page mode switch", async () => {
   await changeLanguage("en");
   mocks.status.mockResolvedValue({
     status: 200,
@@ -218,9 +317,11 @@ it("routes the question to the Eino agent when the workspace agent mode is picke
   renderAssistant();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Open agent" }));
-  await user.click(screen.getByRole("button", { name: "Workspace agent" }));
+  expect(
+    screen.queryByRole("group", { name: "Answer mode" }),
+  ).not.toBeInTheDocument();
   await user.type(
-    screen.getByRole("textbox", { name: "Ask about this page…" }),
+    screen.getByRole("textbox", { name: "Ask the workspace agent…" }),
     "密码要求是什么",
   );
   await user.click(screen.getByRole("button", { name: "Send" }));
@@ -231,7 +332,11 @@ it("routes the question to the Eino agent when the workspace agent mode is picke
     ).toBeInTheDocument(),
   );
   expect(mocks.agent).toHaveBeenCalledWith(
-    { question: "密码要求是什么" },
+    expect.objectContaining({
+      question: "密码要求是什么",
+      sessionId: expect.any(String),
+      tools: expect.any(Array),
+    }),
     expect.objectContaining({ signal: expect.anything() }),
   );
   expect(mocks.chat).not.toHaveBeenCalled();

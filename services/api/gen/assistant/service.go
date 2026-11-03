@@ -58,16 +58,27 @@ var MethodNames = [6]string{"status", "chat", "agent", "workflow", "knowledge", 
 
 // AgentPayload is the payload type of the assistant service agent method.
 type AgentPayload struct {
-	Cookie   string
-	Question string
+	Cookie      string
+	Question    string
+	SessionID   *string
+	Tools       []*AssistantTool
+	RunID       *int64
+	ResumeToken *string
+	ToolCallID  *string
+	ToolResult  *string
 }
 
 // AssistantAgentReply is the result type of the assistant service agent method.
 type AssistantAgentReply struct {
-	Content string
-	Tools   []string
-	Model   string
-	Mode    string
+	Content     string
+	Tools       []string
+	Model       string
+	Mode        string
+	RunID       *int64
+	ResumeToken *string
+	// One WebMCP call to execute in the originating browser before resuming this
+	// task.
+	PageCall *AssistantToolCall
 }
 
 // One turn of the assistant conversation. Tool output is attributed to its

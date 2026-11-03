@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.0.1
  */
 import type { AssistantAgentReplyMode } from "./assistantAgentReplyMode";
+import type { AssistantToolCall } from "./assistantToolCall";
 
 /**
  * Eino agent answer. Tool names are labels only; arguments and payloads stay server side.
@@ -14,5 +15,8 @@ export interface AssistantAgentReply {
   content: string;
   mode: AssistantAgentReplyMode;
   model: string;
+  pageCall?: AssistantToolCall;
+  resumeToken?: string;
+  runId?: number;
   tools: string[];
 }

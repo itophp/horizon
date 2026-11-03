@@ -118,7 +118,11 @@ func (s *Service) Status(ctx context.Context, _ *genassistant.StatusPayload) (re
 	if err != nil {
 		return nil, err
 	}
-	return &genassistant.AssistantStatus{Enabled: cfg.enabled, Configured: cfg.configured, AgentEnabled: agentEnabled, Model: cfg.model}, nil
+	agentBaseURL, err := s.setting(ctx, p, "agent.baseUrl")
+	if err != nil {
+		return nil, err
+	}
+	return &genassistant.AssistantStatus{Enabled: cfg.enabled, Configured: cfg.token != "" && cfg.model != "" && agentBaseURL != "", AgentEnabled: agentEnabled, Model: cfg.model}, nil
 }
 
 // Response protocol payloads. Only the fields this gateway actually needs are

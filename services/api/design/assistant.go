@@ -2,9 +2,9 @@ package design
 
 import . "goa.design/goa/v3/dsl"
 
-// The embedded assistant is a browser-side agent: page tools stay in the page and
-// the model is reached only through this authenticated endpoint. Model, endpoint
-// and credential are deployment settings, never browser input.
+// The embedded workspace agent selects capability and browser WebMCP tools.
+// Browser tools execute in the originating page; the authenticated server owns
+// model execution and checkpoints. Model settings are never browser input.
 
 var AssistantMessage = Type("AssistantMessage", func() {
 	Description("One turn of the assistant conversation. Tool output is attributed to its call id.")
@@ -52,6 +52,9 @@ var AssistantAgentReply = Type("AssistantAgentReply", func() {
 	Attribute("tools", ArrayOf(String))
 	Attribute("model", String)
 	Attribute("mode", String, func() { Enum("agent", "workflow") })
+	Attribute("runId", Int64)
+	Attribute("resumeToken", String)
+	Attribute("pageCall", AssistantToolCall, "One WebMCP call to execute in the originating browser before resuming this task.")
 	Required("content", "tools", "model", "mode")
 })
 
@@ -107,6 +110,12 @@ var _ = Service("assistant", func() {
 		Payload(func() {
 			cookiePayload()
 			Attribute("question", String, func() { MinLength(1); MaxLength(2000) })
+			Attribute("sessionId", String, func() { MaxLength(80) })
+			Attribute("tools", ArrayOf(AssistantTool), func() { MaxLength(40) })
+			Attribute("runId", Int64, func() { Minimum(1) })
+			Attribute("resumeToken", String, func() { MaxLength(80) })
+			Attribute("toolCallId", String, func() { MaxLength(120) })
+			Attribute("toolResult", String, func() { MaxLength(12000) })
 			Required("question")
 		})
 		Result(AssistantAgentReply)

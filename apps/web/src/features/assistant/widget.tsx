@@ -143,25 +143,6 @@ export function AssistantLauncher() {
             </button>
           </header>
 
-          {assistant.agentEnabled ? (
-            <div
-              className="assistant-modes"
-              role="group"
-              aria-label={t("mode")}
-            >
-              {(["page", "agent"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={assistant.mode === value}
-                  onClick={() => assistant.setMode(value)}
-                >
-                  {t(value === "page" ? "modePage" : "modeAgent")}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
           <div className="assistant-log" ref={log}>
             {!assistant.configured ? (
               <p className="assistant-notice">{t("notConfigured")}</p>

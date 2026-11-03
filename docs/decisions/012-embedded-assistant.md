@@ -1,68 +1,50 @@
-# ADR 012：内嵌 AI 助手（页面浮动入口 + 服务端模型网关）
+# ADR 012：内嵌工作区 Agent 与浏览器 WebMCP 工具
 
-日期：2026-10-30。状态：已实现（真实模型联调需部署方提供 Token，见「验证边界」）。
-
-## 背景
-
-ADR 009 在「助手预留」中约定：`PageToolRegistry.list / invoke` 是未来内嵌助手的适配接口，与远程 MCP 共享工具定义，但当时不启用模型、密钥与聊天界面。本次按用户要求启用内嵌助手，因此该约定在此升级为正式能力，并保留原安全边界。
+日期：2026-10-30；更新：2026-11-02。状态：已实现；真实在线模型联调未执行。
 
 ## 决策
 
-助手是**浏览器侧 agent + 服务端模型网关**的组合：
+浮动助手只提供工作区 Agent，不再提供「当前页面」模式。后端 Eino ADK Agent 在同一任务中选择业务能力和当前浏览器提供的 WebMCP 工具。模型、端点及凭证由服务端设置解析，浏览器不接触模型凭证。
 
-- 页面右下角浮动图标 → 浮动对话面板 → 关闭后回到仅图标状态；开关与模型配置来自工作空间设置，关闭时组件不渲染。
-- 工具仍在页面内执行：`features/webmcp/provider` 的同一个 `PageToolRegistry` 既服务远程 MCP，也服务助手。模型只提出工具调用，执行、输入校验与权限过滤留在浏览器。
-- 模型只在服务端调用：`internal/assistant` 解析治理设置后以 OpenAI **Response** 协议（`POST {baseUrl}/responses`）访问模型，浏览器永远拿不到 Token 与端点。
-- 协议：GLM Coding Plan 的 Response 端点基址为 `https://open.bigmodel.cn/api/v1`，默认模型 `glm-5.3-flash`。
-- 本轮为**非流式**单轮网关：一次请求返回文本 + 可能的工具调用，由页面驱动最多 4 轮工具循环。流式输出属于后续增强，不改变现有 DTO 语义。
+- 业务动作由 `ai/tools.Adapter` 经 Capability Gateway 执行，保持 `OriginAgent`、实时权限、风险确认、幂等和审计。
+- 页面工具由既有 `PageToolRegistry.list/invoke` 适配，保持注册、参数校验、权限过滤及撤销语义；本次不扩大远程 MCP 工具集合。
+- 浏览器首次提交问题、会话 ID 和最多 40 个页面工具描述。服务端将工具描述视为不可信输入，限制名称及 Schema 大小，禁止 Schema 加载外部引用。页面工具使用 `webmcp_` 命名空间，与业务能力工具分离。
+- Eino 请求页面工具时使用原生 `tool.Interrupt` 和 `adk.Runner` 检查点暂停，返回单个 `pageCall`、原 `runId` 及短期恢复凭证。浏览器执行后回传该调用 ID 与 JSON 结果，服务端恢复同一 Runner；不让模型重新规划已完成的业务动作。
+- 每个问题固定首次提交的工具清单；导航后新增的页面工具在下次提问时加入。前端在执行前核对当前注册表中仍有相同名称和 Schema 的工具。导航、撤权后不可复用旧的工具执行闭包；结果只作为不可信上下文，不授予业务权限。
 
-## 配置与授权
+## 会话与配置
 
-四个设置键（`internal/governance/registry.go`，全部 workspace 作用域，UI 可见）：
+浮动面板保留开合、清空和停止操作。浏览器以随机会话 ID 串联问题，服务端从本人已完成的 `ai_runs` 加载问答历史；客户端不提供系统指令或伪造的模型历史。清空开启新的会话；切换租户、账号或部门会重新挂载 Provider、撤销旧请求并清理可见消息。
 
-| 键 | 类型 | 默认 | 说明 |
-|---|---|---|---|
-| `assistant.enabled` | boolean | `false` | 助手开关；关闭时前端不渲染入口 |
-| `assistant.baseUrl` | string | `https://open.bigmodel.cn/api/v1` | 模型端点；仅 TLS，回环 HTTP 供本地联调 |
-| `assistant.model` | string | `glm-5.3-flash` | 模型编码 |
-| `assistant.token` | secret | 空 | API Token；AES-GCM 密封存储，读取需 `SETTINGS_ENCRYPTION_KEY` |
+| 设置                | 用途                      |
+| ------------------- | ------------------------- |
+| `assistant.enabled` | 浮动入口开关              |
+| `agent.enabled`     | 工作区 Agent 开关         |
+| `agent.baseUrl`     | Eino Chat Completion 端点 |
+| `assistant.model`   | 服务端模型编码            |
+| `assistant.token`   | 密封存储的模型凭证        |
 
-- 保存与发布沿用既有治理流程：`settings:update` 起草、`settings:publish` 发布；token 标记 sensitive，发布需单次重新认证证明。
-- 使用能力为新增正式权限 `assistant:use`（`internal/identity/catalog.go`），不在旧 viewer 种子内；未授权账号默认拒绝。内置管理员按既有 `IsAdmin` 规则可用。
-- `GET /api/assistant/status` 只返回 `enabled / configured / model`；不返回 baseUrl、Token 或密文。
-- 两个端点都在会话守卫范围内（`internal/transport/identity.go` 的 `guardedPath`：`/api/admin/`、`/api/auth/`、`/api/assistant/`）。守卫负责附加可信 Principal，并对非安全方法校验 Origin 与 CSRF；新增会话级接口一律要加入该清单，否则处理器拿不到身份。
-- `POST /api/assistant/chat` 只接受会话消息与工具定义；模型、端点、凭证一律服务端解析，浏览器无法覆盖。
-- baseUrl 拒绝 userinfo、查询串、片段、控制字符，非 https 仅允许 127.0.0.1 / localhost / ::1，避免服务端被指向任意主机。
+`assistant.baseUrl` 和 `/api/assistant/chat` 保留兼容旧调用方；浮动面板不再使用 Response 协议页面模式。状态接口按 Agent 端点判断配置是否齐全。
 
-## 生命周期与撤销
+## 安全与恢复
 
-- 页面工具仅在「远程 MCP 已配对」或「助手已开启且已配置」时发布到 `document.modelContext`；两者共用 `ensureLocalTools()`，重复调用幂等。
-- 退出登录、401、切换部门、配对失败、页面关闭都执行 `registry.deactivate()`，已发布工具立即撤销；助手再次使用前必须重新发布。这与 ADR 009 的撤销语义一致。
-- 助手面板在退出登录时随 `RequireSession` 卸载，会话消息只存在内存，不写入 localStorage / 服务端。
-- 工具结果按注册期权限过滤：无 `xxx:read` 的工具根本不会注册，模型看不到；执行时 `registry.invoke` 再次校验连接状态与工具存在性。
-
-## 数据与日志边界
-
-- 上游错误响应体不转发，统一映射为 `unavailable`，避免回显提示词或凭证。
-- 请求体上限沿用 1 MB；单条消息与工具结果截断到 8000 字符，工具数上限 40，工具循环 4 轮。
-- 不记录 Token、baseUrl 请求头或模型原始响应；审计只体现设置变更（token 值已脱敏）。
+- `/api/assistant/agent` 延续会话身份、Origin、CSRF 和正式 `assistant:use` 校验。恢复时再次检查当前权限、租户、本人账号、当前部门、原会话、问题及模型；恢复不放大权限。
+- 复用 `orch_checkpoints` 的加密运行状态存储，键前缀为 `embedded:`，不写工作流 worker 使用的 `manifest`。无需新增表或状态枚举；`ai_runs` 等待浏览器期间保持 `running`。
+- 模型消息、工具参数和结果只进入 AES-GCM 加密检查点，认证绑定租户、run 与 key；不进入审计日志或公开运行摘要。
+- 恢复凭证绑定账号和部门，15 分钟到期，SQL 条件更新原子消费，重复或并发恢复只允许一个成功。已领取的恢复时间片限 2 分钟。过期任务在该账号后续 Agent 请求时标记失败，错误码 `timeout`。
+- 页面结果绑定待执行调用 ID，最大 12000 字符。最多 12 次浏览器暂停，Agent 原生迭代预算为 12；业务工具调用保持 Gateway 自身的策略约束。
+- 工具执行失败或工具已撤销作为明确错误结果返回给 Agent；中止请求不代表回滚已成功的业务动作。关闭页面后不会继续执行新的浏览器工具，未恢复任务按到期策略处理。
 
 ## 验证边界
 
-- 已覆盖：设置键默认值与 baseUrl 校验、角色到 Response 协议条目的映射、上游请求形状（路径/鉴权头/模型/工具）、文本与 `function_call` 解析、上游失败不泄露细节；前端覆盖开关关闭不渲染、开合交互、Esc 关闭、工具调用回传结果并续答。
-- 未覆盖：真实 GLM 端点联调（需部署方 Token）、流式输出、多用户配额与限流、助手写操作（当前工具均为只读/导航）。
+测试覆盖同一原生 Eino Runner 的业务工具 → 浏览器工具中断 → 返回结果 → 继续回答，已完成业务调用不重复执行；覆盖加密状态的租户/run 绑定，以及真实 PostgreSQL 的租户、账号、部门、过期及单次恢复条件。HTTP 集成测试用可控模型端点验证接口与任务生命周期；前端覆盖唯一入口、工具回传和注册表撤销。
 
-## 关键代码位置
+可控模型测试不等于真实在线模型联调；浏览器 E2E 按根规则暂停。页面专用业务工具的可用范围仍取决于各页面已有注册，不能从通用页面上下文适配推断全部业务都已接入。
 
-| 职责 | 位置 |
-|---|---|
-| 接口契约 | `services/api/design/assistant.go` |
-| 生成代码 | `services/api/gen/assistant`、`services/api/gen/http/assistant/server`、`apps/web/src/api/generated` |
-| 模型网关 | `services/api/internal/assistant/service.go` |
-| 设置键与校验 | `services/api/internal/governance/registry.go` |
-| 使用权限 | `services/api/internal/identity/catalog.go` |
-| 路由装配 | `services/api/internal/transport/governance.go` |
-| 助手状态与工具循环 | `apps/web/src/features/assistant/provider.tsx` |
-| 浮动图标与弹窗 | `apps/web/src/features/assistant/widget.tsx`、`assistant.css` |
-| 工具注册表复用 | `apps/web/src/features/webmcp/provider.tsx`、`apps/web/src/lib/webmcp/runtime.ts` |
-| 挂载点 | `apps/web/src/features/administration/layout.tsx`（`RequireSession`） |
+## 关键代码
+
+- 契约与生成：`services/api/design/assistant.go` → Goa / Orval。
+- Agent 与加密检查点：`services/api/internal/ai/harness/browser.go`。
+- 单次恢复 SQL：`services/api/db/query/ai.sql`。
+- 会话适配：`services/api/internal/transport/assistant.go`。
+- 浮动面板与 WebMCP 执行：`apps/web/src/features/assistant/provider.tsx`、`widget.tsx`。

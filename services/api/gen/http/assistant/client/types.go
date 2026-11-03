@@ -24,7 +24,13 @@ type ChatRequestBody struct {
 // AgentRequestBody is the type of the "assistant" service "agent" endpoint
 // HTTP request body.
 type AgentRequestBody struct {
-	Question string `form:"question" json:"question" xml:"question"`
+	Question    string                      `form:"question" json:"question" xml:"question"`
+	SessionID   *string                     `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
+	Tools       []*AssistantToolRequestBody `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
+	RunID       *int64                      `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ResumeToken *string                     `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
+	ToolCallID  *string                     `form:"toolCallId,omitempty" json:"toolCallId,omitempty" xml:"toolCallId,omitempty"`
+	ToolResult  *string                     `form:"toolResult,omitempty" json:"toolResult,omitempty" xml:"toolResult,omitempty"`
 }
 
 // WorkflowRequestBody is the type of the "assistant" service "workflow"
@@ -60,19 +66,29 @@ type ChatResponseBody struct {
 // AgentResponseBody is the type of the "assistant" service "agent" endpoint
 // HTTP response body.
 type AgentResponseBody struct {
-	Content *string  `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
-	Tools   []string `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
-	Model   *string  `form:"model,omitempty" json:"model,omitempty" xml:"model,omitempty"`
-	Mode    *string  `form:"mode,omitempty" json:"mode,omitempty" xml:"mode,omitempty"`
+	Content     *string  `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
+	Tools       []string `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
+	Model       *string  `form:"model,omitempty" json:"model,omitempty" xml:"model,omitempty"`
+	Mode        *string  `form:"mode,omitempty" json:"mode,omitempty" xml:"mode,omitempty"`
+	RunID       *int64   `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ResumeToken *string  `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
+	// One WebMCP call to execute in the originating browser before resuming this
+	// task.
+	PageCall *AssistantToolCallResponseBody `form:"pageCall,omitempty" json:"pageCall,omitempty" xml:"pageCall,omitempty"`
 }
 
 // WorkflowResponseBody is the type of the "assistant" service "workflow"
 // endpoint HTTP response body.
 type WorkflowResponseBody struct {
-	Content *string  `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
-	Tools   []string `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
-	Model   *string  `form:"model,omitempty" json:"model,omitempty" xml:"model,omitempty"`
-	Mode    *string  `form:"mode,omitempty" json:"mode,omitempty" xml:"mode,omitempty"`
+	Content     *string  `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
+	Tools       []string `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
+	Model       *string  `form:"model,omitempty" json:"model,omitempty" xml:"model,omitempty"`
+	Mode        *string  `form:"mode,omitempty" json:"mode,omitempty" xml:"mode,omitempty"`
+	RunID       *int64   `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ResumeToken *string  `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
+	// One WebMCP call to execute in the originating browser before resuming this
+	// task.
+	PageCall *AssistantToolCallResponseBody `form:"pageCall,omitempty" json:"pageCall,omitempty" xml:"pageCall,omitempty"`
 }
 
 // IngestResponseBody is the type of the "assistant" service "ingest" endpoint
@@ -333,7 +349,22 @@ func NewChatRequestBody(p *assistant.ChatPayload) *ChatRequestBody {
 // "agent" endpoint of the "assistant" service.
 func NewAgentRequestBody(p *assistant.AgentPayload) *AgentRequestBody {
 	body := &AgentRequestBody{
-		Question: p.Question,
+		Question:    p.Question,
+		SessionID:   p.SessionID,
+		RunID:       p.RunID,
+		ResumeToken: p.ResumeToken,
+		ToolCallID:  p.ToolCallID,
+		ToolResult:  p.ToolResult,
+	}
+	if p.Tools != nil {
+		body.Tools = make([]*AssistantToolRequestBody, len(p.Tools))
+		for i, val := range p.Tools {
+			if val == nil {
+				body.Tools[i] = nil
+				continue
+			}
+			body.Tools[i] = marshalAssistantAssistantToolToAssistantToolRequestBody(val)
+		}
 	}
 	return body
 }
@@ -488,13 +519,18 @@ func NewChatInternal(body *ChatInternalResponseBody) *assistant.IAMProblem {
 // result from a HTTP "OK" response.
 func NewAgentAssistantAgentReplyOK(body *AgentResponseBody) *assistant.AssistantAgentReply {
 	v := &assistant.AssistantAgentReply{
-		Content: *body.Content,
-		Model:   *body.Model,
-		Mode:    *body.Mode,
+		Content:     *body.Content,
+		Model:       *body.Model,
+		Mode:        *body.Mode,
+		RunID:       body.RunID,
+		ResumeToken: body.ResumeToken,
 	}
 	v.Tools = make([]string, len(body.Tools))
 	for i, val := range body.Tools {
 		v.Tools[i] = val
+	}
+	if body.PageCall != nil {
+		v.PageCall = unmarshalAssistantToolCallResponseBodyToAssistantAssistantToolCall(body.PageCall)
 	}
 
 	return v
@@ -551,13 +587,18 @@ func NewAgentInternal(body *AgentInternalResponseBody) *assistant.IAMProblem {
 // endpoint result from a HTTP "OK" response.
 func NewWorkflowAssistantAgentReplyOK(body *WorkflowResponseBody) *assistant.AssistantAgentReply {
 	v := &assistant.AssistantAgentReply{
-		Content: *body.Content,
-		Model:   *body.Model,
-		Mode:    *body.Mode,
+		Content:     *body.Content,
+		Model:       *body.Model,
+		Mode:        *body.Mode,
+		RunID:       body.RunID,
+		ResumeToken: body.ResumeToken,
 	}
 	v.Tools = make([]string, len(body.Tools))
 	for i, val := range body.Tools {
 		v.Tools[i] = val
+	}
+	if body.PageCall != nil {
+		v.PageCall = unmarshalAssistantToolCallResponseBodyToAssistantAssistantToolCall(body.PageCall)
 	}
 
 	return v
@@ -793,6 +834,11 @@ func ValidateAgentResponseBody(body *AgentResponseBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.mode", *body.Mode, []any{"agent", "workflow"}))
 		}
 	}
+	if body.PageCall != nil {
+		if err2 := validateAssistantToolCallResponseBody(body.PageCall, "body.pageCall"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	return
 }
 
@@ -814,6 +860,11 @@ func ValidateWorkflowResponseBody(body *WorkflowResponseBody) (err error) {
 	if body.Mode != nil {
 		if !(*body.Mode == "agent" || *body.Mode == "workflow") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.mode", *body.Mode, []any{"agent", "workflow"}))
+		}
+	}
+	if body.PageCall != nil {
+		if err2 := validateAssistantToolCallResponseBody(body.PageCall, "body.pageCall"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	return

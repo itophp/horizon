@@ -121,13 +121,48 @@ func BuildAgentPayload(assistantAgentBody *string, assistantAgentCookie *string)
 		}
 		err = json.Unmarshal([]byte(*assistantAgentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"question\": \"57\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"question\": \"57\",\n      \"resumeToken\": \"pp3\",\n      \"runId\": 9005700267392517784,\n      \"sessionId\": \"vi3\",\n      \"toolCallId\": \"9la\",\n      \"toolResult\": \"4wg\",\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }'")
 		}
 		if utf8.RuneCountInString(body.Question) < 1 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
 		}
 		if utf8.RuneCountInString(body.Question) > 2000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 2000, false))
+		}
+		if body.SessionID != nil {
+			if utf8.RuneCountInString(*body.SessionID) > 80 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.sessionId", *body.SessionID, utf8.RuneCountInString(*body.SessionID), 80, false))
+			}
+		}
+		if len(body.Tools) > 40 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.tools", body.Tools, len(body.Tools), 40, false))
+		}
+		for _, e := range body.Tools {
+			if e != nil {
+				if err2 := validateAssistantToolRequestBody(e, "body.tools[*]"); err2 != nil {
+					err = goa.MergeErrors(err, err2)
+				}
+			}
+		}
+		if body.RunID != nil {
+			if *body.RunID < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("body.runId", *body.RunID, 1, true))
+			}
+		}
+		if body.ResumeToken != nil {
+			if utf8.RuneCountInString(*body.ResumeToken) > 80 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.resumeToken", *body.ResumeToken, utf8.RuneCountInString(*body.ResumeToken), 80, false))
+			}
+		}
+		if body.ToolCallID != nil {
+			if utf8.RuneCountInString(*body.ToolCallID) > 120 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.toolCallId", *body.ToolCallID, utf8.RuneCountInString(*body.ToolCallID), 120, false))
+			}
+		}
+		if body.ToolResult != nil {
+			if utf8.RuneCountInString(*body.ToolResult) > 12000 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.toolResult", *body.ToolResult, utf8.RuneCountInString(*body.ToolResult), 12000, false))
+			}
 		}
 		if err != nil {
 			return nil, err
@@ -141,7 +176,22 @@ func BuildAgentPayload(assistantAgentBody *string, assistantAgentCookie *string)
 		cookie = *assistantAgentCookie
 	}
 	v := &assistant.AgentPayload{
-		Question: body.Question,
+		Question:    body.Question,
+		SessionID:   body.SessionID,
+		RunID:       body.RunID,
+		ResumeToken: body.ResumeToken,
+		ToolCallID:  body.ToolCallID,
+		ToolResult:  body.ToolResult,
+	}
+	if body.Tools != nil {
+		v.Tools = make([]*assistant.AssistantTool, len(body.Tools))
+		for i, val := range body.Tools {
+			if val == nil {
+				v.Tools[i] = nil
+				continue
+			}
+			v.Tools[i] = marshalAssistantToolRequestBodyToAssistantAssistantTool(val)
+		}
 	}
 	v.Cookie = cookie
 

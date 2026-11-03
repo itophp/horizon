@@ -61,6 +61,7 @@ import type {
   TemporaryAccessRecord,
   TemporaryAccessWorkspace,
   UpdateConversationRequestBody,
+  WorkflowRequestBody,
 } from "./models";
 
 import { request } from "../client/request";
@@ -3278,7 +3279,7 @@ export const getAssistantWorkflowUrl = () => {
  * @summary workflow assistant
  */
 export const assistantWorkflow = async (
-  agentRequestBody: AgentRequestBody,
+  workflowRequestBody: WorkflowRequestBody,
   options?: Parameters<typeof request>[1],
 ): Promise<assistantWorkflowResponse> => {
   const getHeaders = (
@@ -3309,7 +3310,7 @@ export const assistantWorkflow = async (
       "Content-Type": "application/json",
       ...getHeaders(options?.headers),
     },
-    body: JSON.stringify(agentRequestBody),
+    body: JSON.stringify(workflowRequestBody),
   });
 };
 
@@ -3357,9 +3358,9 @@ export const getAssistantWorkflowMutationOptions = <
 export type AssistantWorkflowMutationResult = NonNullable<
   Awaited<ReturnType<typeof assistantWorkflow>>
 >;
-export type AssistantWorkflowMutationBody = AgentRequestBody;
+export type AssistantWorkflowMutationBody = WorkflowRequestBody;
 export type AssistantWorkflowMutationError = IAMProblem;
-export type AssistantWorkflowMutationVariables = { data: AgentRequestBody };
+export type AssistantWorkflowMutationVariables = { data: WorkflowRequestBody };
 
 /**
  * @summary workflow assistant

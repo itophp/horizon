@@ -9,21 +9,11 @@ import {
   type PropsWithChildren,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  assistantAgent,
-  assistantChat,
-  assistantStatus,
-} from "@/api/generated/baseline";
-import type {
-  AssistantMessage,
-  AssistantTool,
-  AssistantReply,
-} from "@/api/generated/models";
+import { assistantAgent, assistantStatus } from "@/api/generated/baseline";
+import type { AssistantTool, AssistantReply } from "@/api/generated/models";
 import { ApiError } from "@/api/client/request";
 import { useWebMcp } from "@/features/webmcp/provider";
 import { useSession } from "@/features/administration/auth";
-
-export type AssistantMode = "page" | "agent";
 
 export interface AssistantTurn {
   id: string;
@@ -44,9 +34,6 @@ export interface AssistantContextValue {
   ready: boolean;
   configured: boolean;
   toolCount: number;
-  mode: AssistantMode;
-  agentEnabled: boolean;
-  setMode: (mode: AssistantMode) => void;
   send: (text: string) => Promise<void>;
   stop: () => void;
   clear: () => void;
@@ -54,7 +41,7 @@ export interface AssistantContextValue {
 
 const Context = createContext<AssistantContextValue | null>(null);
 
-const maximumRounds = 4;
+const maximumRounds = 13;
 const maximumContent = 8000;
 
 function identifier() {
@@ -81,25 +68,27 @@ function toolText(result: { content?: unknown; isError?: boolean }) {
   return text || JSON.stringify({ code: result.isError ? "failed" : "empty" });
 }
 
-function toMessage(turn: AssistantTurn): AssistantMessage {
-  return {
-    role: turn.role === "tool" ? "tool" : turn.role,
-    content: truncate(turn.content),
-    ...(turn.toolCallId ? { toolCallId: turn.toolCallId } : {}),
-    ...(turn.toolCalls?.length ? { toolCalls: turn.toolCalls } : {}),
-  };
+export function AssistantProvider({ children }: PropsWithChildren) {
+  const session = useSession();
+  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}`;
+  return (
+    <ScopedAssistantProvider key={identityKey}>
+      {children}
+    </ScopedAssistantProvider>
+  );
 }
 
-export function AssistantProvider({ children }: PropsWithChildren) {
+function ScopedAssistantProvider({ children }: PropsWithChildren) {
   const { connection, toolCount } = useWebMcp();
   const session = useSession();
   const allowed = session.permissions.includes("assistant:use");
   const [messages, setMessages] = useState<AssistantTurn[]>([]);
-  const [mode, setMode] = useState<AssistantMode>("page");
+  const sessionId = useRef(crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
+  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}`;
 
   useEffect(() => {
     mounted.current = true;
@@ -110,7 +99,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
   }, []);
 
   const status = useQuery({
-    queryKey: ["assistant-status"],
+    queryKey: ["assistant-status", identityKey],
     queryFn: () => assistantStatus(),
     retry: false,
     staleTime: 60000,
@@ -119,8 +108,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
   });
   const snapshot = status.data?.status === 200 ? status.data.data : undefined;
   const ready = allowed && Boolean(snapshot?.enabled);
-  const configured = Boolean(snapshot?.configured);
-  const agentEnabled = Boolean(snapshot?.agentEnabled);
+  const configured = Boolean(snapshot?.configured && snapshot?.agentEnabled);
   const model = snapshot?.model ?? "";
 
   // Page tools reach the model only when the workspace switch is on and a model is
@@ -154,17 +142,17 @@ export function AssistantProvider({ children }: PropsWithChildren) {
   const clear = useCallback(() => {
     stop();
     setMessages([]);
+    sessionId.current = crypto.randomUUID();
     setError(null);
   }, [stop]);
 
   const send = useCallback(
     async (text: string) => {
       const question = text.trim();
-      if (!question || busy) return;
+      if (!question || busy || controller.current) return;
       setError(null);
       setBusy(true);
       const abort = new AbortController();
-      controller.current?.abort();
       controller.current = abort;
       let history: AssistantTurn[] = [
         ...messages,
@@ -172,61 +160,92 @@ export function AssistantProvider({ children }: PropsWithChildren) {
       ];
       setMessages(history);
       try {
-        if (mode === "agent") {
-          // The Eino agent runs the whole tool loop on the server; the browser only
-          // sends the question and renders the grounded answer.
+        const inventory = tools();
+        let continuation:
+          | {
+              runId: number;
+              resumeToken: string;
+              toolCallId: string;
+              toolResult: string;
+            }
+          | undefined;
+        for (let round = 0; round < maximumRounds; round += 1) {
+          if (abort.signal.aborted) return;
           const result = await assistantAgent(
-            { question },
+            {
+              question,
+              sessionId: sessionId.current,
+              ...(continuation ?? { tools: inventory }),
+            },
             { signal: abort.signal },
           );
-          if (abort.signal.aborted) return;
-          if (result.status !== 200) {
+          if (abort.signal.aborted || !mounted.current) return;
+          if (result.status !== 200)
             throw new ApiError("unavailable", result.status);
+          const reply = result.data;
+          const call = reply.pageCall;
+          if (!call) {
+            setMessages([
+              ...history,
+              {
+                id: identifier(),
+                role: "assistant",
+                content: reply.content,
+                tools: reply.tools,
+              },
+            ]);
+            return;
           }
-          if (!mounted.current) return;
-          setMessages([
+          if (!reply.runId || !reply.resumeToken)
+            throw new ApiError("invalid", 400);
+          history = [
             ...history,
             {
               id: identifier(),
               role: "assistant",
-              content: result.data.content,
-              tools: result.data.tools,
+              content: reply.content,
+              toolCalls: [call],
             },
-          ]);
-          return;
-        }
-        for (let round = 0; round < maximumRounds; round += 1) {
-          const result = await assistantChat(
-            {
-              messages: history
-                .filter((turn) => turn.role !== "tool" || turn.toolCallId)
-                .map(toMessage),
-              tools: tools(),
-            },
-            { signal: abort.signal },
-          );
-          if (abort.signal.aborted) return;
-          if (result.status !== 200) {
-            throw new ApiError("unavailable", result.status);
-          }
-          const reply = result.data;
-          const calls = reply.toolCalls ?? [];
-          const turn: AssistantTurn = {
-            id: identifier(),
-            role: "assistant",
-            content: reply.content,
-            ...(calls.length ? { toolCalls: calls } : {}),
-          };
-          history = [...history, turn];
+          ];
           setMessages(history);
-          if (!calls.length) return;
-          for (const call of calls) {
-            const executed = await execute(call);
-            history = [...history, executed];
-            if (!mounted.current) return;
-            setMessages(history);
-          }
+          // The frozen manifest is not authority: the current registry must
+          // still expose this exact tool/schema after navigation or revocation.
+          const expected = inventory.find((tool) => tool.name === call.name);
+          const current = tools().find((tool) => tool.name === call.name);
+          const executed: AssistantTurn =
+            expected &&
+            current &&
+            JSON.stringify(expected.parameters) ===
+              JSON.stringify(current.parameters)
+              ? await execute(call)
+              : {
+                  id: identifier(),
+                  role: "tool",
+                  content: JSON.stringify({ code: "tool_unavailable" }),
+                  toolCallId: call.id,
+                  toolName: call.name,
+                  status: "failed",
+                };
+          if (abort.signal.aborted || !mounted.current) return;
+          history = [...history, executed];
+          setMessages(history);
+          let toolResult = JSON.stringify({
+            content: executed.content,
+            isError: executed.status === "failed",
+          });
+          if (toolResult.length > 12000)
+            toolResult = JSON.stringify({
+              code: "result_too_large",
+              isError: true,
+            });
+          continuation = {
+            runId: reply.runId,
+            resumeToken: reply.resumeToken,
+            toolCallId: call.id,
+            toolResult,
+          };
         }
+        throw new ApiError("invalid", 400);
       } catch (caught) {
         if (abort.signal.aborted) return;
         const code = caught instanceof ApiError ? caught.code : "internal";
@@ -240,8 +259,10 @@ export function AssistantProvider({ children }: PropsWithChildren) {
           );
         }
       } finally {
-        if (controller.current === abort) controller.current = null;
-        if (mounted.current) setBusy(false);
+        if (controller.current === abort) {
+          controller.current = null;
+          if (mounted.current) setBusy(false);
+        }
       }
 
       // Page tools run in the page and keep their own permission checks; the model
@@ -270,6 +291,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
             content: truncate(toolText(result)),
             toolCallId: call.id,
             toolName: call.name,
+            status: result.isError ? "failed" : undefined,
           };
         } catch {
           return {
@@ -283,7 +305,7 @@ export function AssistantProvider({ children }: PropsWithChildren) {
         }
       }
     },
-    [busy, connection, messages, mode, tools],
+    [busy, connection, messages, tools],
   );
 
   const value = useMemo<AssistantContextValue>(
@@ -295,9 +317,6 @@ export function AssistantProvider({ children }: PropsWithChildren) {
       ready,
       configured,
       toolCount,
-      mode,
-      agentEnabled,
-      setMode,
       send,
       stop,
       clear,
@@ -310,9 +329,6 @@ export function AssistantProvider({ children }: PropsWithChildren) {
       ready,
       configured,
       toolCount,
-      mode,
-      agentEnabled,
-      setMode,
       send,
       stop,
       clear,

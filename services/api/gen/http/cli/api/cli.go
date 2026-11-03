@@ -871,7 +871,7 @@ func assistantAgentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant agent --body '{\n      \"question\": \"57\"\n   }' --cookie \"Qui consequatur dolor.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant agent --body '{\n      \"question\": \"57\",\n      \"resumeToken\": \"pp3\",\n      \"runId\": 9005700267392517784,\n      \"sessionId\": \"vi3\",\n      \"toolCallId\": \"9la\",\n      \"toolResult\": \"4wg\",\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }' --cookie \"Qui consequatur dolor.\"")
 }
 
 func assistantWorkflowUsage() {

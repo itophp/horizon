@@ -7,21 +7,18 @@
   "subtitle": "{{model}}",
   "subtitleUnknown": "Model not configured",
   "emptyTitle": "Ask about this workspace",
-  "emptyHint": "The agent can read the current route and run the page tools you are allowed to use. Business records still require your existing permissions.",
+  "emptyHint": "The workspace agent can use your permitted business capabilities and the WebMCP tools available in the current page. Business actions still follow their existing permissions and approvals.",
   "toolCount": "{{count}} page tools available",
   "toolRunning": "Requested {{name}}",
   "toolResult": "Tool result",
   "thinking": "Thinking…",
-  "placeholder": "Ask about this page…",
+  "placeholder": "Ask the workspace agent…",
   "send": "Send",
   "stop": "Stop",
-  "notConfigured": "The agent is on but has no model credential. An administrator can add the model endpoint and token under the agent group in System settings.",
+  "notConfigured": "Enable the workspace agent and configure its model endpoint and credential in System settings to start a conversation.",
   "errors": {
     "failed": "The request failed. Try again.",
     "forbidden": "You do not have permission to use the agent.",
     "unavailable": "The model service is unavailable or not configured. Try again later."
-  },
-  "mode": "Answer mode",
-  "modePage": "This page",
-  "modeAgent": "Workspace agent"
+  }
 }

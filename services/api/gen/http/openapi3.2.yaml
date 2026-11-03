@@ -2406,6 +2406,21 @@ paths:
                             $ref: '#/components/schemas/AgentRequestBody'
                         example:
                             question: "57"
+                            resumeToken: pp3
+                            runId: 9005700267392517784
+                            sessionId: vi3
+                            toolCallId: 9la
+                            toolResult: 4wg
+                            tools:
+                                - description: niq
+                                  name: ni
+                                  parameters: Voluptatem omnis sapiente eos non.
+                                - description: niq
+                                  name: ni
+                                  parameters: Voluptatem omnis sapiente eos non.
+                                - description: niq
+                                  name: ni
+                                  parameters: Voluptatem omnis sapiente eos non.
             responses:
                 "200":
                     description: OK response.
@@ -2417,6 +2432,12 @@ paths:
                                 content: Qui repellat hic nulla vel.
                                 mode: workflow
                                 model: Commodi aut.
+                                pageCall:
+                                    arguments: Impedit qui rerum minus non ipsa optio.
+                                    id: Eveniet voluptatem.
+                                    name: Et qui sit et sint reiciendis.
+                                resumeToken: Reprehenderit est eum totam.
+                                runId: 5749468068227734292
                                 tools:
                                     - Velit non ad nostrum et blanditiis voluptas.
                                     - Voluptates dolorem.
@@ -2815,7 +2836,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/AgentRequestBody'
+                            $ref: '#/components/schemas/WorkflowRequestBody'
                         example:
                             question: t
             responses:
@@ -2829,6 +2850,12 @@ paths:
                                 content: Minima aut.
                                 mode: workflow
                                 model: Aut voluptatum quae dolor quia repellat.
+                                pageCall:
+                                    arguments: Impedit qui rerum minus non ipsa optio.
+                                    id: Eveniet voluptatem.
+                                    name: Et qui sit et sint reiciendis.
+                                resumeToken: Soluta atque minima aut modi voluptatem.
+                                runId: 9035873265805770114
                                 tools:
                                     - Earum eligendi.
                                     - Aliquam nihil.
@@ -6170,9 +6197,60 @@ components:
                     example: "57"
                     minLength: 1
                     maxLength: 2000
+                resumeToken:
+                    type: string
+                    example: pp3
+                    maxLength: 80
+                runId:
+                    type: integer
+                    example: 9005700267392517784
+                    format: int64
+                    minimum: 1
+                sessionId:
+                    type: string
+                    example: vi3
+                    maxLength: 80
+                toolCallId:
+                    type: string
+                    example: 9la
+                    maxLength: 120
+                toolResult:
+                    type: string
+                    example: 4wg
+                    maxLength: 12000
+                tools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssistantTool'
+                    example:
+                        - description: niq
+                          name: ni
+                          parameters: Voluptatem omnis sapiente eos non.
+                        - description: niq
+                          name: ni
+                          parameters: Voluptatem omnis sapiente eos non.
+                        - description: niq
+                          name: ni
+                          parameters: Voluptatem omnis sapiente eos non.
+                    maxItems: 40
             description: Request body for agent.
             example:
                 question: "57"
+                resumeToken: pp3
+                runId: 9005700267392517784
+                sessionId: vi3
+                toolCallId: 9la
+                toolResult: 4wg
+                tools:
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
+                    - description: niq
+                      name: ni
+                      parameters: Voluptatem omnis sapiente eos non.
             required:
                 - question
         AssistantAgentReply:
@@ -6190,6 +6268,15 @@ components:
                 model:
                     type: string
                     example: Commodi aut.
+                pageCall:
+                    $ref: '#/components/schemas/AssistantToolCall'
+                resumeToken:
+                    type: string
+                    example: Reprehenderit est eum totam.
+                runId:
+                    type: integer
+                    example: 5749468068227734292
+                    format: int64
                 tools:
                     type: array
                     items:
@@ -6205,6 +6292,12 @@ components:
                 content: Qui repellat hic nulla vel.
                 mode: workflow
                 model: Commodi aut.
+                pageCall:
+                    arguments: Impedit qui rerum minus non ipsa optio.
+                    id: Eveniet voluptatem.
+                    name: Et qui sit et sint reiciendis.
+                resumeToken: Reprehenderit est eum totam.
+                runId: 5749468068227734292
                 tools:
                     - Velit non ad nostrum et blanditiis voluptas.
                     - Voluptates dolorem.
@@ -8702,6 +8795,19 @@ components:
             example:
                 archived: false
                 title: r1d
+        WorkflowRequestBody:
+            type: object
+            properties:
+                question:
+                    type: string
+                    example: t
+                    minLength: 1
+                    maxLength: 2000
+            description: Request body for workflow.
+            example:
+                question: t
+            required:
+                - question
     securitySchemes:
         browser_session_header_Cookie:
             type: apiKey

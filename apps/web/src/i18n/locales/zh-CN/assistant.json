@@ -7,21 +7,18 @@
   "subtitle": "{{model}}",
   "subtitleUnknown": "模型未配置",
   "emptyTitle": "问问这个工作区",
-  "emptyHint": "智能体可以读取当前路由，并调用你有权使用的页面工具；业务数据仍需经过原有权限校验。",
+  "emptyHint": "工作区智能体可调用你有权使用的业务能力及当前页面已开放的 WebMCP 工具，业务操作仍遵循原有权限和审批。",
   "toolCount": "可用页面工具 {{count}} 个",
   "toolRunning": "调用 {{name}}",
   "toolResult": "工具返回",
   "thinking": "正在思考…",
-  "placeholder": "问问当前页面…",
+  "placeholder": "向工作区智能体提问…",
   "send": "发送",
   "stop": "停止",
-  "notConfigured": "智能体已开启，但缺少模型凭证。需要管理员在系统设置的「智能体」分组中补全模型地址与 Token 后才能回答。",
+  "notConfigured": "请在系统设置中启用工作区智能体，并配置模型地址和凭证后开始对话。",
   "errors": {
     "failed": "请求失败，请重试。",
     "forbidden": "你没有使用智能体的权限。",
     "unavailable": "模型服务不可用或未配置，请稍后再试。"
-  },
-  "mode": "回答模式",
-  "modePage": "当前页面",
-  "modeAgent": "工作区智能体"
+  }
 }

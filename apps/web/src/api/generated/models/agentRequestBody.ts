@@ -5,6 +5,7 @@
  * Application infrastructure and technical demonstrations
  * OpenAPI spec version: 0.0.1
  */
+import type { AssistantTool } from "./assistantTool";
 
 /**
  * Request body for agent.
@@ -15,4 +16,16 @@ export interface AgentRequestBody {
    * @maxLength 2000
    */
   question: string;
+  /** @maxLength 80 */
+  resumeToken?: string;
+  /** @minimum 1 */
+  runId?: number;
+  /** @maxLength 80 */
+  sessionId?: string;
+  /** @maxLength 120 */
+  toolCallId?: string;
+  /** @maxLength 12000 */
+  toolResult?: string;
+  /** @maxItems 40 */
+  tools?: AssistantTool[];
 }

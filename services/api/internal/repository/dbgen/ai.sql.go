@@ -11,6 +11,36 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const aIClaimPageTool = `-- name: AIClaimPageTool :one
+UPDATE orch_checkpoints c SET lease_token = 'claimed', lease_until = now() + interval '2 minutes'
+FROM ai_runs r WHERE c.tenant_id = $1 AND c.run_id = $4 AND c.checkpoint_key = 'embedded:manifest'
+AND c.lease_token = $5::text AND c.lease_token <> 'claimed' AND c.lease_until > now()
+AND r.tenant_id = c.tenant_id AND r.id = c.run_id AND r.account_id = $2 AND r.department_id = $3
+AND r.agent = 'workspace_agent' AND r.status = 'running'
+RETURNING c.payload
+`
+
+type AIClaimPageToolParams struct {
+	TenantID     string
+	AccountID    int64
+	DepartmentID int64
+	RunID        int64
+	Token        string
+}
+
+func (q *Queries) AIClaimPageTool(ctx context.Context, arg AIClaimPageToolParams) (string, error) {
+	row := q.db.QueryRow(ctx, aIClaimPageTool,
+		arg.TenantID,
+		arg.AccountID,
+		arg.DepartmentID,
+		arg.RunID,
+		arg.Token,
+	)
+	var payload string
+	err := row.Scan(&payload)
+	return payload, err
+}
+
 const aICreateRun = `-- name: AICreateRun :one
 INSERT INTO ai_runs (tenant_id, account_id, department_id, session_id, agent, model, instruction_version, question, trace_id, context, origin, correlation_id, causation_id, trigger_depth, trigger_policy, event_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
@@ -97,6 +127,23 @@ func (q *Queries) AIEvaluation(ctx context.Context, tenantID string) (AIEvaluati
 		&i.AverageDurationMs,
 	)
 	return i, err
+}
+
+const aIExpirePageTools = `-- name: AIExpirePageTools :exec
+UPDATE ai_runs r SET status = 'failed', error_code = 'timeout', finished_at = now()
+FROM orch_checkpoints c WHERE r.tenant_id = $1 AND r.account_id = $2
+AND c.tenant_id = r.tenant_id AND c.run_id = r.id AND c.checkpoint_key = 'embedded:manifest'
+AND c.lease_until < now() AND c.lease_token <> '' AND r.agent = 'workspace_agent' AND r.status = 'running'
+`
+
+type AIExpirePageToolsParams struct {
+	TenantID  string
+	AccountID int64
+}
+
+func (q *Queries) AIExpirePageTools(ctx context.Context, arg AIExpirePageToolsParams) error {
+	_, err := q.db.Exec(ctx, aIExpirePageTools, arg.TenantID, arg.AccountID)
+	return err
 }
 
 const aIFinishRun = `-- name: AIFinishRun :exec
@@ -565,4 +612,37 @@ type AISetRunStatusParams struct {
 func (q *Queries) AISetRunStatus(ctx context.Context, arg AISetRunStatusParams) error {
 	_, err := q.db.Exec(ctx, aISetRunStatus, arg.TenantID, arg.ID, arg.Status)
 	return err
+}
+
+const aIWaitForPageTool = `-- name: AIWaitForPageTool :execrows
+INSERT INTO orch_checkpoints(tenant_id, run_id, checkpoint_key, payload, lease_token, lease_until)
+SELECT r.tenant_id, r.id, 'embedded:manifest', $5::text, $6::text, now() + interval '15 minutes'
+FROM ai_runs r WHERE r.tenant_id = $1 AND r.account_id = $2 AND r.department_id = $3
+AND r.id = $4 AND r.agent = 'workspace_agent' AND r.status = 'running'
+ON CONFLICT (tenant_id, run_id, checkpoint_key) DO UPDATE
+SET payload = EXCLUDED.payload, lease_token = EXCLUDED.lease_token, lease_until = EXCLUDED.lease_until, updated_at = now()
+`
+
+type AIWaitForPageToolParams struct {
+	TenantID     string
+	AccountID    int64
+	DepartmentID int64
+	ID           int64
+	Payload      string
+	Token        string
+}
+
+func (q *Queries) AIWaitForPageTool(ctx context.Context, arg AIWaitForPageToolParams) (int64, error) {
+	result, err := q.db.Exec(ctx, aIWaitForPageTool,
+		arg.TenantID,
+		arg.AccountID,
+		arg.DepartmentID,
+		arg.ID,
+		arg.Payload,
+		arg.Token,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

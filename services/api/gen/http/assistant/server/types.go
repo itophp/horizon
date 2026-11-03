@@ -24,7 +24,13 @@ type ChatRequestBody struct {
 // AgentRequestBody is the type of the "assistant" service "agent" endpoint
 // HTTP request body.
 type AgentRequestBody struct {
-	Question *string `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+	Question    *string                     `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+	SessionID   *string                     `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
+	Tools       []*AssistantToolRequestBody `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
+	RunID       *int64                      `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ResumeToken *string                     `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
+	ToolCallID  *string                     `form:"toolCallId,omitempty" json:"toolCallId,omitempty" xml:"toolCallId,omitempty"`
+	ToolResult  *string                     `form:"toolResult,omitempty" json:"toolResult,omitempty" xml:"toolResult,omitempty"`
 }
 
 // WorkflowRequestBody is the type of the "assistant" service "workflow"
@@ -60,19 +66,29 @@ type ChatResponseBody struct {
 // AgentResponseBody is the type of the "assistant" service "agent" endpoint
 // HTTP response body.
 type AgentResponseBody struct {
-	Content string   `form:"content" json:"content" xml:"content"`
-	Tools   []string `form:"tools" json:"tools" xml:"tools"`
-	Model   string   `form:"model" json:"model" xml:"model"`
-	Mode    string   `form:"mode" json:"mode" xml:"mode"`
+	Content     string   `form:"content" json:"content" xml:"content"`
+	Tools       []string `form:"tools" json:"tools" xml:"tools"`
+	Model       string   `form:"model" json:"model" xml:"model"`
+	Mode        string   `form:"mode" json:"mode" xml:"mode"`
+	RunID       *int64   `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ResumeToken *string  `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
+	// One WebMCP call to execute in the originating browser before resuming this
+	// task.
+	PageCall *AssistantToolCallResponseBody `form:"pageCall,omitempty" json:"pageCall,omitempty" xml:"pageCall,omitempty"`
 }
 
 // WorkflowResponseBody is the type of the "assistant" service "workflow"
 // endpoint HTTP response body.
 type WorkflowResponseBody struct {
-	Content string   `form:"content" json:"content" xml:"content"`
-	Tools   []string `form:"tools" json:"tools" xml:"tools"`
-	Model   string   `form:"model" json:"model" xml:"model"`
-	Mode    string   `form:"mode" json:"mode" xml:"mode"`
+	Content     string   `form:"content" json:"content" xml:"content"`
+	Tools       []string `form:"tools" json:"tools" xml:"tools"`
+	Model       string   `form:"model" json:"model" xml:"model"`
+	Mode        string   `form:"mode" json:"mode" xml:"mode"`
+	RunID       *int64   `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ResumeToken *string  `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
+	// One WebMCP call to execute in the originating browser before resuming this
+	// task.
+	PageCall *AssistantToolCallResponseBody `form:"pageCall,omitempty" json:"pageCall,omitempty" xml:"pageCall,omitempty"`
 }
 
 // KnowledgeResponseBody is the type of the "assistant" service "knowledge"
@@ -342,9 +358,11 @@ func NewChatResponseBody(res *assistant.AssistantReply) *ChatResponseBody {
 // "agent" endpoint of the "assistant" service.
 func NewAgentResponseBody(res *assistant.AssistantAgentReply) *AgentResponseBody {
 	body := &AgentResponseBody{
-		Content: res.Content,
-		Model:   res.Model,
-		Mode:    res.Mode,
+		Content:     res.Content,
+		Model:       res.Model,
+		Mode:        res.Mode,
+		RunID:       res.RunID,
+		ResumeToken: res.ResumeToken,
 	}
 	if res.Tools != nil {
 		body.Tools = make([]string, len(res.Tools))
@@ -353,6 +371,9 @@ func NewAgentResponseBody(res *assistant.AssistantAgentReply) *AgentResponseBody
 		}
 	} else {
 		body.Tools = []string{}
+	}
+	if res.PageCall != nil {
+		body.PageCall = marshalAssistantAssistantToolCallToAssistantToolCallResponseBody(res.PageCall)
 	}
 	return body
 }
@@ -361,9 +382,11 @@ func NewAgentResponseBody(res *assistant.AssistantAgentReply) *AgentResponseBody
 // "workflow" endpoint of the "assistant" service.
 func NewWorkflowResponseBody(res *assistant.AssistantAgentReply) *WorkflowResponseBody {
 	body := &WorkflowResponseBody{
-		Content: res.Content,
-		Model:   res.Model,
-		Mode:    res.Mode,
+		Content:     res.Content,
+		Model:       res.Model,
+		Mode:        res.Mode,
+		RunID:       res.RunID,
+		ResumeToken: res.ResumeToken,
 	}
 	if res.Tools != nil {
 		body.Tools = make([]string, len(res.Tools))
@@ -372,6 +395,9 @@ func NewWorkflowResponseBody(res *assistant.AssistantAgentReply) *WorkflowRespon
 		}
 	} else {
 		body.Tools = []string{}
+	}
+	if res.PageCall != nil {
+		body.PageCall = marshalAssistantAssistantToolCallToAssistantToolCallResponseBody(res.PageCall)
 	}
 	return body
 }
@@ -706,7 +732,22 @@ func NewChatPayload(body *ChatRequestBody, cookie string) *assistant.ChatPayload
 // NewAgentPayload builds a assistant service agent endpoint payload.
 func NewAgentPayload(body *AgentRequestBody, cookie string) *assistant.AgentPayload {
 	v := &assistant.AgentPayload{
-		Question: *body.Question,
+		Question:    *body.Question,
+		SessionID:   body.SessionID,
+		RunID:       body.RunID,
+		ResumeToken: body.ResumeToken,
+		ToolCallID:  body.ToolCallID,
+		ToolResult:  body.ToolResult,
+	}
+	if body.Tools != nil {
+		v.Tools = make([]*assistant.AssistantTool, len(body.Tools))
+		for i, val := range body.Tools {
+			if val == nil {
+				v.Tools[i] = nil
+				continue
+			}
+			v.Tools[i] = unmarshalAssistantToolRequestBodyToAssistantAssistantTool(val)
+		}
 	}
 	v.Cookie = cookie
 
@@ -784,6 +825,41 @@ func ValidateAgentRequestBody(body *AgentRequestBody) (err error) {
 		}
 		if utf8.RuneCountInString(*body.Question) > 2000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 2000, false))
+		}
+	}
+	if body.SessionID != nil {
+		if utf8.RuneCountInString(*body.SessionID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.sessionId", *body.SessionID, utf8.RuneCountInString(*body.SessionID), 80, false))
+		}
+	}
+	if len(body.Tools) > 40 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.tools", body.Tools, len(body.Tools), 40, false))
+	}
+	for _, e := range body.Tools {
+		if e != nil {
+			if err2 := validateAssistantToolRequestBody(e, "body.tools[*]"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	if body.RunID != nil {
+		if *body.RunID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.runId", *body.RunID, 1, true))
+		}
+	}
+	if body.ResumeToken != nil {
+		if utf8.RuneCountInString(*body.ResumeToken) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.resumeToken", *body.ResumeToken, utf8.RuneCountInString(*body.ResumeToken), 80, false))
+		}
+	}
+	if body.ToolCallID != nil {
+		if utf8.RuneCountInString(*body.ToolCallID) > 120 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.toolCallId", *body.ToolCallID, utf8.RuneCountInString(*body.ToolCallID), 120, false))
+		}
+	}
+	if body.ToolResult != nil {
+		if utf8.RuneCountInString(*body.ToolResult) > 12000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.toolResult", *body.ToolResult, utf8.RuneCountInString(*body.ToolResult), 12000, false))
 		}
 	}
 	return

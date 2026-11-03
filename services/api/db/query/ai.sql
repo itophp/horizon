@@ -99,3 +99,25 @@ FROM ai_runs
 WHERE tenant_id = $1 AND account_id = $2 AND session_id = $3
 ORDER BY id ASC
 LIMIT sqlc.arg(max_rows)::int;
+
+-- name: AIWaitForPageTool :execrows
+INSERT INTO orch_checkpoints(tenant_id, run_id, checkpoint_key, payload, lease_token, lease_until)
+SELECT r.tenant_id, r.id, 'embedded:manifest', sqlc.arg(payload)::text, sqlc.arg(token)::text, now() + interval '15 minutes'
+FROM ai_runs r WHERE r.tenant_id = $1 AND r.account_id = $2 AND r.department_id = $3
+AND r.id = $4 AND r.agent = 'workspace_agent' AND r.status = 'running'
+ON CONFLICT (tenant_id, run_id, checkpoint_key) DO UPDATE
+SET payload = EXCLUDED.payload, lease_token = EXCLUDED.lease_token, lease_until = EXCLUDED.lease_until, updated_at = now();
+
+-- name: AIClaimPageTool :one
+UPDATE orch_checkpoints c SET lease_token = 'claimed', lease_until = now() + interval '2 minutes'
+FROM ai_runs r WHERE c.tenant_id = $1 AND c.run_id = $4 AND c.checkpoint_key = 'embedded:manifest'
+AND c.lease_token = sqlc.arg(token)::text AND c.lease_token <> 'claimed' AND c.lease_until > now()
+AND r.tenant_id = c.tenant_id AND r.id = c.run_id AND r.account_id = $2 AND r.department_id = $3
+AND r.agent = 'workspace_agent' AND r.status = 'running'
+RETURNING c.payload;
+
+-- name: AIExpirePageTools :exec
+UPDATE ai_runs r SET status = 'failed', error_code = 'timeout', finished_at = now()
+FROM orch_checkpoints c WHERE r.tenant_id = $1 AND r.account_id = $2
+AND c.tenant_id = r.tenant_id AND c.run_id = r.id AND c.checkpoint_key = 'embedded:manifest'
+AND c.lease_until < now() AND c.lease_token <> '' AND r.agent = 'workspace_agent' AND r.status = 'running';

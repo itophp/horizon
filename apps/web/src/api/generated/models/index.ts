@@ -76,3 +76,4 @@ export * from "./systemEchoParams";
 export * from "./temporaryAccessRecord";
 export * from "./temporaryAccessWorkspace";
 export * from "./updateConversationRequestBody";
+export * from "./workflowRequestBody";
