@@ -14,6 +14,39 @@
   "role": {
     "label": "Role"
   },
+  "project": {
+    "label": "Project",
+    "states": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "archived": "Archived"
+    }
+  },
+  "project_member": {
+    "label": "Project member"
+  },
+  "project_plan": {
+    "label": "Project plan",
+    "states": {
+      "pending": "Pending",
+      "in_progress": "In progress",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    }
+  },
+  "project_task": {
+    "label": "Project task",
+    "states": {
+      "todo": "Todo",
+      "in_progress": "In progress",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    }
+  },
+  "project_task_brief": {
+    "label": "Task brief"
+  },
   "example_record": {
     "label": "Example record",
     "states": {

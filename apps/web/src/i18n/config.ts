@@ -1,5 +1,7 @@
 import enArticles from "./locales/en/articles.json";
+import enProjects from "./locales/en/projects.json";
 import zhArticles from "./locales/zh-CN/articles.json";
+import zhProjects from "./locales/zh-CN/projects.json";
 import enAi from "./locales/en/ai.json";
 import zhAi from "./locales/zh-CN/ai.json";
 import enCapability from "./locales/en/capability.json";
@@ -29,6 +31,7 @@ import zhValidation from "./locales/zh-CN/validation.json";
 export const resources = {
   en: {
     articles: enArticles,
+    projects: enProjects,
     admin: enAdmin,
     ai: enAi,
     capability: enCapability,
@@ -45,6 +48,7 @@ export const resources = {
   },
   "zh-CN": {
     articles: zhArticles,
+    projects: zhProjects,
     admin: zhAdmin,
     ai: zhAi,
     capability: zhCapability,

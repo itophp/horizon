@@ -14,6 +14,39 @@
   "role": {
     "label": "角色"
   },
+  "project": {
+    "label": "项目",
+    "states": {
+      "active": "进行中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "archived": "已归档"
+    }
+  },
+  "project_member": {
+    "label": "项目成员"
+  },
+  "project_plan": {
+    "label": "项目计划",
+    "states": {
+      "pending": "未开始",
+      "in_progress": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    }
+  },
+  "project_task": {
+    "label": "项目任务",
+    "states": {
+      "todo": "待开始",
+      "in_progress": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    }
+  },
+  "project_task_brief": {
+    "label": "任务简报"
+  },
   "example_record": {
     "label": "示例记录",
     "states": {

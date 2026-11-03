@@ -12,6 +12,7 @@ import (
 	"baseline/services/api/internal/modules/mcp"
 	"baseline/services/api/internal/modules/notifications"
 	"baseline/services/api/internal/modules/orchestration"
+	"baseline/services/api/internal/modules/projects"
 	"baseline/services/api/internal/modules/settings"
 	"baseline/services/api/internal/platform/capability/registry"
 )
@@ -21,6 +22,7 @@ import (
 // Zero value builds declarations without opening a database or executing them.
 type CapabilityModules struct {
 	Articles      *articles.Module
+	Projects      *projects.Module
 	Core          *governance.Core
 	MCP           *mcp.Service
 	Orchestration *runtime.Engine
@@ -47,8 +49,12 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	if m.Articles == nil {
 		m.Articles = &articles.Module{Pool: m.Core.Pool}
 	}
+	if m.Projects == nil {
+		m.Projects = projects.New(m.Core.Pool)
+	}
 	entries := []registry.Entry{}
 	entries = append(entries, m.Articles.Entries()...)
+	entries = append(entries, m.Projects.Entries()...)
 	entries = append(entries, (&orchestration.Module{Engine: m.Orchestration}).Entries()...)
 	entries = append(entries, m.Core.Identity.Entries()...)
 	entries = append(entries, settings.New(m.Core).Entries()...)

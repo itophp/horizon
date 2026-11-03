@@ -17,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
+  FolderKanban,
   Users,
   Building2,
   Network,
@@ -124,6 +125,12 @@ export function AdminLayout() {
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
   const links = [
+    {
+      to: "/projects",
+      label: t("projects:heading"),
+      icon: FolderKanban,
+      permissions: ["projects:read"],
+    },
     {
       to: "/articles",
       label: t("articles:heading"),

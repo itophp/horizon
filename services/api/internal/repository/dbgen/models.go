@@ -603,6 +603,71 @@ type OrchCheckpoint struct {
 	UpdatedAt     pgtype.Timestamptz
 }
 
+type Project struct {
+	ID        int64
+	TenantID  string
+	Code      string
+	Name      string
+	Status    string
+	Priority  string
+	DueDate   pgtype.Date
+	OwnerID   int64
+	CreatedBy int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type ProjectMember struct {
+	ID        int64
+	TenantID  string
+	ProjectID int64
+	AccountID int64
+	JoinedAt  pgtype.Timestamptz
+}
+
+type ProjectPlan struct {
+	ID        int64
+	TenantID  string
+	ProjectID int64
+	PlanType  string
+	Title     string
+	Content   string
+	Status    string
+	Priority  string
+	DueDate   pgtype.Date
+	OwnerID   int64
+	CreatedBy int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type ProjectTask struct {
+	ID          int64
+	TenantID    string
+	ProjectID   int64
+	PlanID      pgtype.Int8
+	Title       string
+	Description string
+	Status      string
+	Priority    string
+	AssigneeID  pgtype.Int8
+	DueDate     pgtype.Date
+	CompletedAt pgtype.Timestamptz
+	CreatedBy   int64
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type ProjectTaskBrief struct {
+	ID        int64
+	TenantID  string
+	TaskID    int64
+	RunID     int64
+	Summary   string
+	Model     string
+	CreatedAt pgtype.Timestamptz
+}
+
 type TechnicalDemoRecord struct {
 	ID             int64
 	TenantID       string

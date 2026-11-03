@@ -347,3 +347,208 @@ export const articlePublish = (id: number, revision: number) =>
   });
 export const articleDecide = (id: number, revision: number, approve: boolean) =>
   invoke<{ id: number }>("article.decide", { id, revision, approve });
+
+// ---------------------------------------------------------------- projects
+// Every call below is a capability: the page never composes SQL or bypasses the
+// gateway, and membership is decided by the server, not by which buttons render.
+
+export type Project = {
+  id: number;
+  code: string;
+  name: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+  ownerId: number;
+  ownerName: string;
+  planCount: number;
+  taskCount: number;
+  taskDoneCount: number;
+  taskOverdueCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProjectMember = {
+  accountId: number;
+  name: string;
+  email: string;
+  isOwner: boolean;
+};
+
+export type ProjectAccount = {
+  accountId: number;
+  name: string;
+  email: string;
+};
+
+export type ProjectPlan = {
+  id: number;
+  projectId: number;
+  planType: string;
+  title: string;
+  content?: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+  ownerId: number;
+  ownerName: string;
+};
+
+export type ProjectTask = {
+  id: number;
+  projectId: number;
+  planId: number;
+  planTitle: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  assigneeId: number;
+  assigneeName: string;
+  dueDate: string;
+  completedAt: string;
+  brief?: string;
+  briefModel?: string;
+};
+
+export type ProjectPlanInput = {
+  planType: string;
+  title: string;
+  content: string;
+  priority: string;
+  dueDate: string;
+  ownerId: number;
+};
+
+export type ProjectTaskInput = {
+  planId: number;
+  title: string;
+  description: string;
+  priority: string;
+  assigneeId: number;
+  dueDate: string;
+};
+
+export const projectsList = (params?: {
+  status?: string;
+  priority?: string;
+  keyword?: string;
+  limit?: number;
+}) => invoke<{ items: Project[] }>("project.list", { ...params });
+
+export const projectGet = (id: number) =>
+  invoke<Project>("project.get", { id });
+
+export const projectCreate = (value: {
+  code: string;
+  name: string;
+  priority: string;
+  dueDate: string;
+}) => invoke<{ id: number }>("project.create", body(value));
+
+export const projectUpdate = (value: {
+  id: number;
+  name: string;
+  priority: string;
+  dueDate: string;
+}) => invoke<{ id: number }>("project.update", body(value));
+
+export const projectStatusChange = (id: number, from: string, status: string) =>
+  invoke<{ id: number; status: string }>("project.status.change", {
+    id,
+    from,
+    status,
+  });
+
+export const projectMembers = (projectId: number) =>
+  invoke<{ items: ProjectMember[] }>("project.member.list", { projectId });
+
+// The directory search exists because a plain member has no accounts:read.
+export const projectMemberSearch = (projectId: number, keyword: string) =>
+  invoke<{ items: ProjectAccount[] }>("project.member.search", {
+    projectId,
+    keyword,
+  });
+
+export const projectMemberAdd = (projectId: number, accountId: number) =>
+  invoke<{ projectId: number; accountId: number; added: boolean }>(
+    "project.member.add",
+    { projectId, accountId },
+  );
+
+export const projectMemberRemove = (projectId: number, accountId: number) =>
+  invoke<{ projectId: number; accountId: number }>("project.member.remove", {
+    projectId,
+    accountId,
+  });
+
+export const projectOwnerTransfer = (projectId: number, accountId: number) =>
+  invoke<{ projectId: number; ownerId: number }>("project.owner.transfer", {
+    projectId,
+    accountId,
+  });
+
+export const projectPlans = (projectId: number) =>
+  invoke<{ items: ProjectPlan[] }>("project.plan.list", { projectId });
+
+export const projectPlanGet = (id: number) =>
+  invoke<ProjectPlan>("project.plan.get", { id });
+
+export const projectPlanCreate = (
+  value: ProjectPlanInput & { projectId: number },
+) => invoke<{ id: number }>("project.plan.create", body(value));
+
+export const projectPlanUpdate = (value: ProjectPlanInput & { id: number }) =>
+  invoke<{ id: number }>("project.plan.update", body(value));
+
+export const projectPlanStatusChange = (
+  id: number,
+  from: string,
+  status: string,
+) =>
+  invoke<{ id: number; status: string }>("project.plan.status.change", {
+    id,
+    from,
+    status,
+  });
+
+export const projectTasks = (
+  projectId: number,
+  params?: {
+    planId?: number;
+    assigneeId?: number;
+    status?: string;
+    limit?: number;
+  },
+) =>
+  invoke<{ items: ProjectTask[] }>("project.task.list", {
+    projectId,
+    ...params,
+  });
+
+export const projectTaskGet = (id: number) =>
+  invoke<ProjectTask>("project.task.get", { id });
+
+export const projectTaskCreate = (
+  value: ProjectTaskInput & { projectId: number },
+) => invoke<{ id: number }>("project.task.create", body(value));
+
+export const projectTaskUpdate = (value: ProjectTaskInput & { id: number }) =>
+  invoke<{ id: number }>("project.task.update", body(value));
+
+export const projectTaskStatusChange = (
+  id: number,
+  from: string,
+  status: string,
+) =>
+  invoke<{ id: number; status: string; completedAt: string }>(
+    "project.task.status.change",
+    { id, from, status },
+  );
+
+export const projectTaskAssign = (id: number, assigneeId: number) =>
+  invoke<{ id: number; assigneeId: number }>("project.task.assign", {
+    id,
+    assigneeId,
+  });

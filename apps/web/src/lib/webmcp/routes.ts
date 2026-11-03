@@ -7,6 +7,16 @@ export const webMcpRoutes = [
     permission: "articles:read",
     connected: false,
   },
+  // Project collaboration publishes no page-scoped tools yet: entering it
+  // disconnects the previous page's inventory instead of reusing it. The
+  // capabilities stay available to the agent and remote MCP through the
+  // gateway, which is a separate exposure decision.
+  {
+    path: "/projects",
+    module: "projects",
+    permission: "projects:read",
+    connected: false,
+  },
   { path: "/mcp", module: "development", permission: "", connected: true },
   // Legacy entry points redirect to the unified page; kept so older links and
   // agent instructions still resolve.

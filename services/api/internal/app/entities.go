@@ -9,6 +9,7 @@ import (
 	"baseline/services/api/internal/modules/mcp"
 	"baseline/services/api/internal/modules/notifications"
 	"baseline/services/api/internal/modules/orchestration"
+	"baseline/services/api/internal/modules/projects"
 	"baseline/services/api/internal/modules/settings"
 	"baseline/services/api/internal/platform/capability/contracts"
 )
@@ -19,6 +20,7 @@ import (
 func Entities() []contracts.Entity {
 	out := []contracts.Entity{}
 	out = append(out, articles.Entities()...)
+	out = append(out, projects.Entities()...)
 	out = append(out, orchestration.Entities()...)
 	out = append(out, identity.Entities()...)
 	out = append(out, example.Entities()...)

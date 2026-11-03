@@ -1,0 +1,117 @@
+{
+  "heading": "项目协作",
+  "description": "创建项目、拆解计划、分配任务。成员边界由服务端判定。",
+  "policy": "只有项目成员能看到项目、计划和任务，管理员也不绕过。任务指派会触发一次 AI 简报：简报是建议，不改变任何业务字段。归档后的项目只读。",
+  "loading": "加载中…",
+  "error": "操作失败，请刷新后重试。",
+  "denied": "没有项目访问权限。",
+  "invalid": "请检查必填项与日期格式（YYYY-MM-DD）。",
+  "ratio": "{{done}}/{{total}}",
+  "title": "{{code}} · {{name}}",
+  "dash": "—",
+  "summary": "负责人：{{owner}} · 状态：{{status}} · 任务：{{progress}} · 逾期：{{overdue}}",
+  "all": "全部",
+  "open": "打开",
+  "close": "收起",
+  "empty": "暂无数据",
+  "code": "编号",
+  "name": "名称",
+  "owner": "负责人",
+  "priority": "优先级",
+  "dueDate": "预计结束",
+  "status": "状态",
+  "actions": "操作",
+  "progress": "任务进度",
+  "overdue": "逾期",
+  "create": "新建项目",
+  "save": "保存",
+  "cancel": "取消",
+  "edit": "编辑",
+  "you": "我",
+  "priorities": {
+    "low": "低",
+    "normal": "普通",
+    "high": "高",
+    "urgent": "紧急"
+  },
+  "states": {
+    "active": "进行中",
+    "paused": "已暂停",
+    "completed": "已完成",
+    "archived": "已归档"
+  },
+  "statusActions": {
+    "paused": "暂停",
+    "active": "恢复",
+    "completed": "标记完成",
+    "archived": "归档"
+  },
+  "members": {
+    "heading": "成员",
+    "description": "只有负责人可以增删成员、转移负责人。",
+    "keyword": "按姓名或邮箱搜索",
+    "search": "搜索",
+    "add": "添加",
+    "remove": "移除",
+    "makeOwner": "设为负责人",
+    "ownerBadge": "负责人",
+    "noResult": "没有匹配的账号",
+    "count": "当前成员"
+  },
+  "plans": {
+    "heading": "项目计划",
+    "description": "计划是里程碑、阶段或交付物，每项必须有一个负责人。正文支持 Markdown。",
+    "new": "新建计划",
+    "title": "计划标题",
+    "content": "内容（Markdown）",
+    "type": "类型",
+    "empty": "还没有计划",
+    "types": {
+      "milestone": "里程碑",
+      "phase": "阶段",
+      "deliverable": "交付物"
+    },
+    "states": {
+      "pending": "未开始",
+      "in_progress": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "in_progress": "开始",
+      "done": "完成",
+      "cancelled": "取消"
+    }
+  },
+  "tasks": {
+    "heading": "项目任务",
+    "description": "任务挂项目，可归入计划；负责人必须是项目成员。",
+    "new": "新建任务",
+    "title": "任务标题",
+    "descriptionField": "描述（Markdown）",
+    "plan": "所属计划",
+    "assignee": "负责人",
+    "unassigned": "未指定",
+    "noPlan": "不归属计划",
+    "empty": "还没有任务",
+    "assign": "指派",
+    "detail": "详情",
+    "brief": "AI 简报",
+    "briefHint": "AI 生成，仅供参考。",
+    "briefEmpty": "还没有简报。指派负责人后会生成。",
+    "completedAt": "完成于",
+    "completedAtValue": "完成于：{{value}}",
+    "states": {
+      "todo": "待开始",
+      "in_progress": "进行中",
+      "done": "已完成",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "in_progress": "开始",
+      "done": "完成",
+      "todo": "重开",
+      "cancelled": "取消"
+    }
+  }
+}
