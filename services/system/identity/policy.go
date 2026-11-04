@@ -35,6 +35,7 @@ type Principal struct {
 	PermanentGrants           []*genidentity.PermissionGrant
 	TemporaryScopes           map[string][]Scope
 	enforcer                  *casbin.Enforcer
+	permissionCodes           []string
 }
 type principalKey struct{}
 
@@ -49,6 +50,15 @@ func Current(ctx context.Context) (*Principal, error) {
 	return p, nil
 }
 func NewPrincipal(account *genidentity.AccountRecord, tenant string, grants []*genidentity.PermissionGrant) (*Principal, error) {
+	return newPrincipal(account, tenant, grants, Permissions)
+}
+
+// NewPrincipal constructs a principal using this service's immutable plugin catalog.
+func (s *Service) NewPrincipal(account *genidentity.AccountRecord, tenant string, grants []*genidentity.PermissionGrant) (*Principal, error) {
+	return newPrincipal(account, tenant, grants, s.permissionCodes())
+}
+
+func newPrincipal(account *genidentity.AccountRecord, tenant string, grants []*genidentity.PermissionGrant, codes []string) (*Principal, error) {
 	m, err := model.NewModelFromString(policyModel)
 	if err != nil {
 		return nil, err
@@ -57,7 +67,7 @@ func NewPrincipal(account *genidentity.AccountRecord, tenant string, grants []*g
 	if err != nil {
 		return nil, err
 	}
-	p := &Principal{Account: account, TenantID: tenant, Grants: append([]*genidentity.PermissionGrant{}, grants...), PermanentGrants: grants, TemporaryScopes: map[string][]Scope{}, enforcer: e}
+	p := &Principal{Account: account, TenantID: tenant, Grants: append([]*genidentity.PermissionGrant{}, grants...), PermanentGrants: grants, TemporaryScopes: map[string][]Scope{}, enforcer: e, permissionCodes: append([]string(nil), codes...)}
 	for _, g := range grants {
 		if g == nil {
 			return nil, errors.New("invalid stored policy")
@@ -69,6 +79,16 @@ func NewPrincipal(account *genidentity.AccountRecord, tenant string, grants []*g
 	return p, nil
 }
 func (p *Principal) Can(permission string) bool {
+	known := permission == "drive:cleanup" && p.Account.ID == 0
+	for _, code := range p.permissionCodes {
+		if code == permission {
+			known = true
+			break
+		}
+	}
+	if !known {
+		return false
+	}
 	if p.Account.IsAdmin {
 		return true
 	}
@@ -81,10 +101,16 @@ func (p *Principal) Can(permission string) bool {
 }
 func (p *Principal) Effective() []string {
 	out := []string{}
-	for _, permission := range Permissions {
+	for _, permission := range p.permissionCodes {
 		if p.Can(permission) {
 			out = append(out, permission)
 		}
+	}
+	// Account zero is reserved for the in-process retention worker, never an
+	// authenticated human account. The grant is not present in the editable
+	// permission catalog and cleanup executors also check the trusted origin.
+	if p.Account.ID == 0 && p.Can("drive:cleanup") {
+		out = append(out, "drive:cleanup")
 	}
 	return out
 }
@@ -142,14 +168,6 @@ func (s *Service) scope(ctx context.Context, p *Principal, permission string) (S
 		}
 	}
 	return scope, nil
-}
-func knownPermission(permission string) bool {
-	for _, v := range Permissions {
-		if v == permission {
-			return true
-		}
-	}
-	return false
 }
 
 // MergeGrants lets an explicit account rule replace the inherited rule and data scope for the same operation.

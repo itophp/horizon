@@ -108,6 +108,9 @@ func buildRegistry() []Definition {
 	add("files.maxBytes", "files", "integer", `20971520`, limits, false, false, false, 1024, 20971520)
 	add("files.logoMaxBytes", "files", "integer", `2097152`, limits, false, false, false, 1024, 2097152)
 	add("files.extensions", "files", "set", `["png","jpg","jpeg","webp","pdf","txt","csv","docx","xlsx"]`, limits, false, false, false, 0, 0, "png", "jpg", "jpeg", "webp", "pdf", "txt", "csv", "docx", "xlsx")
+	add("drive.maxBytes", "files", "integer", `1073741824`, limits, false, false, true, 1, 1073741824)
+	add("drive.quotaBytes", "files", "integer", `0`, limits, false, false, true, 0, 1<<50)
+	add("drive.blockedExtensions", "files", "string", `""`, limits, true, false, true, 0, 2048)
 	return out
 }
 func FindDefinition(key string) *Definition {

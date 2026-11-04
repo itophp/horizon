@@ -176,6 +176,92 @@ type CapOutbox struct {
 	CreatedAt     pgtype.Timestamptz
 }
 
+type DriveFile struct {
+	ID           int64
+	TenantID     string
+	SpaceID      int64
+	FolderID     pgtype.Int8
+	FileID       int64
+	Name         string
+	CreatedBy    int64
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	DeletedAt    pgtype.Timestamptz
+	TrashBatchID pgtype.Int8
+	TrashRoot    bool
+}
+
+type DriveFolder struct {
+	ID           int64
+	TenantID     string
+	SpaceID      int64
+	ParentID     pgtype.Int8
+	Name         string
+	CreatedBy    int64
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	DeletedAt    pgtype.Timestamptz
+	TrashBatchID pgtype.Int8
+	TrashRoot    bool
+}
+
+type DriveMember struct {
+	ID           int64
+	TenantID     string
+	SpaceID      int64
+	AccountID    pgtype.Int8
+	DepartmentID pgtype.Int8
+	Role         string
+	CreatedAt    pgtype.Timestamptz
+}
+
+type DriveSpace struct {
+	ID        int64
+	TenantID  string
+	Kind      string
+	Name      string
+	OwnerID   int64
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
+type DriveTrashBatch struct {
+	ID        int64
+	TenantID  string
+	SpaceID   int64
+	DeletedBy int64
+	DeletedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+	PurgingAt pgtype.Timestamptz
+}
+
+type DriveUpload struct {
+	ID               int64
+	TenantID         string
+	SpaceID          int64
+	FolderID         pgtype.Int8
+	OwnerID          int64
+	StorageProfileID int64
+	ObjectKey        string
+	Name             string
+	Size             int64
+	State            string
+	FileID           pgtype.Int8
+	CreatedAt        pgtype.Timestamptz
+	ExpiresAt        pgtype.Timestamptz
+}
+
+type DriveUploadChunk struct {
+	ID           int64
+	TenantID     string
+	UploadID     int64
+	ChunkIndex   int32
+	StorageKey   string
+	ExpectedSize int64
+	Sha256       pgtype.Text
+	UploadedAt   pgtype.Timestamptz
+}
+
 type ExampleRecord struct {
 	ID        int64
 	TenantID  string

@@ -47,6 +47,44 @@ func TestLocalStorageContainsPathsAndCleansFailedWrites(t *testing.T) {
 		t.Fatal("partial upload remained", err)
 	}
 }
+
+func TestLocalRangeAndInterruptedTemporaryWrite(t *testing.T) {
+	root := t.TempDir()
+	driver := Local{Root: root}
+	profile := Profile{Driver: "local", Directory: "tenant/uploads"}
+	ctx := context.Background()
+	if err := driver.Write(ctx, profile, "file", strings.NewReader("0123456789")); err != nil {
+		t.Fatal(err)
+	}
+	reader, err := driver.ReadRange(ctx, profile, "file", 3, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, readErr := io.ReadAll(reader)
+	closeErr := reader.Close()
+	if readErr != nil || closeErr != nil || string(data) != "3456" {
+		t.Fatalf("range = %q, read=%v close=%v", data, readErr, closeErr)
+	}
+	tmp := filepath.Join(root, "tenant", "uploads", "file.tmp")
+	if err = os.WriteFile(tmp, []byte("interrupted"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = driver.ClearTemporary(ctx, profile, "file"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = os.Stat(tmp); !os.IsNotExist(err) {
+		t.Fatalf("temporary object remains: %v", err)
+	}
+	reader, err = driver.Read(ctx, profile, "file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, readErr = io.ReadAll(reader)
+	closeErr = reader.Close()
+	if readErr != nil || closeErr != nil || string(data) != "0123456789" {
+		t.Fatalf("final object changed: %q read=%v close=%v", data, readErr, closeErr)
+	}
+}
 func TestFileTypesAreCheckedAgainstBytes(t *testing.T) {
 	for _, test := range []struct{ name, purpose, bytes string }{{"fake.png", "logo", "not an image"}, {"fake.pdf", "attachment", "not pdf"}, {"fake.docx", "attachment", "PK"}, {"../file.txt", "attachment", "text"}, {"script.html", "attachment", "<script>"}, {"nul.txt", "attachment", "a\x00b"}} {
 		if _, _, err := detect(test.name, test.purpose, []byte(test.bytes)); err == nil {

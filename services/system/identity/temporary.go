@@ -73,7 +73,7 @@ func (s *Service) TemporaryAccess(ctx context.Context, _ *genidentity.TemporaryA
 	for _, row := range choices {
 		departments = append(departments, &genidentity.ScopeDepartmentChoice{ID: row.ID, Name: row.Name, OrganizationID: row.OrganizationID, OrganizationName: row.OrganizationName})
 	}
-	return &genidentity.TemporaryAccessWorkspace{Requests: requests, Catalog: PermissionCatalog(), Departments: departments, EffectiveGrants: p.Grants, CanReview: s.canReview(p)}, nil
+	return &genidentity.TemporaryAccessWorkspace{Requests: requests, Catalog: s.permissionCatalog(), Departments: departments, EffectiveGrants: p.Grants, CanReview: s.canReview(p)}, nil
 }
 func (s *Service) validateTemporary(ctx context.Context, p *Principal, grants []*genidentity.PermissionGrant, minutes int) error {
 	policy, err := s.policy(ctx, p.TenantID)
@@ -91,7 +91,7 @@ func (s *Service) validateTemporary(ctx context.Context, p *Principal, grants []
 		return err
 	}
 	for _, grant := range grants {
-		definition := permissionDefinition(grant.Permission)
+		definition := s.permissionDefinition(grant.Permission)
 		if definition == nil || !definition.TemporaryEligible || (!definition.ScopeConfigurable && grant.Scope != "ALL") {
 			return problem("invalid")
 		}
@@ -134,7 +134,7 @@ func (s *Service) resolveTemporary(ctx context.Context, p *Principal, account *g
 	reference.IsAdmin = false
 	out := map[string]Scope{}
 	for _, grant := range grants {
-		target, err := NewPrincipal(&reference, p.TenantID, []*genidentity.PermissionGrant{grant})
+		target, err := s.NewPrincipal(&reference, p.TenantID, []*genidentity.PermissionGrant{grant})
 		if err != nil {
 			return nil, safe(err)
 		}
@@ -150,7 +150,7 @@ func (s *Service) withinApprovalScope(ctx context.Context, base *Principal, perm
 	if !base.Can(permission) {
 		return problem("forbidden")
 	}
-	definition := permissionDefinition(permission)
+	definition := s.permissionDefinition(permission)
 	if definition != nil && !definition.ScopeConfigurable {
 		return nil
 	}
@@ -310,7 +310,7 @@ func (s *Service) loadTemporary(ctx context.Context, p *Principal) error {
 			return safe(err)
 		}
 		for _, grant := range grants {
-			definition := permissionDefinition(grant.Permission)
+			definition := s.permissionDefinition(grant.Permission)
 			scope, ok := scopes[grant.Permission]
 			if definition == nil || !definition.TemporaryEligible || grant.Effect != "allow" || !ok || scope.TenantID != p.TenantID {
 				return problem("forbidden")

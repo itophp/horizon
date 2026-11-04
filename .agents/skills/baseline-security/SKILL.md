@@ -77,3 +77,7 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 Eino Workflow/Graph/ADK 的业务节点仍经 Gateway；嵌套来源强制 OriginCapability，继承深度并拒绝事务内互调。恢复和节点前重建原账号/部门身份；Agent 工具版本白名单与当前权限取交集，禁止递归流程。run/read/cancel 权限独立，查询/取消强制 tenant+account；MCP Token 不自动获得新工具。检查点加密绑定 tenant/run/key，不进入明文审计。取消撤销未执行审批；已在执行或已提交动作不回滚。恢复读取原 invocation，独立流程动作不能因相同载荷共用审批。验证按 docs/orchestration-plan.md（仓库根路径）。
 
 文章审核验证作者隔离、跨租户、版本条件、自审/自动化拒绝、伪造结果拒绝，以及正文不进入事件、调用审计或 AI 轨迹；敏感只读使用 TransientResult 禁止持久化与重放。
+
+## 内置插件权限
+
+插件 Registrar 可贡献权限元数据；身份服务启动前合并为实例级权限目录，重复定义必须与原目录完全一致，冲突默认拒绝。插件注册不授予权限；未知权限默认拒绝，显式 deny 优先。会话、部门切换、审批及后台 PrincipalForTask 重建使用同一目录，撤权后重新解析；验证允许/拒绝、跨租户、目录冲突及撤权，不能用全局可变目录或插件传入的身份扩大授权。

@@ -1,4 +1,19 @@
 {
+  "drive_space": { "label": "Drive space" },
+  "drive_member": { "label": "Drive member" },
+  "drive_folder": { "label": "Drive folder" },
+  "drive_file": { "label": "Drive file" },
+  "drive_trash_batch": { "label": "Drive deletion" },
+  "drive_upload": {
+    "label": "Drive upload",
+    "states": {
+      "open": "Open",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "cleaned": "Cleaned"
+    }
+  },
+  "drive_upload_chunk": { "label": "Upload chunk" },
   "account": {
     "label": "Account"
   },

@@ -110,3 +110,41 @@ it("request mode exposes eligible functions and allows a broader data scope", as
     },
   ]);
 });
+
+it("uses plugin-localized project permission labels and submits the registered code", async () => {
+  await changeLanguage("en", false);
+  const onChange = vi.fn();
+  render(
+    <PermissionMatrix
+      catalog={[
+        {
+          code: "projects:admin",
+          module: "system",
+          function: "projects",
+          action: "admin",
+          temporaryEligible: false,
+          scopeConfigurable: true,
+        },
+      ]}
+      grants={[]}
+      onChange={onChange}
+      departments={[]}
+    />,
+  );
+  await userEvent.click(
+    screen.getByRole("checkbox", { name: "Projects Manage projects" }),
+  );
+  expect(onChange).toHaveBeenLastCalledWith([
+    {
+      permission: "projects:admin",
+      effect: "allow",
+      scope: "DEPARTMENT",
+      departmentIds: [],
+    },
+  ]);
+  await changeLanguage("zh-CN", false);
+  expect(
+    await screen.findByRole("checkbox", { name: "项目协作 管理项目" }),
+  ).toBeInTheDocument();
+  await changeLanguage("en", false);
+});

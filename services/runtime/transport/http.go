@@ -3,6 +3,7 @@ package transport
 import (
 	systemhttp "baseline/services/api/gen/http/system/server"
 	"baseline/services/api/gen/system"
+	"baseline/services/api/kernel/plugin"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
 	"context"
@@ -25,14 +26,14 @@ func Handler(systemService system.Service, options governance.Options, identitie
 // HandlerWithGovernance keeps the historical name used by callers that pass
 // module options instead of a prebuilt core.
 func HandlerWithGovernance(systemService system.Service, options governance.Options, identities ...*identity.Service) http.Handler {
-	handler, _ := handlerWithCore(systemService, options, nil, identities...)
+	handler, _ := handlerWithCore(systemService, options, nil, nil, identities...)
 	return handler
 }
 
 // HandlerWithCore accepts an already configured core, which is what long lived
 // processes and multi-tenant tests use.
 func HandlerWithCore(systemService system.Service, core *governance.Core, identities ...*identity.Service) http.Handler {
-	handler, _ := handlerWithCore(systemService, core.Options, core, identities...)
+	handler, _ := handlerWithCore(systemService, core.Options, core, nil, identities...)
 	return handler
 }
 
@@ -40,10 +41,15 @@ func HandlerWithCore(systemService system.Service, core *governance.Core, identi
 // relay and AI trigger engine). Tests keep using Handler, which never spawns
 // workers.
 func HandlerWithRuntime(systemService system.Service, core *governance.Core, identities ...*identity.Service) (http.Handler, func(context.Context)) {
-	return handlerWithCore(systemService, core.Options, core, identities...)
+	return handlerWithCore(systemService, core.Options, core, nil, identities...)
 }
 
-func handlerWithCore(systemService system.Service, options governance.Options, core *governance.Core, identities ...*identity.Service) (http.Handler, func(context.Context)) {
+// HandlerWithPlugins uses the already registered runtime plugin instances.
+func HandlerWithPlugins(systemService system.Service, core *governance.Core, plugins *plugin.Manager, identities ...*identity.Service) (http.Handler, func(context.Context)) {
+	return handlerWithCore(systemService, core.Options, core, plugins, identities...)
+}
+
+func handlerWithCore(systemService system.Service, options governance.Options, core *governance.Core, plugins *plugin.Manager, identities ...*identity.Service) (http.Handler, func(context.Context)) {
 	mux := goahttp.NewMuxer()
 	errors := func(_ context.Context, _ http.ResponseWriter, err error) {
 		slog.Error("transport failure", "error", err)
@@ -56,7 +62,7 @@ func handlerWithCore(systemService system.Service, options governance.Options, c
 		if core == nil || core.Pool == nil {
 			core = governance.New(identities[0].Database(), identities[0], options)
 		}
-		start = mountGovernance(mux, core, errors)
+		start = mountGovernance(mux, core, plugins, errors)
 	}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()

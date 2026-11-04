@@ -560,7 +560,7 @@ func entityContext(entity contracts.Entity) aicontext.EntityContext {
 func callerOf(p *identity.Principal) contracts.Caller {
 	return contracts.Caller{
 		TenantID: p.TenantID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
-		Admin: p.Account.IsAdmin, Grants: p.Effective(),
+		Admin: p.Account.IsAdmin, RestrictAdmin: true, Grants: p.Effective(),
 	}
 }
 

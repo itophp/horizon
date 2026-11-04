@@ -104,7 +104,7 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 	}
 	definition := entry.Definition
 	caller := callerOf(p)
-	if !caller.Allowed(definition.Permission) {
+	if (definition.Permission != "" && !p.Can(definition.Permission)) || !caller.Allowed(definition.Permission) {
 		return nil, contracts.Problem("forbidden")
 	}
 	if err = definition.Input.Validate(request.Input); err != nil {
@@ -358,7 +358,7 @@ func (g *Gateway) Decide(ctx context.Context, id int64, approve bool, note strin
 		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "forbidden", 0)
 		return nil, contracts.Problem("forbidden")
 	}
-	if !callerOf(requester).Allowed(entry.Definition.Permission) {
+	if (entry.Definition.Permission != "" && !requester.Can(entry.Definition.Permission)) || !callerOf(requester).Allowed(entry.Definition.Permission) {
 		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "forbidden")
 		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "forbidden", 0)
 		return nil, contracts.Problem("forbidden")
@@ -466,7 +466,7 @@ func (g *Gateway) Events(ctx context.Context, limit int) ([]eventhub.Event, erro
 func callerOf(p *identity.Principal) contracts.Caller {
 	return contracts.Caller{
 		TenantID: p.TenantID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
-		Admin: p.Account.IsAdmin, Grants: p.Effective(),
+		Admin: p.Account.IsAdmin, RestrictAdmin: true, Grants: p.Effective(),
 	}
 }
 

@@ -116,16 +116,16 @@ SELECT driver,config FROM gov_storage_profiles WHERE tenant_id=$1 AND id=$2;
 INSERT INTO gov_storage_profiles(tenant_id,driver,config_hash,config) VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id,config_hash) DO UPDATE SET config_hash=EXCLUDED.config_hash RETURNING id;
 
 -- name: GovFiles :many
-SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=sqlc.arg(tenant_id) AND (sqlc.arg(all_data)::boolean OR f.owner_id=sqlc.arg(own_id)::bigint OR f.organization_id=ANY(sqlc.arg(org_ids)::bigint[]) OR f.department_id=ANY(sqlc.arg(dept_ids)::bigint[])) AND f.deleted_at IS NULL ORDER BY f.id DESC LIMIT 1000;
+SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=sqlc.arg(tenant_id) AND f.purpose IN ('logo','attachment') AND (sqlc.arg(all_data)::boolean OR f.owner_id=sqlc.arg(own_id)::bigint OR f.organization_id=ANY(sqlc.arg(org_ids)::bigint[]) OR f.department_id=ANY(sqlc.arg(dept_ids)::bigint[])) AND f.deleted_at IS NULL ORDER BY f.id DESC LIMIT 1000;
 
 -- name: GovFile :one
-SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=sqlc.arg(tenant_id) AND (sqlc.arg(all_data)::boolean OR f.owner_id=sqlc.arg(own_id)::bigint OR f.organization_id=ANY(sqlc.arg(org_ids)::bigint[]) OR f.department_id=ANY(sqlc.arg(dept_ids)::bigint[])) AND f.id=sqlc.arg(id) AND f.deleted_at IS NULL;
+SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=sqlc.arg(tenant_id) AND f.purpose IN ('logo','attachment') AND (sqlc.arg(all_data)::boolean OR f.owner_id=sqlc.arg(own_id)::bigint OR f.organization_id=ANY(sqlc.arg(org_ids)::bigint[]) OR f.department_id=ANY(sqlc.arg(dept_ids)::bigint[])) AND f.id=sqlc.arg(id) AND f.deleted_at IS NULL;
 
 -- name: GovCreateFile :one
 INSERT INTO gov_files(tenant_id,owner_id,organization_id,department_id,storage_profile_id,storage_key,name,mime,size,purpose,sha256) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id;
 
 -- name: GovDeleteFile :one
-UPDATE gov_files f SET deleted_at=now() WHERE f.tenant_id=sqlc.arg(tenant_id) AND (sqlc.arg(all_data)::boolean OR f.owner_id=sqlc.arg(own_id)::bigint OR f.organization_id=ANY(sqlc.arg(org_ids)::bigint[]) OR f.department_id=ANY(sqlc.arg(dept_ids)::bigint[])) AND f.id=sqlc.arg(id) AND f.deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM gov_file_bindings b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) AND NOT EXISTS(SELECT 1 FROM gov_announcement_files b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) RETURNING f.id;
+UPDATE gov_files f SET deleted_at=now() WHERE f.tenant_id=sqlc.arg(tenant_id) AND f.purpose IN ('logo','attachment') AND (sqlc.arg(all_data)::boolean OR f.owner_id=sqlc.arg(own_id)::bigint OR f.organization_id=ANY(sqlc.arg(org_ids)::bigint[]) OR f.department_id=ANY(sqlc.arg(dept_ids)::bigint[])) AND f.id=sqlc.arg(id) AND f.deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM gov_file_bindings b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) AND NOT EXISTS(SELECT 1 FROM gov_announcement_files b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) RETURNING f.id;
 
 -- name: GovBindFile :exec
 INSERT INTO gov_file_bindings(tenant_id,file_id,scope_key,revision) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING;

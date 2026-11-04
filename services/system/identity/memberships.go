@@ -87,7 +87,7 @@ func (s *Service) SwitchDepartment(ctx context.Context, payload *genidentity.Swi
 	if err != nil {
 		return nil, safe(err)
 	}
-	next, err := NewPrincipal(account, p.TenantID, MergeGrants(grants, account.Overrides))
+	next, err := s.NewPrincipal(account, p.TenantID, MergeGrants(grants, account.Overrides))
 	if err != nil {
 		return nil, safe(err)
 	}

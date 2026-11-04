@@ -2,6 +2,30 @@
 // deliberately disconnects before entering them.
 export const webMcpRoutes = [
   {
+    path: "/drive",
+    module: "drive",
+    permission: "drive:use",
+    connected: false,
+  },
+  {
+    path: "/drive/:id",
+    module: "drive",
+    permission: "drive:use",
+    connected: false,
+  },
+  {
+    path: "/drive/:id/members",
+    module: "drive",
+    permission: "drive:use",
+    connected: false,
+  },
+  {
+    path: "/drive/:id/trash",
+    module: "drive",
+    permission: "drive:use",
+    connected: false,
+  },
+  {
     path: "/articles",
     module: "articles",
     permission: "articles:read",

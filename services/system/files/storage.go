@@ -25,6 +25,22 @@ type Driver interface {
 	Delete(context.Context, Profile, string) error
 	Probe(context.Context, Profile) error
 }
+
+// TemporaryCleaner removes an interrupted write's temporary object. Callers
+// must serialize writers for the key before invoking it.
+type TemporaryCleaner interface {
+	ClearTemporary(context.Context, Profile, string) error
+}
+
+// RangeReader permits bounded random reads without rescanning a large object.
+type RangeReader interface {
+	ReadRange(context.Context, Profile, string, int64, int64) (io.ReadCloser, error)
+}
+
+type limitedReadCloser struct {
+	io.Reader
+	io.Closer
+}
 type Profile struct {
 	Driver, Directory, BaseURL string
 	Parameters                 map[string]string
@@ -154,6 +170,44 @@ func (l Local) Read(ctx context.Context, p Profile, key string) (io.ReadCloser, 
 	}
 	defer root.Close()
 	return root.Open(key)
+}
+
+func (l Local) ReadRange(ctx context.Context, p Profile, key string, offset, length int64) (io.ReadCloser, error) {
+	if offset < 0 || length < 0 || !filepath.IsLocal(key) || strings.ContainsAny(key, "/\\") {
+		return nil, governance.Problem("invalid")
+	}
+	root, err := l.open(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	file, err := root.Open(key)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = file.Seek(offset, io.SeekStart); err != nil {
+		if closeErr := file.Close(); closeErr != nil {
+			governance.LogStorageFailure(closeErr)
+		}
+		return nil, err
+	}
+	return &limitedReadCloser{Reader: io.LimitReader(file, length), Closer: file}, nil
+}
+
+func (l Local) ClearTemporary(ctx context.Context, p Profile, key string) error {
+	if !filepath.IsLocal(key) || strings.ContainsAny(key, "/\\") {
+		return governance.Problem("invalid")
+	}
+	root, err := l.open(ctx, p)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	err = root.Remove(key + ".tmp")
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }
 func (l Local) Delete(ctx context.Context, p Profile, key string) error {
 	if !filepath.IsLocal(key) || strings.ContainsAny(key, "/\\") {

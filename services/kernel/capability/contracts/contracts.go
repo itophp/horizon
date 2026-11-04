@@ -179,7 +179,9 @@ type Caller struct {
 	AccountID    int64
 	DepartmentID int64
 	Admin        bool
-	Grants       []string
+	// RestrictAdmin requires even administrators to use their resolved catalog grants.
+	RestrictAdmin bool
+	Grants        []string
 }
 
 // Allowed reports whether the caller holds the permission a capability needs.
@@ -187,7 +189,7 @@ func (c Caller) Allowed(permission string) bool {
 	if permission == "" {
 		return true
 	}
-	if c.Admin {
+	if c.Admin && !c.RestrictAdmin {
 		return true
 	}
 	for _, granted := range c.Grants {

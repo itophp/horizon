@@ -1,6 +1,7 @@
 package server
 
 import (
+	"baseline/services/api/applications/projects"
 	"baseline/services/api/integrations/mcp"
 	"baseline/services/api/runtime/app"
 	"baseline/services/api/runtime/config"
@@ -38,6 +39,22 @@ func Run(ctx context.Context, c config.Config) error {
 	iam := identity.New(identityPool, c.SecureCookies)
 	core := governance.New(identityPool, iam, c.Governance)
 	iam.Policies = core
+	plugins := app.BuiltinPlugins(projects.New(core.Pool))
+	if err := iam.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
+		return err
+	}
+
+	if err := plugins.Start(ctx); err != nil {
+		return err
+	}
+	defer func() {
+		cancelWorkers()
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := plugins.Stop(stopCtx); err != nil {
+			slog.Error("plugin shutdown failed", "error", err)
+		}
+	}()
 	if identityPool != nil {
 		fileService := files.New(core)
 		mcpService := mcp.New(identityPool, iam)
@@ -62,7 +79,7 @@ func Run(ctx context.Context, c config.Config) error {
 			}
 		}()
 	}
-	handler, start := transport.HandlerWithRuntime(app.System{}, core, iam)
+	handler, start := transport.HandlerWithPlugins(app.System{}, core, plugins, iam)
 	if identityPool != nil {
 		go start(workerCtx)
 	}

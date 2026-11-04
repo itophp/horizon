@@ -15,6 +15,7 @@ import (
 	"image/png"
 	"io"
 	"net/http"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -91,7 +92,9 @@ func (s *Service) currentProfile(ctx context.Context, p *identity.Principal) (Pr
 		}
 		out.Parameters[field.Key] = raw
 	}
-	out.Directory = filepath.Join(governance.Hash(p.TenantID)[:24], out.Directory)
+	// The profile stores a portable slash-separated path. The storage driver
+	// rejects backslashes to prevent alternate path interpretations.
+	out.Directory = path.Join(governance.Hash(p.TenantID)[:24], out.Directory)
 	return out, nil
 }
 func (s *Service) file(ctx context.Context, p *identity.Principal, scope identity.Scope, id int64) (dbgen.GovFileRow, error) {
@@ -261,40 +264,11 @@ func (s *Service) Upload(ctx context.Context, payload *UploadPayload) (res *Mana
 	if int64(len(data)) > limit {
 		return nil, governance.Problem("invalid")
 	}
-	profile, err := s.currentProfile(ctx, p)
+	profile, version, err := s.prepareProfile(ctx, p)
 	if err != nil {
 		return nil, err
 	}
 	driver, err := s.Storage.Get(profile.Driver)
-	if err != nil {
-		return nil, err
-	}
-	if err = driver.Validate(ctx, profile); err != nil {
-		return nil, err
-	}
-	configRaw, err := json.Marshal(profile)
-	if err != nil {
-		return nil, err
-	}
-	stored := profile
-	stored.Parameters = map[string]string{}
-	for k, v := range profile.Parameters {
-		stored.Parameters[k] = v
-	}
-	for _, field := range driver.Descriptor().Fields {
-		if field.Secret {
-			encrypted, e := s.Seal(p.TenantID, "storage-profile", field.Key, stored.Parameters[field.Key])
-			if e != nil {
-				return nil, e
-			}
-			stored.Parameters[field.Key] = encrypted
-		}
-	}
-	encoded, err := json.Marshal(stored)
-	if err != nil {
-		return nil, err
-	}
-	version, err := s.Q.GovEnsureStorageProfile(ctx, dbgen.GovEnsureStorageProfileParams{TenantID: p.TenantID, Driver: profile.Driver, ConfigHash: governance.Hash(string(configRaw)), Config: encoded})
 	if err != nil {
 		return nil, err
 	}

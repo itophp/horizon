@@ -483,7 +483,7 @@ func (q *Queries) GovDeleteDictionary(ctx context.Context, arg GovDeleteDictiona
 }
 
 const govDeleteFile = `-- name: GovDeleteFile :one
-UPDATE gov_files f SET deleted_at=now() WHERE f.tenant_id=$1 AND ($2::boolean OR f.owner_id=$3::bigint OR f.organization_id=ANY($4::bigint[]) OR f.department_id=ANY($5::bigint[])) AND f.id=$6 AND f.deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM gov_file_bindings b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) AND NOT EXISTS(SELECT 1 FROM gov_announcement_files b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) RETURNING f.id
+UPDATE gov_files f SET deleted_at=now() WHERE f.tenant_id=$1 AND f.purpose IN ('logo','attachment') AND ($2::boolean OR f.owner_id=$3::bigint OR f.organization_id=ANY($4::bigint[]) OR f.department_id=ANY($5::bigint[])) AND f.id=$6 AND f.deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM gov_file_bindings b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) AND NOT EXISTS(SELECT 1 FROM gov_announcement_files b WHERE b.tenant_id=f.tenant_id AND b.file_id=f.id) RETURNING f.id
 `
 
 type GovDeleteFileParams struct {
@@ -1057,7 +1057,7 @@ func (q *Queries) GovExpireIdleSessions(ctx context.Context, arg GovExpireIdleSe
 }
 
 const govFile = `-- name: GovFile :one
-SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=$1 AND ($2::boolean OR f.owner_id=$3::bigint OR f.organization_id=ANY($4::bigint[]) OR f.department_id=ANY($5::bigint[])) AND f.id=$6 AND f.deleted_at IS NULL
+SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=$1 AND f.purpose IN ('logo','attachment') AND ($2::boolean OR f.owner_id=$3::bigint OR f.organization_id=ANY($4::bigint[]) OR f.department_id=ANY($5::bigint[])) AND f.id=$6 AND f.deleted_at IS NULL
 `
 
 type GovFileParams struct {
@@ -1112,7 +1112,7 @@ func (q *Queries) GovFile(ctx context.Context, arg GovFileParams) (GovFileRow, e
 }
 
 const govFiles = `-- name: GovFiles :many
-SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=$1 AND ($2::boolean OR f.owner_id=$3::bigint OR f.organization_id=ANY($4::bigint[]) OR f.department_id=ANY($5::bigint[])) AND f.deleted_at IS NULL ORDER BY f.id DESC LIMIT 1000
+SELECT f.id,f.owner_id,f.organization_id,f.department_id,f.storage_profile_id,f.storage_key,f.name,f.mime,f.size,f.purpose,f.sha256,f.created_at FROM gov_files f WHERE f.tenant_id=$1 AND f.purpose IN ('logo','attachment') AND ($2::boolean OR f.owner_id=$3::bigint OR f.organization_id=ANY($4::bigint[]) OR f.department_id=ANY($5::bigint[])) AND f.deleted_at IS NULL ORDER BY f.id DESC LIMIT 1000
 `
 
 type GovFilesParams struct {

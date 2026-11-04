@@ -143,3 +143,5 @@ SDK 与 x/time 是应用直接依赖，其余由 SDK 引入；全部由 go.mod/g
 ## 2026-11-01 流程规格生成
 
 复用已在锁文件中的 github.com/google/jsonschema-go v0.4.3（MIT），仅提升为直接依赖，没有升级版本。已核对该版本本地 ForType/Resolve/Validate API、递归类型限制及许可证；工作流字段由实际 Go 类型反射，递归能力 Schema 使用本地 $defs，预算常量与运行时共享。遵循 [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12)，不扩展 contracts.Schema 未实现的输入关键字，也不把结构验证替代运行时授权。
+
+2026-11-04 插件清单：将已锁定的传递依赖 `gopkg.in/yaml.v3 v3.0.1` 提升为直接依赖，不升级版本；使用 `Decoder.KnownFields` 严格拒绝未知字段。已核对 [v3.0.1 API](https://pkg.go.dev/gopkg.in/yaml.v3@v3.0.1) 及 [MIT/Apache-2.0 许可](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE)。仅解析随二进制编译的可信内置清单。

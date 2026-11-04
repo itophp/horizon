@@ -24,7 +24,7 @@ func fileEntity() contracts.Entity {
 				Description: "Verified from the bytes, not from the client header."},
 			{Name: "size", Kind: contracts.AttributeSystem, Type: contracts.TypeInteger, Required: true},
 			{Name: "purpose", Kind: contracts.AttributeBusiness, Type: contracts.TypeEnum, Required: true,
-				Enum: []string{"logo", "attachment"}},
+				Enum: []string{"logo", "attachment", "cloud_drive"}},
 			{Name: "sha256", Kind: contracts.AttributeSystem, Type: contracts.TypeString, Required: true},
 			{Name: "deletedAt", Kind: contracts.AttributeSystem, Type: contracts.TypeTimestamp, Nullable: true},
 			{Name: "purgedAt", Kind: contracts.AttributeSystem, Type: contracts.TypeTimestamp, Nullable: true},

@@ -12,7 +12,9 @@
     "roles": "角色管理",
     "permissions": "权限管理",
     "foundation": "框架验证",
-    "documentation": "权限说明"
+    "documentation": "权限说明",
+    "advanced": "高级设置",
+    "advancedDescription": "请选择要进入的功能。"
   },
   "login": {
     "eyebrow": "一个工作空间，连接每一份协作。",

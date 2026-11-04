@@ -28,6 +28,7 @@ type Service struct {
 	repo          *Repository
 	SecureCookies bool
 	Policies      PolicyProvider
+	pluginCatalog []*genidentity.PermissionDefinition
 }
 
 func New(pool *pgxpool.Pool, secure bool) *Service {
@@ -135,7 +136,7 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (*Principal, err
 		return nil, safe(err)
 	}
 	grants = MergeGrants(grants, account.Overrides)
-	p, err := NewPrincipal(account, session.TenantID, grants)
+	p, err := s.NewPrincipal(account, session.TenantID, grants)
 	if err != nil {
 		return nil, problem("internal")
 	}
@@ -251,7 +252,7 @@ func (s *Service) Snapshot(ctx context.Context, _ *genidentity.SnapshotPayload) 
 	if err != nil {
 		return nil, err
 	}
-	out := &genidentity.AdminSnapshot{Accounts: []*genidentity.AccountRecord{}, Organizations: []*genidentity.OrganizationRecord{}, Departments: []*genidentity.DepartmentRecord{}, Roles: []*genidentity.RoleRecord{}, Permissions: append([]string{}, Permissions...), Catalog: PermissionCatalog()}
+	out := &genidentity.AdminSnapshot{Accounts: []*genidentity.AccountRecord{}, Organizations: []*genidentity.OrganizationRecord{}, Departments: []*genidentity.DepartmentRecord{}, Roles: []*genidentity.RoleRecord{}, Permissions: s.permissionCodes(), Catalog: s.permissionCatalog()}
 	if p.Can("accounts:read") {
 		scope, err := s.scope(ctx, p, "accounts:read")
 		if err != nil {
@@ -296,7 +297,7 @@ func (s *Service) Snapshot(ctx context.Context, _ *genidentity.SnapshotPayload) 
 func (s *Service) validateGrants(ctx context.Context, p *Principal, grants []*genidentity.PermissionGrant, role bool) error {
 	seen := map[string]bool{}
 	for _, g := range grants {
-		if g == nil || !knownPermission(g.Permission) || seen[g.Permission] || (role && g.Effect != "allow") {
+		if g == nil || s.permissionDefinition(g.Permission) == nil || seen[g.Permission] || (role && g.Effect != "allow") {
 			return problem("invalid")
 		}
 		seen[g.Permission] = true

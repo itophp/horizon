@@ -31,6 +31,8 @@ From top to bottom, the framework connects who initiates work, how tasks are org
 | **Business facts and runtime memory** | Business data, task state, execution records, recovery context   | Preserve what happened and how far work has progressed, supporting queries, tracing, and recovery.                                                                    |
 | **Events and feedback**               | Business events, trigger policies, follow-up actions             | Feed established facts back into tasks and decisions, initiating another round of governed action.                                                                    |
 
+**Memory Center**, a planned core mechanism, connects experience from multiple sources to governed task context. Plugins extend the business capability system.
+
 This diagram shows responsibilities. Orchestration sits above the Gateway because it organizes work; starting a workflow and executing each business node still require the Gateway. The capability model and registry support execution, but registration does not grant authorization. See the technical documentation for the actual runtime sequence.
 
 ## What AI-Native Means in an Application
@@ -145,6 +147,24 @@ Events carry correlation information so follow-up tasks can trace their origins.
 This feedback lets an application continue working in response to real business changes: completing a task can trigger a notification, detecting an anomaly can initiate an investigation, and receiving a human decision can resume the original workflow. Explicit policies and permissions control the follow-up actions.
 
 Business knowledge, human judgments, and execution records can also inform later knowledge-base maintenance, agent evaluation, and workflow improvement. Updates to knowledge, policies, and workflows still require controlled maintenance. A business event does not itself grant permission to change rules or train models.
+
+## Memory Center: Governed Context for Intelligent Work
+
+**Memory Center is a core memory mechanism of the AI-native framework**, connecting business facts and accumulated experience to future task decisions. Its proposed design collects information from business events, capabilities, agents, workflows, and knowledge sources; normalizes and redacts it; and asynchronously extracts and connects useful memories for governed retrieval.
+
+![Memory Center architecture](docs/assets/horizon-memory-center-agents.en.png)
+
+Application agents use authorized memories for business context and task decisions. Development agents can analyze permitted usage patterns, system exceptions, and past resolutions to identify improvements and refine the application. Changes remain subject to project authorization, review, and verification.
+
+Retrieval respects tenant, identity, and data scope. Memory does not grant permission or replace current business state, audit records, or original knowledge documents. This is a planned architecture; see the [technical design](docs/AI-Native%20Memory%20Center%20技术架构与开发规范.md).
+
+## Plugins: Extending Business Through a Shared Contract
+
+Plugins contribute entities, capabilities, events, and interface extensions. Pages, workflows, and agents reuse the same capability contract and invoke business actions through the Capability Gateway; registration alone does not grant authorization.
+
+![Plugin architecture](docs/assets/horizon-plugin-architecture.png)
+
+The design starts with built-in Go plugins and frontend extensions, with process and WASM runtimes considered in later phases. See the [plugin integration design](docs/ai-native-plugin-integration.md).
 
 ## From Building Applications to Using Them
 

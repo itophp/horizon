@@ -1,3 +1,5 @@
+import { canShowMenu } from "@/app/plugins/registry";
+import { frontendExtensions } from "@/app/plugins/builtins";
 import { WebMcpProvider } from "@/features/webmcp/provider";
 import { AssistantProvider } from "@/features/assistant/provider";
 import { AssistantLauncher } from "@/features/assistant/widget";
@@ -17,7 +19,7 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
-  FolderKanban,
+  HardDrive,
   Users,
   Building2,
   Network,
@@ -110,7 +112,7 @@ export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [logoutError, setLogoutError] = useState<unknown>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -126,11 +128,15 @@ export function AdminLayout() {
   }, []);
   const links = [
     {
-      to: "/projects",
-      label: t("projects:heading"),
-      icon: FolderKanban,
-      permissions: ["projects:read"],
+      to: "/drive",
+      label: t("drive:heading"),
+      icon: HardDrive,
+      permissions: ["drive:use"],
     },
+    ...frontendExtensions.menus.map((menu) => ({
+      ...menu,
+      label: t(menu.labelKey),
+    })),
     {
       to: "/articles",
       label: t("articles:heading"),
@@ -150,19 +156,6 @@ export function AdminLayout() {
       permissions: [],
     },
     {
-      to: "/capabilities",
-      label: t("capability:nav"),
-      icon: Boxes,
-      permissions: ["example:read"],
-    },
-    // 知识库菜单暂时隐藏：/knowledge 路由仍然保留，可直接由 URL 访问。
-    {
-      to: "/orchestration",
-      label: t("orchestration:nav"),
-      icon: Workflow,
-      permissions: ["orchestration:read"],
-    },
-    {
       to: "/accounts",
       label: t("admin:nav.accounts"),
       icon: Users,
@@ -180,11 +173,19 @@ export function AdminLayout() {
       icon: KeyRound,
       permissions: ["access:manage", "roles:read"],
     },
+  ];
+  const advancedLinks = [
     {
-      to: "/mcp",
-      label: t("mcp:hub.nav"),
-      icon: Command,
-      permissions: [],
+      to: "/capabilities",
+      label: t("capability:nav"),
+      icon: Boxes,
+      permissions: ["example:read"],
+    },
+    {
+      to: "/orchestration",
+      label: t("orchestration:nav"),
+      icon: Workflow,
+      permissions: ["orchestration:read"],
     },
     {
       to: "/settings",
@@ -194,13 +195,7 @@ export function AdminLayout() {
     },
   ];
   const permitted = (items: typeof links) =>
-    items.filter(
-      (link) =>
-        !link.permissions.length ||
-        link.permissions.some((permission) =>
-          session.permissions.includes(permission),
-        ),
-    );
+    items.filter((link) => canShowMenu(link.permissions, session.permissions));
   const matched = search.trim().toLowerCase();
   const results = matched
     ? [
@@ -334,10 +329,10 @@ export function AdminLayout() {
           <div className="sidebar-bottom">
             <button
               className="sidebar-guide"
-              onClick={() => setGuideOpen(true)}
+              onClick={() => setAdvancedOpen(true)}
             >
-              <BookOpen size={16} />
-              <span>{t("admin:nav.documentation")}</span>
+              <Settings2 size={16} />
+              <span>{t("admin:nav.advanced")}</span>
               <ArrowUpRight size={13} />
             </button>
             <div className="workspace-security">
@@ -368,6 +363,10 @@ export function AdminLayout() {
                 <DropdownMenuItem onClick={() => setProfileOpen(true)}>
                   <UserRound size={15} />
                   {t("admin:profile.title")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/mcp")}>
+                  <Command size={15} />
+                  {t("mcp:hub.nav")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
@@ -533,21 +532,18 @@ export function AdminLayout() {
         </div>
       </EditorDialog>
       <EditorDialog
-        open={guideOpen}
-        onOpenChange={setGuideOpen}
-        title={t("admin:guide.title")}
-        description={t("admin:permissions.legend")}
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        title={t("admin:nav.advanced")}
+        description={t("admin:nav.advancedDescription")}
       >
         <div className="access-guide">
-          {[
-            t("admin:guide.one"),
-            t("admin:guide.two"),
-            t("admin:guide.three"),
-            t("admin:guide.four"),
-          ].map((text, index) => (
-            <div key={text}>
-              <span>{index + 1}</span>
-              <p>{text}</p>
+          {permitted(advancedLinks).map((link) => (
+            <div key={link.to}>
+              <link.icon size={17} />
+              <Link to={link.to} onClick={() => setAdvancedOpen(false)}>
+                {link.label}
+              </Link>
             </div>
           ))}
         </div>

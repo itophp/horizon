@@ -75,3 +75,7 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 编排使用 Eino Workflow/Graph/ADK，业务节点仍经 Gateway。嵌套来源强制 OriginCapability，继承父调用/深度，事务内互调拒绝。恢复及节点前重建原账号/部门身份；Agent 工具固定版本白名单与当前权限取交集，禁止递归编排。run/read/cancel 权限独立，查询/取消强制 tenant+account；MCP Token 不自动获得新工具。检查点加密绑定 tenant/run/key，不进入明文审计或运行摘要。取消撤销尚未执行的流程审批，已在执行/已提交动作不回滚；审批恢复读取原 invocation，独立动作不因载荷相同共用审批。详情见 docs/orchestration-plan.md（从仓库根解析）。
 
 文章审核遵循 docs/security.md 的文章评审规则：正文不落调用/AI 审计；评审结论由 article.record-review 落库并归一化为 decision（只接受 OriginWorkflow），发布声明 high + confirm，必须人工确认（多人部署可切 four-eyes），article.reject 只接受 OriginWorkflow|OriginApproval，且都要求 review_code 与状态、版本同时匹配；人工审核禁止自动化与作者自审；修改正文或版本不得沿用旧审核。条件分叉用 Step 的 when 声明，禁止用"两个都跑、内部判空"的方式伪造分支。
+
+## 内置插件权限目录
+
+内置插件可经 kernel/plugin Registrar 声明权限定义；身份服务实例必须在启动工作线程、处理请求或重建 Principal 前校验并合并插件权限。与内置身份目录冲突即失败，重复配置仅允许完全相同的目录；注册不授予权限。会话、部门切换、临时权限及 PrincipalForTask 必须使用同一实例目录，未知权限默认拒绝，deny 优先；不得使用进程级可变目录或信任插件输入作为调用身份。新增权限需声明 scope/临时授权语义，并覆盖 Gateway 允许/拒绝、跨租户、撤权和身份重建。

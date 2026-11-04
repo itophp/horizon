@@ -1,7 +1,10 @@
 import enArticles from "./locales/en/articles.json";
-import enProjects from "./locales/en/projects.json";
+import enDrive from "./locales/en/drive.json";
+import zhDrive from "./locales/zh-CN/drive.json";
+import { frontendExtensions } from "@/app/plugins/builtins";
+import { assertTranslationNamespaces } from "@/app/plugins/registry";
 import zhArticles from "./locales/zh-CN/articles.json";
-import zhProjects from "./locales/zh-CN/projects.json";
+
 import enAi from "./locales/en/ai.json";
 import zhAi from "./locales/zh-CN/ai.json";
 import enCapability from "./locales/en/capability.json";
@@ -28,10 +31,20 @@ import zhCommon from "./locales/zh-CN/common.json";
 import zhEntity from "./locales/zh-CN/entity.json";
 import zhNavigation from "./locales/zh-CN/navigation.json";
 import zhValidation from "./locales/zh-CN/validation.json";
-export const resources = {
+const pluginResources = {
+  en: Object.assign(
+    {},
+    ...frontendExtensions.translations.map((item) => item.en),
+  ),
+  "zh-CN": Object.assign(
+    {},
+    ...frontendExtensions.translations.map((item) => item["zh-CN"]),
+  ),
+};
+const coreResources = {
   en: {
     articles: enArticles,
-    projects: enProjects,
+    drive: enDrive,
     admin: enAdmin,
     ai: enAi,
     capability: enCapability,
@@ -48,7 +61,7 @@ export const resources = {
   },
   "zh-CN": {
     articles: zhArticles,
-    projects: zhProjects,
+    drive: zhDrive,
     admin: zhAdmin,
     ai: zhAi,
     capability: zhCapability,
@@ -63,6 +76,11 @@ export const resources = {
     navigation: zhNavigation,
     validation: zhValidation,
   },
+};
+assertTranslationNamespaces(coreResources, frontendExtensions.translations);
+export const resources = {
+  en: { ...coreResources.en, ...pluginResources.en },
+  "zh-CN": { ...coreResources["zh-CN"], ...pluginResources["zh-CN"] },
 };
 export const storageKey = "baseline.language";
 export function preferredLanguage() {

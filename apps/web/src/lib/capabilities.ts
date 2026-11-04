@@ -60,10 +60,11 @@ function identifier(): string {
 async function invoke<T>(
   name: string,
   input: Record<string, unknown> = {},
+  idempotencyKey?: string,
 ): Promise<CapabilityResponse<T>> {
   const response = await capabilityInvoke(name, {
     input,
-    idempotencyKey: identifier(),
+    idempotencyKey: idempotencyKey ?? identifier(),
   });
   const result = response.data as CapabilityResult;
   if (result.status === "awaiting_approval") {
@@ -78,6 +79,193 @@ async function invoke<T>(
     headers: response.headers ?? emptyHeaders,
   };
 }
+
+// ---------------------------------------------------------------- cloud drive
+
+export type DriveSpace = {
+  id: number;
+  kind: "personal" | "shared";
+  name: string;
+  role: "admin" | "editor" | "viewer";
+};
+export type DriveFolder = { id: number; name: string; parentId: number };
+export type DriveFile = {
+  id: number;
+  name: string;
+  folderId: number;
+  size: number;
+  sha256: string;
+  createdAt: string;
+};
+export type DriveMember = {
+  id: number;
+  targetType: "account" | "department";
+  targetId: number;
+  role: "admin" | "editor" | "viewer";
+};
+export type DriveTrashItem = {
+  id: number;
+  kind: "folder" | "file";
+  folderId: number;
+  fileId: number;
+  name: string;
+  parentId: number;
+  deletedAt: string;
+  expiresAt: string;
+};
+export type DriveUploadStatus = {
+  id: number;
+  spaceId: number;
+  folderId: number;
+  name: string;
+  size: number;
+  state: string;
+  expiresAt: string;
+  completedFileId: number;
+  completedChunks: { index: number; sha256: string }[];
+};
+export type DriveFileChunk = {
+  name: string;
+  size: number;
+  sha256: string;
+  offset: number;
+  content: string;
+  eof: boolean;
+};
+
+export const drivePersonalEnsure = () =>
+  invoke<{ id: number }>("drive.space.personal.ensure");
+export const driveSpaces = () =>
+  invoke<{ items: DriveSpace[] }>("drive.space.list");
+export const driveSpaceUsage = (spaceId: number) =>
+  invoke<{ usedBytes: number; pendingBytes: number; quotaBytes: number }>(
+    "drive.space.usage",
+    { spaceId },
+  );
+export const driveSpaceCreate = (name: string) =>
+  invoke<{ id: number }>("drive.space.create", { name });
+export const driveFolders = (spaceId: number, parentId: number) =>
+  invoke<{ items: DriveFolder[] }>("drive.folder.list", { spaceId, parentId });
+export const driveFolderPath = (spaceId: number, folderId: number) =>
+  invoke<{ items: DriveFolder[] }>("drive.folder.path", { spaceId, folderId });
+export const driveFolderCreate = (
+  spaceId: number,
+  parentId: number,
+  name: string,
+) => invoke<{ id: number }>("drive.folder.create", { spaceId, parentId, name });
+export const driveFolderRename = (spaceId: number, id: number, name: string) =>
+  invoke<{ id: number }>("drive.folder.rename", { spaceId, id, name });
+export const driveFolderMove = (
+  spaceId: number,
+  id: number,
+  parentId: number,
+) => invoke<{ id: number }>("drive.folder.move", { spaceId, id, parentId });
+export const driveFolderTrash = (spaceId: number, folderId: number) =>
+  invoke<{ id: number }>("drive.folder.trash", { spaceId, folderId });
+export const driveFiles = (spaceId: number, folderId: number) =>
+  invoke<{ items: DriveFile[] }>("drive.file.list", { spaceId, folderId });
+export const driveFileRename = (
+  spaceId: number,
+  fileId: number,
+  name: string,
+) => invoke<{ id: number }>("drive.file.rename", { spaceId, fileId, name });
+export const driveFileMove = (
+  spaceId: number,
+  fileId: number,
+  folderId: number,
+) => invoke<{ id: number }>("drive.file.move", { spaceId, fileId, folderId });
+export const driveFileTrash = (spaceId: number, fileId: number) =>
+  invoke<{ id: number }>("drive.file.trash", { spaceId, fileId });
+export const driveMembers = (spaceId: number) =>
+  invoke<{ items: DriveMember[] }>("drive.member.list", { spaceId });
+export const driveMemberAdd = (
+  spaceId: number,
+  targetType: DriveMember["targetType"],
+  targetId: number,
+  role: DriveMember["role"],
+) =>
+  invoke<{ id: number }>("drive.member.add", {
+    spaceId,
+    targetType,
+    targetId,
+    role,
+  });
+export const driveMemberChange = (
+  spaceId: number,
+  memberId: number,
+  role: DriveMember["role"],
+) => invoke<{ id: number }>("drive.member.change", { spaceId, memberId, role });
+export const driveMemberRemove = (spaceId: number, memberId: number) =>
+  invoke<{ id: number }>("drive.member.remove", { spaceId, memberId });
+export const driveTrash = (spaceId: number) =>
+  invoke<{ items: DriveTrashItem[] }>("drive.trash.list", { spaceId });
+export const driveFolderRestore = (
+  spaceId: number,
+  batchId: number,
+  parentId: number,
+  name: string,
+) =>
+  invoke<{ id: number }>("drive.trash.restore", {
+    spaceId,
+    batchId,
+    parentId,
+    name,
+  });
+export const driveFileRestore = (
+  spaceId: number,
+  batchId: number,
+  folderId: number,
+  name: string,
+) =>
+  invoke<{ id: number }>("drive.trash.file.restore", {
+    spaceId,
+    batchId,
+    folderId,
+    name,
+  });
+export const driveTrashPurge = (spaceId: number, batchId: number) =>
+  invoke<{ id: number }>("drive.trash.purge.request", { spaceId, batchId });
+export const driveUploadStart = (
+  spaceId: number,
+  folderId: number,
+  name: string,
+  size: number,
+  key: string,
+) =>
+  invoke<{ id: number; chunkSize: number }>(
+    "drive.upload.start",
+    { spaceId, folderId, name, size },
+    key,
+  );
+export const driveUploadStatus = (id: number) =>
+  invoke<DriveUploadStatus>("drive.upload.status", { id });
+export const driveUploadChunk = (
+  spaceId: number,
+  uploadId: number,
+  index: number,
+  sha256: string,
+  content: string,
+  key: string,
+) =>
+  invoke<{ index: number }>(
+    "drive.upload.chunk",
+    { spaceId, uploadId, index, sha256, content },
+    key,
+  );
+export const driveUploadComplete = (
+  spaceId: number,
+  uploadId: number,
+  key: string,
+) =>
+  invoke<{ id: number }>("drive.upload.complete", { spaceId, uploadId }, key);
+export const driveUploadCancel = (spaceId: number, uploadId: number) =>
+  invoke<{ id: number }>("drive.upload.cancel", { spaceId, uploadId });
+export const driveFileChunk = (
+  spaceId: number,
+  fileId: number,
+  offset: number,
+) =>
+  invoke<DriveFileChunk>("drive.file.chunk.read", { spaceId, fileId, offset });
 
 function body(value: unknown): Record<string, unknown> {
   return (value ?? {}) as Record<string, unknown>;

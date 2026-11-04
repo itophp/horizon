@@ -139,5 +139,9 @@
   "total": "共 {{count}} 个项目",
   "plansCount": "{{count}} 项计划",
   "selfLabel": "（我）",
-  "cardMeta": "{{code}} · {{owner}}"
+  "cardMeta": "{{code}} · {{owner}}",
+  "permission": {
+    "write": "编辑项目",
+    "admin": "管理项目"
+  }
 }

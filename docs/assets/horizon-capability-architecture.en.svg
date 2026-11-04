@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-labelledby="title desc" xml:lang="en">
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1840" viewBox="0 0 2200 1840" role="img" aria-labelledby="title desc" xml:lang="en">
 <title id="title">Horizon AI-Native Conceptual Architecture</title><desc id="desc">Triggers enter task orchestration. Workflow, Graph and ADK organize actions; every business call passes through the Capability Gateway and reuses capability models, registration and triggers. Execution produces business facts and events that drive subsequent actions. Simple actions can enter the Gateway directly.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#688078" /></marker></defs>
-<rect width="1600" height="1600" rx="24" fill="#f7f9f8" />
+<rect width="2200" height="1840" rx="24" fill="#f7f9f8" />
 <style>text{font-family:"Segoe UI",Arial,sans-serif;fill:#17483e}.title{font-size:34px;font-weight:700}.section{font-size:27px;font-weight:650}.body{font-size:23px}.small{font-size:21px;fill:#436e63}.note{font-size:19px;fill:#59776e}.blue{fill:#214e7f}.line{fill:none;stroke:#688078;stroke-width:2.4;marker-end:url(#arrow)}</style>
 <text x="100" y="65" class="title" text-anchor="start" style="font-size:34px">Horizon · AI-Native Application Architecture</text>
 <text x="100" y="103" class="small" text-anchor="start" style="font-size:21px">One capability system connects human intent, agent decisions and real business actions</text>
@@ -64,4 +64,17 @@
 <text x="100" y="1490" class="small" text-anchor="start" style="font-size:21px">Collaboration: Skills &amp; Schemas · Trusted identity &amp; knowledge · Human participation · Tracing &amp; behavior checks</text>
 <text x="100" y="1530" class="note" text-anchor="start" style="font-size:19px">Conceptual view: orchestration organizes work; the Gateway governs workflow starts and node execution. Use components as needed.</text>
 <text x="100" y="1563" class="note" text-anchor="start" style="font-size:19px">See the architecture docs for current support. Dependencies are explicit; registration does not grant authorization.</text>
+<rect x="1600" y="285" width="510" height="1160" rx="24" fill="#e1f2ef" stroke="#188d80" stroke-width="3"/>
+<text x="1855" y="345" class="section" text-anchor="middle">Memory Center</text>
+<text x="1855" y="382" class="small" text-anchor="middle">Core AI-native memory · Planned</text>
+<rect x="1635" y="450" width="440" height="175" rx="16" fill="#f5fbfa" stroke="#91bdb3"/>
+<text x="1855" y="500" class="section" text-anchor="middle">Governed context</text><text x="1855" y="542" class="small" text-anchor="middle">Identity · Tenant · Data scope</text><text x="1855" y="580" class="small" text-anchor="middle">Application and development agents</text>
+<rect x="1635" y="760" width="440" height="175" rx="16" fill="#f5fbfa" stroke="#91bdb3"/>
+<text x="1855" y="810" class="section" text-anchor="middle">Extract and connect</text><text x="1855" y="852" class="small" text-anchor="middle">Normalize · Redact · Process</text><text x="1855" y="890" class="small" text-anchor="middle">Memories · Entities · Events · Tasks</text>
+<rect x="1635" y="1120" width="440" height="175" rx="16" fill="#f5fbfa" stroke="#91bdb3"/>
+<text x="1855" y="1170" class="section" text-anchor="middle">Facts and experience</text><text x="1855" y="1212" class="small" text-anchor="middle">Events · Agents · Workflows · Knowledge</text><text x="1855" y="1250" class="small" text-anchor="middle">Preserve provenance and govern</text>
+<path d="M1855 1120V935 M1855 760V625 M1600 500H1360 M1360 1210H1600" class="line"/>
+<text x="1855" y="1360" class="note" text-anchor="middle">Does not replace business state, audit or source knowledge</text>
+<rect x="100" y="1600" width="610" height="175" rx="18" fill="#e8f0fc" stroke="#779fce"/>
+<text x="125" y="1640" class="section blue">Plugins · Business extensions</text><text x="125" y="1680" class="small">Register entities, capabilities, events and UI</text><text x="125" y="1715" class="small">Business invocations pass through Gateway</text><text x="125" y="1750" class="note">Runtime modes and lifecycle are phased</text>
 </svg>

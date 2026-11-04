@@ -139,5 +139,9 @@
   "total": "{{count}} projects",
   "plansCount": "{{count}} plans",
   "selfLabel": "(me)",
-  "cardMeta": "{{code}} · {{owner}}"
+  "cardMeta": "{{code}} · {{owner}}",
+  "permission": {
+    "write": "Edit projects",
+    "admin": "Manage projects"
+  }
 }

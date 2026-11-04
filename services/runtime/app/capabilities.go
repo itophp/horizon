@@ -3,10 +3,12 @@ package app
 import (
 	"baseline/services/api/ai/knowledge"
 	"baseline/services/api/applications/articles"
+	"baseline/services/api/applications/drive"
 	"baseline/services/api/applications/example"
 	"baseline/services/api/applications/projects"
 	"baseline/services/api/integrations/mcp"
 	"baseline/services/api/kernel/capability/registry"
+	"baseline/services/api/kernel/plugin"
 	runtime "baseline/services/api/kernel/workflow"
 	"baseline/services/api/system/dictionaries"
 	"baseline/services/api/system/files"
@@ -23,6 +25,7 @@ import (
 type CapabilityModules struct {
 	Articles      *articles.Module
 	Projects      *projects.Module
+	Plugins       *plugin.Manager
 	Core          *governance.Core
 	MCP           *mcp.Service
 	Orchestration *runtime.Engine
@@ -52,14 +55,22 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	if m.Projects == nil {
 		m.Projects = projects.New(m.Core.Pool)
 	}
+	fileService, _ := m.Core.Logos.(*files.Service)
+	if fileService == nil {
+		fileService = files.New(m.Core)
+	}
 	entries := []registry.Entry{}
 	entries = append(entries, m.Articles.Entries()...)
-	entries = append(entries, m.Projects.Entries()...)
+	if m.Plugins == nil {
+		m.Plugins = BuiltinPlugins(m.Projects)
+	}
+	entries = append(entries, m.Plugins.Catalog.Entries...)
+	entries = append(entries, drive.NewWithFiles(m.Core.Pool, fileService).Entries()...)
 	entries = append(entries, (&orchestration.Module{Engine: m.Orchestration}).Entries()...)
 	entries = append(entries, m.Core.Identity.Entries()...)
 	entries = append(entries, settings.New(m.Core).Entries()...)
 	entries = append(entries, dictionaries.New(m.Core).Entries()...)
-	entries = append(entries, files.New(m.Core).Entries()...)
+	entries = append(entries, fileService.Entries()...)
 	entries = append(entries, notifications.New(m.Core).Entries()...)
 	entries = append(entries, m.MCP.Entries()...)
 	entries = append(entries, example.New(m.Core.Pool).Entries()...)

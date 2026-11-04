@@ -4,6 +4,8 @@ import (
 	genidentity "baseline/services/api/gen/identity"
 	"baseline/services/api/internal/repository/dbgen"
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"strings"
 	"time"
@@ -55,7 +57,13 @@ func (s *Service) ScopeFor(ctx context.Context, p *Principal, permission string,
 }
 func (s *Service) PrincipalForTask(ctx context.Context, tenant string, id, dept int64) (*Principal, error) {
 	account, err := s.repo.account(ctx, Scope{TenantID: tenant, All: true}, id)
-	if err != nil || account.Status != "active" {
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, problem("forbidden")
+		}
+		return nil, safe(err)
+	}
+	if account.Status != "active" {
 		return nil, problem("forbidden")
 	}
 	account, err = s.departmentAccount(ctx, tenant, account, dept)
@@ -66,7 +74,19 @@ func (s *Service) PrincipalForTask(ctx context.Context, tenant string, id, dept 
 	if err != nil {
 		return nil, err
 	}
-	return NewPrincipal(account, tenant, MergeGrants(grants, account.Overrides))
+	return s.NewPrincipal(account, tenant, MergeGrants(grants, account.Overrides))
+}
+
+// PrincipalForTaskInTx reconstructs an identity using the caller's transaction.
+// It is intended for authorization invariants that must observe the same
+// snapshot as a business write, without opening a second pool connection.
+func (s *Service) PrincipalForTaskInTx(ctx context.Context, tx pgx.Tx, tenant string, id, dept int64) (*Principal, error) {
+	if tx == nil {
+		return nil, problem("unavailable")
+	}
+	bound := *s
+	bound.repo = &Repository{q: dbgen.New(tx)}
+	return bound.PrincipalForTask(ctx, tenant, id, dept)
 }
 func (s *Service) VerifyCurrentPassword(ctx context.Context, p *Principal, password string) error {
 	key := tokenHash("reauth:" + p.TenantID + ":" + p.TokenHash)

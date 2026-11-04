@@ -34,7 +34,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("parse migrations: %w", err)
 	}
-	declared := app.Entities()
+	plugins := app.BuiltinPlugins(nil)
+	declared := app.EntitiesWithPlugins(plugins)
 	structural, contracts := 0, 0
 	for _, item := range declared {
 		for _, problem := range item.Problems() {
@@ -57,7 +58,7 @@ func run() error {
 	for _, table := range tables {
 		columns += len(table.Columns)
 	}
-	entries := (app.CapabilityModules{}).Entries()
+	entries := (app.CapabilityModules{Plugins: plugins}).Entries()
 	for _, entry := range entries {
 		for _, problem := range entry.Definition.Problems() {
 			fmt.Fprintf(os.Stderr, "C0 %s: %s\n", entry.Definition.Name, problem)

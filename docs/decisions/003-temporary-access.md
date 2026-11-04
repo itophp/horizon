@@ -4,7 +4,7 @@
 
 ## 两级目录
 
-`system/identity/catalog.go` 是权限目录的服务端来源，定义一级 module、二级 function、操作 code、是否允许临时申请及是否可配置范围。Goa 生成 PermissionDefinition，Snapshot 和临时申请工作区返回目录；页面不另造权限代码或自行决定哪些权限可申请。界面使用原生表格的 rowSpan 合并一级模块单元格，二级功能下保留操作授权。
+`system/identity/catalog.go` 汇总身份内置权限与启动时经校验的插件权限，形成身份服务实例的服务端目录，定义一级 module、二级 function、操作 code、是否允许临时申请及是否可配置范围。Goa 生成 PermissionDefinition，Snapshot 和临时申请工作区返回目录；页面不另造权限代码或自行决定哪些权限可申请。界面使用原生表格的 rowSpan 合并一级模块单元格，二级功能下保留操作授权。
 
 基础管理包含账号、组织、部门、角色；权限管理包含授权配置与临时审批。既有 accounts/organizations/departments/roles 的权限代码保持兼容，不因界面分组改写角色策略。
 

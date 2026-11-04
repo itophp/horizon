@@ -18,6 +18,7 @@ import (
 	"baseline/services/api/kernel/capability/gateway"
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/kernel/eventhub"
+	"baseline/services/api/runtime/app"
 	"baseline/services/api/system/identity"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -44,7 +45,11 @@ func newProjectHarness(t *testing.T) *projectHarness {
 	t.Helper()
 	_, pool, rootAccount := iamFixture(t)
 	iam := identity.New(pool, false)
-	entries := append(projects.New(pool).Entries(), iam.Entries()...)
+	plugins := app.BuiltinPlugins(projects.New(pool))
+	if err := iam.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
+		t.Fatal(err)
+	}
+	entries := append(plugins.Catalog.Entries, iam.Entries()...)
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
 		t.Fatal(err)
@@ -105,7 +110,7 @@ func (h *projectHarness) account(t *testing.T, username string, permissions ...s
 		ID: id, Username: username, FullName: username,
 		Status: "active", OrganizationID: h.rootAccount.OrganizationID, DepartmentID: h.rootAccount.DepartmentID,
 	}
-	principal, err := identity.NewPrincipal(record, "tenant-a", grants)
+	principal, err := h.iam.NewPrincipal(record, "tenant-a", grants)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +319,7 @@ func TestProjectMembershipRules(t *testing.T) {
 
 	// Another tenant cannot see the project even with the same id and permission.
 	account := &genidentity.AccountRecord{ID: member.id}
-	other, err := identity.NewPrincipal(account, "tenant-other", []*genidentity.PermissionGrant{
+	other, err := h.iam.NewPrincipal(account, "tenant-other", []*genidentity.PermissionGrant{
 		{Permission: projects.ReadPermission, Effect: "allow", Scope: "ALL"},
 	})
 	if err != nil {

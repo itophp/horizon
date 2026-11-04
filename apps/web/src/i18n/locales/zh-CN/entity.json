@@ -1,4 +1,19 @@
 {
+  "drive_space": { "label": "云盘空间" },
+  "drive_member": { "label": "云盘成员" },
+  "drive_folder": { "label": "云盘文件夹" },
+  "drive_file": { "label": "云盘文件" },
+  "drive_trash_batch": { "label": "云盘删除批次" },
+  "drive_upload": {
+    "label": "云盘上传",
+    "states": {
+      "open": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "cleaned": "已清理"
+    }
+  },
+  "drive_upload_chunk": { "label": "上传分块" },
   "account": {
     "label": "账号"
   },

@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-labelledby="title desc">
-<title id="title">Horizon AI-Native 概念架构</title><desc id="desc">交互触发进入任务与编排，Workflow、Graph 和 ADK 组织行动；所有业务调用通过 Capability Gateway，复用能力模型、注册与触发体系；执行产生业务事实与事件，再驱动后续行为。简单动作可以直接进入 Gateway。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1840" viewBox="0 0 2200 1840" role="img" aria-labelledby="title desc">
+<title id="title">Horizon AI-Native 概念架构</title><desc id="desc">交互触发进入任务与编排，Workflow、Graph 和 ADK 组织行动；所有业务调用通过 Capability Gateway，复用能力模型、注册与触发体系；执行产生业务事实与事件；规划中的记忆中心从多源提炼经验并向任务提供受治理的上下文。简单动作可以直接进入 Gateway。</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#688078"/></marker></defs>
-<rect width="1600" height="1600" rx="24" fill="#f7f9f8"/>
+<rect width="2200" height="1840" rx="24" fill="#f7f9f8"/>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#17483e}.title{font-size:34px;font-weight:700}.section{font-size:27px;font-weight:650}.body{font-size:23px}.small{font-size:21px;fill:#436e63}.note{font-size:19px;fill:#59776e}.blue{fill:#214e7f}.line{fill:none;stroke:#688078;stroke-width:2.4;marker-end:url(#arrow)}</style>
 <text x="100" y="65" class="title" text-anchor="start">Horizon · AI-Native 应用概念架构</text>
 <text x="100" y="103" class="small" text-anchor="start">一套业务能力，连接人的意图、Agent 的判断与系统的真实行动</text>
@@ -64,4 +64,31 @@
 <text x="100" y="1490" class="small" text-anchor="start">协作支撑：Skills 与 Schema · 可信身份与知识上下文 · 人工参与 · 可追踪与行为验证</text>
 <text x="100" y="1530" class="note" text-anchor="start">概念职责图：编排组织工作；流程启动与节点执行均受 Gateway 管理；各组件按任务需要使用。</text>
 <text x="100" y="1563" class="note" text-anchor="start">当前支持与业务接入进度见架构文档；依赖显式声明，能力注册不代表已授权执行。</text>
+<rect x="100" y="1600" width="610" height="175" rx="18" fill="#e8f0fc" stroke="#779fce" stroke-width="1.5"/>
+<text x="125" y="1640" class="section blue">插件扩展 · 业务模块接入</text>
+<text x="125" y="1680" class="small">注册实体、能力、事件与界面扩展</text>
+<text x="125" y="1715" class="small">统一能力契约 · 调用仍经过 Gateway</text>
+<text x="125" y="1750" class="note">扩展运行模式与生命周期分阶段建设</text>
+<rect x="1600" y="285" width="510" height="1160" rx="24" fill="#e1f2ef" stroke="#188d80" stroke-width="3"/>
+<text x="1855" y="345" class="section" text-anchor="middle">Memory Center</text>
+<text x="1855" y="382" class="small" text-anchor="middle">AI-Native 核心记忆机制 · 规划中</text>
+<rect x="1635" y="450" width="440" height="175" rx="16" fill="#f5fbfa" stroke="#91bdb3"/>
+<text x="1855" y="500" class="section" text-anchor="middle">受治理的上下文</text>
+<text x="1855" y="542" class="small" text-anchor="middle">身份 · 租户 · 数据范围</text>
+<text x="1855" y="580" class="small" text-anchor="middle">应用与开发 Agent 按权限使用经验</text>
+<rect x="1635" y="760" width="440" height="175" rx="16" fill="#f5fbfa" stroke="#91bdb3"/>
+<text x="1855" y="810" class="section" text-anchor="middle">提炼与关联</text>
+<text x="1855" y="852" class="small" text-anchor="middle">规范化 · 脱敏 · 异步处理</text>
+<text x="1855" y="890" class="small" text-anchor="middle">记忆 · 实体 · 事件 · 任务</text>
+<rect x="1635" y="1120" width="440" height="175" rx="16" fill="#f5fbfa" stroke="#91bdb3"/>
+<text x="1855" y="1170" class="section" text-anchor="middle">多源事实与经验</text>
+<text x="1855" y="1212" class="small" text-anchor="middle">业务事件 · Agent · 流程 · 知识</text>
+<text x="1855" y="1250" class="small" text-anchor="middle">保留来源，持续治理</text>
+<path d="M1855 1120V935 M1855 760V625" class="line"/>
+<path d="M1600 500H1360" class="line"/>
+<text x="1370" y="480" class="note">检索上下文</text>
+<path d="M1360 1210H1600" class="line"/>
+<text x="1370" y="1190" class="note">多源采集</text>
+<text x="1855" y="1360" class="note" text-anchor="middle">不替代业务当前状态、审计或知识原件</text>
+<text x="100" y="1810" class="note">插件扩展能力体系；记忆中心贯穿事实沉淀与任务上下文，业务行动始终经过 Gateway。</text>
 </svg>

@@ -55,6 +55,10 @@ SMTP 主机由部署白名单约束、证书验证不关闭，测试发送仅本
 
 通知中心遵循 [ADR 008](decisions/008-notification-center.md)：独立正式 notifications:send、服务端组织展开/全部范围校验/账号去重/幂等。正文为不可信 Markdown，禁止原始 HTML/MDX、危险 URL 和任意外部图片。通知附件需要账号/有效归属/通知文件绑定 SQL 校验；收件人例外入口不放宽通用 files:read。附件由发送者拥有，不允许绑定其他人的文件；绑定后禁止删除。同步权限 Skill 与负向回归。
 
+## 云盘空间（开发中）
+
+空间基础能力使用 `drive:use` 和 `drive:create`；旧权限不自动授予新权限。个人空间按可信租户和账号隔离，共享空间按可信账号或当前部门的成员授权过滤。云盘写能力只接受人类页面来源，工具标签不是授权边界。云盘对象使用 `cloud_drive` 用途并排除在通用文件读取、列表和删除查询之外；云盘下载必须验证空间授权且使用非持久化结果。上传分块及存储键不能进入调用审计。云盘一期尚未交付，完整目标和待验收条件见 [云盘 PRD](cloud-drive-prd.md)。
+
 ## 页面 WebMCP
 
 [ADR 009](decisions/009-webmcp.md) 的本机开发服务要求 loopback、精确 Host/Origin、Bearer 与显式页面连接；setup 只接受 allowlist 客户端和已连接页面，不提供任意命令/路径。密钥在本机 0600 文件和页面内存，配置/argv/URL 无密钥；SDK sessionId 只做路由标识。开发服务器提供仅 serve 生效的 `/__webmcp/connection` 用于把同一份密钥预填进表单：Host 必须回环、Origin 必须同源、`no-store`、无 CORS 头，构建产物中不存在，读取失败即回退手动填写；预填不放宽服务端 Bearer 校验。工具禁任意 JS、缓存/凭证读取和业务提交，账号工具仅当前已授权快照的筛选计数/只读详情。断开、401、退出、刷新、切部门和身份上下文改变时撤销工具，旧句柄执行拒绝。导航白名单与前端权限仅改善交互，不能替代后端授权与范围。新工具必须补注册生命周期、允许/拒绝、字段投影和跨范围用例。生产远程服务须另行设计身份/会话绑定与 HTTPS，不直接将本机服务暴露公网。
@@ -84,3 +88,5 @@ SMTP 主机由部署白名单约束、证书验证不关闭，测试发送仅本
 文章通过 article.* 能力管理。articles:read/write 仅访问本人文章，articles:review 可读取本租户待审核内容并决定发布；人工审核仅限直接人类页面调用，禁止作者自审。发布后内容不可变，草稿/驳回修改递增 revision；所有评审落库按 revision 与原状态条件更新。article.record-review 只在 pending_ai 下写入 verdict、只接受 OriginWorkflow，并返回归一化 decision 供流程分叉；article.publish 声明 high + confirm，自动化来源只能产生审批卡，必须由人在审批队列确认后才公开（多人部署可换成 four-eyes，要求另一名具备 capability:approve 的账号批准）；article.reject 只接受 OriginWorkflow 或 OriginApproval 且要求 review_code 为 blocked|suspected。两者都要求 review_code 与状态、版本同时匹配，页面、Agent、API、MCP 直接调用无法绕过。Agent 只能读取正文（article.get 工具），正文作为不可信数据。正文不进入事件、调用输入审计、调用结果或 AI 轨迹。敏感读取使用 TransientResult，禁用幂等结果重放并省略持久化数据。
 
 articles.blockedWords 为工作空间设置（系统设置 → 文章审核分组），以换行或逗号分词，复用设置草稿/发布/审计。已发布词库是确定性的：命中而结论不是 blocked 时 record-review 冲突失败，任何模型转述都不能覆盖。未配置或空词库视为"没有确定性规则"——发布仍由另一名审批人放行，因此不再阻断流程；设置读取失败按 unavailable 失败而不是静默跳过。评审使用投稿时的当前正文版本及评审时已发布词库，不追溯已发布文章。投稿事务写 Outbox；旧的 article-moderation 事件策略已移除，评审只由 article-publish 流程执行，避免同一次投稿被两条路径重复评审。待 AI 状态可由作者重新发起流程。AI 运行独立记录，失败不会回滚投稿。远程 MCP 显式开放文章列表、详情、创建草稿与投稿；Token 固化工具集合与当前 articles 权限取交集，不开放人工审核、评审结论写入与发布分支。页面 Agent 工具未开放。
+
+插件权限目录：内置插件在注册阶段声明权限元数据，身份服务在处理请求前将其校验合并到本服务实例的权限目录；与既有代码、权限范围或临时申请策略冲突则启动失败。声明不等于授权，未知权限默认拒绝；会话、部门切换及后台重建的 Principal 使用该实例的同一目录快照，显式 deny 仍优先，撤权后重建立即生效。目录不是客户端授权来源，也不改变租户和记录范围。

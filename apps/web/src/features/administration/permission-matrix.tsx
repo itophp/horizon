@@ -1,3 +1,4 @@
+import { frontendExtensions } from "@/app/plugins/builtins";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -31,6 +32,7 @@ export function scopeOptions(t: TFunction) {
 }
 export function permissionFunctionLabel(key: string, t: TFunction) {
   const labels: Record<string, string> = {
+    drive: t("drive:heading"),
     articles: t("articles:heading"),
     accounts: t("admin:nav.accounts"),
     organizations: t("admin:nav.organizations"),
@@ -45,7 +47,8 @@ export function permissionFunctionLabel(key: string, t: TFunction) {
     mcp: t("mcp:title"),
     orchestration: t("governance:orchestration"),
   };
-  return labels[key] ?? key;
+  const pluginKey = frontendExtensions.permissionFunctions[key];
+  return pluginKey ? t(pluginKey) : (labels[key] ?? key);
 }
 export function PermissionMatrix({
   grants,
@@ -137,12 +140,23 @@ export function PermissionMatrix({
       });
     onChange(next);
   }
+  function permissionActionLabel(definition: PermissionDefinition) {
+    const pluginKey = frontendExtensions.permissionActions[definition.code];
+    return pluginKey
+      ? t(pluginKey)
+      : t(`governance:actions.${definition.action}`);
+  }
   function control(definition: PermissionDefinition, single = false) {
     const effect =
       grants.find((g) => g.permission === definition.code)?.effect ?? "inherit";
-    const label = single
-      ? permissionFunctionLabel(definition.function, t)
-      : `${permissionFunctionLabel(definition.function, t)} ${actions.find((a) => a.key === definition.action)?.label ?? t(`governance:actions.${definition.action}`)}`;
+    const label =
+      definition.code === "drive:use"
+        ? t("drive:permissionUse")
+        : definition.code === "drive:create"
+          ? t("drive:permissionCreate")
+          : single
+            ? permissionFunctionLabel(definition.function, t)
+            : `${permissionFunctionLabel(definition.function, t)} ${actions.find((a) => a.key === definition.action)?.label ?? permissionActionLabel(definition)}`;
     return account ? (
       <div className="grant-switch" role="group" aria-label={label}>
         {(["inherit", "allow", "deny"] as const).map((value) => (
@@ -315,9 +329,7 @@ export function PermissionMatrix({
                             .map((d) => (
                               <label key={d.code}>
                                 {control(d)}
-                                <span>
-                                  {t(`governance:actions.${d.action}`)}
-                                </span>
+                                <span>{permissionActionLabel(d)}</span>
                               </label>
                             ))}
                         </div>

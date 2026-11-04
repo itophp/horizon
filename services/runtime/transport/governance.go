@@ -6,6 +6,8 @@ import (
 	"baseline/services/api/ai/knowledge"
 	"baseline/services/api/ai/triggers"
 	"baseline/services/api/applications/articles"
+	"baseline/services/api/applications/drive"
+	"baseline/services/api/applications/projects"
 	genai "baseline/services/api/gen/ai"
 	genassistant "baseline/services/api/gen/assistant"
 	genbranding "baseline/services/api/gen/branding"
@@ -22,13 +24,13 @@ import (
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/kernel/eventhub"
 	"baseline/services/api/kernel/outbox"
+	"baseline/services/api/kernel/plugin"
 	orchestrationruntime "baseline/services/api/kernel/workflow"
 	"baseline/services/api/runtime/app"
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
 	"context"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -38,7 +40,7 @@ import (
 // mountGovernance wires the capability platform and returns the background
 // starter (outbox relay and AI trigger engine). Every business module now
 // contributes capability entries instead of its own HTTP endpoints.
-func mountGovernance(mux goahttp.Muxer, core *governance.Core, onError func(context.Context, http.ResponseWriter, error)) func(context.Context) {
+func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.Manager, onError func(context.Context, http.ResponseWriter, error)) func(context.Context) {
 	core.Identity.Policies = core
 
 	f, _ := core.Logos.(*files.Service)
@@ -81,14 +83,20 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, onError func(cont
 		}
 		return articles.ContainsBlocked(content, words), true, nil
 	}
-	entries := (app.CapabilityModules{Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService}).Entries()
+	if plugins == nil {
+		plugins = app.BuiltinPlugins(projects.New(core.Pool))
+	}
+	if err := core.Identity.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
+		panic(err)
+	}
+	entries := (app.CapabilityModules{Plugins: plugins, Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService}).Entries()
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
-		slog.Error("capability catalog is invalid", "code", "internal")
+		panic("capability catalog is invalid: " + err.Error())
 	}
-	catalog.RegisterEntities(app.Entities())
-	for _, problem := range catalog.EntityProblems() {
-		slog.Error("entity declaration is invalid", "detail", problem)
+	catalog.RegisterEntities(app.EntitiesWithPlugins(plugins))
+	if err := catalog.Err(); err != nil {
+		panic("invalid entity declarations: " + strings.Join(catalog.EntityProblems(), "; "))
 	}
 
 	dispatcher := gateway.New(gateway.Options{
@@ -110,6 +118,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, onError func(cont
 
 	return func(ctx context.Context) {
 		engine.Start(ctx)
+		go drive.RunCleanup(ctx, core.Pool, dispatcher)
 		go orchestrator.Run(ctx)
 		go relay.Run(ctx)
 	}

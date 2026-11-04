@@ -12,7 +12,9 @@
     "roles": "Roles",
     "permissions": "Permissions",
     "foundation": "Framework verification",
-    "documentation": "Access guide"
+    "documentation": "Access guide",
+    "advanced": "Advanced settings",
+    "advancedDescription": "Choose a destination."
   },
   "login": {
     "eyebrow": "A WORKSPACE, CONNECTED.",
