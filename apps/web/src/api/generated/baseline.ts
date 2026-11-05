@@ -24,10 +24,12 @@ import type {
 import type {
   AIConversation,
   AIRun,
+  AIRunEvent,
   AIStatus,
   AdminSnapshot,
   AgentRequestBody,
   AiConversationsParams,
+  AiRunEventsParams,
   AiRunsParams,
   AssistantAgentReply,
   AssistantReply,
@@ -2147,6 +2149,228 @@ export function useAiRunDetail<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getAiRunDetailQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type aiRunEventsResponse200 = {
+  data: AIRunEvent;
+  status: 200;
+};
+
+export type aiRunEventsResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiRunEventsResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiRunEventsResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiRunEventsResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiRunEventsResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiRunEventsResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiRunEventsResponseSuccess = aiRunEventsResponse200 & {
+  headers: Headers;
+};
+export type aiRunEventsResponseError = (
+  | aiRunEventsResponse400
+  | aiRunEventsResponse401
+  | aiRunEventsResponse403
+  | aiRunEventsResponse404
+  | aiRunEventsResponse500
+  | aiRunEventsResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiRunEventsResponse =
+  aiRunEventsResponseSuccess | aiRunEventsResponseError;
+
+export const getAiRunEventsUrl = (id: number, params?: AiRunEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ai/runs/${id}/events?${stringifiedParams}`
+    : `/api/ai/runs/${id}/events`;
+};
+
+/**
+ * Read authorized task lifecycle events. Disconnecting never cancels business execution.
+ * @summary runEvents ai
+ */
+export const aiRunEvents = async (
+  id: number,
+  params?: AiRunEventsParams,
+  options?: Parameters<typeof request>[1],
+): Promise<aiRunEventsResponse> => {
+  return request<aiRunEventsResponse>(getAiRunEventsUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAiRunEventsQueryKey = (
+  id: number,
+  params?: AiRunEventsParams,
+) => {
+  return [`/api/ai/runs/${id}/events`, ...(params ? [params] : [])] as const;
+};
+
+export const getAiRunEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof aiRunEvents>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  params?: AiRunEventsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunEvents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAiRunEventsQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof aiRunEvents>>> = ({
+    signal,
+  }) => aiRunEvents(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof aiRunEvents>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AiRunEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof aiRunEvents>>
+>;
+export type AiRunEventsQueryError = IAMProblem;
+
+export function useAiRunEvents<
+  TData = Awaited<ReturnType<typeof aiRunEvents>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  params: undefined | AiRunEventsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunEvents>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiRunEvents>>,
+          TError,
+          Awaited<ReturnType<typeof aiRunEvents>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiRunEvents<
+  TData = Awaited<ReturnType<typeof aiRunEvents>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  params?: AiRunEventsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunEvents>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof aiRunEvents>>,
+          TError,
+          Awaited<ReturnType<typeof aiRunEvents>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useAiRunEvents<
+  TData = Awaited<ReturnType<typeof aiRunEvents>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  params?: AiRunEventsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunEvents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary runEvents ai
+ */
+
+export function useAiRunEvents<
+  TData = Awaited<ReturnType<typeof aiRunEvents>>,
+  TError = IAMProblem,
+>(
+  id: number,
+  params?: AiRunEventsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof aiRunEvents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getAiRunEventsQueryOptions(id, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

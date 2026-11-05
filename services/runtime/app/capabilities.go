@@ -7,9 +7,12 @@ import (
 	"baseline/services/api/applications/example"
 	"baseline/services/api/applications/projects"
 	"baseline/services/api/integrations/mcp"
+	ar "baseline/services/api/kernel/applicationruntime"
+	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/kernel/plugin"
 	runtime "baseline/services/api/kernel/workflow"
+	armodule "baseline/services/api/system/applicationruntime"
 	"baseline/services/api/system/dictionaries"
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/governance"
@@ -23,6 +26,7 @@ import (
 // checks. Each domain still owns its definitions; tools must not copy catalogs.
 // Zero value builds declarations without opening a database or executing them.
 type CapabilityModules struct {
+	Runtime       *armodule.Module
 	Articles      *articles.Module
 	Projects      *projects.Module
 	Plugins       *plugin.Manager
@@ -41,7 +45,7 @@ func (m CapabilityModules) Entries() []registry.Entry {
 		m.MCP = mcp.New(m.Core.Pool, m.Core.Identity)
 	}
 	if m.Orchestration == nil {
-		m.Orchestration = runtime.New(m.Core, nil)
+		m.Orchestration = runtime.New(m.Core, WorkflowDefinitions())
 	}
 	if m.Documents == nil {
 		m.Documents = &knowledge.Store{Q: m.Core.Q, Core: m.Core}
@@ -60,6 +64,7 @@ func (m CapabilityModules) Entries() []registry.Entry {
 		fileService = files.New(m.Core)
 	}
 	entries := []registry.Entry{}
+
 	entries = append(entries, m.Articles.Entries()...)
 	if m.Plugins == nil {
 		m.Plugins = BuiltinPlugins(m.Projects)
@@ -76,5 +81,35 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	entries = append(entries, example.New(m.Core.Pool).Entries()...)
 	entries = append(entries, m.Documents.Entries()...)
 	entries = append(entries, m.Knowledge.Entries()...)
+	definitions := []contracts.Definition{}
+	for _, entry := range entries {
+		definitions = append(definitions, entry.Definition)
+	}
+	sources := append([]ar.ApplicationV2{articles.RuntimeApplication()}, m.Plugins.Catalog.Applications...)
+	applications, versions, err := ar.AssembleDeployment(sources, EntitiesWithPlugins(m.Plugins), definitions)
+	if err != nil {
+		panic(err)
+	}
+	for i := range entries {
+		switch entries[i].Definition.Domain {
+		case "articles":
+			entries[i].Definition.Installation = "builtin:articles"
+			entries[i].Definition.Application = "articles"
+		case "projects":
+			entries[i].Definition.Installation = "com.horizon.projects"
+			entries[i].Definition.Application = "projects"
+		}
+	}
+	if m.Runtime == nil {
+		m.Runtime = &armodule.Module{}
+	}
+	m.Runtime.Applications = applications
+	m.Runtime.Versions = versions
+	m.Runtime.Pool = m.Core.Pool
+	m.Runtime.Definitions = map[string]contracts.Definition{}
+	for _, entry := range entries {
+		m.Runtime.Definitions[entry.Definition.Key()] = entry.Definition
+	}
+	entries = append(entries, m.Runtime.Entries()...)
 	return entries
 }

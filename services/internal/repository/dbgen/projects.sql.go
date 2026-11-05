@@ -68,6 +68,36 @@ func (q *Queries) ProjectArchived(ctx context.Context, arg ProjectArchivedParams
 	return archived, err
 }
 
+const projectCount = `-- name: ProjectCount :one
+SELECT count(*) FROM projects p
+WHERE p.tenant_id=$1
+ AND EXISTS (SELECT 1 FROM project_members m WHERE m.tenant_id=p.tenant_id AND m.project_id=p.id AND m.account_id=$2)
+ AND ($3::text = '' OR p.status = $3)
+ AND ($4::text = '' OR p.priority = $4)
+ AND ($5::text = '' OR p.name ILIKE '%'||$5||'%' OR p.code ILIKE '%'||$5||'%')
+`
+
+type ProjectCountParams struct {
+	TenantID       string
+	AccountID      int64
+	StatusFilter   string
+	PriorityFilter string
+	Keyword        string
+}
+
+func (q *Queries) ProjectCount(ctx context.Context, arg ProjectCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, projectCount,
+		arg.TenantID,
+		arg.AccountID,
+		arg.StatusFilter,
+		arg.PriorityFilter,
+		arg.Keyword,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const projectCreate = `-- name: ProjectCreate :one
 INSERT INTO projects(tenant_id,code,name,priority,due_date,owner_id,created_by)
 VALUES($1,$2,$3,$4,$5,$6,$7)
@@ -174,7 +204,7 @@ WHERE p.tenant_id=$1
  AND ($3::text = '' OR p.status = $3)
  AND ($4::text = '' OR p.priority = $4)
  AND ($5::text = '' OR p.name ILIKE '%'||$5||'%' OR p.code ILIKE '%'||$5||'%')
-ORDER BY p.id DESC LIMIT $6
+ORDER BY CASE WHEN $6::text='name:asc' THEN p.name END ASC, p.id DESC LIMIT $8 OFFSET $7
 `
 
 type ProjectListParams struct {
@@ -183,6 +213,8 @@ type ProjectListParams struct {
 	StatusFilter   string
 	PriorityFilter string
 	Keyword        string
+	SortKey        string
+	PageOffset     int32
 	MaxRows        int32
 }
 
@@ -215,6 +247,8 @@ func (q *Queries) ProjectList(ctx context.Context, arg ProjectListParams) ([]Pro
 		arg.StatusFilter,
 		arg.PriorityFilter,
 		arg.Keyword,
+		arg.SortKey,
+		arg.PageOffset,
 		arg.MaxRows,
 	)
 	if err != nil {
@@ -320,13 +354,15 @@ JOIN projects p ON p.tenant_id=m.tenant_id AND p.id=m.project_id
 JOIN iam_accounts a ON a.tenant_id=m.tenant_id AND a.id=m.account_id
 WHERE m.tenant_id=$1 AND m.project_id=$2
  AND EXISTS (SELECT 1 FROM project_members v WHERE v.tenant_id=m.tenant_id AND v.project_id=m.project_id AND v.account_id=$3)
-ORDER BY a.full_name LIMIT $4
+ AND ($4::text='' OR a.full_name ILIKE '%'||$4::text||'%')
+ORDER BY a.full_name LIMIT $5
 `
 
 type ProjectMemberListParams struct {
 	TenantID  string
 	ProjectID int64
 	AccountID int64
+	Keyword   string
 	MaxRows   int32
 }
 
@@ -343,6 +379,7 @@ func (q *Queries) ProjectMemberList(ctx context.Context, arg ProjectMemberListPa
 		arg.TenantID,
 		arg.ProjectID,
 		arg.AccountID,
+		arg.Keyword,
 		arg.MaxRows,
 	)
 	if err != nil {
@@ -805,6 +842,41 @@ func (q *Queries) ProjectTaskBriefUpsert(ctx context.Context, arg ProjectTaskBri
 	return id, err
 }
 
+const projectTaskCount = `-- name: ProjectTaskCount :one
+SELECT count(*) FROM project_tasks t
+WHERE t.tenant_id=$1 AND t.project_id=$2
+ AND EXISTS (SELECT 1 FROM project_members m WHERE m.tenant_id=t.tenant_id AND m.project_id=t.project_id AND m.account_id=$3)
+ AND ($4::bigint = 0 OR t.plan_id = $4)
+ AND ($5::bigint = 0 OR t.assignee_id = $5)
+ AND ($6::text = '' OR t.status = $6)
+ AND ($7::text = '' OR strpos(lower(t.title),lower($7))>0)
+`
+
+type ProjectTaskCountParams struct {
+	TenantID       string
+	ProjectID      int64
+	AccountID      int64
+	PlanFilter     int64
+	AssigneeFilter int64
+	StatusFilter   string
+	Keyword        string
+}
+
+func (q *Queries) ProjectTaskCount(ctx context.Context, arg ProjectTaskCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, projectTaskCount,
+		arg.TenantID,
+		arg.ProjectID,
+		arg.AccountID,
+		arg.PlanFilter,
+		arg.AssigneeFilter,
+		arg.StatusFilter,
+		arg.Keyword,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const projectTaskCreate = `-- name: ProjectTaskCreate :one
 INSERT INTO project_tasks(tenant_id,project_id,plan_id,title,description,priority,assignee_id,due_date,created_by)
 SELECT $1,$2,$3,$4,$5,
@@ -918,7 +990,8 @@ WHERE t.tenant_id=$1 AND t.project_id=$2
  AND ($4::bigint = 0 OR t.plan_id = $4)
  AND ($5::bigint = 0 OR t.assignee_id = $5)
  AND ($6::text = '' OR t.status = $6)
-ORDER BY t.id DESC LIMIT $7
+ AND ($7::text = '' OR strpos(lower(t.title),lower($7))>0)
+ORDER BY t.id DESC LIMIT $9 OFFSET $8
 `
 
 type ProjectTaskListParams struct {
@@ -928,6 +1001,8 @@ type ProjectTaskListParams struct {
 	PlanFilter     int64
 	AssigneeFilter int64
 	StatusFilter   string
+	Keyword        string
+	PageOffset     int32
 	MaxRows        int32
 }
 
@@ -953,6 +1028,8 @@ func (q *Queries) ProjectTaskList(ctx context.Context, arg ProjectTaskListParams
 		arg.PlanFilter,
 		arg.AssigneeFilter,
 		arg.StatusFilter,
+		arg.Keyword,
+		arg.PageOffset,
 		arg.MaxRows,
 	)
 	if err != nil {

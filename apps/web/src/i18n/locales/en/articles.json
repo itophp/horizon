@@ -41,5 +41,25 @@
     "noReview": "No verdict yet",
     "markdownHint": "The body is Markdown. Saving a draft does not publish it; submitting starts the review flow.",
     "revision": "Revision"
+  },
+  "runtime": {
+    "schemaError": "The page definition is invalid or unsupported.",
+    "discard": "Discard unsaved changes?",
+    "cancel": "Cancel",
+    "back": "Back to list",
+    "all": "All states",
+    "sort": "Sort",
+    "previous": "Previous page",
+    "next": "Next page",
+    "sorts": {
+      "id_asc": "ID ↑",
+      "id_desc": "ID ↓",
+      "title_asc": "Title ↑",
+      "title_desc": "Title ↓",
+      "status_asc": "Status ↑",
+      "status_desc": "Status ↓",
+      "revision_asc": "Revision ↑",
+      "revision_desc": "Revision ↓"
+    }
   }
 }

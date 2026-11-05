@@ -124,7 +124,7 @@ type receipt struct {
 	Data       map[string]any `json:"data,omitempty"`
 }
 
-func (e *Engine) step(ctx context.Context, s Step, values map[string]any, iteration int) (map[string]any, error) {
+func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, iteration int) (map[string]any, error) {
 	state, err := current(ctx)
 	if err != nil {
 		return nil, err

@@ -58,6 +58,9 @@ func newProjectHarness(t *testing.T) *projectHarness {
 		Registry: catalog, Identity: iam, Pool: pool,
 		Approvals: approval.NewStore(pool), Audit: audit.NewStore(pool), Events: eventhub.NewStore(pool),
 	})
+	plugins.AttachCapabilities(func(ctx context.Context, name, version string, input contracts.Input, key string) (*contracts.Result, error) {
+		return g.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input, IdempotencyKey: key})
+	})
 	root, err := iam.PrincipalForTask(context.Background(), "tenant-a", rootAccount.ID, rootAccount.DepartmentID)
 	if err != nil {
 		t.Fatal(err)
@@ -105,6 +108,16 @@ func (h *projectHarness) account(t *testing.T, username string, permissions ...s
 	grants := make([]*genidentity.PermissionGrant, 0, len(permissions))
 	for _, permission := range permissions {
 		grants = append(grants, &genidentity.PermissionGrant{Permission: permission, Effect: "allow", Scope: "ALL"})
+	}
+
+	// Invocation refreshes trusted authority; persist the fixture grants rather than
+	// depending on a synthetic in-memory principal that would bypass revocation.
+	encoded, err := json.Marshal(grants)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = h.pool.Exec(context.Background(), "UPDATE iam_accounts SET overrides=$2 WHERE id=$1", id, encoded); err != nil {
+		t.Fatal(err)
 	}
 	record := &genidentity.AccountRecord{
 		ID: id, Username: username, FullName: username,

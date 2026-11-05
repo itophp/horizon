@@ -202,3 +202,9 @@ Copyright (C) 2026 Horizon contributors
 这意味着：你可以自由使用、修改和分发本项目，但**分发衍生作品时必须同样以 GPLv3 开源**，并提供完整对应源码。将本项目作为网络服务对外提供时，GPLv3 不要求向你服务的使用者开放源码；如需覆盖这一场景，应改用 AGPL-3.0。
 
 第三方依赖及随附的第三方内容保留各自的许可证与版权声明。其中 Eino、MCP Go SDK 等为 Apache-2.0，Goa、shadcn、MDXEditor 等为 MIT，均与 GPLv3 兼容（这也是本项目不采用 GPLv2 的原因：Apache-2.0 与 GPLv2 不兼容）。
+
+Application Runtime 第一阶段提供文章的 Schema 驱动列表、详情及表单，接入原能力与审核流程。定义、生成方式及本地复现见 [第一阶段说明](docs/application-runtime-phase-1.md)。
+
+Runtime v2 的多应用装配、项目接入和声明式 Action 见 [M1/M2 实施说明](docs/application-runtime-phase-2.md)；应用在线生命周期和 AI 深度接入仍分期交付。
+
+M3/M4 当前实现、十三引擎差距与实际门禁结果见 [实施记录](docs/application-runtime-phase-3-4.md)；本阶段尚未完成联合验收。

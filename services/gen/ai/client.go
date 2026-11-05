@@ -19,17 +19,19 @@ type Client struct {
 	RunEndpoint                goa.Endpoint
 	RunsEndpoint               goa.Endpoint
 	ConversationsEndpoint      goa.Endpoint
+	RunEventsEndpoint          goa.Endpoint
 	RunDetailEndpoint          goa.Endpoint
 	UpdateConversationEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "ai" service client given the endpoints.
-func NewClient(status, run, runs, conversations, runDetail, updateConversation goa.Endpoint) *Client {
+func NewClient(status, run, runs, conversations, runEvents, runDetail, updateConversation goa.Endpoint) *Client {
 	return &Client{
 		StatusEndpoint:             status,
 		RunEndpoint:                run,
 		RunsEndpoint:               runs,
 		ConversationsEndpoint:      conversations,
+		RunEventsEndpoint:          runEvents,
 		RunDetailEndpoint:          runDetail,
 		UpdateConversationEndpoint: updateConversation,
 	}
@@ -105,6 +107,24 @@ func (c *Client) Conversations(ctx context.Context, p *ConversationsPayload) (re
 		return
 	}
 	return ires.([]*AIConversation), nil
+}
+
+// RunEvents calls the "runEvents" endpoint of the "ai" service.
+// RunEvents may return the following errors:
+//   - "unauthenticated" (type *IAMProblem)
+//   - "forbidden" (type *IAMProblem)
+//   - "invalid" (type *IAMProblem)
+//   - "not_found" (type *IAMProblem)
+//   - "unavailable" (type *IAMProblem)
+//   - "internal" (type *IAMProblem)
+//   - error: internal error
+func (c *Client) RunEvents(ctx context.Context, p *RunEventsPayload) (res RunEventsClientStream, err error) {
+	var ires any
+	ires, err = c.RunEventsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(RunEventsClientStream), nil
 }
 
 // RunDetail calls the "runDetail" endpoint of the "ai" service.

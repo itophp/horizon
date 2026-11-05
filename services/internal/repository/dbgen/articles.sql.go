@@ -9,6 +9,34 @@ import (
 	"context"
 )
 
+const articleCount = `-- name: ArticleCount :one
+SELECT count(*) FROM articles
+WHERE tenant_id=$1 AND (created_by=$2 OR $3::boolean)
+AND ($4::text = '' OR strpos(lower(title),lower($4)) > 0)
+AND ($5::text = '' OR status=$5)
+`
+
+type ArticleCountParams struct {
+	TenantID     string
+	CreatedBy    int64
+	CanReview    bool
+	Keyword      string
+	StatusFilter string
+}
+
+func (q *Queries) ArticleCount(ctx context.Context, arg ArticleCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, articleCount,
+		arg.TenantID,
+		arg.CreatedBy,
+		arg.CanReview,
+		arg.Keyword,
+		arg.StatusFilter,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const articleCreate = `-- name: ArticleCreate :one
 INSERT INTO articles(tenant_id,created_by,title,body) VALUES($1,$2,$3,$4) RETURNING id
 `
@@ -102,13 +130,29 @@ func (q *Queries) ArticleGet(ctx context.Context, arg ArticleGetParams) (Article
 
 const articleList = `-- name: ArticleList :many
 SELECT id,title,status,revision,review_code,created_by FROM articles
-WHERE tenant_id=$1 AND (created_by=$2 OR $3::boolean) ORDER BY id DESC LIMIT 100
+WHERE tenant_id=$1 AND (created_by=$2 OR $3::boolean)
+AND ($4::text = '' OR strpos(lower(title),lower($4)) > 0)
+AND ($5::text = '' OR status=$5)
+ORDER BY
+ CASE WHEN $6::text='title:asc' THEN title END ASC,
+ CASE WHEN $6::text='title:desc' THEN title END DESC,
+ CASE WHEN $6::text='status:asc' THEN status END ASC,
+ CASE WHEN $6::text='status:desc' THEN status END DESC,
+ CASE WHEN $6::text='revision:asc' THEN revision END ASC,
+ CASE WHEN $6::text='revision:desc' THEN revision END DESC,
+ CASE WHEN $6::text='id:asc' THEN id END ASC,
+ id DESC LIMIT $8 OFFSET $7
 `
 
 type ArticleListParams struct {
-	TenantID  string
-	CreatedBy int64
-	CanReview bool
+	TenantID     string
+	CreatedBy    int64
+	CanReview    bool
+	Keyword      string
+	StatusFilter string
+	SortKey      string
+	PageOffset   int32
+	PageLimit    int32
 }
 
 type ArticleListRow struct {
@@ -121,7 +165,16 @@ type ArticleListRow struct {
 }
 
 func (q *Queries) ArticleList(ctx context.Context, arg ArticleListParams) ([]ArticleListRow, error) {
-	rows, err := q.db.Query(ctx, articleList, arg.TenantID, arg.CreatedBy, arg.CanReview)
+	rows, err := q.db.Query(ctx, articleList,
+		arg.TenantID,
+		arg.CreatedBy,
+		arg.CanReview,
+		arg.Keyword,
+		arg.StatusFilter,
+		arg.SortKey,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

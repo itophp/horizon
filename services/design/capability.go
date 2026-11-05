@@ -33,6 +33,15 @@ var CapabilityContract = Type("CapabilityContract", func() {
 	Required("name", "version", "title", "description", "domain", "entity", "permission", "risk", "approval", "idempotent", "readOnly", "executor", "tags", "successEvents", "inputSchema", "outputSchema")
 })
 
+var RuntimeInvocationReference = Type("RuntimeInvocationReference", func() {
+	Description("UI definition freshness reference; never an identity or permission grant.")
+	Attribute("applicationId", String, func() { MinLength(1); MaxLength(80) })
+	Attribute("pageId", String, func() { MinLength(1); MaxLength(100) })
+	Attribute("metadataVersion", String, func() { Pattern("^[a-f0-9]{64}$") })
+	Attribute("installationRevision", Int64, func() { Minimum(1) })
+	Required("applicationId", "pageId", "metadataVersion", "installationRevision")
+})
+
 var CapabilityInvocation = Type("CapabilityInvocation", func() {
 	Description("One audited capability call. Input is the redacted projection; the digest binds replays.")
 	Attribute("invocationId", String)
@@ -141,6 +150,7 @@ var _ = Service("capability", func() {
 			Attribute("idempotencyKey", String, func() { MaxLength(120) })
 			Attribute("correlationId", String, func() { MaxLength(120) })
 			Attribute("causationId", String, func() { MaxLength(120) })
+			Attribute("runtime", RuntimeInvocationReference)
 			Required("name", "input")
 		})
 		Result(CapabilityResult)

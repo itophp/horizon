@@ -39,6 +39,7 @@ type BrowserCall struct {
 	Arguments string `json:"arguments"`
 }
 type BrowserTurn struct {
+	Page                  aicontext.Page
 	Question, SessionID   string
 	Tools                 []BrowserTool
 	RunID                 int64
@@ -50,10 +51,12 @@ type BrowserReply struct {
 	Call  *BrowserCall
 }
 type browserManifest struct {
-	Tools   []BrowserTool `json:"tools"`
-	Pending *BrowserCall  `json:"pending"`
-	Turns   int           `json:"turns"`
-	Used    []string      `json:"used"`
+	AuthorityStamp string         `json:"authorityStamp,omitempty"`
+	Page           aicontext.Page `json:"page"`
+	Tools          []BrowserTool  `json:"tools"`
+	Pending        *BrowserCall   `json:"pending"`
+	Turns          int            `json:"turns"`
+	Used           []string       `json:"used"`
 }
 
 var browserName = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{0,47}$`)
@@ -265,6 +268,16 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 			}
 			return nil, err
 		}
+		if manifest.AuthorityStamp != "" {
+			stamp, e := s.authorityStamp(ctx)
+			if e != nil || stamp != manifest.AuthorityStamp {
+				_, finishErr := fail(ctx, s.runs, p.TenantID, run, "context_changed", time.Now())
+				if finishErr != nil {
+					return nil, finishErr
+				}
+				return nil, governance.Problem("forbidden")
+			}
+		}
 		result = &BrowserCall{ID: in.CallID, Name: manifest.Pending.Name, Arguments: in.Result}
 		manifest.Used = append(manifest.Used, manifest.Pending.Name)
 	} else {
@@ -274,7 +287,19 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 		if _, err = checkpoint.seal("preflight", []byte("check")); err != nil {
 			return nil, err
 		}
-		block := s.contextOf(ctx, p, aicontext.Page{}, nil)
+		manifest.AuthorityStamp, err = s.authorityStamp(ctx)
+		if err != nil {
+			return nil, err
+		}
+		manifest.Page = in.Page
+		if err = in.Page.Validate(s.registry.EntitySet()); err != nil {
+			return nil, err
+		}
+		block := s.contextOf(ctx, p, in.Page, nil)
+		block.Semantic, err = s.resolveSemantic(ctx, in.Page)
+		if err != nil {
+			return nil, err
+		}
 		run, err = s.start(ctx, p, StartInput{Question: in.Question, SessionID: in.SessionID, Origin: contracts.OriginHumanUI, TraceID: traceID(), Block: block})
 		if err != nil {
 			return nil, err
@@ -288,10 +313,23 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 		_, err = fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
 		return nil, err
 	}
-	adapter := &capabilitytools.Adapter{Gateway: s.gateway, Registry: s.registry, Caller: callerOf(p), TraceID: run.TraceID, RunID: run.ID}
+	keys, profileErr := s.toolProfile(ctx)
+	if profileErr != nil {
+		return nil, profileErr
+	}
+	adapter := &capabilitytools.Adapter{AllowedKeys: keys, Gateway: s.gateway, Registry: s.registry, Caller: callerOf(p), TraceID: run.TraceID, RunID: run.ID}
 	messages := s.history(ctx, p, in.SessionID)
 	messages = append(messages, schema.UserMessage(in.Question))
-	answer, pending, err := browserIteration(ctx, chat, adapter.Tools(), manifest.Tools, checkpoint, messages, result, s.contextOf(ctx, p, aicontext.Page{}, nil).Prompt())
+	trusted := s.contextOf(ctx, p, manifest.Page, nil)
+	trusted.Semantic, err = s.resolveSemantic(ctx, manifest.Page)
+	if err != nil {
+		_, finishErr := fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
+		if finishErr != nil {
+			return nil, finishErr
+		}
+		return nil, err
+	}
+	answer, pending, err := browserIteration(ctx, chat, adapter.Tools(ctx), manifest.Tools, checkpoint, messages, result, trusted.Prompt())
 	if err != nil {
 		_, err = fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
 		return nil, err

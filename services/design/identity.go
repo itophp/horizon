@@ -75,6 +75,7 @@ var Account = Type("AccountRecord", func() {
 	Required("id", "username", "fullName", "email", "status", "organizationId", "departmentId", "roleIds", "overrides", "isAdmin", "createdAt", "lastLogin", "memberships")
 })
 var SessionProfile = Type("SessionProfile", func() {
+	Attribute("authorizationVersion", String, "Opaque non-secret authorization cache revision.", func() { Pattern("^[a-f0-9]{64}$") })
 	Attribute("account", Account)
 	Attribute("csrfToken", String)
 	Attribute("permissions", ArrayOf(String))

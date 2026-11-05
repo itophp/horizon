@@ -43,7 +43,7 @@ func BuildRunPayload(aiRunBody *string, aiRunCookie *string) (*ai.RunPayload, er
 		}
 		err = json.Unmarshal([]byte(*aiRunBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"page\": {\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"route\": \"xh0\"\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.Question) < 1 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
@@ -164,6 +164,67 @@ func BuildConversationsPayload(aiConversationsLimit string, aiConversationsCooki
 	v := &ai.ConversationsPayload{}
 	v.Limit = limit
 	v.Cookie = cookie
+
+	return v, nil
+}
+
+// BuildRunEventsPayload builds the payload for the ai runEvents endpoint from
+// CLI flags.
+func BuildRunEventsPayload(aiRunEventsID *string, aiRunEventsAfter string, aiRunEventsCookie *string, aiRunEventsLastEventID *string) (*ai.RunEventsPayload, error) {
+	var err error
+	var id int64
+	{
+		if aiRunEventsID == nil {
+			return nil, fmt.Errorf("missing required flag --id")
+		}
+		id, err = strconv.ParseInt(*aiRunEventsID, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for id, must be INT64")
+		}
+		if id < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("id", id, 1, true))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var after int64
+	{
+		after, err = strconv.ParseInt(aiRunEventsAfter, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for after, must be INT64")
+		}
+		if after < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("after", after, 0, true))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var cookie string
+	{
+		if aiRunEventsCookie == nil {
+			return nil, fmt.Errorf("missing required flag --cookie")
+		}
+		cookie = *aiRunEventsCookie
+	}
+	var lastEventID *string
+	{
+		if aiRunEventsLastEventID != nil {
+			lastEventID = aiRunEventsLastEventID
+			if utf8.RuneCountInString(*aiRunEventsLastEventID) > 30 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("lastEventId", *aiRunEventsLastEventID, utf8.RuneCountInString(*aiRunEventsLastEventID), 30, false))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	v := &ai.RunEventsPayload{}
+	v.ID = id
+	v.After = after
+	v.Cookie = cookie
+	v.LastEventID = lastEventID
 
 	return v, nil
 }

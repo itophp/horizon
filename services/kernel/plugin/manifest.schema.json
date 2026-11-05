@@ -4,14 +4,76 @@
   "title": "Builtin plugin manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "version", "apiVersion", "mode", "extensions"],
+  "required": [
+    "id",
+    "version",
+    "apiVersion",
+    "mode",
+    "extensions"
+  ],
   "properties": {
-    "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"},
-    "version": {"$ref": "#/$defs/version"},
-    "apiVersion": {"const": "1.0"},
-    "mode": {"const": "builtin"},
-    "extensions": {"type": "array", "uniqueItems": true, "items": {"enum": ["capability", "entity", "permission", "event"]}},
-    "dependencies": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": {"id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$"}, "version": {"$ref": "#/$defs/version"}}}}
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "version": {
+      "$ref": "#/$defs/version"
+    },
+    "apiVersion": {
+      "const": "1.0"
+    },
+    "mode": {
+      "const": "builtin"
+    },
+    "extensions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "capability",
+          "entity",
+          "permission",
+          "event",
+          "application",
+          "navigation",
+          "page",
+          "component",
+          "renderer",
+          "action",
+          "provider",
+          "context",
+          "custom-view",
+          "shell",
+          "theme",
+          "locale"
+        ]
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*$"
+          },
+          "version": {
+            "$ref": "#/$defs/version"
+          }
+        }
+      }
+    }
   },
-  "$defs": {"version": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"}}
+  "$defs": {
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    }
+  }
 }

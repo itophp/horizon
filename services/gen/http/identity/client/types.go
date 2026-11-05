@@ -145,11 +145,13 @@ type RevokeTemporaryAccessResponseBody struct {
 // SwitchDepartmentResponseBody is the type of the "identity" service
 // "switch_department" endpoint HTTP response body.
 type SwitchDepartmentResponseBody struct {
-	Account            *AccountRecordResponseBody `form:"account,omitempty" json:"account,omitempty" xml:"account,omitempty"`
-	CsrfToken          *string                    `form:"csrfToken,omitempty" json:"csrfToken,omitempty" xml:"csrfToken,omitempty"`
-	Permissions        []string                   `form:"permissions,omitempty" json:"permissions,omitempty" xml:"permissions,omitempty"`
-	TenantID           *string                    `form:"tenantId,omitempty" json:"tenantId,omitempty" xml:"tenantId,omitempty"`
-	ActiveDepartmentID *int64                     `form:"activeDepartmentId,omitempty" json:"activeDepartmentId,omitempty" xml:"activeDepartmentId,omitempty"`
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string                    `form:"authorizationVersion,omitempty" json:"authorizationVersion,omitempty" xml:"authorizationVersion,omitempty"`
+	Account              *AccountRecordResponseBody `form:"account,omitempty" json:"account,omitempty" xml:"account,omitempty"`
+	CsrfToken            *string                    `form:"csrfToken,omitempty" json:"csrfToken,omitempty" xml:"csrfToken,omitempty"`
+	Permissions          []string                   `form:"permissions,omitempty" json:"permissions,omitempty" xml:"permissions,omitempty"`
+	TenantID             *string                    `form:"tenantId,omitempty" json:"tenantId,omitempty" xml:"tenantId,omitempty"`
+	ActiveDepartmentID   *int64                     `form:"activeDepartmentId,omitempty" json:"activeDepartmentId,omitempty" xml:"activeDepartmentId,omitempty"`
 }
 
 // LoginResponseBody is the type of the "identity" service "login" endpoint
@@ -161,11 +163,13 @@ type LoginResponseBody struct {
 // MeResponseBody is the type of the "identity" service "me" endpoint HTTP
 // response body.
 type MeResponseBody struct {
-	Account            *AccountRecordResponseBody `form:"account,omitempty" json:"account,omitempty" xml:"account,omitempty"`
-	CsrfToken          *string                    `form:"csrfToken,omitempty" json:"csrfToken,omitempty" xml:"csrfToken,omitempty"`
-	Permissions        []string                   `form:"permissions,omitempty" json:"permissions,omitempty" xml:"permissions,omitempty"`
-	TenantID           *string                    `form:"tenantId,omitempty" json:"tenantId,omitempty" xml:"tenantId,omitempty"`
-	ActiveDepartmentID *int64                     `form:"activeDepartmentId,omitempty" json:"activeDepartmentId,omitempty" xml:"activeDepartmentId,omitempty"`
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string                    `form:"authorizationVersion,omitempty" json:"authorizationVersion,omitempty" xml:"authorizationVersion,omitempty"`
+	Account              *AccountRecordResponseBody `form:"account,omitempty" json:"account,omitempty" xml:"account,omitempty"`
+	CsrfToken            *string                    `form:"csrfToken,omitempty" json:"csrfToken,omitempty" xml:"csrfToken,omitempty"`
+	Permissions          []string                   `form:"permissions,omitempty" json:"permissions,omitempty" xml:"permissions,omitempty"`
+	TenantID             *string                    `form:"tenantId,omitempty" json:"tenantId,omitempty" xml:"tenantId,omitempty"`
+	ActiveDepartmentID   *int64                     `form:"activeDepartmentId,omitempty" json:"activeDepartmentId,omitempty" xml:"activeDepartmentId,omitempty"`
 }
 
 // SnapshotResponseBody is the type of the "identity" service "snapshot"
@@ -607,11 +611,13 @@ type DepartmentMembershipResponseBody struct {
 
 // SessionProfileResponseBody is used to define fields on response body types.
 type SessionProfileResponseBody struct {
-	Account            *AccountRecordResponseBody `form:"account,omitempty" json:"account,omitempty" xml:"account,omitempty"`
-	CsrfToken          *string                    `form:"csrfToken,omitempty" json:"csrfToken,omitempty" xml:"csrfToken,omitempty"`
-	Permissions        []string                   `form:"permissions,omitempty" json:"permissions,omitempty" xml:"permissions,omitempty"`
-	TenantID           *string                    `form:"tenantId,omitempty" json:"tenantId,omitempty" xml:"tenantId,omitempty"`
-	ActiveDepartmentID *int64                     `form:"activeDepartmentId,omitempty" json:"activeDepartmentId,omitempty" xml:"activeDepartmentId,omitempty"`
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string                    `form:"authorizationVersion,omitempty" json:"authorizationVersion,omitempty" xml:"authorizationVersion,omitempty"`
+	Account              *AccountRecordResponseBody `form:"account,omitempty" json:"account,omitempty" xml:"account,omitempty"`
+	CsrfToken            *string                    `form:"csrfToken,omitempty" json:"csrfToken,omitempty" xml:"csrfToken,omitempty"`
+	Permissions          []string                   `form:"permissions,omitempty" json:"permissions,omitempty" xml:"permissions,omitempty"`
+	TenantID             *string                    `form:"tenantId,omitempty" json:"tenantId,omitempty" xml:"tenantId,omitempty"`
+	ActiveDepartmentID   *int64                     `form:"activeDepartmentId,omitempty" json:"activeDepartmentId,omitempty" xml:"activeDepartmentId,omitempty"`
 }
 
 // OrganizationRecordResponseBody is used to define fields on response body
@@ -1280,9 +1286,10 @@ func NewRevokeTemporaryAccessInternal(body *RevokeTemporaryAccessInternalRespons
 // "switch_department" endpoint result from a HTTP "OK" response.
 func NewSwitchDepartmentSessionProfileOK(body *SwitchDepartmentResponseBody) *identity.SessionProfile {
 	v := &identity.SessionProfile{
-		CsrfToken:          *body.CsrfToken,
-		TenantID:           *body.TenantID,
-		ActiveDepartmentID: *body.ActiveDepartmentID,
+		AuthorizationVersion: body.AuthorizationVersion,
+		CsrfToken:            *body.CsrfToken,
+		TenantID:             *body.TenantID,
+		ActiveDepartmentID:   *body.ActiveDepartmentID,
 	}
 	v.Account = unmarshalAccountRecordResponseBodyToIdentityAccountRecord(body.Account)
 	v.Permissions = make([]string, len(body.Permissions))
@@ -1395,9 +1402,10 @@ func NewLoginInternal(body *LoginInternalResponseBody) *identity.IAMProblem {
 // a HTTP "OK" response.
 func NewMeSessionProfileOK(body *MeResponseBody) *identity.SessionProfile {
 	v := &identity.SessionProfile{
-		CsrfToken:          *body.CsrfToken,
-		TenantID:           *body.TenantID,
-		ActiveDepartmentID: *body.ActiveDepartmentID,
+		AuthorizationVersion: body.AuthorizationVersion,
+		CsrfToken:            *body.CsrfToken,
+		TenantID:             *body.TenantID,
+		ActiveDepartmentID:   *body.ActiveDepartmentID,
 	}
 	v.Account = unmarshalAccountRecordResponseBodyToIdentityAccountRecord(body.Account)
 	v.Permissions = make([]string, len(body.Permissions))
@@ -1907,6 +1915,9 @@ func ValidateSwitchDepartmentResponseBody(body *SwitchDepartmentResponseBody) (e
 	if body.ActiveDepartmentID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("activeDepartmentId", "body"))
 	}
+	if body.AuthorizationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.authorizationVersion", *body.AuthorizationVersion, "^[a-f0-9]{64}$"))
+	}
 	if body.Account != nil {
 		if err2 := validateAccountRecordResponseBody(body.Account, "body.account"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
@@ -1944,6 +1955,9 @@ func ValidateMeResponseBody(body *MeResponseBody) (err error) {
 	}
 	if body.ActiveDepartmentID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("activeDepartmentId", "body"))
+	}
+	if body.AuthorizationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.authorizationVersion", *body.AuthorizationVersion, "^[a-f0-9]{64}$"))
 	}
 	if body.Account != nil {
 		if err2 := validateAccountRecordResponseBody(body.Account, "body.account"); err2 != nil {
@@ -3011,6 +3025,9 @@ func ValidateSessionProfileResponseBody(body *SessionProfileResponseBody) (err e
 	if body.ActiveDepartmentID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("activeDepartmentId", "body"))
 	}
+	if body.AuthorizationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.authorizationVersion", *body.AuthorizationVersion, "^[a-f0-9]{64}$"))
+	}
 	if body.Account != nil {
 		if err2 := validateAccountRecordResponseBody(body.Account, "body.account"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
@@ -3036,6 +3053,9 @@ func validateSessionProfileResponseBody(body *SessionProfileResponseBody, path s
 	}
 	if body.ActiveDepartmentID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("activeDepartmentId", path))
+	}
+	if body.AuthorizationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern(path+".authorizationVersion", *body.AuthorizationVersion, "^[a-f0-9]{64}$"))
 	}
 	if body.Account != nil {
 		if err2 := validateAccountRecordResponseBody(body.Account, path+".account"); err2 != nil {

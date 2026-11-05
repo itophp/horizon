@@ -47,14 +47,17 @@ const (
 )
 
 // Module is the project collaboration module.
-type Module struct{ Pool *pgxpool.Pool }
+type Module struct {
+	Pool   *pgxpool.Pool
+	Invoke func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)
+}
 
 // New builds the module.
 func New(pool *pgxpool.Pool) *Module { return &Module{Pool: pool} }
 
 // Entries is the capability catalog contributed by the module.
 func (m *Module) Entries() []registry.Entry {
-	entries := make([]registry.Entry, 0, len(definitions()))
+	entries := []registry.Entry{m.batchEntry()}
 	for _, definition := range definitions() {
 		name := definition.Name
 		d := definition
@@ -235,8 +238,10 @@ func listDefinition() contracts.Definition {
 		"priority": contracts.Enum(priorities...),
 		"keyword":  contracts.Str(0, 120),
 		"limit":    contracts.Int(1, 100),
+		"page":     contracts.Int(1, 1000000), "pageSize": contracts.Int(1, 100), "sort": contracts.Enum("id:desc", "name:asc"),
 	})
 	d.Output = contracts.Object(map[string]*contracts.Schema{
+		"total": {Type: "integer"}, "page": {Type: "integer"}, "pageSize": {Type: "integer"},
 		"items": {Type: "array", Items: contracts.Object(projectProperties(), "id", "code", "name", "status", "priority", "ownerId", "ownerName")},
 	}, "items")
 	d.Loggable = []string{"status", "priority", "keyword", "limit"}
@@ -277,7 +282,7 @@ func statusDefinition() contracts.Definition {
 func membersDefinition() contracts.Definition {
 	d := readBase("project.member.list", "List project members",
 		"List the members of one project. Only members can read the list.", "project_member")
-	d.Input = contracts.Object(map[string]*contracts.Schema{"projectId": projectIDSchema()}, "projectId")
+	d.Input = contracts.Object(map[string]*contracts.Schema{"projectId": projectIDSchema(), "keyword": contracts.Str(0, 100)}, "projectId")
 	d.Output = contracts.Object(map[string]*contracts.Schema{
 		"items": {Type: "array", Items: contracts.Object(map[string]*contracts.Schema{
 			"accountId": {Type: "integer"}, "name": {Type: "string"}, "email": {Type: "string"},
@@ -460,6 +465,7 @@ func taskListDefinition() contracts.Definition {
 	d := readBase("project.task.list", "List project tasks",
 		"List the tasks of one project, filtered by plan, assignee or status.", "project_task")
 	d.Input = contracts.Object(map[string]*contracts.Schema{
+		"page": contracts.Int(1, 1000000), "pageSize": contracts.Int(1, 100), "keyword": contracts.Str(0, 200),
 		"projectId":  projectIDSchema(),
 		"planId":     contracts.Int(0, 1<<53),
 		"assigneeId": contracts.Int(0, 1<<53),
@@ -467,6 +473,7 @@ func taskListDefinition() contracts.Definition {
 		"limit":      contracts.Int(1, 100),
 	}, "projectId")
 	d.Output = contracts.Object(map[string]*contracts.Schema{
+		"total": {Type: "integer"}, "page": {Type: "integer"}, "pageSize": {Type: "integer"},
 		"items": {Type: "array", Items: contracts.Object(taskProperties(), "id", "projectId", "title", "status", "priority")},
 	}, "items")
 	d.Loggable = []string{"projectId", "planId", "assigneeId", "status", "limit"}

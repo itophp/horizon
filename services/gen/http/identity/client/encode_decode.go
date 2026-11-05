@@ -1898,9 +1898,10 @@ func unmarshalDepartmentMembershipResponseBodyToIdentityDepartmentMembership(v *
 // *SessionProfileResponseBody.
 func unmarshalSessionProfileResponseBodyToIdentitySessionProfile(v *SessionProfileResponseBody) *identity.SessionProfile {
 	res := &identity.SessionProfile{
-		CsrfToken:          *v.CsrfToken,
-		TenantID:           *v.TenantID,
-		ActiveDepartmentID: *v.ActiveDepartmentID,
+		AuthorizationVersion: v.AuthorizationVersion,
+		CsrfToken:            *v.CsrfToken,
+		TenantID:             *v.TenantID,
+		ActiveDepartmentID:   *v.ActiveDepartmentID,
 	}
 	res.Account = unmarshalAccountRecordResponseBodyToIdentityAccountRecord(v.Account)
 	res.Permissions = make([]string, len(v.Permissions))

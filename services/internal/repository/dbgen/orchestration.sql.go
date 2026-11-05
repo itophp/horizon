@@ -216,6 +216,28 @@ func (q *Queries) OrchRunForInvocation(ctx context.Context, arg OrchRunForInvoca
 	return status, err
 }
 
+const orchSetAnswer = `-- name: OrchSetAnswer :exec
+UPDATE ai_runs SET answer=$4 WHERE tenant_id=$1 AND account_id=$2 AND id=$3
+AND agent='orchestration' AND status IN ('running','awaiting_approval')
+`
+
+type OrchSetAnswerParams struct {
+	TenantID  string
+	AccountID int64
+	ID        int64
+	Answer    string
+}
+
+func (q *Queries) OrchSetAnswer(ctx context.Context, arg OrchSetAnswerParams) error {
+	_, err := q.db.Exec(ctx, orchSetAnswer,
+		arg.TenantID,
+		arg.AccountID,
+		arg.ID,
+		arg.Answer,
+	)
+	return err
+}
+
 const orchSetStatus = `-- name: OrchSetStatus :execrows
 UPDATE ai_runs SET status = $4, error_code = $5,
 finished_at = CASE WHEN $4 IN ('completed','failed','cancelled') THEN now() ELSE NULL END

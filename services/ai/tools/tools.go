@@ -24,19 +24,34 @@ const maxResult = 12000
 
 // Adapter builds the tool set for one run.
 type Adapter struct {
-	Gateway  *gateway.Gateway
-	Registry *registry.Registry
-	Caller   contracts.Caller
-	TraceID  string
-	RunID    int64
-	Depth    int
+	AllowedKeys []string
+	Gateway     *gateway.Gateway
+	Registry    *registry.Registry
+	Caller      contracts.Caller
+	TraceID     string
+	RunID       int64
+	Depth       int
 }
 
 // Tools returns the capabilities the caller may use.
-func (a *Adapter) Tools() []tool.BaseTool {
+func (a *Adapter) Tools(contexts ...context.Context) []tool.BaseTool {
 	definitions := a.Registry.Discover(a.Caller)
+	if len(contexts) > 0 && a.Gateway != nil {
+		var err error
+		if a.AllowedKeys != nil {
+			definitions, err = a.Gateway.DefinitionsFor(contexts[0], a.AllowedKeys)
+		} else {
+			definitions, err = a.Gateway.Definitions(contexts[0])
+		}
+		if err != nil {
+			return nil
+		}
+	}
 	out := make([]tool.BaseTool, 0, len(definitions))
 	for _, definition := range definitions {
+		if !definition.AllowsOrigin(contracts.OriginAgent) {
+			continue
+		}
 		out = append(out, &capabilityTool{definition: definition, adapter: a})
 	}
 	return out

@@ -71,6 +71,11 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 			TraceID: traceID, EventIDs: []string{},
 		}, nil
 	}
+	output.Data, err = projectOutput(p, entry.Definition, output.Data)
+	if err != nil {
+		_ = g.finish(ctx, p.TenantID, invocationID, contracts.StatusFailed, nil, "internal", time.Since(started))
+		return nil, err
+	}
 	stored := storedResult{Data: output.Data, Summary: output.Summary, EventIDs: eventIDs}
 	if entry.Definition.TransientResult {
 		stored.Data = nil
@@ -104,6 +109,14 @@ func (g *Gateway) execute(ctx context.Context, p *identity.Principal, entry regi
 			return contracts.Output{}, nil, err
 		}
 		defer tx.Rollback(ctx)
+		if err = g.checkEntry(ctx, dbgen.New(tx), p, entry, request.Input, true); err != nil {
+			return contracts.Output{}, nil, err
+		}
+		if request.Runtime != nil {
+			if err = g.runtimeCheck(ctx, request.Runtime, entry.Definition, dbgen.New(tx)); err != nil {
+				return contracts.Output{}, nil, err
+			}
+		}
 		output, execErr := entry.Handler.ExecuteTx(ctx, tx, request.Input)
 		if execErr != nil {
 			return contracts.Output{}, nil, execErr
@@ -116,6 +129,9 @@ func (g *Gateway) execute(ctx context.Context, p *identity.Principal, entry regi
 			return contracts.Output{}, nil, err
 		}
 		return output, eventIDs, nil
+	}
+	if err := g.checkEntry(ctx, dbgen.New(g.pool), p, entry, request.Input, false); err != nil {
+		return contracts.Output{}, nil, err
 	}
 	output, err := entry.Handler.Execute(ctx, request.Input)
 	if err != nil {

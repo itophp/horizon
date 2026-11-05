@@ -10,7 +10,7 @@ it("inventories every declared route and identifies parameterized pages", () => 
     ]);
   }
   expect(webMcpRoutes.map((route) => route.path).sort()).toEqual(
-    paths(router.routes).sort(),
+    [...new Set(paths(router.routes))].sort(),
   );
   expect(findWebMcpRoute("/files/123")?.path).toBe("/files/:id");
   expect(findWebMcpRoute("/login")?.connected).toBe(false);

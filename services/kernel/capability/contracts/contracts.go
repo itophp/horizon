@@ -70,19 +70,30 @@ type Idempotency struct {
 }
 
 // Definition is the registered contract of one capability.
+type FieldAccess struct {
+	Path       string
+	Permission string
+}
+
 type Definition struct {
-	Layer       Layer
-	Kind        Kind
-	Reads       []string
-	Writes      []string
-	Effect      Effect
-	RetrySafe   bool
-	Name        string
-	Version     string
-	Title       string
-	Description string
-	Domain      string
-	Entity      string
+	// Installation/Application are deployment-owned activation references, never client authority.
+	AllowedOrigins []Origin
+	Installation   string
+	Application    string
+	InputAccess    []FieldAccess
+	OutputAccess   []FieldAccess
+	Layer          Layer
+	Kind           Kind
+	Reads          []string
+	Writes         []string
+	Effect         Effect
+	RetrySafe      bool
+	Name           string
+	Version        string
+	Title          string
+	Description    string
+	Domain         string
+	Entity         string
 	// Entities lists every business object this capability reads or writes, the
 	// primary Entity first. Empty means the capability touches exactly one
 	// entity, which keeps single-entity capabilities unchanged.
@@ -167,9 +178,19 @@ type Executor func(ctx context.Context, in Input) (Output, error)
 type TxExecutor func(ctx context.Context, tx pgx.Tx, in Input) (Output, error)
 
 // Handler binds one definition to its implementation. Exactly one field is set.
+type RuntimeReference struct {
+	ApplicationID, PageID, MetadataVersion string
+	InstallationRevision                   int64
+}
+type Activation struct {
+	Installation string
+	Application  string
+}
 type Handler struct {
-	Execute   Executor
-	ExecuteTx TxExecutor
+	// ActivationSources resolves only trusted static catalog references from a validated input.
+	ActivationSources func(Input) ([]Activation, error)
+	Execute           Executor
+	ExecuteTx         TxExecutor
 }
 
 // Caller is the resolved subject of a call. It is built from a trusted
@@ -235,6 +256,9 @@ func Digest(in Input) string {
 // The error is a stable code because callers map it onto a transport response.
 // Tooling that has to tell a human what is wrong uses Problems instead.
 func (d Definition) Validate() error {
+	if err := d.validateAccess(); err != nil {
+		return err
+	}
 	if len(d.Problems()) > 0 {
 		return Problem("invalid")
 	}
@@ -303,4 +327,17 @@ func SortedDefinitions(definitions []Definition) []Definition {
 		return out[i].Name < out[j].Name
 	})
 	return out
+}
+
+// AllowsOrigin is a declaration filter, never a replacement for Gateway policy.
+func (d Definition) AllowsOrigin(origin Origin) bool {
+	if len(d.AllowedOrigins) == 0 {
+		return true
+	}
+	for _, value := range d.AllowedOrigins {
+		if value == origin {
+			return true
+		}
+	}
+	return false
 }

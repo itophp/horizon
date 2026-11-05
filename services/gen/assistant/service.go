@@ -56,11 +56,24 @@ const ServiceName = "assistant"
 // MethodKey key.
 var MethodNames = [6]string{"status", "chat", "agent", "workflow", "knowledge", "ingest"}
 
+// Current page context. It is validated against the route and entity catalog
+// and treated as data, not instructions.
+type AIPage struct {
+	ApplicationID   *string
+	PageID          *string
+	MetadataVersion *string
+	Selection       []int64
+	Route           *string
+	Entity          *string
+	EntityID        *int64
+}
+
 // AgentPayload is the payload type of the assistant service agent method.
 type AgentPayload struct {
 	Cookie      string
 	Question    string
 	SessionID   *string
+	Page        *AIPage
 	Tools       []*AssistantTool
 	RunID       *int64
 	ResumeToken *string

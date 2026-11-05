@@ -494,8 +494,13 @@ export async function invokeCapability(
   name: string,
   input: Record<string, unknown>,
   idempotencyKey?: string,
+  version?: string,
 ): Promise<CapabilityResult> {
-  const response = await capabilityInvoke(name, { input, idempotencyKey });
+  const response = await capabilityInvoke(name, {
+    input,
+    idempotencyKey,
+    version,
+  });
   if (response.status !== 200)
     throw new ApiError("unavailable", response.status);
   const result = response.data;
@@ -739,4 +744,48 @@ export const projectTaskAssign = (id: number, assigneeId: number) =>
   invoke<{ id: number; assigneeId: number }>("project.task.assign", {
     id,
     assigneeId,
+  });
+
+// Runtime reads remain capabilities; metadata never supplies an arbitrary URL.
+export const runtimeApplication = (
+  applicationId: string,
+  signal?: AbortSignal,
+) => runtimeRead("application.runtime.resolve", { applicationId }, signal);
+export const runtimeRead = (
+  name: string,
+  input: Record<string, unknown>,
+  signal?: AbortSignal,
+  version = "1.0.0",
+) =>
+  capabilityInvoke(name, { input, version }, { signal }).then((response) => {
+    if (response.status !== 200)
+      throw new ApiError("unavailable", response.status);
+    if (response.data.status !== "succeeded")
+      throw new ApiError(response.data.errorCode || "internal", 400);
+    return response.data.data as unknown;
+  });
+export const runtimeSave = (
+  name: string,
+  input: Record<string, unknown>,
+  key: string,
+) => invokeCapability(name, input, key, "1.0.0");
+
+export const runtimeExecute = (
+  name: string,
+  version: string,
+  input: Record<string, unknown>,
+  idempotencyKey: string,
+  correlationId: string,
+  runtime?: import("@/api/generated/models").RuntimeInvocationReference,
+) =>
+  capabilityInvoke(name, {
+    version,
+    input,
+    idempotencyKey,
+    correlationId,
+    runtime,
+  }).then((response) => {
+    if (response.status !== 200)
+      throw new ApiError("unavailable", response.status);
+    return response.data;
   });

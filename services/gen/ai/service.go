@@ -27,6 +27,9 @@ type Service interface {
 	// List the caller's conversations, newest first. The workbench uses it as its
 	// task list.
 	Conversations(context.Context, *ConversationsPayload) (res []*AIConversation, err error)
+	// Read authorized task lifecycle events. Disconnecting never cancels business
+	// execution.
+	RunEvents(context.Context, *RunEventsPayload, RunEventsServerStream) (err error)
 	// Read one task with the capability calls it caused.
 	RunDetail(context.Context, *RunDetailPayload) (res *AIRun, err error)
 	// Rename or archive one conversation of the caller. A renamed title replaces
@@ -55,7 +58,27 @@ const ServiceName = "ai"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [6]string{"status", "run", "runs", "conversations", "runDetail", "updateConversation"}
+var MethodNames = [7]string{"status", "run", "runs", "conversations", "runEvents", "runDetail", "updateConversation"}
+
+// RunEventsServerStream allows streaming instances of *AIRunEvent to the
+// client.
+type RunEventsServerStream interface {
+	// Send streams instances of "AIRunEvent".
+	Send(*AIRunEvent) error
+	// SendWithContext streams instances of "AIRunEvent" with context.
+	SendWithContext(context.Context, *AIRunEvent) error
+	// Close closes the stream.
+	Close() error
+}
+
+// RunEventsClientStream allows streaming instances of *AIRunEvent to the
+// client.
+type RunEventsClientStream interface {
+	// Recv reads instances of "AIRunEvent" from the stream.
+	Recv() (*AIRunEvent, error)
+	// RecvWithContext reads instances of "AIRunEvent" from the stream with context.
+	RecvWithContext(context.Context) (*AIRunEvent, error)
+}
 
 // AIConversation is the result type of the ai service updateConversation
 // method.
@@ -70,9 +93,13 @@ type AIConversation struct {
 // Current page context. It is validated against the route and entity catalog
 // and treated as data, not instructions.
 type AIPage struct {
-	Route    *string
-	Entity   *string
-	EntityID *int64
+	ApplicationID   *string
+	PageID          *string
+	MetadataVersion *string
+	Selection       []int64
+	Route           *string
+	Entity          *string
+	EntityID        *int64
 }
 
 // AIRun is the result type of the ai service run method.
@@ -99,6 +126,20 @@ type AIRun struct {
 	CreatedAt          string
 	FinishedAt         string
 	Invocations        []*CapabilityInvocation
+}
+
+// AIRunEvent is the result type of the ai service runEvents method.
+type AIRunEvent struct {
+	EventID      string
+	Type         string
+	RunID        string
+	ThreadID     string
+	Timestamp    int64
+	Snapshot     any
+	ToolCallID   *string
+	ToolCallName *string
+	StepName     *string
+	Message      *string
 }
 
 // AIStatus is the result type of the ai service status method.
@@ -154,6 +195,14 @@ type IAMProblem struct {
 type RunDetailPayload struct {
 	Cookie string
 	ID     int64
+}
+
+// RunEventsPayload is the payload type of the ai service runEvents method.
+type RunEventsPayload struct {
+	Cookie      string
+	ID          int64
+	After       int64
+	LastEventID *string
 }
 
 // RunPayload is the payload type of the ai service run method.

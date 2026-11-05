@@ -23,6 +23,7 @@ type Server struct {
 	Run                http.Handler
 	Runs               http.Handler
 	Conversations      http.Handler
+	RunEvents          http.Handler
 	RunDetail          http.Handler
 	UpdateConversation http.Handler
 }
@@ -58,6 +59,7 @@ func New(
 			{"Run", "POST", "/api/ai/runs"},
 			{"Runs", "GET", "/api/ai/runs"},
 			{"Conversations", "GET", "/api/ai/conversations"},
+			{"RunEvents", "GET", "/api/ai/runs/{id}/events"},
 			{"RunDetail", "GET", "/api/ai/runs/{id}"},
 			{"UpdateConversation", "PATCH", "/api/ai/conversations/{sessionId}"},
 		},
@@ -65,6 +67,7 @@ func New(
 		Run:                NewRunHandler(e.Run, mux, decoder, encoder, errhandler, formatter),
 		Runs:               NewRunsHandler(e.Runs, mux, decoder, encoder, errhandler, formatter),
 		Conversations:      NewConversationsHandler(e.Conversations, mux, decoder, encoder, errhandler, formatter),
+		RunEvents:          NewRunEventsHandler(e.RunEvents, mux, decoder, encoder, errhandler, formatter),
 		RunDetail:          NewRunDetailHandler(e.RunDetail, mux, decoder, encoder, errhandler, formatter),
 		UpdateConversation: NewUpdateConversationHandler(e.UpdateConversation, mux, decoder, encoder, errhandler, formatter),
 	}
@@ -79,6 +82,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Run = m(s.Run)
 	s.Runs = m(s.Runs)
 	s.Conversations = m(s.Conversations)
+	s.RunEvents = m(s.RunEvents)
 	s.RunDetail = m(s.RunDetail)
 	s.UpdateConversation = m(s.UpdateConversation)
 }
@@ -92,6 +96,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountRunHandler(mux, h.Run)
 	MountRunsHandler(mux, h.Runs)
 	MountConversationsHandler(mux, h.Conversations)
+	MountRunEventsHandler(mux, h.RunEvents)
 	MountRunDetailHandler(mux, h.RunDetail)
 	MountUpdateConversationHandler(mux, h.UpdateConversation)
 }
@@ -308,6 +313,76 @@ func NewConversationsHandler(
 			if errhandler != nil {
 				errhandler(ctx, w, err)
 			}
+		}
+	})
+}
+
+// MountRunEventsHandler configures the mux to serve the "ai" service
+// "runEvents" endpoint.
+func MountRunEventsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/api/ai/runs/{id}/events", f)
+}
+
+// NewRunEventsHandler creates a HTTP handler which loads the HTTP request and
+// calls the "ai" service "runEvents" endpoint.
+func NewRunEventsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest = DecodeRunEventsRequest(mux, decoder)
+		encodeError   = EncodeRunEventsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "runEvents")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "ai")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		// Set Last-Event-ID header if present
+		if lastEventID := r.Header.Get("Last-Event-ID"); lastEventID != "" {
+			ctx = context.WithValue(ctx, "last-event-id", lastEventID)
+			payload.LastEventID = &lastEventID
+		}
+		v := &ai.RunEventsEndpointInput{
+			Stream: &RunEventsServerStream{
+				w: w,
+				r: r,
+			},
+			Payload: payload,
+		}
+		_, err = endpoint(ctx, v)
+		if err == nil {
+			stream := v.Stream.(*RunEventsServerStream)
+			err = stream.finish()
+		}
+		if err != nil {
+			stream := v.Stream.(*RunEventsServerStream)
+			if stream.attempted {
+				if errhandler != nil {
+					errhandler(ctx, w, err)
+				}
+				return
+			}
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
 		}
 	})
 }

@@ -78,10 +78,15 @@ func (m *Module) listProjects(ctx context.Context, q *dbgen.Queries, p *identity
 	if priority != "" && !allowed(priority, priorities...) {
 		return contracts.Output{}, contracts.Problem("invalid")
 	}
+	page, size := paging(in, 30)
+	sortKey := text(in, "sort")
+	if sortKey == "" {
+		sortKey = "id:desc"
+	}
 	rows, err := q.ProjectList(ctx, dbgen.ProjectListParams{
 		TenantID: p.TenantID, AccountID: p.Account.ID,
 		StatusFilter: status, PriorityFilter: priority, Keyword: text(in, "keyword"),
-		MaxRows: boundedLimit(in, 30, 100),
+		MaxRows: size, PageOffset: (page - 1) * size, SortKey: sortKey,
 	})
 	if err != nil {
 		return contracts.Output{}, err
@@ -90,7 +95,11 @@ func (m *Module) listProjects(ctx context.Context, q *dbgen.Queries, p *identity
 	for _, row := range rows {
 		items = append(items, projectListData(row))
 	}
-	return contracts.Output{Data: map[string]any{"items": items}, Summary: fmt.Sprintf("projects=%d", len(items))}, nil
+	total, err := q.ProjectCount(ctx, dbgen.ProjectCountParams{TenantID: p.TenantID, AccountID: p.Account.ID, StatusFilter: status, PriorityFilter: priority, Keyword: text(in, "keyword")})
+	if err != nil {
+		return contracts.Output{}, err
+	}
+	return contracts.Output{Data: map[string]any{"items": items, "total": total, "page": page, "pageSize": size}, Summary: fmt.Sprintf("projects=%d", len(items))}, nil
 }
 
 func (m *Module) updateProject(ctx context.Context, q *dbgen.Queries, p *identity.Principal, in contracts.Input) (contracts.Output, error) {
@@ -159,7 +168,7 @@ func (m *Module) listMembers(ctx context.Context, q *dbgen.Queries, p *identity.
 		return contracts.Output{}, problem(err)
 	}
 	rows, err := q.ProjectMemberList(ctx, dbgen.ProjectMemberListParams{
-		TenantID: p.TenantID, ProjectID: projectID, AccountID: p.Account.ID, MaxRows: 100,
+		TenantID: p.TenantID, ProjectID: projectID, AccountID: p.Account.ID, MaxRows: 100, Keyword: text(in, "keyword"),
 	})
 	if err != nil {
 		return contracts.Output{}, err

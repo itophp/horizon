@@ -733,6 +733,202 @@ func DecodeConversationsResponse(decoder func(*http.Response) goahttp.Decoder, r
 	}
 }
 
+// BuildRunEventsRequest instantiates a HTTP request object with method and
+// path set to call the "ai" service "runEvents" endpoint
+func (c *Client) BuildRunEventsRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		id int64
+	)
+	{
+		p, ok := v.(*ai.RunEventsPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("ai", "runEvents", "*ai.RunEventsPayload", v)
+		}
+		id = p.ID
+	}
+
+	rawPath := fmt.Sprintf("/api/ai/runs/%v/events", url.PathEscape(fmt.Sprint(id)))
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RunEventsAiPath(id), RawPath: rawPath}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("ai", "runEvents", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeRunEventsRequest returns an encoder for requests sent to the ai
+// runEvents server.
+func EncodeRunEventsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*ai.RunEventsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("ai", "runEvents", "*ai.RunEventsPayload", v)
+		}
+		{
+			head := p.Cookie
+			req.Header.Set("Cookie", head)
+		}
+		if p.LastEventID != nil {
+			head := *p.LastEventID
+			for _, character := range head {
+				if character == 0 || character == '\r' || character == '\n' {
+					return goahttp.ErrValidationError("ai", "runEvents", goa.InvalidPatternError("lastEventId", string(head), "[^\\x00\\r\\n]*"))
+				}
+			}
+			req.Header.Set("Last-Event-ID", head)
+		}
+		values := req.URL.Query()
+		values.Add("after", strconv.FormatInt(p.After, 10))
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeRunEventsResponse returns a decoder for responses returned by the ai
+// runEvents endpoint. restoreBody controls whether the response body should be
+// restored after having been read.
+// DecodeRunEventsResponse may return the following errors:
+//   - "unauthenticated" (type *ai.IAMProblem): http.StatusUnauthorized
+//   - "forbidden" (type *ai.IAMProblem): http.StatusForbidden
+//   - "invalid" (type *ai.IAMProblem): http.StatusBadRequest
+//   - "not_found" (type *ai.IAMProblem): http.StatusNotFound
+//   - "unavailable" (type *ai.IAMProblem): http.StatusServiceUnavailable
+//   - "internal" (type *ai.IAMProblem): http.StatusInternalServerError
+//   - error: internal error
+func DecodeRunEventsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("ai", "runEvents", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body RunEventsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			res := NewRunEventsAIRunEventOK(&body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body RunEventsUnauthenticatedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsUnauthenticatedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			return nil, NewRunEventsUnauthenticated(&body)
+		case http.StatusForbidden:
+			var (
+				body RunEventsForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			return nil, NewRunEventsForbidden(&body)
+		case http.StatusBadRequest:
+			var (
+				body RunEventsInvalidResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsInvalidResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			return nil, NewRunEventsInvalid(&body)
+		case http.StatusNotFound:
+			var (
+				body RunEventsNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			return nil, NewRunEventsNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body RunEventsUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			return nil, NewRunEventsUnavailable(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RunEventsInternalResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			err = ValidateRunEventsInternalResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runEvents", err)
+			}
+			return nil, NewRunEventsInternal(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runEvents", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("ai", "runEvents", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildRunDetailRequest instantiates a HTTP request object with method and
 // path set to call the "ai" service "runDetail" endpoint
 func (c *Client) BuildRunDetailRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -1109,9 +1305,18 @@ func DecodeUpdateConversationResponse(decoder func(*http.Response) goahttp.Decod
 // from a value of type *ai.AIPage.
 func marshalAiAIPageToAIPageRequestBody(v *ai.AIPage) *AIPageRequestBody {
 	res := &AIPageRequestBody{
-		Route:    v.Route,
-		Entity:   v.Entity,
-		EntityID: v.EntityID,
+		ApplicationID:   v.ApplicationID,
+		PageID:          v.PageID,
+		MetadataVersion: v.MetadataVersion,
+		Route:           v.Route,
+		Entity:          v.Entity,
+		EntityID:        v.EntityID,
+	}
+	if v.Selection != nil {
+		res.Selection = make([]int64, len(v.Selection))
+		for i, val := range v.Selection {
+			res.Selection[i] = val
+		}
 	}
 
 	return res
@@ -1121,9 +1326,18 @@ func marshalAiAIPageToAIPageRequestBody(v *ai.AIPage) *AIPageRequestBody {
 // value of type *AIPageRequestBody.
 func marshalAIPageRequestBodyToAiAIPage(v *AIPageRequestBody) *ai.AIPage {
 	res := &ai.AIPage{
-		Route:    v.Route,
-		Entity:   v.Entity,
-		EntityID: v.EntityID,
+		ApplicationID:   v.ApplicationID,
+		PageID:          v.PageID,
+		MetadataVersion: v.MetadataVersion,
+		Route:           v.Route,
+		Entity:          v.Entity,
+		EntityID:        v.EntityID,
+	}
+	if v.Selection != nil {
+		res.Selection = make([]int64, len(v.Selection))
+		for i, val := range v.Selection {
+			res.Selection[i] = val
+		}
 	}
 
 	return res

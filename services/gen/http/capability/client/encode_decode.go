@@ -1453,6 +1453,34 @@ func unmarshalCapabilityContractResponseToCapabilityCapabilityContract(v *Capabi
 	return res
 }
 
+// marshalCapabilityRuntimeInvocationReferenceToRuntimeInvocationReferenceRequestBody
+// builds a value of type *RuntimeInvocationReferenceRequestBody from a value
+// of type *capability.RuntimeInvocationReference.
+func marshalCapabilityRuntimeInvocationReferenceToRuntimeInvocationReferenceRequestBody(v *capability.RuntimeInvocationReference) *RuntimeInvocationReferenceRequestBody {
+	res := &RuntimeInvocationReferenceRequestBody{
+		ApplicationID:        v.ApplicationID,
+		PageID:               v.PageID,
+		MetadataVersion:      v.MetadataVersion,
+		InstallationRevision: v.InstallationRevision,
+	}
+
+	return res
+}
+
+// marshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationReference
+// builds a value of type *capability.RuntimeInvocationReference from a value
+// of type *RuntimeInvocationReferenceRequestBody.
+func marshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationReference(v *RuntimeInvocationReferenceRequestBody) *capability.RuntimeInvocationReference {
+	res := &capability.RuntimeInvocationReference{
+		ApplicationID:        v.ApplicationID,
+		PageID:               v.PageID,
+		MetadataVersion:      v.MetadataVersion,
+		InstallationRevision: v.InstallationRevision,
+	}
+
+	return res
+}
+
 // unmarshalCapabilityInvocationResponseToCapabilityCapabilityInvocation builds
 // a value of type *capability.CapabilityInvocation from a value of type
 // *CapabilityInvocationResponse.

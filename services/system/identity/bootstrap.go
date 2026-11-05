@@ -94,6 +94,9 @@ func Bootstrap(ctx context.Context, pool *pgxpool.Pool, tenant, username, passwo
 	if err = q.IAMAssignRole(ctx, dbgen.IAMAssignRoleParams{TenantID: tenant, AccountID: id, RoleID: adminRole}); err != nil {
 		return nil, err
 	}
+	if err = q.RuntimeProvisionTenant(ctx, tenant); err != nil {
+		return nil, err
+	}
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}

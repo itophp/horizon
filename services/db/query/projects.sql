@@ -19,7 +19,16 @@ WHERE p.tenant_id=sqlc.arg(tenant_id)
  AND (sqlc.arg(status_filter)::text = '' OR p.status = sqlc.arg(status_filter))
  AND (sqlc.arg(priority_filter)::text = '' OR p.priority = sqlc.arg(priority_filter))
  AND (sqlc.arg(keyword)::text = '' OR p.name ILIKE '%'||sqlc.arg(keyword)||'%' OR p.code ILIKE '%'||sqlc.arg(keyword)||'%')
-ORDER BY p.id DESC LIMIT sqlc.arg(max_rows);
+ORDER BY CASE WHEN sqlc.arg(sort_key)::text='name:asc' THEN p.name END ASC, p.id DESC LIMIT sqlc.arg(max_rows) OFFSET sqlc.arg(page_offset);
+
+-- name: ProjectCount :one
+SELECT count(*) FROM projects p
+WHERE p.tenant_id=sqlc.arg(tenant_id)
+ AND EXISTS (SELECT 1 FROM project_members m WHERE m.tenant_id=p.tenant_id AND m.project_id=p.id AND m.account_id=sqlc.arg(account_id))
+ AND (sqlc.arg(status_filter)::text = '' OR p.status = sqlc.arg(status_filter))
+ AND (sqlc.arg(priority_filter)::text = '' OR p.priority = sqlc.arg(priority_filter))
+ AND (sqlc.arg(keyword)::text = '' OR p.name ILIKE '%'||sqlc.arg(keyword)||'%' OR p.code ILIKE '%'||sqlc.arg(keyword)||'%')
+;
 
 -- name: ProjectGet :one
 SELECT p.id, p.code, p.name, p.status, p.priority, p.due_date, p.owner_id,
@@ -66,6 +75,7 @@ JOIN projects p ON p.tenant_id=m.tenant_id AND p.id=m.project_id
 JOIN iam_accounts a ON a.tenant_id=m.tenant_id AND a.id=m.account_id
 WHERE m.tenant_id=sqlc.arg(tenant_id) AND m.project_id=sqlc.arg(project_id)
  AND EXISTS (SELECT 1 FROM project_members v WHERE v.tenant_id=m.tenant_id AND v.project_id=m.project_id AND v.account_id=sqlc.arg(account_id))
+ AND (sqlc.arg(keyword)::text='' OR a.full_name ILIKE '%'||sqlc.arg(keyword)::text||'%')
 ORDER BY a.full_name LIMIT sqlc.arg(max_rows);
 
 -- name: ProjectMemberAdd :execrows
@@ -160,7 +170,18 @@ WHERE t.tenant_id=sqlc.arg(tenant_id) AND t.project_id=sqlc.arg(project_id)
  AND (sqlc.arg(plan_filter)::bigint = 0 OR t.plan_id = sqlc.arg(plan_filter))
  AND (sqlc.arg(assignee_filter)::bigint = 0 OR t.assignee_id = sqlc.arg(assignee_filter))
  AND (sqlc.arg(status_filter)::text = '' OR t.status = sqlc.arg(status_filter))
-ORDER BY t.id DESC LIMIT sqlc.arg(max_rows);
+ AND (sqlc.arg(keyword)::text = '' OR strpos(lower(t.title),lower(sqlc.arg(keyword)))>0)
+ORDER BY t.id DESC LIMIT sqlc.arg(max_rows) OFFSET sqlc.arg(page_offset);
+
+-- name: ProjectTaskCount :one
+SELECT count(*) FROM project_tasks t
+WHERE t.tenant_id=sqlc.arg(tenant_id) AND t.project_id=sqlc.arg(project_id)
+ AND EXISTS (SELECT 1 FROM project_members m WHERE m.tenant_id=t.tenant_id AND m.project_id=t.project_id AND m.account_id=sqlc.arg(account_id))
+ AND (sqlc.arg(plan_filter)::bigint = 0 OR t.plan_id = sqlc.arg(plan_filter))
+ AND (sqlc.arg(assignee_filter)::bigint = 0 OR t.assignee_id = sqlc.arg(assignee_filter))
+ AND (sqlc.arg(status_filter)::text = '' OR t.status = sqlc.arg(status_filter))
+ AND (sqlc.arg(keyword)::text = '' OR strpos(lower(t.title),lower(sqlc.arg(keyword)))>0)
+;
 
 -- name: ProjectTaskGet :one
 SELECT t.id, t.project_id, t.plan_id, t.title, t.description, t.status, t.priority, t.assignee_id,

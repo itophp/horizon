@@ -1,9 +1,19 @@
 {
-  "drive_space": { "label": "云盘空间" },
-  "drive_member": { "label": "云盘成员" },
-  "drive_folder": { "label": "云盘文件夹" },
-  "drive_file": { "label": "云盘文件" },
-  "drive_trash_batch": { "label": "云盘删除批次" },
+  "drive_space": {
+    "label": "云盘空间"
+  },
+  "drive_member": {
+    "label": "云盘成员"
+  },
+  "drive_folder": {
+    "label": "云盘文件夹"
+  },
+  "drive_file": {
+    "label": "云盘文件"
+  },
+  "drive_trash_batch": {
+    "label": "云盘删除批次"
+  },
   "drive_upload": {
     "label": "云盘上传",
     "states": {
@@ -13,7 +23,9 @@
       "cleaned": "已清理"
     }
   },
-  "drive_upload_chunk": { "label": "上传分块" },
+  "drive_upload_chunk": {
+    "label": "上传分块"
+  },
   "account": {
     "label": "账号"
   },
@@ -135,5 +147,26 @@
       "published": "已发布",
       "rejected": "已驳回"
     }
+  },
+  "runtime_installation": {
+    "label": "应用安装"
+  },
+  "runtime_application_state": {
+    "label": "应用启停"
+  },
+  "runtime_installation_history": {
+    "label": "安装历史"
+  },
+  "runtime_installation_template": {
+    "label": "安装模板"
+  },
+  "ai_run_event": {
+    "label": "任务事件"
+  },
+  "runtime_run_dependency": {
+    "label": "任务应用依赖"
+  },
+  "runtime_invocation_dependency": {
+    "label": "调用应用依赖"
   }
 }

@@ -10,6 +10,11 @@ import type { AccountRecord } from "./accountRecord";
 export interface SessionProfile {
   account: AccountRecord;
   activeDepartmentId: number;
+  /**
+   * Opaque non-secret authorization cache revision.
+   * @pattern ^[a-f0-9]{64}$
+   */
+  authorizationVersion?: string;
   csrfToken: string;
   permissions: string[];
   tenantId: string;

@@ -1,18 +1,26 @@
 import { z } from "zod";
 import type { CallToolResult } from "@opentiny/next-sdk/core";
 
+export interface PageToolInvocation {
+  runId: number;
+  correlationId: string;
+  callId: string;
+}
 export interface PageTool {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
   outputSchema?: Record<string, unknown>;
   metadata?: ToolMetadata;
-  execute: (input: unknown) => Promise<CallToolResult>;
+  execute: (
+    input: unknown,
+    invocation?: PageToolInvocation,
+  ) => Promise<CallToolResult>;
 }
 export interface ToolMetadata {
   scope: "global" | "module" | "page";
   version: string;
-  effect: "read" | "navigation" | "interaction";
+  effect: "read" | "navigation" | "interaction" | "write";
   permission: string | null;
 }
 export interface ModelContext {
@@ -41,7 +49,10 @@ export function pageTool<T>(
   name: string,
   description: string,
   schema: z.ZodType<T>,
-  execute: (input: T) => unknown | Promise<unknown>,
+  execute: (
+    input: T,
+    invocation?: PageToolInvocation,
+  ) => unknown | Promise<unknown>,
   metadata: Partial<ToolMetadata> = {},
 ): PageTool {
   return {
@@ -55,11 +66,11 @@ export function pageTool<T>(
       permission: null,
       ...metadata,
     },
-    execute: async (input) => {
+    execute: async (input, invocation) => {
       const parsed = schema.safeParse(input);
       if (!parsed.success) return failure("invalid_arguments");
       try {
-        return result(await execute(parsed.data));
+        return result(await execute(parsed.data, invocation));
       } catch {
         return failure("operation_failed");
       }
@@ -156,9 +167,9 @@ export class PageToolRegistry {
       }),
     );
   }
-  async invoke(name: string, input: unknown) {
+  async invoke(name: string, input: unknown, invocation?: PageToolInvocation) {
     if (!this.connected) return failure("connection_disabled");
     const tool = this.tools.get(name);
-    return tool ? tool.execute(input) : failure("tool_unavailable");
+    return tool ? tool.execute(input, invocation) : failure("tool_unavailable");
   }
 }

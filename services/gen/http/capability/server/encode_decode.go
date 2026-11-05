@@ -1202,6 +1202,20 @@ func marshalCapabilityCapabilityContractToCapabilityContractResponse(v *capabili
 	return res
 }
 
+// unmarshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationReference
+// builds a value of type *capability.RuntimeInvocationReference from a value
+// of type *RuntimeInvocationReferenceRequestBody.
+func unmarshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationReference(v *RuntimeInvocationReferenceRequestBody) *capability.RuntimeInvocationReference {
+	res := &capability.RuntimeInvocationReference{
+		ApplicationID:        *v.ApplicationID,
+		PageID:               *v.PageID,
+		MetadataVersion:      *v.MetadataVersion,
+		InstallationRevision: *v.InstallationRevision,
+	}
+
+	return res
+}
+
 // marshalCapabilityCapabilityInvocationToCapabilityInvocationResponse builds a
 // value of type *CapabilityInvocationResponse from a value of type
 // *capability.CapabilityInvocation.

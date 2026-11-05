@@ -151,7 +151,8 @@ func CSRFMatches(p *Principal, value string) bool {
 	return value != "" && subtle.ConstantTimeCompare([]byte(p.CSRF), []byte(value)) == 1
 }
 func profile(p *Principal) *genidentity.SessionProfile {
-	return &genidentity.SessionProfile{Account: p.Account, CsrfToken: p.CSRF, Permissions: p.Effective(), TenantID: p.TenantID, ActiveDepartmentID: p.Account.DepartmentID}
+	version := authorizationVersion(p)
+	return &genidentity.SessionProfile{AuthorizationVersion: &version, Account: p.Account, CsrfToken: p.CSRF, Permissions: p.Effective(), TenantID: p.TenantID, ActiveDepartmentID: p.Account.DepartmentID}
 }
 func (s *Service) Login(ctx context.Context, payload *genidentity.LoginPayload) (*genidentity.LoginResult, error) {
 	if err := s.available(); err != nil {

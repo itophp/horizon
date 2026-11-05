@@ -76,6 +76,21 @@ type RunResponseBody struct {
 	Invocations        []*CapabilityInvocation `form:"invocations,omitempty" json:"invocations,omitempty" xml:"invocations,omitempty"`
 }
 
+// RunEventsResponseBody is the type of the "ai" service "runEvents" endpoint
+// HTTP response body.
+type RunEventsResponseBody struct {
+	EventID      *string `form:"eventId,omitempty" json:"eventId,omitempty" xml:"eventId,omitempty"`
+	Type         *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	RunID        *string `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
+	ThreadID     *string `form:"threadId,omitempty" json:"threadId,omitempty" xml:"threadId,omitempty"`
+	Timestamp    *int64  `form:"timestamp,omitempty" json:"timestamp,omitempty" xml:"timestamp,omitempty"`
+	Snapshot     any     `form:"snapshot,omitempty" json:"snapshot,omitempty" xml:"snapshot,omitempty"`
+	ToolCallID   *string `form:"toolCallId,omitempty" json:"toolCallId,omitempty" xml:"toolCallId,omitempty"`
+	ToolCallName *string `form:"toolCallName,omitempty" json:"toolCallName,omitempty" xml:"toolCallName,omitempty"`
+	StepName     *string `form:"stepName,omitempty" json:"stepName,omitempty" xml:"stepName,omitempty"`
+	Message      *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // RunDetailResponseBody is the type of the "ai" service "runDetail" endpoint
 // HTTP response body.
 type RunDetailResponseBody struct {
@@ -257,6 +272,42 @@ type ConversationsInternalResponseBody struct {
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 }
 
+// RunEventsUnauthenticatedResponseBody is the type of the "ai" service
+// "runEvents" endpoint HTTP response body for the "unauthenticated" error.
+type RunEventsUnauthenticatedResponseBody struct {
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+}
+
+// RunEventsForbiddenResponseBody is the type of the "ai" service "runEvents"
+// endpoint HTTP response body for the "forbidden" error.
+type RunEventsForbiddenResponseBody struct {
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+}
+
+// RunEventsInvalidResponseBody is the type of the "ai" service "runEvents"
+// endpoint HTTP response body for the "invalid" error.
+type RunEventsInvalidResponseBody struct {
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+}
+
+// RunEventsNotFoundResponseBody is the type of the "ai" service "runEvents"
+// endpoint HTTP response body for the "not_found" error.
+type RunEventsNotFoundResponseBody struct {
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+}
+
+// RunEventsUnavailableResponseBody is the type of the "ai" service "runEvents"
+// endpoint HTTP response body for the "unavailable" error.
+type RunEventsUnavailableResponseBody struct {
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+}
+
+// RunEventsInternalResponseBody is the type of the "ai" service "runEvents"
+// endpoint HTTP response body for the "internal" error.
+type RunEventsInternalResponseBody struct {
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+}
+
 // RunDetailUnauthenticatedResponseBody is the type of the "ai" service
 // "runDetail" endpoint HTTP response body for the "unauthenticated" error.
 type RunDetailUnauthenticatedResponseBody struct {
@@ -388,9 +439,13 @@ type AIConversationResponse struct {
 
 // AIPageRequestBody is used to define fields on request body types.
 type AIPageRequestBody struct {
-	Route    *string `form:"route,omitempty" json:"route,omitempty" xml:"route,omitempty"`
-	Entity   *string `form:"entity,omitempty" json:"entity,omitempty" xml:"entity,omitempty"`
-	EntityID *int64  `form:"entityId,omitempty" json:"entityId,omitempty" xml:"entityId,omitempty"`
+	ApplicationID   *string `form:"applicationId,omitempty" json:"applicationId,omitempty" xml:"applicationId,omitempty"`
+	PageID          *string `form:"pageId,omitempty" json:"pageId,omitempty" xml:"pageId,omitempty"`
+	MetadataVersion *string `form:"metadataVersion,omitempty" json:"metadataVersion,omitempty" xml:"metadataVersion,omitempty"`
+	Selection       []int64 `form:"selection,omitempty" json:"selection,omitempty" xml:"selection,omitempty"`
+	Route           *string `form:"route,omitempty" json:"route,omitempty" xml:"route,omitempty"`
+	Entity          *string `form:"entity,omitempty" json:"entity,omitempty" xml:"entity,omitempty"`
+	EntityID        *int64  `form:"entityId,omitempty" json:"entityId,omitempty" xml:"entityId,omitempty"`
 }
 
 // NewRunRequestBody builds the HTTP request body from the payload of the "run"
@@ -729,6 +784,81 @@ func NewConversationsInternal(body *ConversationsInternalResponseBody) *ai.IAMPr
 	return v
 }
 
+// NewRunEventsAIRunEventOK builds a "ai" service "runEvents" endpoint result
+// from a HTTP "OK" response.
+func NewRunEventsAIRunEventOK(body *RunEventsResponseBody) *ai.AIRunEvent {
+	v := &ai.AIRunEvent{
+		EventID:      *body.EventID,
+		Type:         *body.Type,
+		RunID:        *body.RunID,
+		ThreadID:     *body.ThreadID,
+		Timestamp:    *body.Timestamp,
+		Snapshot:     body.Snapshot,
+		ToolCallID:   body.ToolCallID,
+		ToolCallName: body.ToolCallName,
+		StepName:     body.StepName,
+		Message:      body.Message,
+	}
+
+	return v
+}
+
+// NewRunEventsUnauthenticated builds a ai service runEvents endpoint
+// unauthenticated error.
+func NewRunEventsUnauthenticated(body *RunEventsUnauthenticatedResponseBody) *ai.IAMProblem {
+	v := &ai.IAMProblem{
+		Code: *body.Code,
+	}
+
+	return v
+}
+
+// NewRunEventsForbidden builds a ai service runEvents endpoint forbidden error.
+func NewRunEventsForbidden(body *RunEventsForbiddenResponseBody) *ai.IAMProblem {
+	v := &ai.IAMProblem{
+		Code: *body.Code,
+	}
+
+	return v
+}
+
+// NewRunEventsInvalid builds a ai service runEvents endpoint invalid error.
+func NewRunEventsInvalid(body *RunEventsInvalidResponseBody) *ai.IAMProblem {
+	v := &ai.IAMProblem{
+		Code: *body.Code,
+	}
+
+	return v
+}
+
+// NewRunEventsNotFound builds a ai service runEvents endpoint not_found error.
+func NewRunEventsNotFound(body *RunEventsNotFoundResponseBody) *ai.IAMProblem {
+	v := &ai.IAMProblem{
+		Code: *body.Code,
+	}
+
+	return v
+}
+
+// NewRunEventsUnavailable builds a ai service runEvents endpoint unavailable
+// error.
+func NewRunEventsUnavailable(body *RunEventsUnavailableResponseBody) *ai.IAMProblem {
+	v := &ai.IAMProblem{
+		Code: *body.Code,
+	}
+
+	return v
+}
+
+// NewRunEventsInternal builds a ai service runEvents endpoint internal error.
+func NewRunEventsInternal(body *RunEventsInternalResponseBody) *ai.IAMProblem {
+	v := &ai.IAMProblem{
+		Code: *body.Code,
+	}
+
+	return v
+}
+
 // NewRunDetailAIRunOK builds a "ai" service "runDetail" endpoint result from a
 // HTTP "OK" response.
 func NewRunDetailAIRunOK(body *RunDetailResponseBody) *ai.AIRun {
@@ -1021,6 +1151,35 @@ func ValidateRunResponseBody(body *RunResponseBody) (err error) {
 			if err2 := validateCapabilityInvocation(e, "body.invocations[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
+		}
+	}
+	return
+}
+
+// ValidateRunEventsResponseBody runs the validations defined on
+// RunEventsResponseBody
+func ValidateRunEventsResponseBody(body *RunEventsResponseBody) (err error) {
+	if body.EventID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("eventId", "body"))
+	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
+	if body.RunID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("runId", "body"))
+	}
+	if body.ThreadID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("threadId", "body"))
+	}
+	if body.Timestamp == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timestamp", "body"))
+	}
+	if body.Snapshot == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("snapshot", "body"))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "RUN_STARTED" || *body.Type == "RUN_FINISHED" || *body.Type == "RUN_ERROR" || *body.Type == "STATE_SNAPSHOT" || *body.Type == "TOOL_CALL_START" || *body.Type == "TOOL_CALL_END" || *body.Type == "STEP_STARTED" || *body.Type == "STEP_FINISHED") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"RUN_STARTED", "RUN_FINISHED", "RUN_ERROR", "STATE_SNAPSHOT", "TOOL_CALL_START", "TOOL_CALL_END", "STEP_STARTED", "STEP_FINISHED"}))
 		}
 	}
 	return
@@ -1346,6 +1505,60 @@ func ValidateConversationsUnavailableResponseBody(body *ConversationsUnavailable
 // ValidateConversationsInternalResponseBody runs the validations defined on
 // ConversationsInternalResponseBody
 func ValidateConversationsInternalResponseBody(body *ConversationsInternalResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateRunEventsUnauthenticatedResponseBody runs the validations defined on
+// RunEventsUnauthenticatedResponseBody
+func ValidateRunEventsUnauthenticatedResponseBody(body *RunEventsUnauthenticatedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateRunEventsForbiddenResponseBody runs the validations defined on
+// RunEventsForbiddenResponseBody
+func ValidateRunEventsForbiddenResponseBody(body *RunEventsForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateRunEventsInvalidResponseBody runs the validations defined on
+// RunEventsInvalidResponseBody
+func ValidateRunEventsInvalidResponseBody(body *RunEventsInvalidResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateRunEventsNotFoundResponseBody runs the validations defined on
+// RunEventsNotFoundResponseBody
+func ValidateRunEventsNotFoundResponseBody(body *RunEventsNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateRunEventsUnavailableResponseBody runs the validations defined on
+// RunEventsUnavailableResponseBody
+func ValidateRunEventsUnavailableResponseBody(body *RunEventsUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	return
+}
+
+// ValidateRunEventsInternalResponseBody runs the validations defined on
+// RunEventsInternalResponseBody
+func ValidateRunEventsInternalResponseBody(body *RunEventsInternalResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -1808,6 +2021,24 @@ func validateAIConversationResponse(body *AIConversationResponse, path string) (
 
 // ValidateAIPageRequestBody runs the validations defined on AIPage
 func ValidateAIPageRequestBody(body *AIPageRequestBody) (err error) {
+	if body.ApplicationID != nil {
+		if utf8.RuneCountInString(*body.ApplicationID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 80, false))
+		}
+	}
+	if body.PageID != nil {
+		if utf8.RuneCountInString(*body.PageID) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 100, false))
+		}
+	}
+	if body.MetadataVersion != nil {
+		if utf8.RuneCountInString(*body.MetadataVersion) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.metadataVersion", *body.MetadataVersion, utf8.RuneCountInString(*body.MetadataVersion), 100, false))
+		}
+	}
+	if len(body.Selection) > 20 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.selection", body.Selection, len(body.Selection), 20, false))
+	}
 	if body.Route != nil {
 		if utf8.RuneCountInString(*body.Route) > 120 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.route", *body.Route, utf8.RuneCountInString(*body.Route), 120, false))
@@ -1829,6 +2060,24 @@ func ValidateAIPageRequestBody(body *AIPageRequestBody) (err error) {
 // validateAIPageRequestBody checks AIPage and reports errors using the path
 // supplied by its caller
 func validateAIPageRequestBody(body *AIPageRequestBody, path string) (err error) {
+	if body.ApplicationID != nil {
+		if utf8.RuneCountInString(*body.ApplicationID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 80, false))
+		}
+	}
+	if body.PageID != nil {
+		if utf8.RuneCountInString(*body.PageID) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 100, false))
+		}
+	}
+	if body.MetadataVersion != nil {
+		if utf8.RuneCountInString(*body.MetadataVersion) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".metadataVersion", *body.MetadataVersion, utf8.RuneCountInString(*body.MetadataVersion), 100, false))
+		}
+	}
+	if len(body.Selection) > 20 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError(path+".selection", body.Selection, len(body.Selection), 20, false))
+	}
 	if body.Route != nil {
 		if utf8.RuneCountInString(*body.Route) > 120 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".route", *body.Route, utf8.RuneCountInString(*body.Route), 120, false))

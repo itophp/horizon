@@ -2012,9 +2012,16 @@ paths:
                             $ref: '#/components/schemas/RunRequestBody'
                         example:
                             page:
+                                applicationId: 2y7
                                 entity: w7q
                                 entityId: 5722665807259745387
+                                metadataVersion: knc
+                                pageId: kp6
                                 route: xh0
+                                selection:
+                                    - 8615325486438952813
+                                    - 3615004802301163038
+                                    - 8292885423084348597
                             question: q
                             sessionId: 2vr
             responses:
@@ -2313,6 +2320,108 @@ paths:
                                 code: Nisi maxime sed placeat.
             security:
                 - browser_session_header_Cookie: []
+    /api/ai/runs/{id}/events:
+        get:
+            tags:
+                - ai
+            summary: runEvents ai
+            description: Read authorized task lifecycle events. Disconnecting never cancels business execution.
+            operationId: ai#runEvents
+            parameters:
+                - name: after
+                  in: query
+                  allowEmptyValue: true
+                  schema:
+                    type: integer
+                    default: 0
+                    example: 2517092798470815405
+                    format: int64
+                    minimum: 0
+                  example: 2517092798470815405
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    example: 5422783467239394492
+                    format: int64
+                    minimum: 1
+                  example: 5422783467239394492
+                - name: Last-Event-ID
+                  in: header
+                  schema:
+                    type: string
+                    example: h2x
+                    maxLength: 30
+                  example: h2x
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        text/event-stream:
+                            itemSchema:
+                                type: object
+                                properties:
+                                    data:
+                                        type: string
+                                        contentMediaType: application/json
+                                        contentSchema:
+                                            $ref: '#/components/schemas/AIRunEvent'
+                                    id:
+                                        type: string
+                                        example: Praesentium qui.
+                                required:
+                                    - data
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Velit dolor quia quod animi eum.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Qui ducimus.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Nihil et minima assumenda.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Voluptatem consectetur error voluptate reprehenderit.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quas dolor et dolores.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Est et sunt veritatis.
+            security:
+                - browser_session_header_Cookie: []
     /api/ai/status:
         get:
             tags:
@@ -2405,6 +2514,17 @@ paths:
                         schema:
                             $ref: '#/components/schemas/AgentRequestBody'
                         example:
+                            page:
+                                applicationId: 2y7
+                                entity: w7q
+                                entityId: 5722665807259745387
+                                metadataVersion: knc
+                                pageId: kp6
+                                route: xh0
+                                selection:
+                                    - 8615325486438952813
+                                    - 3615004802301163038
+                                    - 8292885423084348597
                             question: "57"
                             resumeToken: pp3
                             runId: 9005700267392517784
@@ -3031,6 +3151,7 @@ paths:
                                     status: Aliquid commodi at.
                                     username: Veritatis aut blanditiis.
                                 activeDepartmentId: 2266162534159252130
+                                authorizationVersion: e033321ddd3b9cfa7772712c4c297ba4638d5b7497337add1dc4e7d2300a389b
                                 csrfToken: Quia rem error sequi voluptates nulla aut.
                                 permissions:
                                     - Blanditiis officia sit asperiores reprehenderit.
@@ -3207,6 +3328,7 @@ paths:
                                         status: Aliquid commodi at.
                                         username: Veritatis aut blanditiis.
                                     activeDepartmentId: 1446770442448876546
+                                    authorizationVersion: 7284424ab6e6ca09e8679b7952dd9f22017b9b2fd877204c6f09ab43d57abbae
                                     csrfToken: Illum nam itaque quis non qui omnis.
                                     permissions:
                                         - Et cupiditate expedita sit nesciunt aliquid id.
@@ -3414,6 +3536,7 @@ paths:
                                     status: Aliquid commodi at.
                                     username: Veritatis aut blanditiis.
                                 activeDepartmentId: 3092710889580113396
+                                authorizationVersion: a1d9fed4ce63d3943d9c8710b08b7769b45370fec9b107b7638ae6e66a80c171
                                 csrfToken: Dolorem eos dignissimos necessitatibus illo.
                                 permissions:
                                     - Ipsa nostrum iste inventore quasi tempora numquam.
@@ -3755,6 +3878,11 @@ paths:
                             correlationId: ja4
                             idempotencyKey: yqh
                             input: Nam praesentium hic velit officia debitis enim.
+                            runtime:
+                                applicationId: "9"
+                                installationRevision: 8502953085697194992
+                                metadataVersion: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
+                                pageId: ka4
                             version: a58
             responses:
                 "200":
@@ -4675,6 +4803,10 @@ components:
         AIPage:
             type: object
             properties:
+                applicationId:
+                    type: string
+                    example: 2y7
+                    maxLength: 80
                 entity:
                     type: string
                     example: w7q
@@ -4684,15 +4816,41 @@ components:
                     example: 5722665807259745387
                     format: int64
                     minimum: 0
+                metadataVersion:
+                    type: string
+                    example: knc
+                    maxLength: 100
+                pageId:
+                    type: string
+                    example: kp6
+                    maxLength: 100
                 route:
                     type: string
                     example: xh0
                     maxLength: 120
+                selection:
+                    type: array
+                    items:
+                        type: integer
+                        example: 8615325486438952813
+                        format: int64
+                    example:
+                        - 8615325486438952813
+                        - 3615004802301163038
+                        - 8292885423084348597
+                    maxItems: 20
             description: Current page context. It is validated against the route and entity catalog and treated as data, not instructions.
             example:
+                applicationId: 2y7
                 entity: w7q
                 entityId: 5722665807259745387
+                metadataVersion: knc
+                pageId: kp6
                 route: xh0
+                selection:
+                    - 8615325486438952813
+                    - 3615004802301163038
+                    - 8292885423084348597
         AIRun:
             type: object
             properties:
@@ -4966,6 +5124,66 @@ components:
                 - createdAt
                 - finishedAt
                 - invocations
+        AIRunEvent:
+            type: object
+            properties:
+                eventId:
+                    type: string
+                    example: Quos quos autem.
+                message:
+                    type: string
+                    example: Commodi ducimus ut quasi.
+                runId:
+                    type: string
+                    example: Corporis quasi.
+                snapshot:
+                    example: Et qui soluta aut enim animi autem.
+                stepName:
+                    type: string
+                    example: Hic vitae amet.
+                threadId:
+                    type: string
+                    example: Placeat numquam.
+                timestamp:
+                    type: integer
+                    example: 6951083632503157258
+                    format: int64
+                toolCallId:
+                    type: string
+                    example: Veniam inventore rerum.
+                toolCallName:
+                    type: string
+                    example: Repudiandae voluptatum et corporis consequatur quia.
+                type:
+                    type: string
+                    example: TOOL_CALL_END
+                    enum:
+                        - RUN_STARTED
+                        - RUN_FINISHED
+                        - RUN_ERROR
+                        - STATE_SNAPSHOT
+                        - TOOL_CALL_START
+                        - TOOL_CALL_END
+                        - STEP_STARTED
+                        - STEP_FINISHED
+            example:
+                eventId: Quos quos autem.
+                message: Commodi ducimus ut quasi.
+                runId: Corporis quasi.
+                snapshot: Et qui soluta aut enim animi autem.
+                stepName: Hic vitae amet.
+                threadId: Placeat numquam.
+                timestamp: 6951083632503157258
+                toolCallId: Veniam inventore rerum.
+                toolCallName: Repudiandae voluptatum et corporis consequatur quia.
+                type: TOOL_CALL_END
+            required:
+                - eventId
+                - type
+                - runId
+                - threadId
+                - timestamp
+                - snapshot
         AIStatus:
             type: object
             properties:
@@ -6192,6 +6410,8 @@ components:
         AgentRequestBody:
             type: object
             properties:
+                page:
+                    $ref: '#/components/schemas/AIPage'
                 question:
                     type: string
                     example: "57"
@@ -6235,6 +6455,17 @@ components:
                     maxItems: 40
             description: Request body for agent.
             example:
+                page:
+                    applicationId: 2y7
+                    entity: w7q
+                    entityId: 5722665807259745387
+                    metadataVersion: knc
+                    pageId: kp6
+                    route: xh0
+                    selection:
+                        - 8615325486438952813
+                        - 3615004802301163038
+                        - 8292885423084348597
                 question: "57"
                 resumeToken: pp3
                 runId: 9005700267392517784
@@ -7412,6 +7643,8 @@ components:
                     maxLength: 120
                 input:
                     example: Nam praesentium hic velit officia debitis enim.
+                runtime:
+                    $ref: '#/components/schemas/RuntimeInvocationReference'
                 version:
                     type: string
                     example: a58
@@ -7422,6 +7655,11 @@ components:
                 correlationId: ja4
                 idempotencyKey: yqh
                 input: Nam praesentium hic velit officia debitis enim.
+                runtime:
+                    applicationId: "9"
+                    installationRevision: 8502953085697194992
+                    metadataVersion: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
+                    pageId: ka4
                 version: a58
             required:
                 - input
@@ -7600,6 +7838,7 @@ components:
                         status: Aliquid commodi at.
                         username: Veritatis aut blanditiis.
                     activeDepartmentId: 1446770442448876546
+                    authorizationVersion: 7284424ab6e6ca09e8679b7952dd9f22017b9b2fd877204c6f09ab43d57abbae
                     csrfToken: Illum nam itaque quis non qui omnis.
                     permissions:
                         - Et cupiditate expedita sit nesciunt aliquid id.
@@ -8023,13 +8262,53 @@ components:
             description: Request body for run.
             example:
                 page:
+                    applicationId: 2y7
                     entity: w7q
                     entityId: 5722665807259745387
+                    metadataVersion: knc
+                    pageId: kp6
                     route: xh0
+                    selection:
+                        - 8615325486438952813
+                        - 3615004802301163038
+                        - 8292885423084348597
                 question: q
                 sessionId: 2vr
             required:
                 - question
+        RuntimeInvocationReference:
+            type: object
+            properties:
+                applicationId:
+                    type: string
+                    example: "9"
+                    minLength: 1
+                    maxLength: 80
+                installationRevision:
+                    type: integer
+                    example: 8502953085697194992
+                    format: int64
+                    minimum: 1
+                metadataVersion:
+                    type: string
+                    example: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
+                    pattern: ^[a-f0-9]{64}$
+                pageId:
+                    type: string
+                    example: ka4
+                    minLength: 1
+                    maxLength: 100
+            description: UI definition freshness reference; never an identity or permission grant.
+            example:
+                applicationId: "9"
+                installationRevision: 8502953085697194992
+                metadataVersion: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
+                pageId: ka4
+            required:
+                - applicationId
+                - pageId
+                - metadataVersion
+                - installationRevision
         ScopeDepartmentChoice:
             type: object
             properties:
@@ -8066,6 +8345,11 @@ components:
                     type: integer
                     example: 2266162534159252130
                     format: int64
+                authorizationVersion:
+                    type: string
+                    description: Opaque non-secret authorization cache revision.
+                    example: e033321ddd3b9cfa7772712c4c297ba4638d5b7497337add1dc4e7d2300a389b
+                    pattern: ^[a-f0-9]{64}$
                 csrfToken:
                     type: string
                     example: Quia rem error sequi voluptates nulla aut.
@@ -8187,6 +8471,7 @@ components:
                     status: Aliquid commodi at.
                     username: Veritatis aut blanditiis.
                 activeDepartmentId: 2266162534159252130
+                authorizationVersion: e033321ddd3b9cfa7772712c4c297ba4638d5b7497337add1dc4e7d2300a389b
                 csrfToken: Quia rem error sequi voluptates nulla aut.
                 permissions:
                     - Blanditiis officia sit asperiores reprehenderit.

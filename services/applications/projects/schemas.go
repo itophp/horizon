@@ -151,3 +151,14 @@ func allowed(value string, allowed ...string) bool {
 	}
 	return false
 }
+
+func paging(in contracts.Input, fallback int32) (int32, int32) {
+	page, size := int32(integer(in, "page")), int32(integer(in, "pageSize"))
+	if page == 0 {
+		page = 1
+	}
+	if size == 0 {
+		size = boundedLimit(in, fallback, 100)
+	}
+	return page, size
+}

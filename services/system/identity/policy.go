@@ -186,3 +186,9 @@ func MergeGrants(roles, overrides []*genidentity.PermissionGrant) []*genidentity
 	}
 	return append(out, overrides...)
 }
+
+// CanPermanent excludes temporary grants for installation and governance operations.
+func (p *Principal) CanPermanent(permission string) bool {
+	base, err := p.permanent()
+	return err == nil && base.Can(permission)
+}

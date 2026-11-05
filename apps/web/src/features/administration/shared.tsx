@@ -1,6 +1,6 @@
 import { useConfiguration } from "@/features/governance/runtime";
 import { useSession } from "./auth";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { tableFeatures, useTable, type ColumnDef } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
@@ -346,21 +346,28 @@ export type AdminColumn<T> = {
   header: string;
   cell: (row: T) => ReactNode;
   className?: string;
+  style?: CSSProperties;
 };
 export function DataTable<T extends { id: number }>({
   rows,
   columns,
   selectable = false,
+  serverPage = false,
+  onRowClick,
 }: {
   rows: T[];
   columns: AdminColumn<T>[];
   selectable?: boolean;
+  serverPage?: boolean;
+  onRowClick?: (row: T) => void;
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const config = useConfiguration();
-  const pageSize = Number(config.value("display.pageSize", 8));
+  const pageSize = serverPage
+    ? Math.max(1, rows.length)
+    : Number(config.value("display.pageSize", 8));
   const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   const current = Math.min(page, pages);
   const visible = useMemo(
@@ -417,6 +424,10 @@ export function DataTable<T extends { id: number }>({
                 {group.headers.map((header) => (
                   <TableHead
                     key={header.id}
+                    style={
+                      columns.find((column) => column.id === header.column.id)
+                        ?.style
+                    }
                     className={
                       columns.find((column) => column.id === header.column.id)
                         ?.className
@@ -432,6 +443,24 @@ export function DataTable<T extends { id: number }>({
             {table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
+                tabIndex={onRowClick ? 0 : undefined}
+                onClick={(event) => {
+                  if (
+                    onRowClick &&
+                    !(event.target as HTMLElement).closest(
+                      "a,button,input,select,textarea",
+                    )
+                  )
+                    onRowClick(row.original);
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    onRowClick &&
+                    event.key === "Enter" &&
+                    event.target === event.currentTarget
+                  )
+                    onRowClick(row.original);
+                }}
                 data-selected={selected.has(row.original.id) || undefined}
               >
                 {selectable && (
@@ -447,6 +476,10 @@ export function DataTable<T extends { id: number }>({
                 {row.getAllCells().map((cell) => (
                   <TableCell
                     key={cell.id}
+                    style={
+                      columns.find((column) => column.id === cell.column.id)
+                        ?.style
+                    }
                     className={
                       columns.find((column) => column.id === cell.column.id)
                         ?.className
@@ -464,38 +497,40 @@ export function DataTable<T extends { id: number }>({
         </Table>
         {rows.length === 0 && <EmptyState />}
       </div>
-      <div className="table-pagination">
-        <span>
-          {t("admin:feedback.rows", {
-            from: rows.length ? (current - 1) * pageSize + 1 : 0,
-            to: Math.min(current * pageSize, rows.length),
-            total: rows.length,
-          })}
-        </span>
-        <div>
+      {!serverPage && (
+        <div className="table-pagination">
           <span>
-            {t("admin:feedback.page", { page: current, total: pages })}
+            {t("admin:feedback.rows", {
+              from: rows.length ? (current - 1) * pageSize + 1 : 0,
+              to: Math.min(current * pageSize, rows.length),
+              total: rows.length,
+            })}
           </span>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            disabled={current === 1}
-            aria-label={t("admin:actions.previous")}
-            onClick={() => setPage(current - 1)}
-          >
-            <ChevronLeft size={14} />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            disabled={current === pages}
-            aria-label={t("admin:actions.next")}
-            onClick={() => setPage(current + 1)}
-          >
-            <ChevronRight size={14} />
-          </Button>
+          <div>
+            <span>
+              {t("admin:feedback.page", { page: current, total: pages })}
+            </span>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={current === 1}
+              aria-label={t("admin:actions.previous")}
+              onClick={() => setPage(current - 1)}
+            >
+              <ChevronLeft size={14} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={current === pages}
+              aria-label={t("admin:actions.next")}
+              onClick={() => setPage(current + 1)}
+            >
+              <ChevronRight size={14} />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

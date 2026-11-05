@@ -1,3 +1,6 @@
+import { RuntimeShellSlot } from "@/features/application-runtime/shell-slot";
+import { useApplicationCatalog } from "@/features/application-runtime/catalog";
+import { WorkspaceHost } from "@/features/application-runtime/workspace";
 import { canShowMenu } from "@/app/plugins/registry";
 import { frontendExtensions } from "@/app/plugins/builtins";
 import { WebMcpProvider } from "@/features/webmcp/provider";
@@ -126,19 +129,51 @@ export function AdminLayout() {
     window.addEventListener("keydown", shortcut);
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
+  const applicationCatalog = useApplicationCatalog();
   const links = [
+    ...(applicationCatalog.data?.items ?? []).flatMap((application) =>
+      (application.navigation ?? []).flatMap((nav) => {
+        const page = application.pages.find((page) => page.id === nav.pageId);
+        return page && !page.route.includes(":")
+          ? [
+              {
+                to: page.route,
+                label: t(nav.labelKey),
+                icon: Boxes,
+                permissions: [application.permission],
+              },
+            ]
+          : [];
+      }),
+    ),
+    {
+      to: "/applications",
+      label: t("runtime:applications"),
+      icon: Building2,
+      permissions: ["applications:read"],
+    },
     {
       to: "/drive",
       label: t("drive:heading"),
       icon: HardDrive,
       permissions: ["drive:use"],
     },
-    ...frontendExtensions.menus.map((menu) => ({
-      ...menu,
-      label: t(menu.labelKey),
-    })),
+    ...frontendExtensions.menus
+      .filter((menu) =>
+        applicationCatalog.data?.items.some(
+          (application) => application.route === menu.to,
+        ),
+      )
+      .map((menu) => ({
+        ...menu,
+        label: t(menu.labelKey),
+      })),
     {
-      to: "/articles",
+      to: applicationCatalog.data?.items.some(
+        (application) => application.id === "articles",
+      )
+        ? "/articles"
+        : "",
       label: t("articles:heading"),
       icon: BookOpen,
       permissions: ["articles:read"],
@@ -195,7 +230,10 @@ export function AdminLayout() {
     },
   ];
   const permitted = (items: typeof links) =>
-    items.filter((link) => canShowMenu(link.permissions, session.permissions));
+    items.filter(
+      (link) =>
+        link.to !== "" && canShowMenu(link.permissions, session.permissions),
+    );
   const matched = search.trim().toLowerCase();
   const results = matched
     ? [
@@ -295,6 +333,7 @@ export function AdminLayout() {
             </select>
           </div>
           <nav className="console-nav" aria-label={t("navigation:main")}>
+            <RuntimeShellSlot slot="navigation" />
             <div className="nav-section-label">{t("admin:nav.workspace")}</div>
             {permitted(links.slice(0, 3)).map((link) => (
               <NavLink
@@ -487,7 +526,8 @@ export function AdminLayout() {
           </header>
           <main className="console-content" id="admin-content">
             {!!logoutError && <ErrorBanner error={logoutError} />}
-            <Outlet />
+            <RuntimeShellSlot slot="toolbar" />
+            <WorkspaceHost />
           </main>
           <footer className="console-footer">
             <span>{brand.text("branding.footer", t("admin:footer"))}</span>

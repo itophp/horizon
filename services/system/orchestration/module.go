@@ -31,7 +31,7 @@ func (m *Module) Entries() []registry.Entry {
 	diagram.Title = "Workflow diagram"
 	diagram.Description = "Read the compiled node and dependency structure of a versioned workflow."
 	return []registry.Entry{
-		{Definition: start, Handler: contracts.Handler{ExecuteTx: m.Engine.StartTx}},
+		{Definition: start, Handler: contracts.Handler{ExecuteTx: m.Engine.StartTx, ActivationSources: m.Engine.ActivationSources}},
 		{Definition: cancel, Handler: contracts.Handler{ExecuteTx: m.Engine.CancelTx}},
 		{Definition: definition("get", "orchestration:read", true, id), Handler: contracts.Handler{Execute: m.Engine.Query}},
 		{Definition: diagram, Handler: contracts.Handler{Execute: m.Engine.Describe}},

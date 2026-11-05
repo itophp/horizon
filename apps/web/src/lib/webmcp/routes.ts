@@ -2,6 +2,12 @@
 // deliberately disconnects before entering them.
 export const webMcpRoutes = [
   {
+    path: "/applications",
+    module: "runtime",
+    permission: "applications:read",
+    connected: false,
+  },
+  {
     path: "/drive",
     module: "drive",
     permission: "drive:use",
@@ -29,7 +35,13 @@ export const webMcpRoutes = [
     path: "/articles",
     module: "articles",
     permission: "articles:read",
-    connected: false,
+    connected: true,
+  },
+  {
+    path: "/articles/:id",
+    module: "articles",
+    permission: "articles:read",
+    connected: true,
   },
   // Project collaboration publishes no page-scoped tools yet: entering it
   // disconnects the previous page's inventory instead of reusing it. The
@@ -39,13 +51,13 @@ export const webMcpRoutes = [
     path: "/projects",
     module: "projects",
     permission: "projects:read",
-    connected: false,
+    connected: true,
   },
   {
     path: "/projects/:id",
     module: "projects",
     permission: "projects:read",
-    connected: false,
+    connected: true,
   },
   { path: "/mcp", module: "development", permission: "", connected: true },
   // Legacy entry points redirect to the unified page; kept so older links and

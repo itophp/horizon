@@ -17,11 +17,12 @@ import (
 // InvokeRequestBody is the type of the "capability" service "invoke" endpoint
 // HTTP request body.
 type InvokeRequestBody struct {
-	Version        *string `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
-	Input          any     `form:"input,omitempty" json:"input,omitempty" xml:"input,omitempty"`
-	IdempotencyKey *string `form:"idempotencyKey,omitempty" json:"idempotencyKey,omitempty" xml:"idempotencyKey,omitempty"`
-	CorrelationID  *string `form:"correlationId,omitempty" json:"correlationId,omitempty" xml:"correlationId,omitempty"`
-	CausationID    *string `form:"causationId,omitempty" json:"causationId,omitempty" xml:"causationId,omitempty"`
+	Version        *string                                `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	Input          any                                    `form:"input,omitempty" json:"input,omitempty" xml:"input,omitempty"`
+	IdempotencyKey *string                                `form:"idempotencyKey,omitempty" json:"idempotencyKey,omitempty" xml:"idempotencyKey,omitempty"`
+	CorrelationID  *string                                `form:"correlationId,omitempty" json:"correlationId,omitempty" xml:"correlationId,omitempty"`
+	CausationID    *string                                `form:"causationId,omitempty" json:"causationId,omitempty" xml:"causationId,omitempty"`
+	Runtime        *RuntimeInvocationReferenceRequestBody `form:"runtime,omitempty" json:"runtime,omitempty" xml:"runtime,omitempty"`
 }
 
 // DecideRequestBody is the type of the "capability" service "decide" endpoint
@@ -472,6 +473,15 @@ type CapabilityEventResponse struct {
 	AiStatus      string `form:"aiStatus" json:"aiStatus" xml:"aiStatus"`
 	AiPolicy      string `form:"aiPolicy" json:"aiPolicy" xml:"aiPolicy"`
 	AiRunID       int64  `form:"aiRunId" json:"aiRunId" xml:"aiRunId"`
+}
+
+// RuntimeInvocationReferenceRequestBody is used to define fields on request
+// body types.
+type RuntimeInvocationReferenceRequestBody struct {
+	ApplicationID        *string `form:"applicationId,omitempty" json:"applicationId,omitempty" xml:"applicationId,omitempty"`
+	PageID               *string `form:"pageId,omitempty" json:"pageId,omitempty" xml:"pageId,omitempty"`
+	MetadataVersion      *string `form:"metadataVersion,omitempty" json:"metadataVersion,omitempty" xml:"metadataVersion,omitempty"`
+	InstallationRevision *int64  `form:"installationRevision,omitempty" json:"installationRevision,omitempty" xml:"installationRevision,omitempty"`
 }
 
 // NewDefinitionsResponseBody builds the HTTP response body from the result of
@@ -1060,6 +1070,9 @@ func NewInvokePayload(body *InvokeRequestBody, name string, cookie string) *capa
 		CorrelationID:  body.CorrelationID,
 		CausationID:    body.CausationID,
 	}
+	if body.Runtime != nil {
+		v.Runtime = unmarshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationReference(body.Runtime)
+	}
 	v.Name = name
 	v.Cookie = cookie
 
@@ -1139,6 +1152,11 @@ func ValidateInvokeRequestBody(body *InvokeRequestBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.causationId", *body.CausationID, utf8.RuneCountInString(*body.CausationID), 120, false))
 		}
 	}
+	if body.Runtime != nil {
+		if err2 := validateRuntimeInvocationReferenceRequestBody(body.Runtime, "body.runtime"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	return
 }
 
@@ -1150,6 +1168,91 @@ func ValidateDecideRequestBody(body *DecideRequestBody) (err error) {
 	if body.Note != nil {
 		if utf8.RuneCountInString(*body.Note) > 500 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.note", *body.Note, utf8.RuneCountInString(*body.Note), 500, false))
+		}
+	}
+	return
+}
+
+// ValidateRuntimeInvocationReferenceRequestBody runs the validations defined
+// on RuntimeInvocationReference
+func ValidateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationReferenceRequestBody) (err error) {
+	if body.ApplicationID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("applicationId", "body"))
+	}
+	if body.PageID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("pageId", "body"))
+	}
+	if body.MetadataVersion == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("metadataVersion", "body"))
+	}
+	if body.InstallationRevision == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("installationRevision", "body"))
+	}
+	if body.ApplicationID != nil {
+		if utf8.RuneCountInString(*body.ApplicationID) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 1, true))
+		}
+		if utf8.RuneCountInString(*body.ApplicationID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 80, false))
+		}
+	}
+	if body.PageID != nil {
+		if utf8.RuneCountInString(*body.PageID) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 1, true))
+		}
+		if utf8.RuneCountInString(*body.PageID) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 100, false))
+		}
+	}
+	if body.MetadataVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.metadataVersion", *body.MetadataVersion, "^[a-f0-9]{64}$"))
+	}
+	if body.InstallationRevision != nil {
+		if *body.InstallationRevision < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.installationRevision", *body.InstallationRevision, 1, true))
+		}
+	}
+	return
+}
+
+// validateRuntimeInvocationReferenceRequestBody checks
+// RuntimeInvocationReference and reports errors using the path supplied by its
+// caller
+func validateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationReferenceRequestBody, path string) (err error) {
+	if body.ApplicationID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("applicationId", path))
+	}
+	if body.PageID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("pageId", path))
+	}
+	if body.MetadataVersion == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("metadataVersion", path))
+	}
+	if body.InstallationRevision == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("installationRevision", path))
+	}
+	if body.ApplicationID != nil {
+		if utf8.RuneCountInString(*body.ApplicationID) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 1, true))
+		}
+		if utf8.RuneCountInString(*body.ApplicationID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 80, false))
+		}
+	}
+	if body.PageID != nil {
+		if utf8.RuneCountInString(*body.PageID) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 1, true))
+		}
+		if utf8.RuneCountInString(*body.PageID) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 100, false))
+		}
+	}
+	if body.MetadataVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern(path+".metadataVersion", *body.MetadataVersion, "^[a-f0-9]{64}$"))
+	}
+	if body.InstallationRevision != nil {
+		if *body.InstallationRevision < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError(path+".installationRevision", *body.InstallationRevision, 1, true))
 		}
 	}
 	return

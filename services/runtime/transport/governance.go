@@ -27,6 +27,7 @@ import (
 	"baseline/services/api/kernel/plugin"
 	orchestrationruntime "baseline/services/api/kernel/workflow"
 	"baseline/services/api/runtime/app"
+	"baseline/services/api/system/applicationruntime"
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
@@ -64,7 +65,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	hub := eventhub.NewHub()
 	events := eventhub.NewStore(core.Pool)
 
-	orchestrator := orchestrationruntime.New(core, orchestrationruntime.Builtins())
+	orchestrator := orchestrationruntime.New(core, app.WorkflowDefinitions())
 	articleModule := &articles.Module{Pool: core.Pool}
 	articleModule.Blocked = func(ctx context.Context, p *identity.Principal, content string) (bool, bool, error) {
 		raw, err := core.Setting(ctx, p, "articles.blockedWords")
@@ -89,7 +90,8 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	if err := core.Identity.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
 		panic(err)
 	}
-	entries := (app.CapabilityModules{Plugins: plugins, Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService}).Entries()
+	runtimeModule := &applicationruntime.Module{}
+	entries := (app.CapabilityModules{Runtime: runtimeModule, Plugins: plugins, Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService}).Entries()
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
 		panic("capability catalog is invalid: " + err.Error())
@@ -100,14 +102,21 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	}
 
 	dispatcher := gateway.New(gateway.Options{
-		Registry: catalog, Identity: core.Identity, Pool: core.Pool,
+		Registry: catalog, Identity: core.Identity, Pool: core.Pool, RuntimeCheck: runtimeModule.ValidateInvocation,
 		Approvals: approvals, Audit: auditStore, Events: events,
 	})
+	runtimeModule.Invoke = func(ctx context.Context, name, version string, input contracts.Input, key string) (*contracts.Result, error) {
+		return dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input, IdempotencyKey: key})
+	}
 	if err := orchestrator.Attach(dispatcher, catalog); err != nil {
 		panic("invalid workflow definitions")
 	}
+	plugins.AttachCapabilities(func(ctx context.Context, name, version string, input contracts.Input, key string) (*contracts.Result, error) {
+		return dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input, IdempotencyKey: key})
+	})
 	mcpService.AttachGateway(dispatcher)
 	agentService := harness.New(core, catalog, dispatcher, runs, auditStore, documents)
+	agentService.Profile = runtimeModule.AgentProfile
 	orchestrator.AgentModel = agentService.WorkflowModel
 	engine := triggers.NewEngine(triggers.NewStore(core.Pool), hub, agentService, core.Identity)
 	relay := outbox.NewRelay(core.Pool, hub)

@@ -29,6 +29,11 @@ func ConversationsAiPath() string {
 	return "/api/ai/conversations"
 }
 
+// RunEventsAiPath returns the URL path to the ai service runEvents HTTP endpoint.
+func RunEventsAiPath(id int64) string {
+	return fmt.Sprintf("/api/ai/runs/%v/events", id)
+}
+
 // RunDetailAiPath returns the URL path to the ai service runDetail HTTP endpoint.
 func RunDetailAiPath(id int64) string {
 	return fmt.Sprintf("/api/ai/runs/%v", id)

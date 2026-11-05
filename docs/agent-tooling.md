@@ -83,3 +83,7 @@ OpenAI 官方说明：AGENTS 按根到当前目录组合；从根启动不等于
 账号远程业务 MCP 的实现边界与接入见 [ADR 011](decisions/011-remote-mcp.md) 和 [操作指南](mcp-operations.md)。功能工具在 integrations/mcp/registry.go 注册，业务输入映射到能力契约；工程 Skill 与 webskills/baseline-business 的客户端使用说明分开。验证使用 test-mcp、test-mcp-e2e，按批次执行。
 
 流程规格与未来生成器的边界见 [Schema 路线](agent-generation-plan.md)；先使用 [完整生命周期示例](orchestration-example.md) 和生成的结构契约，不把自然语言规则或 Schema 校验当成业务安全证明。
+
+Application Runtime 页面先检查 `services/applications/articles/pages.go` 的贡献示例和 `kernel/applicationruntime` Adapter。公共 Go 契约经 `cmd/runtimespec` 生成 TypeScript/Zod；运行 `make generate`，禁止修改 `apps/web/src/api/generated/runtime.ts`。页面绑定现有能力，不新增通用 SQL CRUD。实现与边界见 [第一阶段说明](application-runtime-phase-1.md)。
+
+Runtime v2 任务同时核对装配语义、Provider/创建编辑绑定、表达式类型和真实入口；生成示例与 TS/Zod 都通过 cmd/runtimespec 更新。新业务优先贡献定义，不在通用渲染器增加业务字段/权限常量。批量组合使用 Gateway 与独立子事务，验证逐项范围和幂等。参见 [M1/M2 实施说明](application-runtime-phase-2.md) 和 [ADR 018](decisions/018-runtime-v2-and-action-dispatch.md)。

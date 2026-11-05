@@ -8,3 +8,4 @@ extensions:
   - entity
   - permission
   - event
+  - application

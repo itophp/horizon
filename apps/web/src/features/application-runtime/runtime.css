@@ -1,0 +1,85 @@
+.runtime-layout {
+  display: grid;
+  gap: 1rem;
+}
+.runtime-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+.runtime-fields dt {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+.runtime-fields dd {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.runtime-section {
+  min-width: 0;
+}
+.runtime-layout-grid > .admin-panel .runtime-fields {
+  grid-template-columns: repeat(var(--runtime-columns), minmax(0, 1fr));
+}
+@media (max-width: 640px) {
+  .runtime-layout-grid > .admin-panel .runtime-fields {
+    grid-template-columns: 1fr;
+  }
+}
+.runtime-layout-split,
+.runtime-master-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+.runtime-layout-split > *,
+.runtime-master-detail > * {
+  min-width: 0;
+}
+.runtime-subtable {
+  display: grid;
+  gap: 1rem;
+  overflow-x: auto;
+}
+.runtime-subtable fieldset {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  padding: 1rem;
+  border-radius: var(--radius);
+}
+.runtime-workspace-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.runtime-workspace-tabs > span {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .runtime-layout-split,
+  .runtime-master-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .runtime-master-detail:has(> section) > :first-child {
+    display: none;
+  }
+  .runtime-workspace-tabs {
+    max-width: 100%;
+  }
+}
+
+.runtime-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  transform: none;
+  border-radius: 0;
+  max-width: 42rem;
+  width: min(100vw, 42rem);
+  height: 100dvh;
+  overflow-y: auto;
+}

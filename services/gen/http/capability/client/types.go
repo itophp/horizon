@@ -17,11 +17,12 @@ import (
 // InvokeRequestBody is the type of the "capability" service "invoke" endpoint
 // HTTP request body.
 type InvokeRequestBody struct {
-	Version        *string `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
-	Input          any     `form:"input" json:"input" xml:"input"`
-	IdempotencyKey *string `form:"idempotencyKey,omitempty" json:"idempotencyKey,omitempty" xml:"idempotencyKey,omitempty"`
-	CorrelationID  *string `form:"correlationId,omitempty" json:"correlationId,omitempty" xml:"correlationId,omitempty"`
-	CausationID    *string `form:"causationId,omitempty" json:"causationId,omitempty" xml:"causationId,omitempty"`
+	Version        *string                                `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	Input          any                                    `form:"input" json:"input" xml:"input"`
+	IdempotencyKey *string                                `form:"idempotencyKey,omitempty" json:"idempotencyKey,omitempty" xml:"idempotencyKey,omitempty"`
+	CorrelationID  *string                                `form:"correlationId,omitempty" json:"correlationId,omitempty" xml:"correlationId,omitempty"`
+	CausationID    *string                                `form:"causationId,omitempty" json:"causationId,omitempty" xml:"causationId,omitempty"`
+	Runtime        *RuntimeInvocationReferenceRequestBody `form:"runtime,omitempty" json:"runtime,omitempty" xml:"runtime,omitempty"`
 }
 
 // DecideRequestBody is the type of the "capability" service "decide" endpoint
@@ -458,6 +459,15 @@ type CapabilityEventResponse struct {
 	AiRunID       *int64  `form:"aiRunId,omitempty" json:"aiRunId,omitempty" xml:"aiRunId,omitempty"`
 }
 
+// RuntimeInvocationReferenceRequestBody is used to define fields on request
+// body types.
+type RuntimeInvocationReferenceRequestBody struct {
+	ApplicationID        string `form:"applicationId" json:"applicationId" xml:"applicationId"`
+	PageID               string `form:"pageId" json:"pageId" xml:"pageId"`
+	MetadataVersion      string `form:"metadataVersion" json:"metadataVersion" xml:"metadataVersion"`
+	InstallationRevision int64  `form:"installationRevision" json:"installationRevision" xml:"installationRevision"`
+}
+
 // NewInvokeRequestBody builds the HTTP request body from the payload of the
 // "invoke" endpoint of the "capability" service.
 func NewInvokeRequestBody(p *capability.InvokePayload) *InvokeRequestBody {
@@ -467,6 +477,9 @@ func NewInvokeRequestBody(p *capability.InvokePayload) *InvokeRequestBody {
 		IdempotencyKey: p.IdempotencyKey,
 		CorrelationID:  p.CorrelationID,
 		CausationID:    p.CausationID,
+	}
+	if p.Runtime != nil {
+		body.Runtime = marshalCapabilityRuntimeInvocationReferenceToRuntimeInvocationReferenceRequestBody(p.Runtime)
 	}
 	return body
 }
@@ -2219,6 +2232,51 @@ func validateCapabilityEventResponse(body *CapabilityEventResponse, path string)
 	}
 	if body.AiRunID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("aiRunId", path))
+	}
+	return
+}
+
+// ValidateRuntimeInvocationReferenceRequestBody runs the validations defined
+// on RuntimeInvocationReference
+func ValidateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationReferenceRequestBody) (err error) {
+	if utf8.RuneCountInString(body.ApplicationID) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.applicationId", body.ApplicationID, utf8.RuneCountInString(body.ApplicationID), 1, true))
+	}
+	if utf8.RuneCountInString(body.ApplicationID) > 80 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.applicationId", body.ApplicationID, utf8.RuneCountInString(body.ApplicationID), 80, false))
+	}
+	if utf8.RuneCountInString(body.PageID) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.pageId", body.PageID, utf8.RuneCountInString(body.PageID), 1, true))
+	}
+	if utf8.RuneCountInString(body.PageID) > 100 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.pageId", body.PageID, utf8.RuneCountInString(body.PageID), 100, false))
+	}
+	err = goa.MergeErrors(err, goa.ValidatePattern("body.metadataVersion", body.MetadataVersion, "^[a-f0-9]{64}$"))
+	if body.InstallationRevision < 1 {
+		err = goa.MergeErrors(err, goa.InvalidRangeError("body.installationRevision", body.InstallationRevision, 1, true))
+	}
+	return
+}
+
+// validateRuntimeInvocationReferenceRequestBody checks
+// RuntimeInvocationReference and reports errors using the path supplied by its
+// caller
+func validateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationReferenceRequestBody, path string) (err error) {
+	if utf8.RuneCountInString(body.ApplicationID) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError(path+".applicationId", body.ApplicationID, utf8.RuneCountInString(body.ApplicationID), 1, true))
+	}
+	if utf8.RuneCountInString(body.ApplicationID) > 80 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError(path+".applicationId", body.ApplicationID, utf8.RuneCountInString(body.ApplicationID), 80, false))
+	}
+	if utf8.RuneCountInString(body.PageID) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError(path+".pageId", body.PageID, utf8.RuneCountInString(body.PageID), 1, true))
+	}
+	if utf8.RuneCountInString(body.PageID) > 100 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError(path+".pageId", body.PageID, utf8.RuneCountInString(body.PageID), 100, false))
+	}
+	err = goa.MergeErrors(err, goa.ValidatePattern(path+".metadataVersion", body.MetadataVersion, "^[a-f0-9]{64}$"))
+	if body.InstallationRevision < 1 {
+		err = goa.MergeErrors(err, goa.InvalidRangeError(path+".installationRevision", body.InstallationRevision, 1, true))
 	}
 	return
 }

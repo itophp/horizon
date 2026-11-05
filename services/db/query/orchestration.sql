@@ -54,3 +54,7 @@ SELECT count(*)::bigint FROM cap_approvals a JOIN cap_invocations i
 ON i.tenant_id = a.tenant_id AND i.invocation_id = a.invocation_id
 WHERE a.tenant_id = $1 AND a.account_id = $2 AND a.status = 'pending'
 AND i.idempotency_key LIKE ('orch:' || sqlc.arg(run_id)::bigint::text || ':%');
+
+-- name: OrchSetAnswer :exec
+UPDATE ai_runs SET answer=$4 WHERE tenant_id=$1 AND account_id=$2 AND id=$3
+AND agent='orchestration' AND status IN ('running','awaiting_approval');

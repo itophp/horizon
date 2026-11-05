@@ -37,6 +37,7 @@ const (
 // Request is one invocation request. Security fields are not part of it: the
 // principal comes from the trusted context, the origin from the adapter.
 type Request struct {
+	Runtime        *contracts.RuntimeReference
 	Name           string
 	Version        string
 	Input          contracts.Input
@@ -49,24 +50,26 @@ type Request struct {
 
 // Options wires the gateway.
 type Options struct {
-	Registry  *registry.Registry
-	Identity  *identity.Service
-	Pool      *pgxpool.Pool
-	Approvals *approval.Store
-	Audit     *audit.Store
-	Events    *eventhub.Store
-	Now       func() time.Time
+	RuntimeCheck func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
+	Registry     *registry.Registry
+	Identity     *identity.Service
+	Pool         *pgxpool.Pool
+	Approvals    *approval.Store
+	Audit        *audit.Store
+	Events       *eventhub.Store
+	Now          func() time.Time
 }
 
 // Gateway executes capabilities.
 type Gateway struct {
-	registry  *registry.Registry
-	identity  *identity.Service
-	pool      *pgxpool.Pool
-	approvals *approval.Store
-	audit     *audit.Store
-	events    *eventhub.Store
-	now       func() time.Time
+	runtimeCheck func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
+	registry     *registry.Registry
+	identity     *identity.Service
+	pool         *pgxpool.Pool
+	approvals    *approval.Store
+	audit        *audit.Store
+	events       *eventhub.Store
+	now          func() time.Time
 }
 
 // New builds a gateway.
@@ -76,7 +79,7 @@ func New(options Options) *Gateway {
 		now = time.Now
 	}
 	return &Gateway{
-		registry: options.Registry, identity: options.Identity, pool: options.Pool,
+		registry: options.Registry, runtimeCheck: options.RuntimeCheck, identity: options.Identity, pool: options.Pool,
 		approvals: options.Approvals, audit: options.Audit, events: options.Events, now: now,
 	}
 }
@@ -92,6 +95,22 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 	if err != nil {
 		return nil, contracts.Problem("unauthenticated")
 	}
+	if g.identity != nil && p.Account.ID > 0 {
+		refreshed, e := g.identity.PrincipalForTask(ctx, p.TenantID, p.Account.ID, p.Account.DepartmentID)
+		if e != nil {
+			return nil, contracts.Problem("forbidden")
+		}
+		if p.TokenHash != "" {
+			session, se := dbgen.New(g.pool).IAMSession(ctx, p.TokenHash)
+			if se != nil || session.ActiveDepartmentID != p.Account.DepartmentID {
+				return nil, contracts.Problem("unauthenticated")
+			}
+		}
+		refreshed.CSRF = p.CSRF
+		refreshed.TokenHash = p.TokenHash
+		p = refreshed
+		ctx = identity.WithPrincipal(ctx, p)
+	}
 	if err = g.validateRequest(&request); err != nil {
 		return nil, err
 	}
@@ -103,6 +122,12 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 		request.IdempotencyKey = ""
 	}
 	definition := entry.Definition
+	if !definition.AllowsOrigin(request.Origin) {
+		return nil, contracts.Problem("forbidden")
+	}
+	if err = checkInputAccess(p, definition, request.Input); err != nil {
+		return nil, err
+	}
 	caller := callerOf(p)
 	if (definition.Permission != "" && !p.Can(definition.Permission)) || !caller.Allowed(definition.Permission) {
 		return nil, contracts.Problem("forbidden")
@@ -110,8 +135,19 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 	if err = definition.Input.Validate(request.Input); err != nil {
 		return nil, contracts.Problem("invalid")
 	}
+	if err = g.checkEntry(ctx, dbgen.New(g.pool), p, entry, request.Input, false); err != nil {
+		return nil, err
+	}
 	if definition.Idempotency.Required && strings.TrimSpace(request.IdempotencyKey) == "" {
 		return nil, contracts.Problem("invalid")
+	}
+	if request.Runtime != nil {
+		if g.runtimeCheck == nil {
+			return nil, contracts.Problem("unavailable")
+		}
+		if err = g.runtimeCheck(ctx, request.Runtime, definition, dbgen.New(g.pool)); err != nil {
+			return nil, err
+		}
 	}
 	digest := contracts.Digest(request.Input)
 	if request.IdempotencyKey != "" {
@@ -207,7 +243,11 @@ func (g *Gateway) replay(ctx context.Context, p *identity.Principal, definition 
 		if len(row.Result) > 0 {
 			_ = json.Unmarshal(row.Result, &stored)
 		}
-		result.Data = stored.Data
+		var err error
+		result.Data, err = projectOutput(p, definition, stored.Data)
+		if err != nil {
+			return nil, false, err
+		}
 		result.EventIDs = stored.EventIDs
 	case contracts.StatusFailed:
 		result.ErrorCode = row.ErrorCode
@@ -257,6 +297,9 @@ func (g *Gateway) requestApproval(ctx context.Context, p *identity.Principal, en
 	}
 	defer tx.Rollback(ctx)
 	q := dbgen.New(tx)
+	if err = g.checkEntry(ctx, q, p, entry, request.Input, true); err != nil {
+		return nil, err
+	}
 	if _, err = q.CapCreateInvocation(ctx, dbgen.CapCreateInvocationParams{
 		TenantID: p.TenantID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
 		InvocationID: invocationID, Capability: entry.Definition.Name, CapabilityVersion: entry.Definition.Version,
@@ -276,6 +319,15 @@ func (g *Gateway) requestApproval(ctx context.Context, p *identity.Principal, en
 			}
 		}
 		return nil, err
+	}
+	refs, sourceErr := entrySources(entry, request.Input)
+	if sourceErr != nil {
+		return nil, sourceErr
+	}
+	for _, ref := range refs {
+		if err = q.RuntimeBindInvocation(ctx, dbgen.RuntimeBindInvocationParams{TenantID: p.TenantID, InvocationID: invocationID, PluginID: ref.Installation}); err != nil {
+			return nil, err
+		}
 	}
 	approvalID, err := g.approvals.Create(ctx, q, approval.Approval{
 		TenantID: p.TenantID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
@@ -358,6 +410,16 @@ func (g *Gateway) Decide(ctx context.Context, id int64, approve bool, note strin
 		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "forbidden", 0)
 		return nil, contracts.Problem("forbidden")
 	}
+	if err = g.checkEntry(ctx, dbgen.New(g.pool), requester, entry, input, false); err != nil {
+		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "unavailable")
+		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "unavailable", 0)
+		return nil, err
+	}
+	if err = checkInputAccess(requester, entry.Definition, input); err != nil {
+		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "forbidden")
+		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "forbidden", 0)
+		return nil, err
+	}
 	if (entry.Definition.Permission != "" && !requester.Can(entry.Definition.Permission)) || !callerOf(requester).Allowed(entry.Definition.Permission) {
 		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "forbidden")
 		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "forbidden", 0)
@@ -399,17 +461,31 @@ func (g *Gateway) Definitions(ctx context.Context) ([]contracts.Definition, erro
 	if err != nil {
 		return nil, contracts.Problem("unauthenticated")
 	}
-	return g.registry.Discover(callerOf(p)), nil
+	out := []contracts.Definition{}
+	for _, d := range g.registry.Discover(callerOf(p)) {
+		if g.available(ctx, dbgen.New(g.pool), p, d, false) == nil {
+			d.Input = contracts.AuthorizedSchema(d.Input, d.InputAccess, p.Can)
+			if d.Input == nil {
+				continue
+			}
+			d.Output = contracts.AuthorizedSchema(d.Output, d.OutputAccess, p.Can)
+			if d.Output == nil {
+				continue
+			}
+			out = append(out, d)
+		}
+	}
+	return out, nil
 }
 
 // Entities is the metadata projection for the caller.
 func (g *Gateway) Entities(ctx context.Context) ([]contracts.Entity, error) {
-	p, err := identity.Current(ctx)
-	if err != nil {
-		return nil, contracts.Problem("unauthenticated")
-	}
 	allowed := map[string]bool{}
-	for _, definition := range g.registry.Discover(callerOf(p)) {
+	definitions, err := g.Definitions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, definition := range definitions {
 		for _, name := range definition.EntityNames() {
 			allowed[name] = true
 		}

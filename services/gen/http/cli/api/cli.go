@@ -29,7 +29,7 @@ import (
 func UsageCommands() []string {
 	return []string{
 		"system (health|echo)",
-		"ai (status|run|runs|conversations|run-detail|update-conversation)",
+		"ai (status|run|runs|conversations|run-events|run-detail|update-conversation)",
 		"assistant (status|chat|agent|workflow|knowledge|ingest)",
 		"capability (definitions|invoke|invocations|invocation|approvals|decide|events)",
 		"branding (get|logo)",
@@ -100,6 +100,12 @@ func ParseEndpoint(
 		aiConversationsFlags      = flag.NewFlagSet("conversations", flag.ExitOnError)
 		aiConversationsLimitFlag  = aiConversationsFlags.String("limit", "30", "")
 		aiConversationsCookieFlag = new(cliStringFlag)
+
+		aiRunEventsFlags           = flag.NewFlagSet("run-events", flag.ExitOnError)
+		aiRunEventsIDFlag          = new(cliStringFlag)
+		aiRunEventsAfterFlag       = aiRunEventsFlags.String("after", "0", "")
+		aiRunEventsCookieFlag      = new(cliStringFlag)
+		aiRunEventsLastEventIDFlag = new(cliStringFlag)
 
 		aiRunDetailFlags      = flag.NewFlagSet("run-detail", flag.ExitOnError)
 		aiRunDetailIDFlag     = new(cliStringFlag)
@@ -215,6 +221,9 @@ func ParseEndpoint(
 	aiRunsFlags.Var(aiRunsSessionIDFlag, "session-id", "")
 	aiRunsFlags.Var(aiRunsCookieFlag, "cookie", "")
 	aiConversationsFlags.Var(aiConversationsCookieFlag, "cookie", "")
+	aiRunEventsFlags.Var(aiRunEventsIDFlag, "id", "")
+	aiRunEventsFlags.Var(aiRunEventsCookieFlag, "cookie", "")
+	aiRunEventsFlags.Var(aiRunEventsLastEventIDFlag, "last-event-id", "")
 	aiRunDetailFlags.Var(aiRunDetailIDFlag, "id", "")
 	aiRunDetailFlags.Var(aiRunDetailCookieFlag, "cookie", "")
 	aiUpdateConversationFlags.Var(aiUpdateConversationBodyFlag, "body", "")
@@ -268,6 +277,7 @@ func ParseEndpoint(
 	aiRunFlags.Usage = aiRunUsage
 	aiRunsFlags.Usage = aiRunsUsage
 	aiConversationsFlags.Usage = aiConversationsUsage
+	aiRunEventsFlags.Usage = aiRunEventsUsage
 	aiRunDetailFlags.Usage = aiRunDetailUsage
 	aiUpdateConversationFlags.Usage = aiUpdateConversationUsage
 
@@ -369,6 +379,9 @@ func ParseEndpoint(
 
 			case "conversations":
 				epf = aiConversationsFlags
+
+			case "run-events":
+				epf = aiRunEventsFlags
 
 			case "run-detail":
 				epf = aiRunDetailFlags
@@ -513,6 +526,9 @@ func ParseEndpoint(
 			case "conversations":
 				endpoint = c.Conversations()
 				data, err = aic.BuildConversationsPayload(*aiConversationsLimitFlag, aiConversationsCookieFlag.value)
+			case "run-events":
+				endpoint = c.RunEvents()
+				data, err = aic.BuildRunEventsPayload(aiRunEventsIDFlag.value, *aiRunEventsAfterFlag, aiRunEventsCookieFlag.value, aiRunEventsLastEventIDFlag.value)
 			case "run-detail":
 				endpoint = c.RunDetail()
 				data, err = aic.BuildRunDetailPayload(aiRunDetailIDFlag.value, aiRunDetailCookieFlag.value)
@@ -672,6 +688,7 @@ func aiUsage() {
 	fmt.Fprintln(os.Stderr, `    run: Execute one agent task. Business actions inside it go through the capability gateway.`)
 	fmt.Fprintln(os.Stderr, `    runs: List the caller's own tasks, newest first. A session id narrows it to one conversation.`)
 	fmt.Fprintln(os.Stderr, `    conversations: List the caller's conversations, newest first. The workbench uses it as its task list.`)
+	fmt.Fprintln(os.Stderr, `    run-events: Read authorized task lifecycle events. Disconnecting never cancels business execution.`)
 	fmt.Fprintln(os.Stderr, `    run-detail: Read one task with the capability calls it caused.`)
 	fmt.Fprintln(os.Stderr, `    update-conversation: Rename or archive one conversation of the caller. A renamed title replaces the derived first question; an archived conversation stays readable and is restored with archived=false.`)
 	fmt.Fprintln(os.Stderr)
@@ -713,7 +730,7 @@ func aiRunUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run --body '{\n      \"page\": {\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"route\": \"xh0\"\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }' --cookie \"Ut dicta autem.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run --body '{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }' --cookie \"Ut dicta autem.\"")
 }
 
 func aiRunsUsage() {
@@ -756,6 +773,30 @@ func aiConversationsUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai conversations --limit 72 --cookie \"Expedita dicta voluptatum quo libero.\"")
+}
+
+func aiRunEventsUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] ai run-events", os.Args[0])
+	fmt.Fprint(os.Stderr, " -id INT64")
+	fmt.Fprint(os.Stderr, " -after INT64")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprint(os.Stderr, " -last-event-id STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Read authorized task lifecycle events. Disconnecting never cancels business execution.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -id INT64: `)
+	fmt.Fprintln(os.Stderr, `    -after INT64: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+	fmt.Fprintln(os.Stderr, `    -last-event-id STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run-events --id 5422783467239394492 --after 2517092798470815405 --cookie \"Praesentium alias tempora neque magnam quo sit.\" --last-event-id \"h2x\"")
 }
 
 func aiRunDetailUsage() {
@@ -871,7 +912,7 @@ func assistantAgentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant agent --body '{\n      \"question\": \"57\",\n      \"resumeToken\": \"pp3\",\n      \"runId\": 9005700267392517784,\n      \"sessionId\": \"vi3\",\n      \"toolCallId\": \"9la\",\n      \"toolResult\": \"4wg\",\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }' --cookie \"Qui consequatur dolor.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "assistant agent --body '{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"57\",\n      \"resumeToken\": \"pp3\",\n      \"runId\": 9005700267392517784,\n      \"sessionId\": \"vi3\",\n      \"toolCallId\": \"9la\",\n      \"toolResult\": \"4wg\",\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }' --cookie \"Qui consequatur dolor.\"")
 }
 
 func assistantWorkflowUsage() {
@@ -986,7 +1027,7 @@ func capabilityInvokeUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invoke --body '{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"version\": \"a58\"\n   }' --name \"0k\" --cookie \"Voluptatum aut culpa.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invoke --body '{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"runtime\": {\n         \"applicationId\": \"9\",\n         \"installationRevision\": 8502953085697194992,\n         \"metadataVersion\": \"d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14\",\n         \"pageId\": \"ka4\"\n      },\n      \"version\": \"a58\"\n   }' --name \"0k\" --cookie \"Voluptatum aut culpa.\"")
 }
 
 func capabilityInvocationsUsage() {

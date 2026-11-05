@@ -1558,9 +1558,10 @@ func marshalIdentityDepartmentMembershipToDepartmentMembershipResponseBody(v *id
 // *identity.SessionProfile.
 func marshalIdentitySessionProfileToSessionProfileResponseBody(v *identity.SessionProfile) *SessionProfileResponseBody {
 	res := &SessionProfileResponseBody{
-		CsrfToken:          v.CsrfToken,
-		TenantID:           v.TenantID,
-		ActiveDepartmentID: v.ActiveDepartmentID,
+		AuthorizationVersion: v.AuthorizationVersion,
+		CsrfToken:            v.CsrfToken,
+		TenantID:             v.TenantID,
+		ActiveDepartmentID:   v.ActiveDepartmentID,
 	}
 	if v.Account != nil {
 		res.Account = marshalIdentityAccountRecordToAccountRecordResponseBody(v.Account)

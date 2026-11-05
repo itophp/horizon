@@ -5,6 +5,7 @@
  * Application infrastructure and technical demonstrations
  * OpenAPI spec version: 0.0.1
  */
+import type { RuntimeInvocationReference } from "./runtimeInvocationReference";
 
 /**
  * Request body for invoke.
@@ -17,6 +18,7 @@ export interface InvokeRequestBody {
   /** @maxLength 120 */
   idempotencyKey?: string;
   input: unknown;
+  runtime?: RuntimeInvocationReference;
   /** @maxLength 16 */
   version?: string;
 }

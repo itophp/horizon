@@ -82,6 +82,14 @@ func definition(a string) contracts.Definition {
 		input["approve"] = &contracts.Schema{Type: "boolean"}
 		required = append(required, "approve")
 	}
+	if a == "list" {
+		input["keyword"] = &contracts.Schema{Type: "string", MaxLength: ptr(200)}
+		input["status"] = &contracts.Schema{Type: "string", Enum: []string{"draft", "pending_ai", "pending_review", "published", "rejected"}}
+		input["page"] = contracts.Int(1, 1000000)
+		input["pageSize"] = contracts.Int(1, 100)
+		input["sort"] = &contracts.Schema{Type: "string", Enum: []string{"id:asc", "id:desc", "title:asc", "title:desc", "status:asc", "status:desc", "revision:asc", "revision:desc"}}
+		input["select"] = &contracts.Schema{Type: "array", Items: &contracts.Schema{Type: "string", Enum: []string{"id", "title", "status", "revision", "reviewCode"}}, MinItems: ptr(1), MaxItems: ptr(5)}
+	}
 	permission := "articles:write"
 	ro := a == "list" || a == "get"
 	if ro {
@@ -100,7 +108,7 @@ func definition(a string) contracts.Definition {
 	}
 	row := map[string]*contracts.Schema{"id": {Type: "integer"}, "title": {Type: "string"}, "status": {Type: "string"}, "revision": {Type: "integer"}, "reviewCode": {Type: "string"}}
 	if a == "list" {
-		d.Output = contracts.Object(map[string]*contracts.Schema{"items": {Type: "array", Items: contracts.Object(row, "id", "title", "status", "revision", "reviewCode")}}, "items")
+		d.Output = contracts.Object(map[string]*contracts.Schema{"items": {Type: "array", Items: contracts.Object(row)}, "total": {Type: "integer"}, "page": {Type: "integer"}, "pageSize": {Type: "integer"}}, "items")
 	} else if a == "get" {
 		row["body"] = &contracts.Schema{Type: "string"}
 		d.Output = contracts.Object(row, "id", "title", "body", "status", "revision", "reviewCode")
@@ -140,7 +148,21 @@ func (m *Module) list(ctx context.Context, in contracts.Input) (contracts.Output
 	if e != nil {
 		return contracts.Output{}, e
 	}
-	rows, e := dbgen.New(m.Pool).ArticleList(ctx, dbgen.ArticleListParams{TenantID: p.TenantID, CreatedBy: p.Account.ID, CanReview: p.Can("articles:review")})
+	page, size := integer(in, "page"), integer(in, "pageSize")
+	if page == 0 {
+		page = 1
+	}
+	if size == 0 {
+		size = 100
+	}
+	keyword, _ := in["keyword"].(string)
+	status, _ := in["status"].(string)
+	sortKey, _ := in["sort"].(string)
+	if sortKey == "" {
+		sortKey = "id:desc"
+	}
+	q := dbgen.New(m.Pool)
+	rows, e := q.ArticleList(ctx, dbgen.ArticleListParams{TenantID: p.TenantID, CreatedBy: p.Account.ID, CanReview: p.Can("articles:review"), Keyword: keyword, StatusFilter: status, SortKey: sortKey, PageLimit: int32(size), PageOffset: int32((page - 1) * size)})
 	if e != nil {
 		return contracts.Output{}, e
 	}
@@ -148,7 +170,26 @@ func (m *Module) list(ctx context.Context, in contracts.Input) (contracts.Output
 	for _, r := range rows {
 		items = append(items, map[string]any{"id": r.ID, "title": r.Title, "status": r.Status, "revision": r.Revision, "reviewCode": r.ReviewCode})
 	}
-	return contracts.Output{Data: map[string]any{"items": items}}, nil
+	if fields, ok := in["select"].([]any); ok {
+		for _, item := range items {
+			for key := range item {
+				keep := false
+				for _, f := range fields {
+					if f == key {
+						keep = true
+					}
+				}
+				if !keep {
+					delete(item, key)
+				}
+			}
+		}
+	}
+	total, e := q.ArticleCount(ctx, dbgen.ArticleCountParams{TenantID: p.TenantID, CreatedBy: p.Account.ID, CanReview: p.Can("articles:review"), Keyword: keyword, StatusFilter: status})
+	if e != nil {
+		return contracts.Output{}, e
+	}
+	return contracts.Output{Data: map[string]any{"items": items, "total": total, "page": page, "pageSize": size}}, nil
 }
 func (m *Module) get(ctx context.Context, in contracts.Input) (contracts.Output, error) {
 	p, e := principal(ctx)
@@ -286,3 +327,5 @@ func ContainsBlocked(content, words string) bool {
 	}
 	return false
 }
+
+func ptr(v int) *int { return &v }

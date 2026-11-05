@@ -37,6 +37,17 @@ func (a *assistantAdapter) Agent(ctx context.Context, payload *genassistant.Agen
 			return ""
 		}
 		in := harness.BrowserTurn{Question: payload.Question, SessionID: value(payload.SessionID), Token: value(payload.ResumeToken), CallID: value(payload.ToolCallID), Result: value(payload.ToolResult)}
+		if payload.Page != nil {
+			in.Page.ApplicationID = valueString(payload.Page.ApplicationID)
+			in.Page.PageID = valueString(payload.Page.PageID)
+			in.Page.MetadataVersion = valueString(payload.Page.MetadataVersion)
+			in.Page.Route = valueString(payload.Page.Route)
+			in.Page.Entity = valueString(payload.Page.Entity)
+			if payload.Page.EntityID != nil {
+				in.Page.EntityID = *payload.Page.EntityID
+			}
+			in.Page.Selection = payload.Page.Selection
+		}
 		if payload.RunID != nil {
 			in.RunID = *payload.RunID
 		}

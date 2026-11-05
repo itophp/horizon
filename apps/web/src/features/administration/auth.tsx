@@ -34,7 +34,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
     queryKey: getIdentityMeQueryKey(),
     queryFn: async () => {
       const response = await identityMe();
-      if (response.status === 200) setCSRFToken(response.data.csrfToken);
+      if (response.status === 200) {
+        const previous = client.getQueryData<identityMeResponse>(
+          getIdentityMeQueryKey(),
+        );
+        if (
+          previous?.status === 200 &&
+          previous.data.authorizationVersion &&
+          previous.data.authorizationVersion !==
+            response.data.authorizationVersion
+        ) {
+          await client.cancelQueries({
+            predicate: (item) =>
+              item.queryKey[0] !== getIdentityMeQueryKey()[0],
+          });
+          client.removeQueries({
+            predicate: (item) =>
+              item.queryKey[0] !== getIdentityMeQueryKey()[0],
+          });
+        }
+        setCSRFToken(response.data.csrfToken);
+      }
       return response as identityMeResponse;
     },
     retry: false,
@@ -52,7 +72,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void client.invalidateQueries({
       predicate: (item) => item.queryKey[0] !== getIdentityMeQueryKey()[0],
     });
-  }, [profile?.csrfToken, client]);
+  }, [profile?.csrfToken, profile?.authorizationVersion, client]);
   useEffect(() => {
     const refresh = () => {
       void client.invalidateQueries({ queryKey: getIdentityMeQueryKey() });
@@ -114,7 +134,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
         },
       }}
     >
-      <Fragment key={profile?.activeDepartmentId}>{children}</Fragment>
+      <Fragment
+        key={JSON.stringify([
+          profile?.tenantId,
+          profile?.account.id,
+          profile?.activeDepartmentId,
+          profile?.authorizationVersion,
+        ])}
+      >
+        {children}
+      </Fragment>
     </AuthContext.Provider>
   );
 }

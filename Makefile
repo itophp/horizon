@@ -31,6 +31,7 @@ generate:
 	./scripts/go.sh run goa.design/goa/v3/cmd/goa gen baseline/services/api/design
 	cd services && ../.tools/bin/sqlc generate
 	pnpm --filter @baseline/web generate
+	./scripts/go.sh run ./cmd/runtimespec
 	pnpm --filter @baseline/web exec prettier --write src/api/generated
 
 generate-workflows:

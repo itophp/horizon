@@ -206,6 +206,15 @@ type InvokePayload struct {
 	IdempotencyKey *string
 	CorrelationID  *string
 	CausationID    *string
+	Runtime        *RuntimeInvocationReference
+}
+
+// UI definition freshness reference; never an identity or permission grant.
+type RuntimeInvocationReference struct {
+	ApplicationID        string
+	PageID               string
+	MetadataVersion      string
+	InstallationRevision int64
 }
 
 // Error returns an error description.

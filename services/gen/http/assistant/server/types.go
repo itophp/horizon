@@ -26,6 +26,7 @@ type ChatRequestBody struct {
 type AgentRequestBody struct {
 	Question    *string                     `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
 	SessionID   *string                     `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
+	Page        *AIPageRequestBody          `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
 	Tools       []*AssistantToolRequestBody `form:"tools,omitempty" json:"tools,omitempty" xml:"tools,omitempty"`
 	RunID       *int64                      `form:"runId,omitempty" json:"runId,omitempty" xml:"runId,omitempty"`
 	ResumeToken *string                     `form:"resumeToken,omitempty" json:"resumeToken,omitempty" xml:"resumeToken,omitempty"`
@@ -318,6 +319,17 @@ type AssistantToolRequestBody struct {
 	Name        *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 	Parameters  any     `form:"parameters,omitempty" json:"parameters,omitempty" xml:"parameters,omitempty"`
+}
+
+// AIPageRequestBody is used to define fields on request body types.
+type AIPageRequestBody struct {
+	ApplicationID   *string `form:"applicationId,omitempty" json:"applicationId,omitempty" xml:"applicationId,omitempty"`
+	PageID          *string `form:"pageId,omitempty" json:"pageId,omitempty" xml:"pageId,omitempty"`
+	MetadataVersion *string `form:"metadataVersion,omitempty" json:"metadataVersion,omitempty" xml:"metadataVersion,omitempty"`
+	Selection       []int64 `form:"selection,omitempty" json:"selection,omitempty" xml:"selection,omitempty"`
+	Route           *string `form:"route,omitempty" json:"route,omitempty" xml:"route,omitempty"`
+	Entity          *string `form:"entity,omitempty" json:"entity,omitempty" xml:"entity,omitempty"`
+	EntityID        *int64  `form:"entityId,omitempty" json:"entityId,omitempty" xml:"entityId,omitempty"`
 }
 
 // NewStatusResponseBody builds the HTTP response body from the result of the
@@ -739,6 +751,9 @@ func NewAgentPayload(body *AgentRequestBody, cookie string) *assistant.AgentPayl
 		ToolCallID:  body.ToolCallID,
 		ToolResult:  body.ToolResult,
 	}
+	if body.Page != nil {
+		v.Page = unmarshalAIPageRequestBodyToAssistantAIPage(body.Page)
+	}
 	if body.Tools != nil {
 		v.Tools = make([]*assistant.AssistantTool, len(body.Tools))
 		for i, val := range body.Tools {
@@ -830,6 +845,11 @@ func ValidateAgentRequestBody(body *AgentRequestBody) (err error) {
 	if body.SessionID != nil {
 		if utf8.RuneCountInString(*body.SessionID) > 80 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.sessionId", *body.SessionID, utf8.RuneCountInString(*body.SessionID), 80, false))
+		}
+	}
+	if body.Page != nil {
+		if err2 := validateAIPageRequestBody(body.Page, "body.page"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if len(body.Tools) > 40 {
@@ -1064,6 +1084,83 @@ func validateAssistantToolRequestBody(body *AssistantToolRequestBody, path strin
 	if body.Description != nil {
 		if utf8.RuneCountInString(*body.Description) > 2000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
+		}
+	}
+	return
+}
+
+// ValidateAIPageRequestBody runs the validations defined on AIPage
+func ValidateAIPageRequestBody(body *AIPageRequestBody) (err error) {
+	if body.ApplicationID != nil {
+		if utf8.RuneCountInString(*body.ApplicationID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 80, false))
+		}
+	}
+	if body.PageID != nil {
+		if utf8.RuneCountInString(*body.PageID) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 100, false))
+		}
+	}
+	if body.MetadataVersion != nil {
+		if utf8.RuneCountInString(*body.MetadataVersion) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.metadataVersion", *body.MetadataVersion, utf8.RuneCountInString(*body.MetadataVersion), 100, false))
+		}
+	}
+	if len(body.Selection) > 20 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.selection", body.Selection, len(body.Selection), 20, false))
+	}
+	if body.Route != nil {
+		if utf8.RuneCountInString(*body.Route) > 120 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.route", *body.Route, utf8.RuneCountInString(*body.Route), 120, false))
+		}
+	}
+	if body.Entity != nil {
+		if utf8.RuneCountInString(*body.Entity) > 40 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.entity", *body.Entity, utf8.RuneCountInString(*body.Entity), 40, false))
+		}
+	}
+	if body.EntityID != nil {
+		if *body.EntityID < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.entityId", *body.EntityID, 0, true))
+		}
+	}
+	return
+}
+
+// validateAIPageRequestBody checks AIPage and reports errors using the path
+// supplied by its caller
+func validateAIPageRequestBody(body *AIPageRequestBody, path string) (err error) {
+	if body.ApplicationID != nil {
+		if utf8.RuneCountInString(*body.ApplicationID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".applicationId", *body.ApplicationID, utf8.RuneCountInString(*body.ApplicationID), 80, false))
+		}
+	}
+	if body.PageID != nil {
+		if utf8.RuneCountInString(*body.PageID) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".pageId", *body.PageID, utf8.RuneCountInString(*body.PageID), 100, false))
+		}
+	}
+	if body.MetadataVersion != nil {
+		if utf8.RuneCountInString(*body.MetadataVersion) > 100 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".metadataVersion", *body.MetadataVersion, utf8.RuneCountInString(*body.MetadataVersion), 100, false))
+		}
+	}
+	if len(body.Selection) > 20 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError(path+".selection", body.Selection, len(body.Selection), 20, false))
+	}
+	if body.Route != nil {
+		if utf8.RuneCountInString(*body.Route) > 120 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".route", *body.Route, utf8.RuneCountInString(*body.Route), 120, false))
+		}
+	}
+	if body.Entity != nil {
+		if utf8.RuneCountInString(*body.Entity) > 40 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".entity", *body.Entity, utf8.RuneCountInString(*body.Entity), 40, false))
+		}
+	}
+	if body.EntityID != nil {
+		if *body.EntityID < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError(path+".entityId", *body.EntityID, 0, true))
 		}
 	}
 	return

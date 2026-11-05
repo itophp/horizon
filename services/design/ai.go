@@ -8,9 +8,29 @@ import . "goa.design/goa/v3/dsl"
 
 var AIPage = Type("AIPage", func() {
 	Description("Current page context. It is validated against the route and entity catalog and treated as data, not instructions.")
+	Attribute("applicationId", String, func() { MaxLength(80) })
+	Attribute("pageId", String, func() { MaxLength(100) })
+	Attribute("metadataVersion", String, func() { MaxLength(100) })
+	Attribute("selection", ArrayOf(Int64), func() { MaxLength(20) })
 	Attribute("route", String, func() { MaxLength(120) })
 	Attribute("entity", String, func() { MaxLength(40) })
 	Attribute("entityId", Int64, func() { Minimum(0) })
+})
+
+var AIRunEvent = Type("AIRunEvent", func() {
+	Attribute("eventId", String)
+	Attribute("type", String, func() {
+		Enum("RUN_STARTED", "RUN_FINISHED", "RUN_ERROR", "STATE_SNAPSHOT", "TOOL_CALL_START", "TOOL_CALL_END", "STEP_STARTED", "STEP_FINISHED")
+	})
+	Attribute("runId", String)
+	Attribute("threadId", String)
+	Attribute("timestamp", Int64)
+	Attribute("snapshot", Any)
+	Attribute("toolCallId", String)
+	Attribute("toolCallName", String)
+	Attribute("stepName", String)
+	Attribute("message", String)
+	Required("eventId", "type", "runId", "threadId", "timestamp", "snapshot")
 })
 
 var AIStatus = Type("AIStatus", func() {
@@ -128,6 +148,22 @@ var _ = Service("ai", func() {
 		HTTP(func() {
 			GET("/api/ai/conversations")
 			Param("limit")
+			Response(StatusOK)
+		})
+	})
+	Method("runEvents", func() {
+		Description("Read authorized task lifecycle events. Disconnecting never cancels business execution.")
+		Payload(func() {
+			cookiePayload()
+			resourceId()
+			Attribute("after", Int64, func() { Minimum(0); Default(0) })
+			Attribute("lastEventId", String, func() { MaxLength(30) })
+		})
+		StreamingResult(AIRunEvent)
+		HTTP(func() {
+			GET("/api/ai/runs/{id}/events")
+			Param("after")
+			ServerSentEvents(func() { SSERequestID("lastEventId"); SSEEventID("eventId") })
 			Response(StatusOK)
 		})
 	})

@@ -9,8 +9,13 @@ import {
   type PropsWithChildren,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { assistantAgent, assistantStatus } from "@/api/generated/baseline";
+import {
+  assistantAgent,
+  assistantStatus,
+  aiRunDetail,
+} from "@/api/generated/baseline";
 import type { AssistantTool, AssistantReply } from "@/api/generated/models";
+import { getPageReference } from "@/features/application-runtime/semantic-store";
 import { ApiError } from "@/api/client/request";
 import { useWebMcp } from "@/features/webmcp/provider";
 import { useSession } from "@/features/administration/auth";
@@ -70,7 +75,7 @@ function toolText(result: { content?: unknown; isError?: boolean }) {
 
 export function AssistantProvider({ children }: PropsWithChildren) {
   const session = useSession();
-  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}`;
+  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}:${session.authorizationVersion ?? ""}`;
   return (
     <ScopedAssistantProvider key={identityKey}>
       {children}
@@ -88,7 +93,7 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
   const [error, setError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
-  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}`;
+  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}:${session.authorizationVersion ?? ""}`;
 
   useEffect(() => {
     mounted.current = true;
@@ -174,6 +179,7 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
           const result = await assistantAgent(
             {
               question,
+              page: getPageReference(),
               sessionId: sessionId.current,
               ...(continuation ?? { tools: inventory }),
             },
@@ -217,7 +223,7 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
             current &&
             JSON.stringify(expected.parameters) ===
               JSON.stringify(current.parameters)
-              ? await execute(call)
+              ? await execute(call, reply.runId)
               : {
                   id: identifier(),
                   role: "tool",
@@ -269,6 +275,7 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
       // only ever requests a tool, it never executes one.
       async function execute(
         call: NonNullable<AssistantReply["toolCalls"]>[number],
+        runId?: number,
       ): Promise<AssistantTurn> {
         let input: unknown;
         try {
@@ -284,7 +291,23 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
           };
         }
         try {
-          const result = await connection.registry.invoke(call.name, input);
+          let invocation:
+            import("@/lib/webmcp/runtime").PageToolInvocation | undefined;
+          if (call.name.startsWith("rt_") && runId) {
+            const detail = await aiRunDetail(runId);
+            if (detail.status !== 200)
+              throw new ApiError("unavailable", detail.status);
+            invocation = {
+              runId,
+              correlationId: detail.data.traceId,
+              callId: call.id,
+            };
+          }
+          const result = await connection.registry.invoke(
+            call.name,
+            input,
+            invocation,
+          );
           return {
             id: identifier(),
             role: "tool",

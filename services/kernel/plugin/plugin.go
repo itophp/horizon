@@ -14,6 +14,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	ar "baseline/services/api/kernel/applicationruntime"
 	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/registry"
 )
@@ -72,11 +73,13 @@ type Permission struct {
 
 type Extension struct{ PluginID, PluginVersion, Type, Name, Version string }
 type Registrar struct {
-	manifest    Manifest
-	entries     []registry.Entry
-	entities    []contracts.Entity
-	permissions []Permission
-	extensions  []Extension
+	contributions []Contribution
+	applications  []ar.ApplicationV2
+	manifest      Manifest
+	entries       []registry.Entry
+	entities      []contracts.Entity
+	permissions   []Permission
+	extensions    []Extension
 }
 
 func (r *Registrar) Capabilities(entries []registry.Entry) {
@@ -105,10 +108,12 @@ func (r *Registrar) references(kind string, names []string) {
 }
 
 type Catalog struct {
-	Entries     []registry.Entry
-	Entities    []contracts.Entity
-	Permissions []Permission
-	Extensions  []Extension
+	Contributions []Contribution
+	Applications  []ar.ApplicationV2
+	Entries       []registry.Entry
+	Entities      []contracts.Entity
+	Permissions   []Permission
+	Extensions    []Extension
 }
 type Manager struct {
 	plugins    []Plugin
@@ -199,7 +204,7 @@ func (m *Manager) Register(ctx context.Context) error {
 		r := &Registrar{manifest: p.Manifest()}
 		allowed := map[string]bool{}
 		for _, kind := range r.manifest.Extensions {
-			if kind != "capability" && kind != "entity" && kind != "permission" && kind != "event" {
+			if kind != "capability" && kind != "entity" && kind != "permission" && kind != "event" && kind != "application" && !runtimeContributionType(kind) {
 				return fmt.Errorf("unknown extension type %q", kind)
 			}
 			if allowed[kind] {
@@ -210,12 +215,60 @@ func (m *Manager) Register(ctx context.Context) error {
 		if err := p.Register(ctx, r); err != nil {
 			return fmt.Errorf("register plugin %s: %w", p.Manifest().ID, err)
 		}
+		for _, item := range r.contributions {
+			found := false
+			if !runtimeContributionType(item.Type) || item.Entry == "" || item.Version == "" || strings.ContainsAny(item.Entry, "/:\\") {
+				return fmt.Errorf("invalid runtime contribution")
+			}
+			for i := range r.applications {
+				if r.applications[i].ID == item.ApplicationID {
+					found = true
+					if item.Page != nil {
+						if item.Type != "page" || item.Page.ID != item.Entry {
+							return fmt.Errorf("invalid page contribution")
+						}
+						r.applications[i].Pages = append(r.applications[i].Pages, *item.Page)
+					}
+					if item.Provider != nil {
+						if item.Type != "provider" {
+							return fmt.Errorf("invalid provider contribution")
+						}
+						r.applications[i].Providers = append(r.applications[i].Providers, *item.Provider)
+					}
+					if item.Component != nil {
+						if item.Component.Source != r.manifest.ID {
+							return fmt.Errorf("invalid component provenance")
+						}
+						r.applications[i].Components = append(r.applications[i].Components, *item.Component)
+					}
+					if item.Action != nil || len(item.ContextBindings) > 0 {
+						target := false
+						for j := range r.applications[i].Pages {
+							if r.applications[i].Pages[j].ID == item.PageID {
+								target = true
+								if item.Action != nil {
+									r.applications[i].Pages[j].Actions = append(r.applications[i].Pages[j].Actions, *item.Action)
+								}
+								r.applications[i].Pages[j].RelationBindings = append(r.applications[i].Pages[j].RelationBindings, item.ContextBindings...)
+							}
+						}
+						if !target {
+							return fmt.Errorf("unknown contribution page")
+						}
+					}
+					r.applications[i].Extensions = append(r.applications[i].Extensions, ar.ExtensionV2{ID: item.ID, Slot: item.Slot, Source: r.manifest.ID, Version: item.Version, Type: item.Type, Entry: item.Entry, RuntimeCompatibility: "2.1", Permissions: item.Permissions})
+				}
+			}
+			if !found {
+				return fmt.Errorf("unknown contribution application")
+			}
+		}
 		for _, e := range r.extensions {
 			if !allowed[e.Type] {
 				return fmt.Errorf("plugin %s did not declare %s extensions", r.manifest.ID, e.Type)
 			}
 			key := e.Type + ":" + e.Name
-			if e.Type == "capability" {
+			if e.Type == "capability" || e.Type == "application" {
 				key += "@" + e.Version
 			}
 			if e.Name == "" || seen[key] {
@@ -267,6 +320,13 @@ func (m *Manager) Register(ctx context.Context) error {
 		}
 		staged.Entries = append(staged.Entries, r.entries...)
 		staged.Entities = append(staged.Entities, r.entities...)
+		for _, application := range r.applications {
+			if application.Source != r.manifest.ID {
+				return fmt.Errorf("plugin %s has invalid application ownership", r.manifest.ID)
+			}
+		}
+		staged.Applications = append(staged.Applications, r.applications...)
+		staged.Contributions = append(staged.Contributions, r.contributions...)
 		staged.Permissions = append(staged.Permissions, r.permissions...)
 		staged.Extensions = append(staged.Extensions, r.extensions...)
 	}
@@ -312,4 +372,62 @@ func (m *Manager) Stop(ctx context.Context) error {
 	m.started = nil
 	m.running = false
 	return first
+}
+
+// AttachCapabilities supplies the execution dependency after Gateway construction.
+func (m *Manager) AttachCapabilities(invoke func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)) {
+	for _, p := range m.plugins {
+		if consumer, ok := p.(interface {
+			AttachCapabilities(func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error))
+		}); ok {
+			consumer.AttachCapabilities(invoke)
+		}
+	}
+}
+
+func (r *Registrar) Applications(apps ...ar.ApplicationV2) {
+	for _, app := range apps {
+		if app.PluginVersion == "" {
+			app.PluginVersion = r.manifest.Version
+		}
+		if len(app.PluginDependencies) == 0 {
+			for _, dep := range r.manifest.Dependencies {
+				app.PluginDependencies = append(app.PluginDependencies, ar.PluginDependency{ID: dep.ID, Version: dep.Version})
+			}
+		}
+		r.applications = append(r.applications, app)
+		r.extensions = append(r.extensions, Extension{r.manifest.ID, r.manifest.Version, "application", app.ID, app.Version})
+	}
+}
+
+// Contribution references deployment-owned code/resources; Entry is never a URL.
+type Contribution struct {
+	Page            *ar.PageV2
+	Provider        *ar.Provider
+	Component       *ar.ComponentDefinition
+	Action          *ar.Action
+	PageID          string
+	ContextBindings []ar.RelatedBinding
+	Slot            string
+	ID              string
+	ApplicationID   string
+	Type            string
+	Entry           string
+	Version         string
+	Permissions     []string
+}
+
+func (r *Registrar) Contributions(items ...Contribution) {
+	for _, item := range items {
+		r.contributions = append(r.contributions, item)
+		r.extensions = append(r.extensions, Extension{r.manifest.ID, r.manifest.Version, item.Type, item.ID, item.Version})
+	}
+}
+
+func runtimeContributionType(kind string) bool {
+	switch kind {
+	case "navigation", "page", "component", "renderer", "action", "provider", "context", "custom-view", "shell", "theme", "locale":
+		return true
+	}
+	return false
 }

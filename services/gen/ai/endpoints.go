@@ -20,8 +20,18 @@ type Endpoints struct {
 	Run                goa.Endpoint
 	Runs               goa.Endpoint
 	Conversations      goa.Endpoint
+	RunEvents          goa.Endpoint
 	RunDetail          goa.Endpoint
 	UpdateConversation goa.Endpoint
+}
+
+// RunEventsEndpointInput holds both the payload and the server stream of the
+// "runEvents" method.
+type RunEventsEndpointInput struct {
+	// Payload is the method payload.
+	Payload *RunEventsPayload
+	// Stream is the server stream used by the "runEvents" method to send data.
+	Stream RunEventsServerStream
 }
 
 // NewEndpoints wraps the methods of the "ai" service with endpoints.
@@ -33,6 +43,7 @@ func NewEndpoints(s Service) *Endpoints {
 		Run:                NewRunEndpoint(s, a.APIKeyAuth),
 		Runs:               NewRunsEndpoint(s, a.APIKeyAuth),
 		Conversations:      NewConversationsEndpoint(s, a.APIKeyAuth),
+		RunEvents:          NewRunEventsEndpoint(s, a.APIKeyAuth),
 		RunDetail:          NewRunDetailEndpoint(s, a.APIKeyAuth),
 		UpdateConversation: NewUpdateConversationEndpoint(s, a.APIKeyAuth),
 	}
@@ -44,6 +55,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Run = m(e.Run)
 	e.Runs = m(e.Runs)
 	e.Conversations = m(e.Conversations)
+	e.RunEvents = m(e.RunEvents)
 	e.RunDetail = m(e.RunDetail)
 	e.UpdateConversation = m(e.UpdateConversation)
 }
@@ -121,6 +133,25 @@ func NewConversationsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) g
 			return nil, err
 		}
 		return s.Conversations(ctx, p)
+	}
+}
+
+// NewRunEventsEndpoint returns an endpoint function that calls the method
+// "runEvents" of service "ai".
+func NewRunEventsEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		ep := req.(*RunEventsEndpointInput)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "browser_session",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, string(ep.Payload.Cookie), &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.RunEvents(ctx, ep.Payload, ep.Stream)
 	}
 }
 

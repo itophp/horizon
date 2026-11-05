@@ -1,0 +1,22 @@
+[
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:articles",
+    "version": "1.0.0",
+    "digest": "0a2a06886b5afea5785215a12f7bc00bed69f2b3d3fb6d033e325528ff07a1c9",
+    "applications": [
+      "articles"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "com.horizon.projects",
+    "version": "1.0.0",
+    "digest": "abbc889debe6890f73ddb43ed2536702d47bdee2e0f2c26510f3ee7ed1973779",
+    "applications": [
+      "projects"
+    ],
+    "dependencies": []
+  }
+]

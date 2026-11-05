@@ -615,6 +615,183 @@ func EncodeConversationsError(encoder func(context.Context, http.ResponseWriter)
 	}
 }
 
+// EncodeRunEventsResponse returns an encoder for responses returned by the ai
+// runEvents endpoint.
+func EncodeRunEventsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*ai.AIRunEvent)
+		enc := encoder(ctx, w)
+		body := NewRunEventsResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeRunEventsRequest returns a decoder for requests sent to the ai
+// runEvents endpoint.
+func DecodeRunEventsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*ai.RunEventsPayload, error) {
+	return func(r *http.Request) (*ai.RunEventsPayload, error) {
+		var payload *ai.RunEventsPayload
+		var (
+			id          int64
+			after       int64
+			cookie      string
+			lastEventID *string
+			err         error
+
+			params = mux.Vars(r)
+		)
+		{
+			idRaw := params["id"]
+			v, err2 := strconv.ParseInt(idRaw, 10, 64)
+			if err2 != nil {
+				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("id", idRaw, "integer"))
+			}
+			id = v
+		}
+		if id < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("id", id, 1, true))
+		}
+		{
+			afterRaw := r.URL.Query().Get("after")
+			if afterRaw != "" {
+				v, err2 := strconv.ParseInt(afterRaw, 10, 64)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("after", afterRaw, "integer"))
+				}
+				after = v
+			}
+		}
+		if after < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("after", after, 0, true))
+		}
+		cookie = r.Header.Get("Cookie")
+		if cookie == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("cookie", "header"))
+		}
+		lastEventIDValues, lastEventIDPresent := r.Header["Last-Event-Id"]
+		if lastEventIDPresent && len(lastEventIDValues) > 0 {
+			for _, character := range lastEventIDValues[0] {
+				if character == 0 || character == '\r' || character == '\n' {
+					err = goa.MergeErrors(err, goa.InvalidPatternError("lastEventId", lastEventIDValues[0], "[^\\x00\\r\\n]*"))
+					break
+				}
+			}
+			value := lastEventIDValues[0]
+			lastEventID = &value
+		}
+		if lastEventID != nil {
+			if utf8.RuneCountInString(*lastEventID) > 30 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("lastEventId", *lastEventID, utf8.RuneCountInString(*lastEventID), 30, false))
+			}
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewRunEventsPayload(id, after, cookie, lastEventID)
+		if index := strings.IndexByte(string(payload.Cookie), ' '); index >= 0 {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			payload.Cookie = payload.Cookie[index+1:]
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeRunEventsError returns an encoder for errors returned by the runEvents
+// ai endpoint.
+func EncodeRunEventsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "unauthenticated":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunEventsUnauthenticatedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "forbidden":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunEventsForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "invalid":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunEventsInvalidResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "not_found":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunEventsNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "unavailable":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunEventsUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "internal":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunEventsInternalResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeRunDetailResponse returns an encoder for responses returned by the ai
 // runDetail endpoint.
 func EncodeRunDetailResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
@@ -926,9 +1103,18 @@ func EncodeUpdateConversationError(encoder func(context.Context, http.ResponseWr
 // a value of type *AIPageRequestBody.
 func unmarshalAIPageRequestBodyToAiAIPage(v *AIPageRequestBody) *ai.AIPage {
 	res := &ai.AIPage{
-		Route:    v.Route,
-		Entity:   v.Entity,
-		EntityID: v.EntityID,
+		ApplicationID:   v.ApplicationID,
+		PageID:          v.PageID,
+		MetadataVersion: v.MetadataVersion,
+		Route:           v.Route,
+		Entity:          v.Entity,
+		EntityID:        v.EntityID,
+	}
+	if v.Selection != nil {
+		res.Selection = make([]int64, len(v.Selection))
+		for i, val := range v.Selection {
+			res.Selection[i] = val
+		}
 	}
 
 	return res

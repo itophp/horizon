@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"baseline/services/api/ai/harness"
@@ -66,6 +67,10 @@ func (a *aiAdapter) Run(ctx context.Context, payload *genai.RunPayload) (*genai.
 		input.SessionID = *payload.SessionID
 	}
 	if payload.Page != nil {
+		input.Page.ApplicationID = valueString(payload.Page.ApplicationID)
+		input.Page.PageID = valueString(payload.Page.PageID)
+		input.Page.MetadataVersion = valueString(payload.Page.MetadataVersion)
+		input.Page.Selection = payload.Page.Selection
 		if payload.Page.Route != nil {
 			input.Page.Route = *payload.Page.Route
 		}
@@ -179,4 +184,48 @@ func decodeJSON(raw json.RawMessage) any {
 		return nil
 	}
 	return decoded
+}
+
+func (a *aiAdapter) RunEvents(ctx context.Context, p *genai.RunEventsPayload, stream genai.RunEventsServerStream) error {
+	after := p.After
+	if p.LastEventID != nil && *p.LastEventID != "" {
+		n, err := strconv.ParseInt(*p.LastEventID, 10, 64)
+		if err != nil || n < 0 {
+			return aiProblem(contracts.Problem("invalid"))
+		}
+		if n > after {
+			after = n
+		}
+	}
+	err := a.harness.Events(ctx, p.ID, after, func(e harness.TaskEvent) error {
+		event := &genai.AIRunEvent{EventID: e.ID, Type: e.Type, RunID: e.RunID, ThreadID: e.ThreadID, Timestamp: e.Timestamp, Snapshot: e.Snapshot}
+		if id, ok := e.Snapshot["toolCallId"].(string); ok {
+			event.ToolCallID = &id
+		}
+		if name, ok := e.Snapshot["toolCallName"].(string); ok {
+			event.ToolCallName = &name
+		}
+		if name, ok := e.Snapshot["stepName"].(string); ok {
+			event.StepName = &name
+		}
+		if e.Type == "RUN_ERROR" {
+			message, _ := e.Snapshot["code"].(string)
+			if message == "" {
+				message, _ = e.Snapshot["status"].(string)
+			}
+			event.Message = &message
+		}
+		return stream.SendWithContext(ctx, event)
+	})
+	if err != nil {
+		return aiProblem(err)
+	}
+	return stream.Close()
+}
+
+func valueString(v *string) string {
+	if v != nil {
+		return *v
+	}
+	return ""
 }

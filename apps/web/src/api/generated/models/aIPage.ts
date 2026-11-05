@@ -10,10 +10,18 @@
  * Current page context. It is validated against the route and entity catalog and treated as data, not instructions.
  */
 export interface AIPage {
+  /** @maxLength 80 */
+  applicationId?: string;
   /** @maxLength 40 */
   entity?: string;
   /** @minimum 0 */
   entityId?: number;
+  /** @maxLength 100 */
+  metadataVersion?: string;
+  /** @maxLength 100 */
+  pageId?: string;
   /** @maxLength 120 */
   route?: string;
+  /** @maxItems 20 */
+  selection?: number[];
 }

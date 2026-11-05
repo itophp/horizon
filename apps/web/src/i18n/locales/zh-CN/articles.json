@@ -41,5 +41,25 @@
     "noReview": "尚无评审结论",
     "markdownHint": "正文支持 Markdown；保存草稿不会公开，提交评审后才进入流程。",
     "revision": "版本"
+  },
+  "runtime": {
+    "schemaError": "页面定义无效或版本不受支持。",
+    "discard": "放弃尚未保存的修改？",
+    "cancel": "取消",
+    "back": "返回列表",
+    "all": "全部状态",
+    "sort": "排序",
+    "previous": "上一页",
+    "next": "下一页",
+    "sorts": {
+      "id_asc": "编号 ↑",
+      "id_desc": "编号 ↓",
+      "title_asc": "标题 ↑",
+      "title_desc": "标题 ↓",
+      "status_asc": "状态 ↑",
+      "status_desc": "状态 ↓",
+      "revision_asc": "版本 ↑",
+      "revision_desc": "版本 ↓"
+    }
   }
 }

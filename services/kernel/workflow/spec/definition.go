@@ -57,10 +57,12 @@ type Agent struct {
 	Output *contracts.Schema `json:"output,omitempty"`
 }
 type Definition struct {
-	Name    string            `json:"name"`
-	Version string            `json:"version"`
-	Input   *contracts.Schema `json:"input"`
-	Steps   []Step            `json:"steps"`
+	FreshContext bool              `json:"freshContext,omitempty"`
+	ResultStep   string            `json:"resultStep,omitempty"`
+	Name         string            `json:"name"`
+	Version      string            `json:"version"`
+	Input        *contracts.Schema `json:"input"`
+	Steps        []Step            `json:"steps"`
 }
 
 const (
@@ -95,6 +97,12 @@ func (d Definition) Validate(r *registry.Registry) error {
 		}
 		byID[s.ID] = s
 	}
+	if d.ResultStep != "" {
+		step, ok := byID[d.ResultStep]
+		if !ok || step.Agent == nil || step.Agent.Output != nil {
+			return fmt.Errorf("result step must be a prose agent node")
+		}
+	}
 	footprints := map[string][]contracts.Definition{}
 	outputs := map[string]*contracts.Schema{}
 	for _, s := range d.Steps {
@@ -124,8 +132,9 @@ func (d Definition) Validate(r *registry.Registry) error {
 				}
 			}
 			e, ok := r.Resolve(name, version)
-			if !ok || e.Definition.Layer != contracts.LayerAtomic {
-				return fmt.Errorf("step %s requires an atomic capability", s.ID)
+			readComposition := ok && s.Agent == nil && e.Definition.Layer == contracts.LayerOrchestration && e.Definition.ReadOnly && s.Poll == nil && s.MaxAttempts <= 1 && s.Compensation == nil
+			if !ok || e.Definition.Layer != contracts.LayerAtomic && !readComposition {
+				return fmt.Errorf("step %s requires an atomic capability or a single read composition", s.ID)
 			}
 			footprints[s.ID] = append(footprints[s.ID], e.Definition.Normalized())
 			if s.Agent == nil {

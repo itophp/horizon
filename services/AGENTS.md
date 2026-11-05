@@ -79,3 +79,7 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 ## 内置插件权限目录
 
 内置插件可经 kernel/plugin Registrar 声明权限定义；身份服务实例必须在启动工作线程、处理请求或重建 Principal 前校验并合并插件权限。与内置身份目录冲突即失败，重复配置仅允许完全相同的目录；注册不授予权限。会话、部门切换、临时权限及 PrincipalForTask 必须使用同一实例目录，未知权限默认拒绝，deny 优先；不得使用进程级可变目录或信任插件输入作为调用身份。新增权限需声明 scope/临时授权语义，并覆盖 Gateway 允许/拒绝、跨租户、撤权和身份重建。
+
+Application Runtime 的只读定义来自业务模块贡献及 kernel/applicationruntime Adapter；公共 TS 类型和结构校验从 Go 契约生成，禁止手改 api/generated/runtime.ts。页面定义不能扩权或替代文章 SQL 的本人/审核人范围；所有页面动作仍经 Gateway。
+
+Runtime v2 目录解析必须按贡献中的实际权限投影，不能固定某个示例的权限或实体。创建/编辑分别用能力 I/O，派生字段只读，普通更新不依赖状态转移存在。批量组合须经注入的 Gateway 调用器执行子能力，禁止把多个独立事务称为原子事务；operationId/子幂等键与外层调用重放按 ADR 018 区分。

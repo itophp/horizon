@@ -5,12 +5,14 @@
  * Application infrastructure and technical demonstrations
  * OpenAPI spec version: 0.0.1
  */
+import type { AIPage } from "./aIPage";
 import type { AssistantTool } from "./assistantTool";
 
 /**
  * Request body for agent.
  */
 export interface AgentRequestBody {
+  page?: AIPage;
   /**
    * @minLength 1
    * @maxLength 2000

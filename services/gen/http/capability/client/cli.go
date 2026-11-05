@@ -44,7 +44,7 @@ func BuildInvokePayload(capabilityInvokeBody *string, capabilityInvokeName *stri
 		}
 		err = json.Unmarshal([]byte(*capabilityInvokeBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"version\": \"a58\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"runtime\": {\n         \"applicationId\": \"9\",\n         \"installationRevision\": 8502953085697194992,\n         \"metadataVersion\": \"d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14\",\n         \"pageId\": \"ka4\"\n      },\n      \"version\": \"a58\"\n   }'")
 		}
 		if body.Input == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("input", "body"))
@@ -67,6 +67,11 @@ func BuildInvokePayload(capabilityInvokeBody *string, capabilityInvokeName *stri
 		if body.CausationID != nil {
 			if utf8.RuneCountInString(*body.CausationID) > 120 {
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.causationId", *body.CausationID, utf8.RuneCountInString(*body.CausationID), 120, false))
+			}
+		}
+		if body.Runtime != nil {
+			if err2 := validateRuntimeInvocationReferenceRequestBody(body.Runtime, "body.runtime"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
 			}
 		}
 		if err != nil {
@@ -102,6 +107,9 @@ func BuildInvokePayload(capabilityInvokeBody *string, capabilityInvokeName *stri
 		IdempotencyKey: body.IdempotencyKey,
 		CorrelationID:  body.CorrelationID,
 		CausationID:    body.CausationID,
+	}
+	if body.Runtime != nil {
+		v.Runtime = marshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationReference(body.Runtime)
 	}
 	v.Name = name
 	v.Cookie = cookie

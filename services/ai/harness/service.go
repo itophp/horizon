@@ -46,6 +46,7 @@ const instruction = "You are the workspace agent of this capability-centric ente
 
 // Service runs agents.
 type Service struct {
+	Profile func(context.Context) ([]string, error)
 	*governance.Core
 	registry  *registry.Registry
 	gateway   *gateway.Gateway
@@ -122,6 +123,10 @@ func (s *Service) Run(ctx context.Context, in RunInput) (*Run, error) {
 		origin = contracts.OriginHumanUI
 	}
 	block := s.contextOf(ctx, p, in.Page, nil)
+	block.Semantic, err = s.resolveSemantic(ctx, in.Page)
+	if err != nil {
+		return nil, err
+	}
 	history := s.history(ctx, p, in.SessionID)
 	run, err := s.start(ctx, p, StartInput{
 		Question: question, SessionID: in.SessionID, Origin: origin,
@@ -210,6 +215,10 @@ func (s *Service) start(ctx context.Context, p *identity.Principal, in StartInpu
 
 func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, question string, block aicontext.Context, depth int, history []adk.Message) (*Run, error) {
 	started := time.Now()
+	authority, stampErr := s.authorityStamp(ctx)
+	if stampErr != nil {
+		return nil, stampErr
+	}
 	cfg, err := s.resolve(ctx, p)
 	if err != nil {
 		return nil, err
@@ -218,7 +227,11 @@ func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, que
 	if err != nil {
 		return fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
 	}
-	adapter := &tools.Adapter{
+	keys, profileErr := s.toolProfile(ctx)
+	if profileErr != nil {
+		return fail(ctx, s.runs, p.TenantID, run, "forbidden", started)
+	}
+	adapter := &tools.Adapter{AllowedKeys: keys,
 		Gateway: s.gateway, Registry: s.registry, Caller: callerOf(p),
 		TraceID: run.TraceID, RunID: run.ID, Depth: depth,
 	}
@@ -227,7 +240,7 @@ func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, que
 		Description: "Capability driven workspace agent",
 		Instruction: instruction + "\n\n" + block.Prompt(),
 		Model:       model,
-		ToolsConfig: adk.ToolsConfig{ToolsNodeConfig: compose.ToolsNodeConfig{Tools: adapter.Tools()}},
+		ToolsConfig: adk.ToolsConfig{ToolsNodeConfig: compose.ToolsNodeConfig{Tools: adapter.Tools(ctx)}},
 	})
 	if err != nil {
 		return fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
@@ -264,6 +277,10 @@ func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, que
 		if text := strings.TrimSpace(message.Content); text != "" {
 			answer = text
 		}
+	}
+	currentAuthority, stampErr := s.authorityStamp(ctx)
+	if stampErr != nil || currentAuthority != authority {
+		return fail(ctx, s.runs, p.TenantID, run, "context_changed", started)
 	}
 	if answer == "" {
 		return fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
@@ -509,8 +526,8 @@ func (s *Service) contextOf(ctx context.Context, p *identity.Principal, page aic
 // so the model is not told about business objects it cannot use.
 func (s *Service) entityContexts(ctx context.Context) []aicontext.EntityContext {
 	catalog, err := s.gateway.Entities(ctx)
-	if err != nil || len(catalog) == 0 {
-		catalog = s.registry.Entities()
+	if err != nil {
+		return nil
 	}
 	out := make([]aicontext.EntityContext, 0, len(catalog))
 	for _, entity := range catalog {

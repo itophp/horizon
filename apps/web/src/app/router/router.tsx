@@ -1,4 +1,6 @@
+import { DynamicApplicationRoute } from "@/features/application-runtime/route";
 import { frontendExtensions } from "@/app/plugins/builtins";
+import { InstallationsPage } from "@/features/application-runtime/installations";
 import { ArticlesPage } from "@/features/articles/page";
 
 import { DrivePage } from "@/features/drive/page";
@@ -82,6 +84,8 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { path: "/", element: <DefaultWorkspace /> },
+              { path: "/applications", element: <InstallationsPage /> },
+              { path: "*", element: <DynamicApplicationRoute /> },
               { path: "/analytics", element: <DashboardPage /> },
               { path: "/capabilities", element: <CapabilityPage /> },
               {
@@ -94,6 +98,7 @@ export const router = createBrowserRouter([
               },
               { path: "/ai", element: <AiPage /> },
               { path: "/articles", element: <ArticlesPage /> },
+              { path: "/articles/:id", element: <ArticlesPage /> },
               ...frontendExtensions.routes,
               { path: "/drive", element: <DrivePage /> },
               { path: "/drive/:id", element: <DriveDetailPage /> },

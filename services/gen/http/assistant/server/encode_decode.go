@@ -870,6 +870,27 @@ func marshalAssistantAssistantToolCallToAssistantToolCallResponseBody(v *assista
 	return res
 }
 
+// unmarshalAIPageRequestBodyToAssistantAIPage builds a value of type
+// *assistant.AIPage from a value of type *AIPageRequestBody.
+func unmarshalAIPageRequestBodyToAssistantAIPage(v *AIPageRequestBody) *assistant.AIPage {
+	res := &assistant.AIPage{
+		ApplicationID:   v.ApplicationID,
+		PageID:          v.PageID,
+		MetadataVersion: v.MetadataVersion,
+		Route:           v.Route,
+		Entity:          v.Entity,
+		EntityID:        v.EntityID,
+	}
+	if v.Selection != nil {
+		res.Selection = make([]int64, len(v.Selection))
+		for i, val := range v.Selection {
+			res.Selection[i] = val
+		}
+	}
+
+	return res
+}
+
 // marshalAssistantKnowledgeDocumentToKnowledgeDocumentResponse builds a value
 // of type *KnowledgeDocumentResponse from a value of type
 // *assistant.KnowledgeDocument.

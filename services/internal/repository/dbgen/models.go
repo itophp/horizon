@@ -48,6 +48,15 @@ type AiRun struct {
 	EventID            string
 }
 
+type AiRunEvent struct {
+	TenantID  string
+	RunID     int64
+	Sequence  int64
+	EventType string
+	Payload   []byte
+	CreatedAt pgtype.Timestamptz
+}
+
 type AiTriggerExecution struct {
 	ID            int64
 	TenantID      string
@@ -752,6 +761,55 @@ type ProjectTaskBrief struct {
 	Summary   string
 	Model     string
 	CreatedAt pgtype.Timestamptz
+}
+
+type RuntimeApplicationState struct {
+	TenantID      string
+	ApplicationID string
+	PluginID      string
+	Enabled       bool
+	Revision      int64
+}
+
+type RuntimeInstallation struct {
+	TenantID        string
+	PluginID        string
+	Version         string
+	Status          string
+	Revision        int64
+	Digest          string
+	PreviousVersion string
+	UpdatedAt       pgtype.Timestamptz
+}
+
+type RuntimeInstallationHistory struct {
+	ID        int64
+	TenantID  string
+	PluginID  string
+	AccountID int64
+	Action    string
+	Version   string
+	Revision  int64
+	CreatedAt pgtype.Timestamptz
+}
+
+type RuntimeInstallationTemplate struct {
+	PluginID      string
+	Version       string
+	ApplicationID string
+	Enabled       bool
+}
+
+type RuntimeInvocationDependency struct {
+	TenantID     string
+	InvocationID string
+	PluginID     string
+}
+
+type RuntimeRunDependency struct {
+	TenantID string
+	RunID    int64
+	PluginID string
 }
 
 type TechnicalDemoRecord struct {

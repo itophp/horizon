@@ -270,7 +270,11 @@ it.each([false, true])(
         screen.getByText("You are on the accounts page."),
       ).toBeInTheDocument(),
     );
-    expect(mocks.invoke).toHaveBeenCalledWith("baseline_page_context", {});
+    expect(mocks.invoke).toHaveBeenCalledWith(
+      "baseline_page_context",
+      {},
+      undefined,
+    );
     const first = mocks.agent.mock.calls[0][0];
     const second = mocks.agent.mock.calls[1][0];
     expect(second).toMatchObject({

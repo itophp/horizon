@@ -1,9 +1,19 @@
 {
-  "drive_space": { "label": "Drive space" },
-  "drive_member": { "label": "Drive member" },
-  "drive_folder": { "label": "Drive folder" },
-  "drive_file": { "label": "Drive file" },
-  "drive_trash_batch": { "label": "Drive deletion" },
+  "drive_space": {
+    "label": "Drive space"
+  },
+  "drive_member": {
+    "label": "Drive member"
+  },
+  "drive_folder": {
+    "label": "Drive folder"
+  },
+  "drive_file": {
+    "label": "Drive file"
+  },
+  "drive_trash_batch": {
+    "label": "Drive deletion"
+  },
   "drive_upload": {
     "label": "Drive upload",
     "states": {
@@ -13,7 +23,9 @@
       "cleaned": "Cleaned"
     }
   },
-  "drive_upload_chunk": { "label": "Upload chunk" },
+  "drive_upload_chunk": {
+    "label": "Upload chunk"
+  },
   "account": {
     "label": "Account"
   },
@@ -135,5 +147,26 @@
       "published": "Published",
       "rejected": "Rejected"
     }
+  },
+  "runtime_installation": {
+    "label": "Application installation"
+  },
+  "runtime_application_state": {
+    "label": "Application activation"
+  },
+  "runtime_installation_history": {
+    "label": "Installation history"
+  },
+  "runtime_installation_template": {
+    "label": "Installation template"
+  },
+  "ai_run_event": {
+    "label": "Task event"
+  },
+  "runtime_run_dependency": {
+    "label": "Task application dependency"
+  },
+  "runtime_invocation_dependency": {
+    "label": "Invocation application dependency"
   }
 }

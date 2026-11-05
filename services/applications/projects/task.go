@@ -98,10 +98,11 @@ func (m *Module) listTasks(ctx context.Context, q *dbgen.Queries, p *identity.Pr
 	if _, err := q.ProjectGet(ctx, dbgen.ProjectGetParams{TenantID: p.TenantID, ID: projectID, AccountID: p.Account.ID}); err != nil {
 		return contracts.Output{}, problem(err)
 	}
+	page, size := paging(in, 50)
 	rows, err := q.ProjectTaskList(ctx, dbgen.ProjectTaskListParams{
 		TenantID: p.TenantID, ProjectID: projectID, AccountID: p.Account.ID,
 		PlanFilter: integer(in, "planId"), AssigneeFilter: integer(in, "assigneeId"),
-		StatusFilter: status, MaxRows: boundedLimit(in, 50, 100),
+		StatusFilter: status, MaxRows: size, PageOffset: (page - 1) * size, Keyword: text(in, "keyword"),
 	})
 	if err != nil {
 		return contracts.Output{}, err
@@ -116,7 +117,11 @@ func (m *Module) listTasks(ctx context.Context, q *dbgen.Queries, p *identity.Pr
 			"dueDate": dateText(row.DueDate), "completedAt": timeText(row.CompletedAt),
 		})
 	}
-	return contracts.Output{Data: map[string]any{"items": items}, Summary: fmt.Sprintf("tasks=%d", len(items))}, nil
+	total, err := q.ProjectTaskCount(ctx, dbgen.ProjectTaskCountParams{TenantID: p.TenantID, ProjectID: projectID, AccountID: p.Account.ID, PlanFilter: integer(in, "planId"), AssigneeFilter: integer(in, "assigneeId"), StatusFilter: status, Keyword: text(in, "keyword")})
+	if err != nil {
+		return contracts.Output{}, err
+	}
+	return contracts.Output{Data: map[string]any{"items": items, "total": total, "page": page, "pageSize": size}, Summary: fmt.Sprintf("tasks=%d", len(items))}, nil
 }
 
 func (m *Module) updateTask(ctx context.Context, q *dbgen.Queries, p *identity.Principal, in contracts.Input) (contracts.Output, error) {

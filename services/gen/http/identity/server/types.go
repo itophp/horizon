@@ -145,11 +145,13 @@ type RevokeTemporaryAccessResponseBody struct {
 // SwitchDepartmentResponseBody is the type of the "identity" service
 // "switch_department" endpoint HTTP response body.
 type SwitchDepartmentResponseBody struct {
-	Account            *AccountRecordResponseBody `form:"account" json:"account" xml:"account"`
-	CsrfToken          string                     `form:"csrfToken" json:"csrfToken" xml:"csrfToken"`
-	Permissions        []string                   `form:"permissions" json:"permissions" xml:"permissions"`
-	TenantID           string                     `form:"tenantId" json:"tenantId" xml:"tenantId"`
-	ActiveDepartmentID int64                      `form:"activeDepartmentId" json:"activeDepartmentId" xml:"activeDepartmentId"`
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string                    `form:"authorizationVersion,omitempty" json:"authorizationVersion,omitempty" xml:"authorizationVersion,omitempty"`
+	Account              *AccountRecordResponseBody `form:"account" json:"account" xml:"account"`
+	CsrfToken            string                     `form:"csrfToken" json:"csrfToken" xml:"csrfToken"`
+	Permissions          []string                   `form:"permissions" json:"permissions" xml:"permissions"`
+	TenantID             string                     `form:"tenantId" json:"tenantId" xml:"tenantId"`
+	ActiveDepartmentID   int64                      `form:"activeDepartmentId" json:"activeDepartmentId" xml:"activeDepartmentId"`
 }
 
 // LoginResponseBody is the type of the "identity" service "login" endpoint
@@ -161,11 +163,13 @@ type LoginResponseBody struct {
 // MeResponseBody is the type of the "identity" service "me" endpoint HTTP
 // response body.
 type MeResponseBody struct {
-	Account            *AccountRecordResponseBody `form:"account" json:"account" xml:"account"`
-	CsrfToken          string                     `form:"csrfToken" json:"csrfToken" xml:"csrfToken"`
-	Permissions        []string                   `form:"permissions" json:"permissions" xml:"permissions"`
-	TenantID           string                     `form:"tenantId" json:"tenantId" xml:"tenantId"`
-	ActiveDepartmentID int64                      `form:"activeDepartmentId" json:"activeDepartmentId" xml:"activeDepartmentId"`
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string                    `form:"authorizationVersion,omitempty" json:"authorizationVersion,omitempty" xml:"authorizationVersion,omitempty"`
+	Account              *AccountRecordResponseBody `form:"account" json:"account" xml:"account"`
+	CsrfToken            string                     `form:"csrfToken" json:"csrfToken" xml:"csrfToken"`
+	Permissions          []string                   `form:"permissions" json:"permissions" xml:"permissions"`
+	TenantID             string                     `form:"tenantId" json:"tenantId" xml:"tenantId"`
+	ActiveDepartmentID   int64                      `form:"activeDepartmentId" json:"activeDepartmentId" xml:"activeDepartmentId"`
 }
 
 // SnapshotResponseBody is the type of the "identity" service "snapshot"
@@ -607,11 +611,13 @@ type DepartmentMembershipResponseBody struct {
 
 // SessionProfileResponseBody is used to define fields on response body types.
 type SessionProfileResponseBody struct {
-	Account            *AccountRecordResponseBody `form:"account" json:"account" xml:"account"`
-	CsrfToken          string                     `form:"csrfToken" json:"csrfToken" xml:"csrfToken"`
-	Permissions        []string                   `form:"permissions" json:"permissions" xml:"permissions"`
-	TenantID           string                     `form:"tenantId" json:"tenantId" xml:"tenantId"`
-	ActiveDepartmentID int64                      `form:"activeDepartmentId" json:"activeDepartmentId" xml:"activeDepartmentId"`
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string                    `form:"authorizationVersion,omitempty" json:"authorizationVersion,omitempty" xml:"authorizationVersion,omitempty"`
+	Account              *AccountRecordResponseBody `form:"account" json:"account" xml:"account"`
+	CsrfToken            string                     `form:"csrfToken" json:"csrfToken" xml:"csrfToken"`
+	Permissions          []string                   `form:"permissions" json:"permissions" xml:"permissions"`
+	TenantID             string                     `form:"tenantId" json:"tenantId" xml:"tenantId"`
+	ActiveDepartmentID   int64                      `form:"activeDepartmentId" json:"activeDepartmentId" xml:"activeDepartmentId"`
 }
 
 // OrganizationRecordResponseBody is used to define fields on response body
@@ -909,9 +915,10 @@ func NewRevokeTemporaryAccessResponseBody(res *identity.TemporaryAccessRecord) *
 // result of the "switch_department" endpoint of the "identity" service.
 func NewSwitchDepartmentResponseBody(res *identity.SessionProfile) *SwitchDepartmentResponseBody {
 	body := &SwitchDepartmentResponseBody{
-		CsrfToken:          res.CsrfToken,
-		TenantID:           res.TenantID,
-		ActiveDepartmentID: res.ActiveDepartmentID,
+		AuthorizationVersion: res.AuthorizationVersion,
+		CsrfToken:            res.CsrfToken,
+		TenantID:             res.TenantID,
+		ActiveDepartmentID:   res.ActiveDepartmentID,
 	}
 	if res.Account != nil {
 		body.Account = marshalIdentityAccountRecordToAccountRecordResponseBody(res.Account)
@@ -941,9 +948,10 @@ func NewLoginResponseBody(res *identity.LoginResult) *LoginResponseBody {
 // endpoint of the "identity" service.
 func NewMeResponseBody(res *identity.SessionProfile) *MeResponseBody {
 	body := &MeResponseBody{
-		CsrfToken:          res.CsrfToken,
-		TenantID:           res.TenantID,
-		ActiveDepartmentID: res.ActiveDepartmentID,
+		AuthorizationVersion: res.AuthorizationVersion,
+		CsrfToken:            res.CsrfToken,
+		TenantID:             res.TenantID,
+		ActiveDepartmentID:   res.ActiveDepartmentID,
 	}
 	if res.Account != nil {
 		body.Account = marshalIdentityAccountRecordToAccountRecordResponseBody(res.Account)

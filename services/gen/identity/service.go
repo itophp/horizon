@@ -218,11 +218,13 @@ type ScopeDepartmentChoice struct {
 // SessionProfile is the result type of the identity service switch_department
 // method.
 type SessionProfile struct {
-	Account            *AccountRecord
-	CsrfToken          string
-	Permissions        []string
-	TenantID           string
-	ActiveDepartmentID int64
+	// Opaque non-secret authorization cache revision.
+	AuthorizationVersion *string
+	Account              *AccountRecord
+	CsrfToken            string
+	Permissions          []string
+	TenantID             string
+	ActiveDepartmentID   int64
 }
 
 // SnapshotPayload is the payload type of the identity service snapshot method.

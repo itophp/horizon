@@ -121,7 +121,7 @@ func BuildAgentPayload(assistantAgentBody *string, assistantAgentCookie *string)
 		}
 		err = json.Unmarshal([]byte(*assistantAgentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"question\": \"57\",\n      \"resumeToken\": \"pp3\",\n      \"runId\": 9005700267392517784,\n      \"sessionId\": \"vi3\",\n      \"toolCallId\": \"9la\",\n      \"toolResult\": \"4wg\",\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"57\",\n      \"resumeToken\": \"pp3\",\n      \"runId\": 9005700267392517784,\n      \"sessionId\": \"vi3\",\n      \"toolCallId\": \"9la\",\n      \"toolResult\": \"4wg\",\n      \"tools\": [\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         },\n         {\n            \"description\": \"niq\",\n            \"name\": \"ni\",\n            \"parameters\": \"Voluptatem omnis sapiente eos non.\"\n         }\n      ]\n   }'")
 		}
 		if utf8.RuneCountInString(body.Question) < 1 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
@@ -132,6 +132,11 @@ func BuildAgentPayload(assistantAgentBody *string, assistantAgentCookie *string)
 		if body.SessionID != nil {
 			if utf8.RuneCountInString(*body.SessionID) > 80 {
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.sessionId", *body.SessionID, utf8.RuneCountInString(*body.SessionID), 80, false))
+			}
+		}
+		if body.Page != nil {
+			if err2 := validateAIPageRequestBody(body.Page, "body.page"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
 			}
 		}
 		if len(body.Tools) > 40 {
@@ -182,6 +187,9 @@ func BuildAgentPayload(assistantAgentBody *string, assistantAgentCookie *string)
 		ResumeToken: body.ResumeToken,
 		ToolCallID:  body.ToolCallID,
 		ToolResult:  body.ToolResult,
+	}
+	if body.Page != nil {
+		v.Page = marshalAIPageRequestBodyToAssistantAIPage(body.Page)
 	}
 	if body.Tools != nil {
 		v.Tools = make([]*assistant.AssistantTool, len(body.Tools))

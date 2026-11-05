@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -122,7 +123,46 @@ func (e *Engine) StartTx(ctx context.Context, tx pgx.Tx, in contracts.Input) (co
 	if err != nil {
 		return contracts.Output{}, err
 	}
-	m := manifest{Format: 1, Definition: d, Hash: d.Hash(), Input: args, Correlation: meta.CorrelationID, Parent: meta.InvocationID, Depth: meta.Depth + 1}
+	sources := map[string]bool{}
+	for _, step := range d.Steps {
+		keys := []string{step.Capability + "@" + step.Version}
+		if step.Agent != nil {
+			keys = step.Agent.Tools
+		}
+		for _, key := range keys {
+			name, version, _ := strings.Cut(key, "@")
+			entry, ok := e.registry.Resolve(name, version)
+			if !ok {
+				continue
+			}
+			source := entry.Definition.Installation
+			if source != "" {
+				sources[source] = true
+			}
+		}
+	}
+	orderedSources := []string{}
+	for source := range sources {
+		orderedSources = append(orderedSources, source)
+	}
+	sort.Strings(orderedSources)
+	for _, source := range orderedSources {
+		installed, e := q.RuntimeInstallationReadLock(ctx, dbgen.RuntimeInstallationReadLockParams{TenantID: p.TenantID, PluginID: source})
+		if e != nil || installed.Status != "enabled" {
+			return contracts.Output{}, contracts.Problem("unavailable")
+		}
+		if err = q.RuntimeBindRun(ctx, dbgen.RuntimeBindRunParams{TenantID: p.TenantID, RunID: row.ID, PluginID: source}); err != nil {
+			return contracts.Output{}, err
+		}
+	}
+	stamp := ""
+	if d.FreshContext {
+		stamp, err = authorityStamp(ctx, q, p)
+		if err != nil {
+			return contracts.Output{}, err
+		}
+	}
+	m := manifest{AuthorityStamp: stamp, Format: 1, Definition: d, Hash: d.Hash(), Input: args, Correlation: meta.CorrelationID, Parent: meta.InvocationID, Depth: meta.Depth + 1}
 	state := execution{ID: row.ID, Tenant: p.TenantID, Account: p.Account.ID, Manifest: m}
 	ctx = context.WithValue(ctx, executionKey{}, state)
 	raw, err := json.Marshal(m)
@@ -275,6 +315,15 @@ func (e *Engine) execute(ctx context.Context, row dbgen.OrchCandidatesRow) error
 	if !ok || currentDef.Hash() != m.Hash {
 		return status("failed", "version_mismatch")
 	}
+	if m.Definition.FreshContext {
+		stamp, e := authorityStamp(ctx, q, p)
+		if e != nil {
+			return e
+		}
+		if stamp != m.AuthorityStamp {
+			return status("failed", "context_changed")
+		}
+	}
 	state.Manifest = m
 	ctx = context.WithValue(ctx, executionKey{}, state)
 	r, err := e.compile(ctx, m.Definition)
@@ -311,5 +360,63 @@ func (e *Engine) execute(ctx context.Context, row dbgen.OrchCandidatesRow) error
 		}
 		return status("failed", contracts.Code(err))
 	}
+	if m.Definition.ResultStep != "" {
+		resultStore := checkpointStore{core: e.Core, q: q, prefix: "adk:" + m.Definition.ResultStep + ":"}
+		raw, exists, e := resultStore.Get(ctx, "result")
+		if e != nil {
+			return e
+		}
+		if !exists {
+			return status("failed", "invalid")
+		}
+		var answer struct {
+			Answer string `json:"answer"`
+		}
+		if json.Unmarshal(raw, &answer) != nil || answer.Answer == "" {
+			return status("failed", "invalid")
+		}
+		if len([]rune(answer.Answer)) > 8000 {
+			return status("failed", "invalid")
+		}
+		if err = q.OrchSetAnswer(ctx, dbgen.OrchSetAnswerParams{TenantID: row.TenantID, AccountID: row.AccountID, ID: row.ID, Answer: answer.Answer}); err != nil {
+			return err
+		}
+	}
 	return status("completed", "")
+}
+
+// ActivationSources is a pure catalog lookup used before risk approval and again at execution.
+func (e *Engine) ActivationSources(in contracts.Input) ([]contracts.Activation, error) {
+	name, _ := in["flow"].(string)
+	version, _ := in["version"].(string)
+	d, ok := e.definitions[name+"@"+version]
+	if !ok {
+		return nil, contracts.Problem("not_found")
+	}
+	out := []contracts.Activation{}
+	for _, step := range d.Steps {
+		keys := []string{step.Capability + "@" + step.Version}
+		if step.Agent != nil {
+			keys = step.Agent.Tools
+		}
+		for _, key := range keys {
+			name, version, _ := strings.Cut(key, "@")
+			entry, ok := e.registry.Resolve(name, version)
+			if !ok {
+				return nil, contracts.Problem("invalid")
+			}
+			if entry.Definition.Installation != "" {
+				out = append(out, contracts.Activation{Installation: entry.Definition.Installation, Application: entry.Definition.Application})
+			}
+		}
+	}
+	return out, nil
+}
+
+func authorityStamp(ctx context.Context, q *dbgen.Queries, p *identity.Principal) (string, error) {
+	rows, err := q.RuntimeScopeStamp(ctx, p.TenantID)
+	if err != nil {
+		return "", err
+	}
+	return contracts.Digest(contracts.Input{"principal": identity.AuthorizationVersion(p), "applications": rows}), nil
 }

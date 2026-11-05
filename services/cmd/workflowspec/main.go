@@ -4,6 +4,7 @@ package main
 
 import (
 	runtime "baseline/services/api/kernel/workflow/spec"
+	"baseline/services/api/runtime/app"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -56,7 +57,7 @@ func run(out, file string) error {
 	if err = write("workflow.schema.json", schema); err != nil {
 		return err
 	}
-	for _, d := range runtime.Builtins() {
+	for _, d := range app.WorkflowDefinitions() {
 		name := d.Name + ".workflow.json"
 		expected[name] = true
 		if err = write(name, d); err != nil {

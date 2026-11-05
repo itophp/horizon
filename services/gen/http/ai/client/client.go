@@ -9,6 +9,9 @@ package client
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"mime"
 	"net/http"
 
 	goahttp "goa.design/goa/v3/http"
@@ -29,6 +32,10 @@ type Client struct {
 	// Conversations Doer is the HTTP client used to make requests to the
 	// conversations endpoint.
 	ConversationsDoer goahttp.Doer
+
+	// RunEvents Doer is the HTTP client used to make requests to the runEvents
+	// endpoint.
+	RunEventsDoer goahttp.Doer
 
 	// RunDetail Doer is the HTTP client used to make requests to the runDetail
 	// endpoint.
@@ -62,6 +69,7 @@ func NewClient(
 		RunDoer:                doer,
 		RunsDoer:               doer,
 		ConversationsDoer:      doer,
+		RunEventsDoer:          doer,
 		RunDetailDoer:          doer,
 		UpdateConversationDoer: doer,
 		RestoreResponseBody:    restoreBody,
@@ -165,6 +173,47 @@ func (c *Client) Conversations() goa.Endpoint {
 			return nil, goahttp.ErrRequestError("ai", "conversations", err)
 		}
 		return decodeResponse(resp)
+	}
+}
+
+// RunEvents returns an endpoint that makes HTTP requests to the ai service
+// runEvents server.
+func (c *Client) RunEvents() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeRunEventsRequest(c.encoder)
+		decodeResponse = DecodeRunEventsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildRunEventsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		// For SSE endpoints, connect and return a stream
+		resp, err := c.RunEventsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("ai", "runEvents", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			// Decode designed errors (the decoder closes the response body).
+			return decodeResponse(resp)
+		}
+
+		contentType := resp.Header.Get("Content-Type")
+		mediaType, _, mediaTypeErr := mime.ParseMediaType(contentType)
+		if mediaTypeErr != nil || mediaType != "text/event-stream" {
+			contentTypeErr := fmt.Errorf("unexpected content type: %s (expected text/event-stream)", contentType)
+			if err := resp.Body.Close(); err != nil {
+				return nil, errors.Join(contentTypeErr, goahttp.ErrDecodingError("ai", "runEvents", err))
+			}
+			return nil, contentTypeErr
+		}
+
+		return NewRunEventsStream(resp, c.decoder), nil
 	}
 }
 

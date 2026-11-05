@@ -1,3 +1,5 @@
+import enRuntime from "./locales/en/runtime.json";
+import zhRuntime from "./locales/zh-CN/runtime.json";
 import enArticles from "./locales/en/articles.json";
 import enDrive from "./locales/en/drive.json";
 import zhDrive from "./locales/zh-CN/drive.json";
@@ -43,6 +45,7 @@ const pluginResources = {
 };
 const coreResources = {
   en: {
+    runtime: enRuntime,
     articles: enArticles,
     drive: enDrive,
     admin: enAdmin,
@@ -60,6 +63,7 @@ const coreResources = {
     validation: enValidation,
   },
   "zh-CN": {
+    runtime: zhRuntime,
     articles: zhArticles,
     drive: zhDrive,
     admin: zhAdmin,

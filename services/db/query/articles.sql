@@ -1,6 +1,22 @@
 -- name: ArticleList :many
 SELECT id,title,status,revision,review_code,created_by FROM articles
-WHERE tenant_id=$1 AND (created_by=$2 OR sqlc.arg(can_review)::boolean) ORDER BY id DESC LIMIT 100;
+WHERE tenant_id=$1 AND (created_by=$2 OR sqlc.arg(can_review)::boolean)
+AND (sqlc.arg(keyword)::text = '' OR strpos(lower(title),lower(sqlc.arg(keyword))) > 0)
+AND (sqlc.arg(status_filter)::text = '' OR status=sqlc.arg(status_filter))
+ORDER BY
+ CASE WHEN sqlc.arg(sort_key)::text='title:asc' THEN title END ASC,
+ CASE WHEN sqlc.arg(sort_key)::text='title:desc' THEN title END DESC,
+ CASE WHEN sqlc.arg(sort_key)::text='status:asc' THEN status END ASC,
+ CASE WHEN sqlc.arg(sort_key)::text='status:desc' THEN status END DESC,
+ CASE WHEN sqlc.arg(sort_key)::text='revision:asc' THEN revision END ASC,
+ CASE WHEN sqlc.arg(sort_key)::text='revision:desc' THEN revision END DESC,
+ CASE WHEN sqlc.arg(sort_key)::text='id:asc' THEN id END ASC,
+ id DESC LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
+-- name: ArticleCount :one
+SELECT count(*) FROM articles
+WHERE tenant_id=$1 AND (created_by=$2 OR sqlc.arg(can_review)::boolean)
+AND (sqlc.arg(keyword)::text = '' OR strpos(lower(title),lower(sqlc.arg(keyword))) > 0)
+AND (sqlc.arg(status_filter)::text = '' OR status=sqlc.arg(status_filter));
 -- name: ArticleGet :one
 SELECT id,title,body,status,revision,review_code,created_by FROM articles
 WHERE tenant_id=$1 AND id=$2 AND (created_by=$3 OR sqlc.arg(can_review)::boolean);

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 const roots = [
   "docs/generated/workflows",
+  "docs/generated/runtime",
   "services/gen",
   "services/internal/repository/dbgen",
   "apps/web/src/api/generated",

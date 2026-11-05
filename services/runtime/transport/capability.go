@@ -108,8 +108,13 @@ func (a *capabilityAdapter) Invoke(ctx context.Context, payload *gen.InvokePaylo
 	if payload.IdempotencyKey != nil {
 		key = *payload.IdempotencyKey
 	}
+	var runtimeRef *contracts.RuntimeReference
+	if payload.Runtime != nil {
+		runtimeRef = &contracts.RuntimeReference{ApplicationID: payload.Runtime.ApplicationID, PageID: payload.Runtime.PageID, MetadataVersion: payload.Runtime.MetadataVersion, InstallationRevision: payload.Runtime.InstallationRevision}
+	}
 	result, err := a.gateway.Invoke(ctx, gateway.Request{
-		Name: payload.Name, Version: version, Input: input, IdempotencyKey: key,
+		Runtime: runtimeRef,
+		Name:    payload.Name, Version: version, Input: input, IdempotencyKey: key,
 		Origin: contracts.OriginHumanUI, CorrelationID: correlation, CausationID: causation,
 	})
 	if err != nil {

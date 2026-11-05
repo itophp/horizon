@@ -111,6 +111,7 @@ var _ = Service("assistant", func() {
 			cookiePayload()
 			Attribute("question", String, func() { MinLength(1); MaxLength(2000) })
 			Attribute("sessionId", String, func() { MaxLength(80) })
+			Attribute("page", AIPage)
 			Attribute("tools", ArrayOf(AssistantTool), func() { MaxLength(40) })
 			Attribute("runId", Int64, func() { Minimum(1) })
 			Attribute("resumeToken", String, func() { MaxLength(80) })
