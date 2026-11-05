@@ -14,11 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"goa.design/goa/v3/security"
-	"slices"
 	"strings"
 )
-
-var Tools = []string{"articles_list", "articles_get", "articles_create", "articles_submit", "context_get", "capabilities_list", "dictionary_options", "notifications_list", "notifications_get", "workflows_list", "workflows_get", "workflows_run", "workflows_cancel"}
 
 type Service struct {
 	pool     *pgxpool.Pool
@@ -73,7 +70,7 @@ func (s *Service) issue(ctx context.Context, in *CreatePayload, rotateID int64, 
 	} else {
 		departmentID = in.DepartmentID
 	}
-	boundPrincipal, err := s.identity.PrincipalForTask(ctx, p.TenantID, p.Account.ID, departmentID)
+	_, err = s.identity.PrincipalForTask(ctx, p.TenantID, p.Account.ID, departmentID)
 	if err != nil {
 		return nil, problem("forbidden")
 	}
@@ -103,30 +100,17 @@ func (s *Service) issue(ctx context.Context, in *CreatePayload, rotateID int64, 
 		if e != nil {
 			return nil, e
 		}
-		tools, e := q.MCPTokenTools(ctx, dbgen.MCPTokenToolsParams{TenantID: p.TenantID, AccountID: p.Account.ID, ID: rotateID})
-		if e != nil {
-			return nil, e
-		}
-		in = &CreatePayload{Name: old.Name, DepartmentID: old.DepartmentID, Days: 30, Tools: tools}
+		in = &CreatePayload{Name: old.Name, DepartmentID: old.DepartmentID, Days: 30}
+
 		expiry = old.ExpiresAt
 		if _, e = q.MCPRevokeToken(ctx, dbgen.MCPRevokeTokenParams{TenantID: p.TenantID, AccountID: p.Account.ID, ID: rotateID}); e != nil {
 			return nil, e
 		}
 	}
-	if strings.TrimSpace(in.Name) == "" || in.Days < 1 || in.Days > 90 || len(in.Tools) == 0 {
+	if strings.TrimSpace(in.Name) == "" || in.Days < 1 || in.Days > 90 {
 		return nil, problem("invalid")
 	}
 
-	seen := map[string]bool{}
-	for _, tool := range in.Tools {
-		if !slices.Contains(Tools, tool) || seen[tool] {
-			return nil, problem("invalid")
-		}
-		if !toolAllowed(boundPrincipal, tool) {
-			return nil, problem("forbidden")
-		}
-		seen[tool] = true
-	}
 	var raw [32]byte
 	if _, err = rand.Read(raw[:]); err != nil {
 		return nil, err
@@ -137,15 +121,10 @@ func (s *Service) issue(ctx context.Context, in *CreatePayload, rotateID int64, 
 	if err != nil {
 		return nil, err
 	}
-	for _, tool := range in.Tools {
-		if err = q.MCPAddTokenTool(ctx, dbgen.MCPAddTokenToolParams{TokenID: row.ID, Tool: tool}); err != nil {
-			return nil, err
-		}
-	}
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	return &MCPTokenCreated{Secret: secret, Token: &MCPToken{ID: row.ID, DepartmentID: row.DepartmentID, Name: row.Name, Prefix: row.TokenPrefix, Tools: in.Tools, CreatedAt: governance.Time(row.CreatedAt), ExpiresAt: governance.Time(row.ExpiresAt)}}, nil
+	return &MCPTokenCreated{Secret: secret, Token: &MCPToken{ID: row.ID, DepartmentID: row.DepartmentID, Name: row.Name, Prefix: row.TokenPrefix, Tools: []string{}, CreatedAt: governance.Time(row.CreatedAt), ExpiresAt: governance.Time(row.ExpiresAt)}}, nil
 }
 func (s *Service) List(ctx context.Context, _ *ListPayload) (out []*MCPToken, err error) {
 	defer mapped(&err)
@@ -163,11 +142,8 @@ func (s *Service) List(ctx context.Context, _ *ListPayload) (out []*MCPToken, er
 	}
 	out = []*MCPToken{}
 	for _, r := range rows {
-		tools, e := q.MCPTokenTools(ctx, dbgen.MCPTokenToolsParams{TenantID: p.TenantID, AccountID: p.Account.ID, ID: r.ID})
-		if e != nil {
-			return nil, e
-		}
-		out = append(out, &MCPToken{ID: r.ID, DepartmentID: r.DepartmentID, Name: r.Name, Prefix: r.TokenPrefix, Tools: tools, CreatedAt: governance.Time(r.CreatedAt), ExpiresAt: governance.Time(r.ExpiresAt), RevokedAt: governance.Time(r.RevokedAt), LastUsedAt: governance.Time(r.LastUsedAt), RevokedBy: r.RevokedBy})
+
+		out = append(out, &MCPToken{ID: r.ID, DepartmentID: r.DepartmentID, Name: r.Name, Prefix: r.TokenPrefix, Tools: []string{}, CreatedAt: governance.Time(r.CreatedAt), ExpiresAt: governance.Time(r.ExpiresAt), RevokedAt: governance.Time(r.RevokedAt), LastUsedAt: governance.Time(r.LastUsedAt), RevokedBy: r.RevokedBy})
 	}
 	return out, nil
 }
@@ -223,8 +199,17 @@ func (s *Service) Capabilities(ctx context.Context, in *CapabilitiesPayload) (ou
 	if e != nil {
 		return nil, e
 	}
-	out = append([]string{}, Tools...)
-	out = slices.DeleteFunc(out, func(v string) bool { return !toolAllowed(p, v) })
+	if s.gateway == nil {
+		return nil, problem("unavailable")
+	}
+	definitions, e := s.gateway.AutomatedDefinitions(identity.WithPrincipal(ctx, p))
+	if e != nil {
+		return nil, e
+	}
+	out = []string{}
+	for _, d := range definitions {
+		out = append(out, d.ToolName())
+	}
 	return out, nil
 }
 
@@ -254,21 +239,3 @@ func (s *Service) AdminRevoke(ctx context.Context, in *AdminRevokePayload) (err 
 }
 
 func (s *Service) AttachGateway(g *gateway.Gateway) { s.gateway = g }
-func toolAllowed(p *identity.Principal, name string) bool {
-	permission := ""
-	switch name {
-	case "articles_list", "articles_get":
-		permission = "articles:read"
-	case "articles_create", "articles_submit":
-		permission = "articles:write"
-	case "dictionary_options":
-		permission = "dictionaries:use"
-	case "workflows_list", "workflows_get":
-		permission = "orchestration:read"
-	case "workflows_run":
-		permission = "orchestration:run"
-	case "workflows_cancel":
-		permission = "orchestration:cancel"
-	}
-	return permission == "" || p.Can(permission)
-}

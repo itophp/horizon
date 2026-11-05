@@ -51,6 +51,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { changeLanguage } from "@/i18n";
 import { useTheme } from "@/app/providers/theme";
 import { AuthProvider, useAuth, useSession } from "./auth";
+import { ActivityCapture } from "./activity-capture";
+import { recordNavigation } from "@/lib/activity";
 import {
   BrandMark,
   EditorDialog,
@@ -93,6 +95,10 @@ export function RequireSession() {
         key={`${auth.profile.tenantId}:${auth.profile.account.id}:${auth.profile.activeDepartmentId}:${auth.profile.csrfToken}`}
       >
         <AssistantProvider>
+          <ActivityCapture
+            key={`${auth.profile.tenantId}:${auth.profile.account.id}:${auth.profile.activeDepartmentId}`}
+            enabled={auth.profile.permissions.includes("memory:collect")}
+          />
           <Outlet />
           {!onAgentPage && <AssistantLauncher />}
         </AssistantProvider>
@@ -300,6 +306,7 @@ export function AdminLayout() {
               <NavLink
                 key={link.to}
                 to={link.to}
+                onClick={() => recordNavigation(link.to)}
                 end
                 className={({ isActive }) => (isActive ? "active" : "")}
               >
@@ -314,6 +321,7 @@ export function AdminLayout() {
             {permitted(links.slice(3)).map((link) => (
               <NavLink
                 to={link.to}
+                onClick={() => recordNavigation(link.to)}
                 aria-label={link.label}
                 key={link.to}
                 className={({ isActive }) => (isActive ? "active" : "")}

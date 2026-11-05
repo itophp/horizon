@@ -108,3 +108,7 @@ Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapa
 - [ ] 两层权限与两个语言文案是否都补齐？
 
 验证：`make check-entities`、`make check-rules`，阶段验收 `make ci-fast`。
+
+## 受限数据能力的固定父能力
+
+仅允许特定编排入口调用的数据能力使用 internal-only 与 parent:<能力名>@<版本> 标签；注册表验证固定父能力存在且为 orchestration，Gateway 从可信调用上下文核对父能力及版本，Agent 工具目录不暴露它。不得从请求体接受父能力身份；父能力仍须经 Gateway 执行原资源授权，数据 SQL 仍须执行租户与范围过滤。

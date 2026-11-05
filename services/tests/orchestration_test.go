@@ -11,6 +11,7 @@ import (
 	"baseline/services/api/kernel/capability/gateway"
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/kernel/eventhub"
+	canonical "baseline/services/api/kernel/memory"
 	runtime "baseline/services/api/kernel/workflow"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
@@ -20,10 +21,23 @@ import (
 	"errors"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
+	"strings"
+	"sync"
 	"testing"
 )
 
 type workflowModel struct{ tools []*schema.ToolInfo }
+
+type workflowObservations struct {
+	mu     sync.Mutex
+	events []canonical.Envelope
+}
+
+func (o *workflowObservations) Submit(event canonical.Envelope) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.events = append(o.events, event)
+}
 
 func (m *workflowModel) WithTools(tools []*schema.ToolInfo) (model.ToolCallingChatModel, error) {
 	return &workflowModel{tools: tools}, nil
@@ -66,6 +80,8 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	definitions := append(runtime.Builtins(), runtime.Definition{Name: "poll", Version: "1", Input: contracts.Object(nil), Steps: []runtime.Step{{ID: "ready", Capability: "test.ready", Version: "1", Poll: &runtime.Poll{DoneField: "done", MaxSteps: 4}}}})
 	definitions = append(definitions, runtime.Definition{Name: "agent-write", Version: "1", Input: contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer"}}, "id"), Steps: []runtime.Step{{ID: "archiveAgent", Agent: &runtime.Agent{Instruction: "Archive the record using the provided tool.", Tools: []string{"example.record.archive@1.0.0"}, MaxIterations: 3}, Input: map[string]runtime.Mapping{"id": {From: "input", Field: "id"}}}}})
 	e := runtime.New(core, definitions)
+	observations := &workflowObservations{}
+	e.Observations = observations
 	entries := append(example.New(pool).Entries(), (&orchmodule.Module{Engine: e}).Entries()...)
 	entries = append(entries, pollEntry)
 	entries = append(entries, (&articles.Module{Pool: pool}).Entries()...)
@@ -137,6 +153,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	}
 	// Reconstruct the Eino engine and compiled graph, exercising durable restore.
 	e = runtime.New(core, definitions)
+	e.Observations = observations
 	if err := e.Attach(g, catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -144,6 +161,18 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	tick()
 	if status(id) != "completed" {
 		t.Fatalf("workflow did not resume: %s", status(id))
+	}
+	observations.mu.Lock()
+	phases := map[string]bool{}
+	for _, event := range observations.events {
+		phases[event.EventType] = true
+		if raw, err := json.Marshal(event); err != nil || strings.Contains(string(raw), "private workflow payload") {
+			t.Fatalf("workflow observation leaked input: %s %v", raw, err)
+		}
+	}
+	observations.mu.Unlock()
+	if !phases["workflow.node.started"] || !phases["workflow.node.completed"] || !phases["workflow.node.interrupted"] {
+		t.Fatalf("workflow lifecycle observations missing: %#v", phases)
 	}
 	var count int
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM example_records WHERE title='private workflow payload'").Scan(&count); err != nil || count != 1 {

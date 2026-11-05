@@ -1,6 +1,6 @@
 {
   "title": "MCP Server",
-  "description": "管理个人只读业务工具的访问凭证。",
+  "description": "管理个人 MCP 凭证，访问账号有权使用的业务能力。",
   "hub": {
     "title": "Agent 协作",
     "subtitle": "在同一页面切换远程业务 MCP 凭证、页面 MCP 连接和可分发的 WebSkills。",
@@ -110,5 +110,6 @@
   "emergencyHelp": "拥有专门管理权限时，可撤销当前工作区指定 Token，请向账号本人获取 Token ID。",
   "emergencyId": "待撤销的 Token ID",
   "adminPassword": "管理员确认密码",
-  "emergencyDone": "Token 已撤销。"
+  "emergencyDone": "Token 已撤销。",
+  "dynamicTools": "此凭证可使用所选部门当前有权使用的能力，每次请求都会重新检查权限。"
 }

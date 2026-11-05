@@ -30,6 +30,7 @@ import (
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
+	memorysystem "baseline/services/api/system/memory"
 	"context"
 	"net/http"
 	"strings"
@@ -40,7 +41,7 @@ import (
 // mountGovernance wires the capability platform and returns the background
 // starter (outbox relay and AI trigger engine). Every business module now
 // contributes capability entries instead of its own HTTP endpoints.
-func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.Manager, onError func(context.Context, http.ResponseWriter, error)) func(context.Context) {
+func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.Manager, observer *memorysystem.Observer, onError func(context.Context, http.ResponseWriter, error)) func(context.Context) {
 	core.Identity.Policies = core
 
 	f, _ := core.Logos.(*files.Service)
@@ -65,7 +66,10 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	events := eventhub.NewStore(core.Pool)
 
 	orchestrator := orchestrationruntime.New(core, orchestrationruntime.Builtins())
+	orchestrator.Observations = observer
 	articleModule := &articles.Module{Pool: core.Pool}
+	memoryModule := memorysystem.New(core.Pool)
+	memoryModule.AttachIdentity(core.Identity)
 	articleModule.Blocked = func(ctx context.Context, p *identity.Principal, content string) (bool, bool, error) {
 		raw, err := core.Setting(ctx, p, "articles.blockedWords")
 		if err != nil {
@@ -89,7 +93,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	if err := core.Identity.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
 		panic(err)
 	}
-	entries := (app.CapabilityModules{Plugins: plugins, Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService}).Entries()
+	entries := (app.CapabilityModules{Plugins: plugins, Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService, Memory: memoryModule}).Entries()
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
 		panic("capability catalog is invalid: " + err.Error())
@@ -101,8 +105,9 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 
 	dispatcher := gateway.New(gateway.Options{
 		Registry: catalog, Identity: core.Identity, Pool: core.Pool,
-		Approvals: approvals, Audit: auditStore, Events: events,
+		Approvals: approvals, Audit: auditStore, Events: events, Observations: observer,
 	})
+	memoryModule.AttachGateway(dispatcher)
 	if err := orchestrator.Attach(dispatcher, catalog); err != nil {
 		panic("invalid workflow definitions")
 	}
@@ -111,6 +116,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	orchestrator.AgentModel = agentService.WorkflowModel
 	engine := triggers.NewEngine(triggers.NewStore(core.Pool), hub, agentService, core.Identity)
 	relay := outbox.NewRelay(core.Pool, hub)
+	memoryConsumer := memorysystem.NewConsumer(core.Pool)
 
 	capabilityhttp.Mount(mux, capabilityhttp.New(gencapability.NewEndpoints(newCapability(dispatcher, catalog)), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, onError, nil))
 	aihttp.Mount(mux, aihttp.New(genai.NewEndpoints(newAI(agentService)), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, onError, nil))
@@ -121,6 +127,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 		go drive.RunCleanup(ctx, core.Pool, dispatcher)
 		go orchestrator.Run(ctx)
 		go relay.Run(ctx)
+		go memoryConsumer.Run(ctx)
 	}
 }
 

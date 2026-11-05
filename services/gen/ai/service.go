@@ -21,6 +21,9 @@ type Service interface {
 	// Execute one agent task. Business actions inside it go through the capability
 	// gateway.
 	Run(context.Context, *RunPayload) (res *AIRun, err error)
+	// Execute one agent task. Business actions inside it go through the capability
+	// gateway.
+	RunStream(context.Context, *RunStreamPayload, RunStreamServerStream) (err error)
 	// List the caller's own tasks, newest first. A session id narrows it to one
 	// conversation.
 	Runs(context.Context, *RunsPayload) (res []*AIRun, err error)
@@ -55,7 +58,28 @@ const ServiceName = "ai"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [6]string{"status", "run", "runs", "conversations", "runDetail", "updateConversation"}
+var MethodNames = [7]string{"status", "run", "runStream", "runs", "conversations", "runDetail", "updateConversation"}
+
+// RunStreamServerStream allows streaming instances of *AIStreamEvent to the
+// client.
+type RunStreamServerStream interface {
+	// Send streams instances of "AIStreamEvent".
+	Send(*AIStreamEvent) error
+	// SendWithContext streams instances of "AIStreamEvent" with context.
+	SendWithContext(context.Context, *AIStreamEvent) error
+	// Close closes the stream.
+	Close() error
+}
+
+// RunStreamClientStream allows streaming instances of *AIStreamEvent to the
+// client.
+type RunStreamClientStream interface {
+	// Recv reads instances of "AIStreamEvent" from the stream.
+	Recv() (*AIStreamEvent, error)
+	// RecvWithContext reads instances of "AIStreamEvent" from the stream with
+	// context.
+	RecvWithContext(context.Context) (*AIStreamEvent, error)
+}
 
 // AIConversation is the result type of the ai service updateConversation
 // method.
@@ -117,6 +141,17 @@ type AIStatus struct {
 	CompletionTokens  int64
 }
 
+// AIStreamEvent is the result type of the ai service runStream method.
+type AIStreamEvent struct {
+	Sequence   int
+	Kind       string
+	Delta      string
+	Capability string
+	Status     string
+	ErrorCode  string
+	Run        *AIRun
+}
+
 // One audited capability call. Input is the redacted projection; the digest
 // binds replays.
 type CapabilityInvocation struct {
@@ -158,6 +193,14 @@ type RunDetailPayload struct {
 
 // RunPayload is the payload type of the ai service run method.
 type RunPayload struct {
+	Cookie    string
+	Question  string
+	SessionID *string
+	Page      *AIPage
+}
+
+// RunStreamPayload is the payload type of the ai service runStream method.
+type RunStreamPayload struct {
 	Cookie    string
 	Question  string
 	SessionID *string

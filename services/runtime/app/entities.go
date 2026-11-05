@@ -11,6 +11,7 @@ import (
 	"baseline/services/api/system/dictionaries"
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/identity"
+	"baseline/services/api/system/memory"
 	"baseline/services/api/system/notifications"
 	"baseline/services/api/system/orchestration"
 	"baseline/services/api/system/settings"
@@ -29,6 +30,7 @@ func EntitiesWithPlugins(plugins *plugin.Manager) []contracts.Entity {
 	out = append(out, plugins.Catalog.Entities...)
 	out = append(out, orchestration.Entities()...)
 	out = append(out, identity.Entities()...)
+	out = append(out, memory.Entities()...)
 	out = append(out, example.Entities()...)
 	out = append(out, notifications.Entities()...)
 	out = append(out, files.Entities()...)

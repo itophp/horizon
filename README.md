@@ -15,6 +15,8 @@ Horizon 是面向企业应用的 AI 原生框架。它把业务实体、Schema �
 
 ## 概念架构
 
+前端设计与开发：[设计系统](docs/design-system.md) · [页面模板与布局](docs/page-templates.md) · [组件使用指南](docs/ui-component-guidelines.md) · [组合与交互模式](docs/ui-interaction-patterns.md) · [代码参考](docs/code-reference/README.md) · [AI 界面参考](docs/ui-ai-patterns.md)。
+
 ![Horizon AI-Native 概念架构](docs/assets/horizon-capability-architecture.svg)
 
 [查看 SVG 原图](docs/assets/horizon-capability-architecture.svg) · [查看概念与运行机制说明](docs/architecture.md)

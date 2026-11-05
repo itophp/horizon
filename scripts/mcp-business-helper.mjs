@@ -52,13 +52,14 @@ export async function diagnose(url, token, expected) {
     );
     const list = await client.listTools({}, { timeout: 10000 });
     const result = await client.callTool(
-      { name: "context_get", arguments: {} },
+      { name: "mcp_context_get", arguments: {} },
       undefined,
       { timeout: 10000 },
     );
     if (result.isError) throw new Error("context_failed");
     const item = result.content.find((value) => value.type === "text");
-    const context = JSON.parse(item?.text || "null");
+    const response = JSON.parse(item?.text || "null");
+    const context = response?.data;
     if (
       !context ||
       context.accountId !== expected.accountId ||

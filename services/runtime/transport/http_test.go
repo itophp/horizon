@@ -17,6 +17,7 @@ func TestSessionGuardCoversEveryAuthenticatedSurface(t *testing.T) {
 		"/api/assistant/status":           true,
 		"/api/assistant/chat":             true,
 		"/api/ai/status":                  true,
+		"/api/ai/runs/stream":             true,
 		"/api/admin/snapshot":             true,
 		"/api/auth/me":                    true,
 		"/api/auth/temporary-access":      true,

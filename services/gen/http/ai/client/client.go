@@ -9,6 +9,9 @@ package client
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"mime"
 	"net/http"
 
 	goahttp "goa.design/goa/v3/http"
@@ -22,6 +25,10 @@ type Client struct {
 
 	// Run Doer is the HTTP client used to make requests to the run endpoint.
 	RunDoer goahttp.Doer
+
+	// RunStream Doer is the HTTP client used to make requests to the runStream
+	// endpoint.
+	RunStreamDoer goahttp.Doer
 
 	// Runs Doer is the HTTP client used to make requests to the runs endpoint.
 	RunsDoer goahttp.Doer
@@ -60,6 +67,7 @@ func NewClient(
 	return &Client{
 		StatusDoer:             doer,
 		RunDoer:                doer,
+		RunStreamDoer:          doer,
 		RunsDoer:               doer,
 		ConversationsDoer:      doer,
 		RunDetailDoer:          doer,
@@ -117,6 +125,47 @@ func (c *Client) Run() goa.Endpoint {
 			return nil, goahttp.ErrRequestError("ai", "run", err)
 		}
 		return decodeResponse(resp)
+	}
+}
+
+// RunStream returns an endpoint that makes HTTP requests to the ai service
+// runStream server.
+func (c *Client) RunStream() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeRunStreamRequest(c.encoder)
+		decodeResponse = DecodeRunStreamResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildRunStreamRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		// For SSE endpoints, connect and return a stream
+		resp, err := c.RunStreamDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("ai", "runStream", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			// Decode designed errors (the decoder closes the response body).
+			return decodeResponse(resp)
+		}
+
+		contentType := resp.Header.Get("Content-Type")
+		mediaType, _, mediaTypeErr := mime.ParseMediaType(contentType)
+		if mediaTypeErr != nil || mediaType != "text/event-stream" {
+			contentTypeErr := fmt.Errorf("unexpected content type: %s (expected text/event-stream)", contentType)
+			if err := resp.Body.Close(); err != nil {
+				return nil, errors.Join(contentTypeErr, goahttp.ErrDecodingError("ai", "runStream", err))
+			}
+			return nil, contentTypeErr
+		}
+
+		return NewRunStreamStream(resp, c.decoder), nil
 	}
 }
 

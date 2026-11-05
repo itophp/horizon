@@ -6,6 +6,7 @@ import (
 
 	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/registry"
+	"baseline/services/api/system/identity"
 )
 
 // Event types published by the mcp module.
@@ -28,6 +29,7 @@ func (s *Service) Entries() []registry.Entry {
 		{Definition: s.rotateTokenDefinition(), Handler: contracts.Handler{Execute: s.rotateToken}},
 		{Definition: s.adminRevokeTokenDefinition(), Handler: contracts.Handler{Execute: s.adminRevokeToken}},
 		{Definition: s.capabilitiesDefinition(), Handler: contracts.Handler{Execute: s.listCapabilities}},
+		{Definition: s.contextDefinition(), Handler: contracts.Handler{Execute: s.currentContext}},
 		{Definition: s.auditDefinition(), Handler: contracts.Handler{Execute: s.listAudits}},
 	}
 }
@@ -38,7 +40,7 @@ func idSchema() *contracts.Schema { return contracts.Int(1, 1<<40) }
 // never listed in Loggable, so it cannot reach the audit projection.
 func passwordSchema() *contracts.Schema { return contracts.Str(1, 128) }
 
-// stringListSchema is an open ended list of tool names, as stored on a token.
+// stringListSchema is an open ended list of tool names.
 func stringListSchema() *contracts.Schema {
 	return &contracts.Schema{Type: "array", Items: &contracts.Schema{Type: "string"}}
 }
@@ -49,7 +51,7 @@ func tokenSchema() *contracts.Schema {
 		"name":         {Type: "string"},
 		"prefix":       {Type: "string"},
 		"departmentId": {Type: "integer"},
-		"tools":        stringListSchema(),
+		"tools":        stringListSchema(), // Deprecated: accepted for old clients but ignored.
 		"createdAt":    {Type: "string"},
 		"expiresAt":    {Type: "string"},
 		"revokedAt":    {Type: "string"},
@@ -72,7 +74,7 @@ func auditSchema() *contracts.Schema {
 func (s *Service) createTokenDefinition() contracts.Definition {
 	return contracts.Definition{Layer: contracts.LayerAtomic,
 		Name: "mcp.token.create", Version: version, Title: "Create an MCP token",
-		Description: "Mint a personal MCP credential bound to a department and a tool subset. The secret is returned once.",
+		Description: "Mint a personal MCP credential bound to a department and current permissions. The secret is returned once.",
 		Domain:      "mcp", Entity: "mcp_token", Permission: "",
 		Risk: contracts.RiskHigh, Approval: contracts.ApprovalConfirm,
 		Idempotency:   contracts.Idempotency{Required: true, Scope: "tenant+operation+key"},
@@ -83,21 +85,21 @@ func (s *Service) createTokenDefinition() contracts.Definition {
 			"name":         contracts.Str(1, 100),
 			"departmentId": contracts.Int(0, 1<<40),
 			"days":         contracts.Int(1, 90),
-			"tools":        contracts.Array(contracts.Enum(Tools...), 1, len(Tools)),
-		}, "password", "name", "days", "tools"),
+			"tools":        stringListSchema(),
+		}, "password", "name", "days"),
 		Output: contracts.Object(map[string]*contracts.Schema{
 			"id": {Type: "integer"}, "name": {Type: "string"}, "prefix": {Type: "string"},
 			"secret": {Type: "string"}, "expiresAt": {Type: "string"},
 		}, "id", "name", "prefix", "secret"),
 		// The password is deliberately absent: it must never be projected.
-		Loggable: []string{"name", "departmentId", "days", "tools"},
+		Loggable: []string{"name", "departmentId", "days"},
 	}
 }
 
 func (s *Service) listTokensDefinition() contracts.Definition {
 	return contracts.Definition{Layer: contracts.LayerAtomic,
 		Name: "mcp.token.list", Version: version, Title: "List my MCP tokens",
-		Description: "List the caller's own MCP credentials with their tools, expiry and revocation state.",
+		Description: "List the caller's own MCP credentials with their expiry and revocation state.",
 		Domain:      "mcp", Entity: "mcp_token", Permission: "",
 		Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true,
 		Executor: "go:mcp.token.list", Tags: []string{"mcp", "read", "agent"},
@@ -129,7 +131,7 @@ func (s *Service) revokeTokenDefinition() contracts.Definition {
 func (s *Service) rotateTokenDefinition() contracts.Definition {
 	return contracts.Definition{Layer: contracts.LayerAtomic,
 		Name: "mcp.token.rotate", Version: version, Title: "Rotate an MCP token",
-		Description: "Replace a credential with a new secret, carrying over its department, tools and expiry.",
+		Description: "Replace a credential with a new secret, carrying over its department and expiry.",
 		Domain:      "mcp", Entity: "mcp_token", Permission: "mcp:revoke",
 		Risk: contracts.RiskHigh, Approval: contracts.ApprovalConfirm,
 		Idempotency:   contracts.Idempotency{Required: true, Scope: "tenant+operation+key"},
@@ -168,7 +170,7 @@ func (s *Service) adminRevokeTokenDefinition() contracts.Definition {
 func (s *Service) capabilitiesDefinition() contracts.Definition {
 	return contracts.Definition{Layer: contracts.LayerAtomic,
 		Name: "mcp.capability.list", Version: version, Title: "List MCP tool capabilities",
-		Description: "List the MCP tools the caller may bind to a credential in a department.",
+		Description: "List the MCP capability tools currently available in a department.",
 		Domain:      "mcp", Entity: "mcp_token", Permission: "",
 		Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true,
 		Executor: "go:mcp.capability.list", Tags: []string{"mcp", "read", "agent"},
@@ -180,6 +182,26 @@ func (s *Service) capabilitiesDefinition() contracts.Definition {
 		}),
 		Loggable: []string{"departmentId"},
 	}
+}
+
+// contextDefinition exposes only the authenticated subject needed by MCP pairing.
+func (s *Service) contextDefinition() contracts.Definition {
+	return contracts.Definition{Layer: contracts.LayerAtomic,
+		Name: "mcp.context.get", Version: version, Title: "Get current MCP identity",
+		Description: "Get the authenticated account and active department for connection verification.",
+		Domain:      "mcp", Entity: "mcp_token", Risk: contracts.RiskLow,
+		Approval: contracts.ApprovalAuto, ReadOnly: true, Executor: "go:mcp.context.get",
+		Tags: []string{"mcp", "read", "agent"}, Input: contracts.Object(map[string]*contracts.Schema{}),
+		Output: contracts.Object(map[string]*contracts.Schema{"accountId": {Type: "integer"}, "departmentId": {Type: "integer"}}, "accountId", "departmentId"),
+	}
+}
+
+func (s *Service) currentContext(ctx context.Context, _ contracts.Input) (contracts.Output, error) {
+	p, err := identity.Current(ctx)
+	if err != nil {
+		return contracts.Output{}, err
+	}
+	return contracts.Output{Data: map[string]any{"accountId": p.Account.ID, "departmentId": p.Account.DepartmentID}}, nil
 }
 
 func (s *Service) auditDefinition() contracts.Definition {

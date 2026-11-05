@@ -79,7 +79,9 @@ func (s *Store) List(ctx context.Context, tenant string, accountID int64, limit 
 	}
 	out := make([]Run, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, runFromListRow(row))
+		run := runFromListRow(row)
+		run.TenantID = tenant
+		out = append(out, run)
 	}
 	return out, nil
 }
@@ -164,7 +166,9 @@ func (s *Store) ListSession(ctx context.Context, tenant string, accountID int64,
 	}
 	out := make([]Run, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, runFromSessionRow(row))
+		run := runFromSessionRow(row)
+		run.TenantID = tenant
+		out = append(out, run)
 	}
 	return out, nil
 }
@@ -182,6 +186,7 @@ func (s *Store) Get(ctx context.Context, tenant string, accountID, id int64) (*R
 		return nil, err
 	}
 	run := runFromGetRow(row)
+	run.TenantID = tenant
 	return &run, nil
 }
 
@@ -202,6 +207,23 @@ func AttachInvocations(ctx context.Context, store *audit.Store, run *Run) {
 		return
 	}
 	run.Invocations = invocations
+	settleWaiting(run)
+}
+
+func settleWaiting(run *Run) {
+	// Settled business calls release the waiting projection; business failures
+	// stay on invocations and never rewrite a successfully completed AI reply.
+	if run.Status == StatusAwaitingApproval && len(run.Invocations) > 0 {
+		waiting := false
+		for _, invocation := range run.Invocations {
+			if invocation.Status == "awaiting_approval" || invocation.Status == "running" {
+				waiting = true
+			}
+		}
+		if !waiting {
+			run.Status = StatusCompleted
+		}
+	}
 }
 
 // Summary returns the tenant level evaluation snapshot.

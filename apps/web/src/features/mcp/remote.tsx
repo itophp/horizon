@@ -8,7 +8,7 @@ import {
 } from "@/lib/mcp/connection";
 import { useState } from "react";
 import { Plus, ShieldAlert } from "lucide-react";
-import { useController, useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +18,6 @@ import {
   mcpManagementCreate,
   mcpManagementAdminRevoke,
   mcpManagementRotate,
-  mcpManagementCapabilities,
   mcpManagementAudit,
   mcpManagementRevoke,
   mcpManagementList,
@@ -44,7 +43,6 @@ const schema = z.object({
     .number({ message: "department" })
     .int()
     .positive({ message: "department" }),
-  tools: z.array(z.string()).min(1, { message: "tools" }),
   password: z
     .string({ message: "password" })
     .min(1, { message: "password" })
@@ -106,7 +104,6 @@ export function RemoteMcpSection() {
   });
   const client = useQueryClient();
   const [secret, setSecret] = useState("");
-  const [catalogBlocked, setCatalogBlocked] = useState(false);
   // The token list is the primary content of this section: issuing, rotating and
   // revoking all happen inside a dialog opened from that list instead of from
   // forms that stay on the page.
@@ -125,23 +122,8 @@ export function RemoteMcpSection() {
       password: "",
       days: 30,
       departmentId: auth.profile!.activeDepartmentId,
-      tools: ["context_get", "capabilities_list"],
     },
   });
-  const departmentId = useWatch({
-    control: form.control,
-    name: "departmentId",
-  });
-  const capabilities = useQuery({
-    queryKey: ["mcp", "capabilities", departmentId],
-    queryFn: () => mcpManagementCapabilities({ departmentId }),
-    retry: false,
-  });
-  const availableTools =
-    capabilities.data?.status === 200 ? capabilities.data.data : [];
-  // Selections survive a reload of the tool catalog: a catalog that is refetching,
-  // empty or unavailable must not silently drop what the operator already chose.
-  const tools = useController({ control: form.control, name: "tools" });
   const refresh = () => client.invalidateQueries({ queryKey: tokenKey });
   const create = useMutation({
     mutationFn: (value: z.infer<typeof schema>) => mcpManagementCreate(value),
@@ -247,6 +229,7 @@ export function RemoteMcpSection() {
   return (
     <div className="webmcp-stack">
       <p className="muted-text">{t("description")}</p>
+      <p className="muted-text">{t("dynamicTools")}</p>
       <section className="admin-panel webmcp-section">
         <div className="mcp-token-head">
           <div>
@@ -257,7 +240,6 @@ export function RemoteMcpSection() {
             <Button
               disabled={!!secret || create.isPending}
               onClick={() => {
-                setCatalogBlocked(false);
                 setCreating(true);
               }}
             >
@@ -288,14 +270,7 @@ export function RemoteMcpSection() {
           <form
             className="mcp-form"
             noValidate
-            onSubmit={form.handleSubmit((value) => {
-              if (availableTools.length === 0) {
-                setCatalogBlocked(true);
-                return;
-              }
-              setCatalogBlocked(false);
-              create.mutate(value);
-            })}
+            onSubmit={form.handleSubmit((value) => create.mutate(value))}
           >
             <div className="editor-field">
               <label htmlFor="mcp-name">{t("name")}</label>
@@ -366,50 +341,10 @@ export function RemoteMcpSection() {
                 message={errors.password ? t("validation.password") : undefined}
               />
             </div>
-            <fieldset
-              className="mcp-tools"
-              aria-invalid={!!errors.tools}
-              aria-describedby={errors.tools ? "mcp-tools-error" : undefined}
-            >
-              <legend>{t("tools")}</legend>
-              {availableTools.length === 0 ? (
-                <small className="field-error" role="alert">
-                  {capabilities.isPending
-                    ? t("catalogLoading")
-                    : t("catalogUnavailable")}
-                </small>
-              ) : (
-                availableTools.map((tool) => (
-                  <label className="mcp-tool-choice" key={tool}>
-                    <input
-                      type="checkbox"
-                      value={tool}
-                      checked={(tools.field.value ?? []).includes(tool)}
-                      onChange={(event) => {
-                        const selected = tools.field.value ?? [];
-                        const next = event.target.checked
-                          ? [...selected, tool]
-                          : selected.filter((item) => item !== tool);
-                        tools.field.onChange([...new Set(next)]);
-                      }}
-                    />
-                    {t(`toolNames.${tool}`)}
-                  </label>
-                ))
-              )}
-              <FieldError
-                id="mcp-tools-error"
-                message={errors.tools ? t("validation.tools") : undefined}
-              />
-            </fieldset>
+            <p>{t("dynamicTools")}</p>
             {create.isError && (
               <p role="alert" className="form-error">
                 {failureText(create.error, t)}
-              </p>
-            )}
-            {catalogBlocked && !create.isError && (
-              <p role="alert" className="form-error">
-                {t("catalogBlocked")}
               </p>
             )}
             <div className="mcp-dialog-actions">
@@ -468,14 +403,6 @@ export function RemoteMcpSection() {
                 new Intl.DateTimeFormat(i18n.resolvedLanguage, {
                   dateStyle: "medium",
                 }).format(new Date(token.expiresAt)),
-            },
-            {
-              id: "tools",
-              header: t("tools"),
-              cell: (token) =>
-                token.tools
-                  .map((tool) => t(`toolNames.${tool}`))
-                  .join(t("separator")),
             },
             {
               id: "revokedBy",

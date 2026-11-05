@@ -2313,6 +2313,92 @@ paths:
                                 code: Nisi maxime sed placeat.
             security:
                 - browser_session_header_Cookie: []
+    /api/ai/runs/stream:
+        post:
+            tags:
+                - ai
+            summary: runStream ai
+            description: Execute one agent task. Business actions inside it go through the capability gateway.
+            operationId: ai#runStream
+            requestBody:
+                description: Request body for runStream.
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RunRequestBody'
+                        example:
+                            page:
+                                entity: w7q
+                                entityId: 5722665807259745387
+                                route: xh0
+                            question: sm
+                            sessionId: i6d
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        text/event-stream:
+                            itemSchema:
+                                type: object
+                                properties:
+                                    data:
+                                        type: string
+                                        contentMediaType: application/json
+                                        contentSchema:
+                                            $ref: '#/components/schemas/AIStreamEvent'
+                                required:
+                                    - data
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Iusto adipisci explicabo explicabo.
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Nobis beatae omnis soluta.
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quisquam ex odit corporis.
+                "404":
+                    description: 'not_found: Not Found response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Ut omnis delectus perferendis molestiae dolore in.
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Quod iusto nulla non.
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Et sit exercitationem.
+            security:
+                - browser_session_header_Cookie: []
     /api/ai/status:
         get:
             tags:
@@ -5040,6 +5126,110 @@ components:
                 - averageDurationMs
                 - promptTokens
                 - completionTokens
+        AIStreamEvent:
+            type: object
+            properties:
+                capability:
+                    type: string
+                    example: Quidem dicta amet sunt illum.
+                delta:
+                    type: string
+                    example: Vitae incidunt ipsam quia.
+                errorCode:
+                    type: string
+                    example: Ipsam inventore adipisci.
+                kind:
+                    type: string
+                    example: completed
+                    enum:
+                        - started
+                        - planning
+                        - tool_start
+                        - tool_end
+                        - answer_delta
+                        - completed
+                        - failed
+                run:
+                    $ref: '#/components/schemas/AIRun'
+                sequence:
+                    type: integer
+                    example: 2472347303600054734
+                    format: int64
+                status:
+                    type: string
+                    example: In sed voluptatem.
+            description: Ordered public execution progress. No private reasoning or raw tool inputs/outputs.
+            example:
+                capability: Quidem dicta amet sunt illum.
+                delta: Vitae incidunt ipsam quia.
+                errorCode: Ipsam inventore adipisci.
+                kind: completed
+                run:
+                    agent: Vero molestiae culpa dignissimos.
+                    answer: Quis expedita.
+                    causationId: Culpa placeat voluptatem qui animi facilis vel.
+                    completionTokens: 5529367383786657361
+                    correlationId: Rem odit dolores unde dicta placeat error.
+                    createdAt: Natus quibusdam.
+                    durationMs: 8755897376742758011
+                    errorCode: Dolor unde blanditiis quod.
+                    eventId: Ex in at minima dolorem fugiat ea.
+                    finishedAt: Provident occaecati.
+                    id: 4997798868657085553
+                    instructionVersion: Qui qui eligendi modi.
+                    invocations:
+                        - approvalId: 6243873934051831685
+                          capability: Vel explicabo ipsum nemo sed aut aut.
+                          causationId: Labore qui et aliquid.
+                          correlationId: Iste explicabo et aperiam possimus a nihil.
+                          createdAt: Quis commodi.
+                          durationMs: 3019834645638402625
+                          errorCode: Vitae sunt ut rem voluptate unde.
+                          finishedAt: Aut distinctio beatae architecto.
+                          input: Sit illum non voluptates.
+                          inputDigest: Deserunt inventore.
+                          invocationId: Laudantium qui voluptatem voluptas vel quam optio.
+                          origin: approval
+                          result: Repellat fugiat non aliquam dolorum.
+                          status: awaiting_approval
+                          traceId: Eum aut.
+                          triggerDepth: 3328960312055392617
+                          version: Asperiores voluptatum blanditiis.
+                        - approvalId: 6243873934051831685
+                          capability: Vel explicabo ipsum nemo sed aut aut.
+                          causationId: Labore qui et aliquid.
+                          correlationId: Iste explicabo et aperiam possimus a nihil.
+                          createdAt: Quis commodi.
+                          durationMs: 3019834645638402625
+                          errorCode: Vitae sunt ut rem voluptate unde.
+                          finishedAt: Aut distinctio beatae architecto.
+                          input: Sit illum non voluptates.
+                          inputDigest: Deserunt inventore.
+                          invocationId: Laudantium qui voluptatem voluptas vel quam optio.
+                          origin: approval
+                          result: Repellat fugiat non aliquam dolorum.
+                          status: awaiting_approval
+                          traceId: Eum aut.
+                          triggerDepth: 3328960312055392617
+                          version: Asperiores voluptatum blanditiis.
+                    model: Aut aut ullam animi recusandae vel nihil.
+                    origin: api
+                    promptTokens: 1254517976634839703
+                    question: Delectus vero enim perspiciatis provident doloremque.
+                    status: awaiting_approval
+                    toolCalls: 6046268502009396699
+                    traceId: Quisquam quidem qui eos qui aut rerum.
+                    triggerDepth: 1543835788976309250
+                    triggerPolicy: Atque rerum vel commodi similique deleniti sunt.
+                sequence: 2472347303600054734
+                status: In sed voluptatem.
+            required:
+                - sequence
+                - kind
+                - delta
+                - capability
+                - status
+                - errorCode
         AccountRecord:
             type: object
             properties:

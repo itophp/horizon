@@ -29,7 +29,7 @@ import (
 func UsageCommands() []string {
 	return []string{
 		"system (health|echo)",
-		"ai (status|run|runs|conversations|run-detail|update-conversation)",
+		"ai (status|run|run-stream|runs|conversations|run-detail|update-conversation)",
 		"assistant (status|chat|agent|workflow|knowledge|ingest)",
 		"capability (definitions|invoke|invocations|invocation|approvals|decide|events)",
 		"branding (get|logo)",
@@ -91,6 +91,10 @@ func ParseEndpoint(
 		aiRunFlags      = flag.NewFlagSet("run", flag.ExitOnError)
 		aiRunBodyFlag   = new(cliStringFlag)
 		aiRunCookieFlag = new(cliStringFlag)
+
+		aiRunStreamFlags      = flag.NewFlagSet("run-stream", flag.ExitOnError)
+		aiRunStreamBodyFlag   = new(cliStringFlag)
+		aiRunStreamCookieFlag = new(cliStringFlag)
 
 		aiRunsFlags         = flag.NewFlagSet("runs", flag.ExitOnError)
 		aiRunsLimitFlag     = aiRunsFlags.String("limit", "30", "")
@@ -212,6 +216,8 @@ func ParseEndpoint(
 	aiStatusFlags.Var(aiStatusCookieFlag, "cookie", "")
 	aiRunFlags.Var(aiRunBodyFlag, "body", "")
 	aiRunFlags.Var(aiRunCookieFlag, "cookie", "")
+	aiRunStreamFlags.Var(aiRunStreamBodyFlag, "body", "")
+	aiRunStreamFlags.Var(aiRunStreamCookieFlag, "cookie", "")
 	aiRunsFlags.Var(aiRunsSessionIDFlag, "session-id", "")
 	aiRunsFlags.Var(aiRunsCookieFlag, "cookie", "")
 	aiConversationsFlags.Var(aiConversationsCookieFlag, "cookie", "")
@@ -266,6 +272,7 @@ func ParseEndpoint(
 	aiFlags.Usage = aiUsage
 	aiStatusFlags.Usage = aiStatusUsage
 	aiRunFlags.Usage = aiRunUsage
+	aiRunStreamFlags.Usage = aiRunStreamUsage
 	aiRunsFlags.Usage = aiRunsUsage
 	aiConversationsFlags.Usage = aiConversationsUsage
 	aiRunDetailFlags.Usage = aiRunDetailUsage
@@ -363,6 +370,9 @@ func ParseEndpoint(
 
 			case "run":
 				epf = aiRunFlags
+
+			case "run-stream":
+				epf = aiRunStreamFlags
 
 			case "runs":
 				epf = aiRunsFlags
@@ -507,6 +517,9 @@ func ParseEndpoint(
 			case "run":
 				endpoint = c.Run()
 				data, err = aic.BuildRunPayload(aiRunBodyFlag.value, aiRunCookieFlag.value)
+			case "run-stream":
+				endpoint = c.RunStream()
+				data, err = aic.BuildRunStreamPayload(aiRunStreamBodyFlag.value, aiRunStreamCookieFlag.value)
 			case "runs":
 				endpoint = c.Runs()
 				data, err = aic.BuildRunsPayload(*aiRunsLimitFlag, aiRunsSessionIDFlag.value, aiRunsCookieFlag.value)
@@ -670,6 +683,7 @@ func aiUsage() {
 	fmt.Fprintln(os.Stderr, "COMMAND:")
 	fmt.Fprintln(os.Stderr, `    status: Report whether the agent is enabled, the catalog size and the tenant quality snapshot.`)
 	fmt.Fprintln(os.Stderr, `    run: Execute one agent task. Business actions inside it go through the capability gateway.`)
+	fmt.Fprintln(os.Stderr, `    run-stream: Execute one agent task. Business actions inside it go through the capability gateway.`)
 	fmt.Fprintln(os.Stderr, `    runs: List the caller's own tasks, newest first. A session id narrows it to one conversation.`)
 	fmt.Fprintln(os.Stderr, `    conversations: List the caller's conversations, newest first. The workbench uses it as its task list.`)
 	fmt.Fprintln(os.Stderr, `    run-detail: Read one task with the capability calls it caused.`)
@@ -714,6 +728,26 @@ func aiRunUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run --body '{\n      \"page\": {\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"route\": \"xh0\"\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }' --cookie \"Ut dicta autem.\"")
+}
+
+func aiRunStreamUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] ai run-stream", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -cookie STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Execute one agent task. Business actions inside it go through the capability gateway.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -cookie STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run-stream --body '{\n      \"page\": {\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"route\": \"xh0\"\n      },\n      \"question\": \"sm\",\n      \"sessionId\": \"i6d\"\n   }' --cookie \"Consectetur vel.\"")
 }
 
 func aiRunsUsage() {

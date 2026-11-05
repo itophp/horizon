@@ -21,6 +21,7 @@ type Server struct {
 	Mounts             []*MountPoint
 	Status             http.Handler
 	Run                http.Handler
+	RunStream          http.Handler
 	Runs               http.Handler
 	Conversations      http.Handler
 	RunDetail          http.Handler
@@ -56,6 +57,7 @@ func New(
 		Mounts: []*MountPoint{
 			{"Status", "GET", "/api/ai/status"},
 			{"Run", "POST", "/api/ai/runs"},
+			{"RunStream", "POST", "/api/ai/runs/stream"},
 			{"Runs", "GET", "/api/ai/runs"},
 			{"Conversations", "GET", "/api/ai/conversations"},
 			{"RunDetail", "GET", "/api/ai/runs/{id}"},
@@ -63,6 +65,7 @@ func New(
 		},
 		Status:             NewStatusHandler(e.Status, mux, decoder, encoder, errhandler, formatter),
 		Run:                NewRunHandler(e.Run, mux, decoder, encoder, errhandler, formatter),
+		RunStream:          NewRunStreamHandler(e.RunStream, mux, decoder, encoder, errhandler, formatter),
 		Runs:               NewRunsHandler(e.Runs, mux, decoder, encoder, errhandler, formatter),
 		Conversations:      NewConversationsHandler(e.Conversations, mux, decoder, encoder, errhandler, formatter),
 		RunDetail:          NewRunDetailHandler(e.RunDetail, mux, decoder, encoder, errhandler, formatter),
@@ -77,6 +80,7 @@ func (s *Server) Service() string { return "ai" }
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Status = m(s.Status)
 	s.Run = m(s.Run)
+	s.RunStream = m(s.RunStream)
 	s.Runs = m(s.Runs)
 	s.Conversations = m(s.Conversations)
 	s.RunDetail = m(s.RunDetail)
@@ -90,6 +94,7 @@ func (s *Server) MethodNames() []string { return ai.MethodNames[:] }
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountStatusHandler(mux, h.Status)
 	MountRunHandler(mux, h.Run)
+	MountRunStreamHandler(mux, h.RunStream)
 	MountRunsHandler(mux, h.Runs)
 	MountConversationsHandler(mux, h.Conversations)
 	MountRunDetailHandler(mux, h.RunDetail)
@@ -202,6 +207,71 @@ func NewRunHandler(
 			if errhandler != nil {
 				errhandler(ctx, w, err)
 			}
+		}
+	})
+}
+
+// MountRunStreamHandler configures the mux to serve the "ai" service
+// "runStream" endpoint.
+func MountRunStreamHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/api/ai/runs/stream", f)
+}
+
+// NewRunStreamHandler creates a HTTP handler which loads the HTTP request and
+// calls the "ai" service "runStream" endpoint.
+func NewRunStreamHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest = DecodeRunStreamRequest(mux, decoder)
+		encodeError   = EncodeRunStreamError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "runStream")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "ai")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		v := &ai.RunStreamEndpointInput{
+			Stream: &RunStreamServerStream{
+				w: w,
+				r: r,
+			},
+			Payload: payload,
+		}
+		_, err = endpoint(ctx, v)
+		if err == nil {
+			stream := v.Stream.(*RunStreamServerStream)
+			err = stream.finish()
+		}
+		if err != nil {
+			stream := v.Stream.(*RunStreamServerStream)
+			if stream.attempted {
+				if errhandler != nil {
+					errhandler(ctx, w, err)
+				}
+				return
+			}
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
 		}
 	})
 }

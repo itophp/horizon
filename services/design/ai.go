@@ -67,6 +67,18 @@ var AIConversation = Type("AIConversation", func() {
 	Required("sessionId", "title", "updatedAt", "messageCount", "archived")
 })
 
+var AIStreamEvent = Type("AIStreamEvent", func() {
+	Description("Ordered public execution progress. No private reasoning or raw tool inputs/outputs.")
+	Attribute("sequence", Int)
+	Attribute("kind", String, func() { Enum("started", "planning", "tool_start", "tool_end", "answer_delta", "completed", "failed") })
+	Attribute("delta", String)
+	Attribute("capability", String)
+	Attribute("status", String)
+	Attribute("errorCode", String)
+	Attribute("run", AIRun)
+	Required("sequence", "kind", "delta", "capability", "status", "errorCode")
+})
+
 var _ = Service("ai", func() {
 	Description("Agent workbench: start a task, read its trace and inspect runtime quality.")
 	Security(SessionCookie)
@@ -102,6 +114,18 @@ var _ = Service("ai", func() {
 		})
 		Result(AIRun)
 		HTTP(func() { POST("/api/ai/runs"); Response(StatusCreated) })
+	})
+	Method("runStream", func() {
+		Description("Execute one agent task. Business actions inside it go through the capability gateway.")
+		Payload(func() {
+			cookiePayload()
+			Attribute("question", String, func() { MinLength(1); MaxLength(4000) })
+			Attribute("sessionId", String, func() { MaxLength(80) })
+			Attribute("page", AIPage)
+			Required("question")
+		})
+		StreamingResult(AIStreamEvent)
+		HTTP(func() { POST("/api/ai/runs/stream"); ServerSentEvents() })
 	})
 	Method("runs", func() {
 		Description("List the caller's own tasks, newest first. A session id narrows it to one conversation.")

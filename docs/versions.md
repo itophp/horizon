@@ -1,5 +1,11 @@
 # 版本及官方依据
 
+## AI 工作台组件（2026-11-04）
+
+新增固定依赖 `@shadcn/react` 0.3.1（MIT），仅使用官方 Message Scroller；[固定版本 npm 元数据](https://registry.npmjs.org/@shadcn/react/0.3.1) 声明 React/@types/react >=19，与本项目 19.3.1/19.3.0 匹配，无新增运行时传递依赖。package.json 与 pnpm-lock.yaml 同步。shadcn 仍使用锁定 CLI 4.23.0，从官方 base-nova Registry 引入 Message、Bubble、Message Scroller、Trace、Collapsible、Input Group、Textarea、Empty、Skeleton 源码，复用既有 cn、Base UI 和 lucide；保留已有 Button/Input 不覆盖。源码采用官方 MIT 许可，默认可见辅助文案接入 i18next。
+
+组件组合依据为 [AI Elements](https://ui.shadcn.com/docs/ai-elements)，具体迁移位置与验证边界见 [AI 界面参考](ui-ai-patterns.md)。不引入 AI SDK transport 或第二套 Agent 运行时。
+
 核实日期：2026-10-28。从官方 npm 注册表、Go module proxy 和 Go 下载清单查询版本，选择实际运行通过的兼容组合；全部直接依赖固定版本，传递依赖由 pnpm-lock.yaml / go.sum 锁定。机器可读记录见 versions.json。
 
 | 依赖 | 选定版本 | 官方版本元数据 |

@@ -31,6 +31,7 @@ func buildRegistry() []Definition {
 	// Article moderation policy is content configuration, not account security:
 	// its own group keeps the word list where an editor looks for it.
 	add("articles.blockedWords", "articles", "string", `""`, workspace, true, false, true, 0, 10000)
+	add("memory.activitySamplePercent", "memory", "integer", `10`, workspace, false, false, true, 0, 100)
 	add("branding.name", "branding", "string", `"Horizon"`, branding, false, false, true, 1, 100)
 	add("branding.tagline", "branding", "string", `"Administration workspace"`, branding, false, false, true, 0, 200)
 	add("branding.loginTitle", "branding", "string", `""`, branding, false, false, true, 0, 200)

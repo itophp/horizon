@@ -679,6 +679,117 @@ type McpTokenTool struct {
 	Tool    string
 }
 
+type MemoryAccessAudit struct {
+	ID            int64
+	TenantID      string
+	ActorID       int64
+	Action        string
+	ObjectID      int64
+	CorrelationID string
+	CreatedAt     pgtype.Timestamptz
+}
+
+type MemoryCorrection struct {
+	ID              int64
+	TenantID        string
+	MemoryID        int64
+	ActorID         int64
+	PreviousVersion int64
+	PreviousTitle   string
+	PreviousSummary string
+	CreatedAt       pgtype.Timestamptz
+}
+
+type MemoryEvent struct {
+	ID                  int64
+	TenantID            string
+	OrganizationID      string
+	EventID             string
+	EventType           string
+	EventVersion        string
+	OccurredAt          pgtype.Timestamptz
+	IngestedAt          pgtype.Timestamptz
+	ActorID             string
+	ActorType           string
+	DepartmentID        int64
+	SourceType          string
+	SourceID            string
+	SourceModule        string
+	ResourceType        string
+	ResourceID          string
+	ActionName          string
+	Result              string
+	InvocationID        string
+	SessionID           string
+	TaskID              string
+	WorkflowInstanceID  string
+	TraceID             string
+	CorrelationID       string
+	CausationID         string
+	TriggerDepth        int32
+	Sensitivity         string
+	CandidatePartitions []string
+	Payload             []byte
+}
+
+type MemoryEventInbox struct {
+	SourceEventID int64
+	TenantID      string
+	EventID       string
+	Attempts      int32
+	AvailableAt   pgtype.Timestamptz
+	CompletedAt   pgtype.Timestamptz
+	DeadAt        pgtype.Timestamptz
+	ErrorCode     string
+}
+
+type MemoryItem struct {
+	ID                 int64
+	TenantID           string
+	Partition          string
+	MemoryType         string
+	ScopeType          string
+	ScopeID            string
+	OwnerID            int64
+	Title              string
+	Summary            string
+	Sensitivity        string
+	VerificationStatus string
+	Status             string
+	Version            int64
+	ValidFrom          pgtype.Timestamptz
+	ValidTo            pgtype.Timestamptz
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
+}
+
+type MemoryPartitionPolicy struct {
+	ID            int64
+	TenantID      string
+	Partition     string
+	RetentionDays int32
+	Revision      int64
+	UpdatedBy     int64
+	UpdatedAt     pgtype.Timestamptz
+}
+
+type MemoryRelation struct {
+	ID             int64
+	TenantID       string
+	SourceMemoryID int64
+	TargetMemoryID int64
+	RelationType   string
+	CreatedAt      pgtype.Timestamptz
+}
+
+type MemorySource struct {
+	ID        int64
+	TenantID  string
+	MemoryID  int64
+	EventID   string
+	CreatedAt pgtype.Timestamptz
+}
+
 type OrchCheckpoint struct {
 	TenantID      string
 	RunID         int64

@@ -141,6 +141,7 @@
   "fileLimit": "The selected file exceeds the size limit.",
   "fileReadFailed": "Unable to read the selected file.",
   "groups": {
+    "memory": "Memory collection",
     "articles": "Article moderation",
     "branding": "Branding",
     "display": "Display & locale",
@@ -154,6 +155,7 @@
     "assistant": "AI assistant"
   },
   "labels": {
+    "memory_activitySamplePercent": "Activity sampling percentage",
     "branding_name": "Product name",
     "branding_tagline": "Product tagline",
     "branding_loginTitle": "Login headline",
@@ -249,6 +251,13 @@
   "overrideFields": "Item {{id}} · {{fields}}",
   "additionalActions": "Additional actions",
   "systemModule": "System governance",
+  "memoryPermissions": {
+    "read": "Read memories",
+    "write": "Manage memories",
+    "collect": "Collect activity",
+    "replay": "Inspect and replay ingestion",
+    "manage": "Manage retention policies"
+  },
   "actions": {
     "publish": "Publish",
     "rollback": "Rollback",

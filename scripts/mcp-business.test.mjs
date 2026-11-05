@@ -67,7 +67,7 @@ test("business installer keeps secrets out of configuration, preserves other ser
         resolve(home, ".agents/skills/baseline-business/SKILL.md"),
         "utf8",
       ),
-      /capabilities_list/,
+      /mcp_context_get/,
     );
     for (const invalid of [null, 0, "bad", []]) {
       await writeFile(

@@ -180,11 +180,11 @@ test("personal token, protocol diagnostic, client installation and independent r
       new StdioClientTransport({ command: config.command, args: config.args }),
     );
     expect((await bridge.listTools()).tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(["context_get", "capabilities_list"]),
+      expect.arrayContaining(["mcp_context_get", "mcp_capability_list"]),
     );
     await page.goto("/");
     expect(
-      (await bridge.callTool({ name: "context_get", arguments: {} })).isError,
+      (await bridge.callTool({ name: "mcp_context_get", arguments: {} })).isError,
     ).not.toBe(true);
     await page.goto("/mcp-settings");
     await expect(page.getByText(secret, { exact: true })).toHaveCount(0);
@@ -202,7 +202,7 @@ test("personal token, protocol diagnostic, client installation and independent r
     const replacement = await secretNode.locator("code").innerText();
     expect(replacement).not.toBe(secret);
     const oldCall = await bridge
-      .callTool({ name: "context_get", arguments: {} })
+      .callTool({ name: "mcp_context_get", arguments: {} })
       .catch(() => null);
     expect(oldCall === null || oldCall.isError).toBeTruthy();
     await page

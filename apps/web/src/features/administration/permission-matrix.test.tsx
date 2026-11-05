@@ -148,3 +148,55 @@ it("uses plugin-localized project permission labels and submits the registered c
   ).toBeInTheDocument();
   await changeLanguage("en", false);
 });
+
+it("labels and grants memory permissions without making them temporary", async () => {
+  await changeLanguage("en", false);
+  const onChange = vi.fn();
+  const memoryCatalog: PermissionDefinition[] = [
+    "read",
+    "write",
+    "collect",
+    "replay",
+    "manage",
+  ].map((action) => ({
+    code: `memory:${action}`,
+    module: "system",
+    function: "memory",
+    action,
+    temporaryEligible: false,
+    scopeConfigurable: false,
+  }));
+  const { rerender } = render(
+    <PermissionMatrix
+      catalog={memoryCatalog}
+      grants={[]}
+      onChange={onChange}
+      departments={[]}
+    />,
+  );
+  await userEvent.click(
+    screen.getByRole("checkbox", {
+      name: "Memory collection Manage retention policies",
+    }),
+  );
+  expect(onChange).toHaveBeenLastCalledWith([
+    {
+      permission: "memory:manage",
+      effect: "allow",
+      scope: "ALL",
+      departmentIds: [],
+    },
+  ]);
+  rerender(
+    <PermissionMatrix
+      catalog={memoryCatalog}
+      grants={[]}
+      onChange={onChange}
+      departments={[]}
+      request
+    />,
+  );
+  expect(
+    screen.queryByRole("checkbox", { name: /Memory collection/ }),
+  ).not.toBeInTheDocument();
+});

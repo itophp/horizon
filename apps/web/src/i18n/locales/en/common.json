@@ -13,7 +13,9 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
-    "retry": "Retry"
+    "retry": "Retry",
+    "scrollToEnd": "Scroll to end",
+    "scrollToStart": "Scroll to start"
   },
   "api": {
     "title": "API connection",

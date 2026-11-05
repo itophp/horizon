@@ -1,4 +1,15 @@
 {
+  "memory_event": { "label": "记忆事件" },
+  "memory_event_inbox": { "label": "记忆事件处理" },
+  "memory_item": {
+    "label": "记忆",
+    "states": { "active": "有效", "archived": "已归档", "deleted": "已删除" }
+  },
+  "memory_source": { "label": "记忆来源" },
+  "memory_relation": { "label": "记忆关系" },
+  "memory_correction": { "label": "记忆纠正记录" },
+  "memory_access_audit": { "label": "记忆访问审计" },
+  "memory_partition_policy": { "label": "记忆分区策略" },
   "drive_space": { "label": "云盘空间" },
   "drive_member": { "label": "云盘成员" },
   "drive_folder": { "label": "云盘文件夹" },

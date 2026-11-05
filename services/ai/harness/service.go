@@ -130,6 +130,7 @@ func (s *Service) Run(ctx context.Context, in RunInput) (*Run, error) {
 	if err != nil {
 		return nil, err
 	}
+	emitProgress(ctx, Progress{Kind: "started", Run: run})
 	return s.loop(ctx, p, run, question, block, 0, history)
 }
 
@@ -221,6 +222,13 @@ func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, que
 	adapter := &tools.Adapter{
 		Gateway: s.gateway, Registry: s.registry, Caller: callerOf(p),
 		TraceID: run.TraceID, RunID: run.ID, Depth: depth,
+		Observe: func(capability, status string) {
+			kind := "tool_end"
+			if status == "running" {
+				kind = "tool_start"
+			}
+			emitProgress(ctx, Progress{Kind: kind, Capability: capability, Status: status})
+		},
 	}
 	runtimeAgent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Name:        agentName,
@@ -237,7 +245,9 @@ func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, que
 	messages := make([]adk.Message, 0, len(history)+1)
 	messages = append(messages, history...)
 	messages = append(messages, schema.UserMessage(question))
-	iterator := runtimeAgent.Run(ctx, &adk.AgentInput{Messages: messages})
+	_, streaming := ctx.Value(progressKey{}).(progressHandler)
+	emitProgress(ctx, Progress{Kind: "planning"})
+	iterator := runtimeAgent.Run(ctx, &adk.AgentInput{Messages: messages, EnableStreaming: streaming})
 	for {
 		event, ok := iterator.Next()
 		if !ok {
@@ -253,8 +263,11 @@ func (s *Service) loop(ctx context.Context, p *identity.Principal, run *Run, que
 		if output.Role != schema.Assistant {
 			continue
 		}
-		message, err := output.GetMessage()
-		if err != nil || message == nil {
+		message, err := publicMessage(ctx, output)
+		if err != nil {
+			return fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
+		}
+		if message == nil {
 			continue
 		}
 		if message.ResponseMeta != nil && message.ResponseMeta.Usage != nil {
@@ -426,7 +439,14 @@ func (s *Service) SessionRuns(ctx context.Context, sessionID string, limit int) 
 	if limit <= 0 || limit > 100 {
 		limit = 100
 	}
-	return s.runs.ListSession(ctx, p.TenantID, p.Account.ID, sessionID, limit)
+	runs, err := s.runs.ListSession(ctx, p.TenantID, p.Account.ID, sessionID, limit)
+	if err != nil {
+		return nil, err
+	}
+	for i := range runs {
+		AttachInvocations(ctx, s.audit, &runs[i])
+	}
+	return runs, nil
 }
 
 // Runs lists the caller's tasks.
@@ -435,7 +455,14 @@ func (s *Service) Runs(ctx context.Context, limit int) ([]Run, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.runs.List(ctx, p.TenantID, p.Account.ID, limit)
+	runs, err := s.runs.List(ctx, p.TenantID, p.Account.ID, limit)
+	if err != nil {
+		return nil, err
+	}
+	for i := range runs {
+		AttachInvocations(ctx, s.audit, &runs[i])
+	}
+	return runs, nil
 }
 
 // RunDetail returns one task with the capability calls it caused.

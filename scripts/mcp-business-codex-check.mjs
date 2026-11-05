@@ -74,7 +74,7 @@ export async function nativeCodexConnection(
         request("mcpServer/tool/call", {
           threadId,
           server: "baseline-business",
-          tool: "context_get",
+          tool: "mcp_context_get",
           arguments: {},
         }),
       close,

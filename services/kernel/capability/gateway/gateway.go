@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/kernel/eventhub"
+	canonical "baseline/services/api/kernel/memory"
 	"baseline/services/api/kernel/policy"
 	"baseline/services/api/system/identity"
 
@@ -49,24 +51,28 @@ type Request struct {
 
 // Options wires the gateway.
 type Options struct {
-	Registry  *registry.Registry
-	Identity  *identity.Service
-	Pool      *pgxpool.Pool
-	Approvals *approval.Store
-	Audit     *audit.Store
-	Events    *eventhub.Store
-	Now       func() time.Time
+	Registry     *registry.Registry
+	Identity     *identity.Service
+	Pool         *pgxpool.Pool
+	Approvals    *approval.Store
+	Audit        *audit.Store
+	Events       *eventhub.Store
+	Now          func() time.Time
+	Observations ObservationSink
 }
+
+type ObservationSink interface{ Submit(canonical.Envelope) }
 
 // Gateway executes capabilities.
 type Gateway struct {
-	registry  *registry.Registry
-	identity  *identity.Service
-	pool      *pgxpool.Pool
-	approvals *approval.Store
-	audit     *audit.Store
-	events    *eventhub.Store
-	now       func() time.Time
+	registry     *registry.Registry
+	identity     *identity.Service
+	pool         *pgxpool.Pool
+	approvals    *approval.Store
+	audit        *audit.Store
+	events       *eventhub.Store
+	now          func() time.Time
+	observations ObservationSink
 }
 
 // New builds a gateway.
@@ -77,7 +83,7 @@ func New(options Options) *Gateway {
 	}
 	return &Gateway{
 		registry: options.Registry, identity: options.Identity, pool: options.Pool,
-		approvals: options.Approvals, audit: options.Audit, events: options.Events, now: now,
+		approvals: options.Approvals, audit: options.Audit, events: options.Events, now: now, observations: options.Observations,
 	}
 }
 
@@ -85,6 +91,7 @@ func New(options Options) *Gateway {
 // outcomes. Request level denials (unauthenticated, forbidden, invalid, not
 // found, conflict) are returned as coded errors so the transport can map them.
 func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Result, error) {
+	parent, hasParent := CurrentInvocation(ctx)
 	if err := inheritRequest(ctx, &request); err != nil {
 		return nil, err
 	}
@@ -103,8 +110,19 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 		request.IdempotencyKey = ""
 	}
 	definition := entry.Definition
+	for _, tag := range definition.Tags {
+		if strings.HasPrefix(tag, "parent:") && (!hasParent || request.Origin != contracts.OriginCapability || parent.Capability+"@"+parent.Version != strings.TrimPrefix(tag, "parent:")) {
+			g.observeDenied(p, request, definition.Name, "origin")
+			return nil, contracts.Problem("forbidden")
+		}
+	}
+	if slices.Contains(definition.Tags, "manual-only") && request.Origin != contracts.OriginHumanUI && request.Origin != contracts.OriginAPI && request.Origin != contracts.OriginApproval {
+		g.observeDenied(p, request, definition.Name, "origin")
+		return nil, contracts.Problem("forbidden")
+	}
 	caller := callerOf(p)
 	if (definition.Permission != "" && !p.Can(definition.Permission)) || !caller.Allowed(definition.Permission) {
+		g.observeDenied(p, request, definition.Name, "permission")
 		return nil, contracts.Problem("forbidden")
 	}
 	if err = definition.Input.Validate(request.Input); err != nil {
@@ -123,6 +141,7 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 	}
 	decision := policy.Admit(definition, caller, request.Origin)
 	if !decision.Allowed {
+		g.observeDenied(p, request, definition.Name, "policy")
 		return nil, contracts.Problem(decision.Code)
 	}
 	if decision.Approval != contracts.ApprovalAuto {
@@ -400,6 +419,15 @@ func (g *Gateway) Definitions(ctx context.Context) ([]contracts.Definition, erro
 		return nil, contracts.Problem("unauthenticated")
 	}
 	return g.registry.Discover(callerOf(p)), nil
+}
+
+// AutomatedDefinitions returns the same eligible capability catalog used by the AI assistant.
+func (g *Gateway) AutomatedDefinitions(ctx context.Context) ([]contracts.Definition, error) {
+	p, err := identity.Current(ctx)
+	if err != nil {
+		return nil, contracts.Problem("unauthenticated")
+	}
+	return g.registry.DiscoverAutomated(callerOf(p)), nil
 }
 
 // Entities is the metadata projection for the caller.

@@ -379,5 +379,15 @@
     },
     "license": "MIT",
     "source": "https://registry.npmjs.org/@mdxeditor/editor/4.3.4"
+  },
+  "@shadcn/react": {
+    "version": "0.3.1",
+    "selectedVersion": "0.3.1",
+    "license": "MIT",
+    "peerDependencies": {
+      "react": ">=19",
+      "@types/react": ">=19"
+    },
+    "source": "https://registry.npmjs.org/@shadcn/react/0.3.1"
   }
 }

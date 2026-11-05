@@ -302,6 +302,157 @@ func EncodeRunError(encoder func(context.Context, http.ResponseWriter) goahttp.E
 	}
 }
 
+// EncodeRunStreamResponse returns an encoder for responses returned by the ai
+// runStream endpoint.
+func EncodeRunStreamResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*ai.AIStreamEvent)
+		enc := encoder(ctx, w)
+		body := NewRunStreamResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeRunStreamRequest returns a decoder for requests sent to the ai
+// runStream endpoint.
+func DecodeRunStreamRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*ai.RunStreamPayload, error) {
+	return func(r *http.Request) (*ai.RunStreamPayload, error) {
+		var payload *ai.RunStreamPayload
+		var (
+			body RunStreamRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return payload, goa.MissingPayloadError()
+			}
+			var gerr *goa.ServiceError
+			if errors.As(err, &gerr) {
+				return payload, gerr
+			}
+			return payload, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateRunStreamRequestBody(&body)
+		if err != nil {
+			return payload, err
+		}
+
+		var (
+			cookie string
+		)
+		cookie = r.Header.Get("Cookie")
+		if cookie == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("cookie", "header"))
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewRunStreamPayload(&body, cookie)
+		if index := strings.IndexByte(string(payload.Cookie), ' '); index >= 0 {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			payload.Cookie = payload.Cookie[index+1:]
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeRunStreamError returns an encoder for errors returned by the runStream
+// ai endpoint.
+func EncodeRunStreamError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "unauthenticated":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunStreamUnauthenticatedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		case "forbidden":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunStreamForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "invalid":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunStreamInvalidResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "not_found":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunStreamNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "unavailable":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunStreamUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "internal":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunStreamInternalResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeRunsResponse returns an encoder for responses returned by the ai runs
 // endpoint.
 func EncodeRunsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
@@ -960,10 +1111,10 @@ func marshalAiCapabilityInvocationToCapabilityInvocation(v *ai.CapabilityInvocat
 	return res
 }
 
-// marshalAiAIRunToAIRunResponse builds a value of type *AIRunResponse from a
-// value of type *ai.AIRun.
-func marshalAiAIRunToAIRunResponse(v *ai.AIRun) *AIRunResponse {
-	res := &AIRunResponse{
+// marshalAiAIRunToAIRun builds a value of type *AIRun from a value of type
+// *ai.AIRun.
+func marshalAiAIRunToAIRun(v *ai.AIRun) *AIRun {
+	res := &AIRun{
 		ID:                 v.ID,
 		Question:           v.Question,
 		Answer:             v.Answer,

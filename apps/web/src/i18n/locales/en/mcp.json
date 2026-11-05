@@ -1,6 +1,6 @@
 {
   "title": "MCP Server",
-  "description": "Manage personal access to read-only business tools.",
+  "description": "Manage personal MCP credentials for capabilities permitted to your account.",
   "hub": {
     "title": "Agent collaboration",
     "subtitle": "Switch between remote business MCP credentials, the page MCP connection and distributable WebSkills on one page.",
@@ -110,5 +110,6 @@
   "emergencyHelp": "With the dedicated management permission, revoke a specified token in this workspace. Ask the owner for its Token ID.",
   "emergencyId": "Token ID to revoke",
   "adminPassword": "Administrator password",
-  "emergencyDone": "Token revoked."
+  "emergencyDone": "Token revoked.",
+  "dynamicTools": "This credential can use capabilities available to the selected department. Access is checked on each request."
 }

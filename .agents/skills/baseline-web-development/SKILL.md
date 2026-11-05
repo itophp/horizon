@@ -41,3 +41,7 @@ description: "Build or modify React pages, navigation, shared UI, forms, tables,
 通知中心及 Markdown/文件引用按 [ADR 008](../../../docs/decisions/008-notification-center.md)：独立正式发送权限、服务端全部组织范围/去重/幂等，原始 HTML/危险 URL 不执行；收件人附件入口用本人+有效归属+消息绑定 SQL 授权，不能扩大通用文件范围。变更同步公共能力 Skill 并验证收发、越权、失效归属和附件下载。
 
 设置定时发布按 [ADR 010](../../../docs/decisions/010-settings-schedules.md)：正式 publish/ALL，敏感单次 settings.schedule 证明在排期事务消费，到期重建原部门 Principal 并复查权限/摘要/依赖/版本；行锁与 savepoint 保证配置和结果原子提交，取消/重启/并发不能重复发布。UI 明示设备时区并转 UTC，使用生成 SDK；后台不借旧会话或临时权执行。修改时同步公共能力与权限规则并覆盖真实数据库、状态和取消测试。
+
+## Memory Center 前端接入
+
+Memory Center 使用从模块 Definition 生成的 capability-memory 类型和生成的通用 Gateway SDK，不能手写重复 DTO 或裸 fetch。活动采集仅使用服务端白名单页面与动作，不上传 URL 参数、表单值或页面内容；采样率使用共享设置，切换账号或部门时停止并清空旧队列。新增权限标签维护双语并验证临时权限不会暴露它们。
