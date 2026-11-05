@@ -55,6 +55,16 @@ func (s *Service) ScopeFor(ctx context.Context, p *Principal, permission string,
 	}
 	return s.scope(ctx, p, permission)
 }
+
+// ScopeForInTx resolves trusted scope in the transaction applying that scope.
+func (s *Service) ScopeForInTx(ctx context.Context, tx pgx.Tx, p *Principal, permission string, permanent bool) (Scope, error) {
+	if tx == nil {
+		return Scope{}, problem("unavailable")
+	}
+	bound := *s
+	bound.repo = &Repository{q: dbgen.New(tx)}
+	return bound.ScopeFor(ctx, p, permission, permanent)
+}
 func (s *Service) PrincipalForTask(ctx context.Context, tenant string, id, dept int64) (*Principal, error) {
 	account, err := s.repo.account(ctx, Scope{TenantID: tenant, All: true}, id)
 	if err != nil {

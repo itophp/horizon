@@ -19,6 +19,11 @@ func RunAiPath() string {
 	return "/api/ai/runs"
 }
 
+// RunStreamAiPath returns the URL path to the ai service runStream HTTP endpoint.
+func RunStreamAiPath() string {
+	return "/api/ai/runs/stream"
+}
+
 // RunsAiPath returns the URL path to the ai service runs HTTP endpoint.
 func RunsAiPath() string {
 	return "/api/ai/runs"

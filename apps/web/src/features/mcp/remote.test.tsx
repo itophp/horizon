@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
@@ -13,7 +13,6 @@ const api = vi.hoisted(() => ({
   rotate: vi.fn(),
   revoke: vi.fn(),
   adminRevoke: vi.fn(),
-  capabilities: vi.fn(),
   list: vi.fn(),
   permissions: [] as string[],
 }));
@@ -24,7 +23,6 @@ vi.mock("@/lib/capabilities", async (original) => ({
   mcpManagementRotate: api.rotate,
   mcpManagementRevoke: api.revoke,
   mcpManagementAdminRevoke: api.adminRevoke,
-  mcpManagementCapabilities: api.capabilities,
   mcpManagementList: api.list,
   mcpManagementAudit: async () => ({
     status: 200,
@@ -94,15 +92,9 @@ beforeEach(async () => {
   api.rotate.mockReset();
   api.revoke.mockReset();
   api.adminRevoke.mockReset();
-  api.capabilities.mockReset();
   api.list.mockReset();
   api.permissions = [];
   api.list.mockResolvedValue({ status: 200, data: [], headers: new Headers() });
-  api.capabilities.mockResolvedValue({
-    status: 200,
-    data: ["context_get", "capabilities_list", "notifications_list"],
-    headers: new Headers(),
-  });
 });
 
 it("associates every validation error with its own field", async () => {
@@ -125,13 +117,12 @@ it("associates every validation error with its own field", async () => {
   expect(api.create).not.toHaveBeenCalled();
 });
 
-it("keeps the password and the chosen tools when the server rejects the request", async () => {
+it("keeps the password when the server rejects the request", async () => {
   const user = userEvent.setup();
   api.create.mockRejectedValue(new ApiError("forbidden", 403));
   show();
   await openCreate(user);
   await fill(user);
-  await user.click(screen.getByLabelText("My notifications"));
   await user.click(screen.getByRole("button", { name: "Create token" }));
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -140,12 +131,10 @@ it("keeps the password and the chosen tools when the server rejects the request"
   expect(screen.getByLabelText("Current password")).toHaveValue(
     "correct-horse",
   );
-  expect(screen.getByLabelText("My notifications")).toBeChecked();
   expect(api.create).toHaveBeenCalledWith({
     name: "CI reader",
     days: 30,
     departmentId: 1,
-    tools: ["context_get", "capabilities_list", "notifications_list"],
     password: "correct-horse",
   });
 });
@@ -172,23 +161,14 @@ it("shows the secret once, then clears the password before the next token", asyn
   );
 });
 
-it("explains when the tool catalog cannot be loaded", async () => {
-  api.capabilities.mockReturnValue({
-    data: undefined,
-    isError: true,
-    error: new ApiError("unavailable", 503),
-  });
+it("explains that credentials follow current permissions without selecting tools", async () => {
   const user = userEvent.setup();
   show();
   await openCreate(user);
-  await fill(user);
-  await user.click(screen.getByRole("button", { name: "Create token" }));
-
-  const tools = screen.getByRole("group", { name: "Allowed tools" });
-  expect(within(tools).getByRole("alert")).toHaveTextContent(
-    "The tool catalog cannot be loaded; no token can be issued without it.",
-  );
-  expect(api.create).not.toHaveBeenCalled();
+  expect(
+    screen.getAllByText(/Access is checked on each request/).length,
+  ).toBeGreaterThan(0);
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 });
 
 it("confirms rotating a listed token with the password inside a dialog", async () => {

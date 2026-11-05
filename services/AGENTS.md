@@ -11,6 +11,8 @@
 
 ## Capability-Centric 分层
 
+AI 任务 SSE 契约在 design/ai.go，传输复用既有 harness.Run 的 Principal/assistant:use/Gateway 边界；进度只允许公开阶段、能力名和状态，禁止原始工具数据与隐含推理。流式连接关闭与后台业务撤销不是同一动作。运行详情和会话历史关联业务审计时必须使用可信租户及已授权账号记录；确认后的等待状态以最新业务调用投影为准。
+
 - `kernel/capability/contracts`：稳定词汇（Definition/Schema/Result/Event/Origin），不得引入存储或传输依赖。
 - `kernel/capability/registry`：进程内定义中心；启动时校验版本、Handler、工具名冲突，失败即视为部署错误。
 - `kernel/capability/gateway`：唯一执行入口；顺序固定为身份→权限→Schema→幂等→策略/审批→执行→Outbox→审计。禁止在 Handler 中绕开它直接调用 Executor。
@@ -24,6 +26,8 @@
 # 服务、安全与数据访问实现
 
 继承服务规则，安全相关开发加载 baseline-security；规则详见 docs/security.md。
+
+- Memory Center 按 `docs/security.md` 的当前实现边界约束；新增共享作用域或业务来源必须先经 Gateway 验证原资源授权并在 SQL 强制可信范围，敏感内容不得进入能力审计、事件或模型历史。`manual-only` 能力不向 Agent 工具目录暴露，网关和执行端都拒绝自动化来源；`internal-only` 且声明 `parent:` 的能力只接受网关注入的指定父能力，不得信任客户端传入的父身份。
 
 - auth 验证凭证、建立可信 Principal；authorization/Casbin 管资源操作；dataaccess 解析可信范围；repository/sqlc 在 SQL 层强制过滤。四个职责不能互相省略。
 - 受保护请求默认拒绝；客户端 tenant/organization/department/owner 参数只能作为已授权范围内的业务输入，不能决定当前身份/权限。新增公开接口显式说明理由。
@@ -83,3 +87,6 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 Application Runtime 的只读定义来自业务模块贡献及 kernel/applicationruntime Adapter；公共 TS 类型和结构校验从 Go 契约生成，禁止手改 api/generated/runtime.ts。页面定义不能扩权或替代文章 SQL 的本人/审核人范围；所有页面动作仍经 Gateway。
 
 Runtime v2 目录解析必须按贡献中的实际权限投影，不能固定某个示例的权限或实体。创建/编辑分别用能力 I/O，派生字段只读，普通更新不依赖状态转移存在。批量组合须经注入的 Gateway 调用器执行子能力，禁止把多个独立事务称为原子事务；operationId/子幂等键与外层调用重放按 ADR 018 区分。
+## 远程 MCP 动态能力目录（现行）
+
+远程 MCP 与 AI 助手共享自动化能力发现；Token 绑定账号和部门，每次请求按当前正式权限重建目录，历史固化工具集合不再限制能力。业务调用必须经 Gateway，并保持来源、数据范围、审批和幂等检查；手动和内部专用能力不进入自动化目录。权限变更须覆盖发现、猜测调用和撤权后的拒绝。详见 docs/security.md 和 docs/decisions/011-remote-mcp.md（从仓库根解析）。

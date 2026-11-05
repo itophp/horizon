@@ -32,6 +32,7 @@ generate:
 	cd services && ../.tools/bin/sqlc generate
 	pnpm --filter @baseline/web generate
 	./scripts/go.sh run ./cmd/runtimespec
+	./scripts/go.sh run ./cmd/capabilitysdk
 	pnpm --filter @baseline/web exec prettier --write src/api/generated
 
 generate-workflows:

@@ -81,8 +81,13 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 		response := applicantClient.request(t, "GET", "/api/admin/temporary-access", nil, false)
 		checkStatus(t, response, 200)
 		workspace := decodeBody[genidentity.TemporaryAccessWorkspace](t, response)
-		if workspace.CanReview || len(workspace.Catalog) != 61 || len(workspace.Departments) != 2 {
+		if workspace.CanReview || len(workspace.Catalog) != len(identity.PermissionCatalog()) || len(workspace.Departments) != 2 {
 			t.Fatal("request directory or independent approval permission incorrect")
+		}
+		for _, permission := range workspace.Catalog {
+			if permission.Function == "memory" && permission.TemporaryEligible {
+				t.Fatal("memory permissions must not be eligible for temporary access")
+			}
 		}
 		response = manager.request(t, "GET", "/api/admin/temporary-access", nil, false)
 		checkStatus(t, response, 200)

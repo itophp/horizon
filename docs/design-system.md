@@ -1,5 +1,15 @@
 # 设计系统
 
+## 页面与组件规范入口
+
+模板以 [不挂载的代码参考](code-reference/README.md) 提供。AI 工作台、工具调用与流程节点的组件复用按 [AI 界面参考](ui-ai-patterns.md) 执行，区分对话轨迹与图编辑器节点。
+
+交互与组合方案见 [shadcn/ui 组合与交互模式](ui-interaction-patterns.md)，包括导航/选择/命令/预览/聚焦任务的区分，以及分页、浮层、反馈、加载与方向上下文的完整规范。
+
+新建或修改页面必须先选 [页面模板与布局](page-templates.md)，再按 [shadcn/ui 组件使用指南](ui-component-guidelines.md) 完成组件选型。覆盖六种基础模板、六种专业模板、七种布局；组件指南规定按钮尺寸、选择器、远程搜索、表单、浮层、表格与图表。模板是规范，尚未实现的组合不能声称已有可运行组件。
+
+官方能力发现从 [shadcn/ui llms.txt](https://ui.shadcn.com/llms.txt) 开始，优先复用本地组件与官方组件/组合示例/Blocks/Charts/Registry。项目采用 Base UI，官网最新示例必须核对本地源码与锁文件。禁止仅复制 shadcn 样式后用原生交互控件代替已有组件；必要的 HTML 语义与底层结构不受此限制。
+
 shadcn CLI 4.23.0 按当前官方 Vite 流程初始化（base-nova / Base UI），组件源码纳入 components/ui。components.json 为唯一 Registry 与路径配置，新增组件使用 pnpm --filter @baseline/web exec shadcn add <component>。当前 button/card/input/table 已用于示例。官方 registry 不需要额外凭证；尚未安装全局 MCP，CLI 保持可重复使用。
 
 Tailwind 4 Vite 插件，基础 tokens 在 styles/index.css，后台在 styles/admin.css 中统一覆盖。/foundation 技术示例使用中性色背景、白色内容面板、蓝色主要动作；后台按下文现行基准使用浅/暗主题和中性主操作配色。统一 --primary / --background / --foreground / --radius，不在每页定义独立体系。Geist 字体通过 npm 本地打包，没有运行时字体 CDN。

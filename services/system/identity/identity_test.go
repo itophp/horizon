@@ -89,18 +89,18 @@ func TestGovernanceCatalogDoesNotMakeManagementTemporary(t *testing.T) {
 			}
 		}
 	}
-	for _, code := range []string{"orchestration:read", "orchestration:run", "orchestration:cancel", "articles:read", "articles:write", "articles:review", "drive:use", "drive:create", "applications:read", "applications:manage"} {
+	for _, code := range []string{"orchestration:read", "orchestration:run", "orchestration:cancel", "articles:read", "articles:write", "articles:review", "drive:use", "drive:create", "memory:read", "memory:write", "memory:collect", "memory:replay", "memory:manage", "applications:read", "applications:manage"} {
 		d := permissionDefinition(code)
 		if d == nil || d.TemporaryEligible || d.ScopeConfigurable {
 			t.Fatalf("unsafe orchestration permission: %s", code)
 		}
 	}
 
-	// 63 covers the four identity resources, access/temporary/mcp management, the
+	// 68 covers the four identity resources, access/temporary/mcp management, the
 	// capability approval gate, the three example module permissions, the three
 	// knowledge base management grants, three orchestration permissions, three
-	// article grants, three project grants, two cloud drive grants and two runtime grants.
-	if len(seen) != 63 {
+	// article grants, three project grants, two cloud drive grants and two runtime grants and five memory grants.
+	if len(seen) != 68 {
 		t.Fatal("unexpected catalog", len(seen))
 	}
 }

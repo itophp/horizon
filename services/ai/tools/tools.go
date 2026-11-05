@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/gateway"
@@ -31,11 +32,12 @@ type Adapter struct {
 	TraceID     string
 	RunID       int64
 	Depth       int
+	Observe     func(capability, status string)
 }
 
 // Tools returns the capabilities the caller may use.
 func (a *Adapter) Tools(contexts ...context.Context) []tool.BaseTool {
-	definitions := a.Registry.Discover(a.Caller)
+	definitions := a.Registry.DiscoverAutomated(a.Caller)
 	if len(contexts) > 0 && a.Gateway != nil {
 		var err error
 		if a.AllowedKeys != nil {
@@ -49,7 +51,7 @@ func (a *Adapter) Tools(contexts ...context.Context) []tool.BaseTool {
 	}
 	out := make([]tool.BaseTool, 0, len(definitions))
 	for _, definition := range definitions {
-		if !definition.AllowsOrigin(contracts.OriginAgent) {
+		if slices.Contains(definition.Tags, "manual-only") || slices.Contains(definition.Tags, "internal-only") || !definition.AllowsOrigin(contracts.OriginAgent) {
 			continue
 		}
 		out = append(out, &capabilityTool{definition: definition, adapter: a})
@@ -77,6 +79,11 @@ func (t *capabilityTool) Info(context.Context) (*schema.ToolInfo, error) {
 // InvokableRun returns business failures as data so the model can explain them
 // instead of aborting the whole turn.
 func (t *capabilityTool) InvokableRun(ctx context.Context, argumentsInJSON string, _ ...tool.Option) (string, error) {
+	observe := func(status string) {
+		if t.adapter.Observe != nil {
+			t.adapter.Observe(t.definition.Name, status)
+		}
+	}
 	input := contracts.Input{}
 	if argumentsInJSON != "" {
 		if err := json.Unmarshal([]byte(argumentsInJSON), &input); err != nil {
@@ -87,6 +94,7 @@ func (t *capabilityTool) InvokableRun(ctx context.Context, argumentsInJSON strin
 	if t.definition.Idempotency.Required {
 		key = fmt.Sprintf("run:%d:%s:%s", t.adapter.RunID, t.definition.Name, contracts.Digest(input))
 	}
+	observe("running")
 	result, err := t.adapter.Gateway.Invoke(ctx, gateway.Request{
 		Name: t.definition.Name, Version: t.definition.Version, Input: input,
 		IdempotencyKey: key, Origin: contracts.OriginAgent,
@@ -95,8 +103,10 @@ func (t *capabilityTool) InvokableRun(ctx context.Context, argumentsInJSON strin
 		TriggerDepth:  t.adapter.Depth,
 	})
 	if err != nil {
+		observe("failed")
 		return envelope{OK: false, Status: "failed", ErrorCode: mapCode(err)}.String(), nil
 	}
+	observe(string(result.Status))
 	out := envelope{
 		OK: result.Status == contracts.StatusSucceeded, Status: string(result.Status),
 		InvocationID: result.InvocationID, Data: result.Data, EventIDs: result.EventIDs,

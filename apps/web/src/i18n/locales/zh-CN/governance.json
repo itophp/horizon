@@ -141,6 +141,7 @@
   "fileLimit": "所选文件超过大小限制。",
   "fileReadFailed": "无法读取所选文件。",
   "groups": {
+    "memory": "记忆采集",
     "articles": "文章审核",
     "branding": "基础品牌",
     "display": "显示与国际化",
@@ -154,6 +155,7 @@
     "assistant": "AI 助手"
   },
   "labels": {
+    "memory_activitySamplePercent": "活动采样百分比",
     "branding_name": "产品名称",
     "branding_tagline": "产品副标题",
     "branding_loginTitle": "登录页标题",
@@ -249,6 +251,13 @@
   "overrideFields": "字典项 {{id}} · {{fields}}",
   "additionalActions": "扩展操作",
   "systemModule": "系统治理",
+  "memoryPermissions": {
+    "read": "查看记忆",
+    "write": "管理记忆",
+    "collect": "采集活动",
+    "replay": "查看并重放摄取任务",
+    "manage": "管理保留策略"
+  },
   "actions": {
     "publish": "发布",
     "rollback": "回退",

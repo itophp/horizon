@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -71,6 +72,34 @@ func New(entries []Entry) *Registry {
 			return newer(r.byKey[r.byName[name][i]].Definition.Version, r.byKey[r.byName[name][j]].Definition.Version)
 		})
 	}
+	for _, entry := range r.byKey {
+		internal, manual, parents := false, false, []string{}
+		for _, tag := range entry.Definition.Tags {
+			if tag == "internal-only" {
+				internal = true
+			}
+			if tag == "manual-only" {
+				manual = true
+			}
+			if strings.HasPrefix(tag, "parent:") {
+				parents = append(parents, strings.TrimPrefix(tag, "parent:"))
+			}
+		}
+		if internal {
+			if manual || len(parents) != 1 || entry.Definition.Layer != contracts.LayerAtomic {
+				r.err = contracts.Problem("invalid")
+				return r
+			}
+			parent, exists := r.byKey[parents[0]]
+			if !exists || parent.Definition.Layer != contracts.LayerOrchestration {
+				r.err = contracts.Problem("invalid")
+				return r
+			}
+		} else if len(parents) != 0 {
+			r.err = contracts.Problem("invalid")
+			return r
+		}
+	}
 	return r
 }
 
@@ -126,6 +155,15 @@ func (r *Registry) Discover(caller contracts.Caller) []contracts.Definition {
 		}
 	}
 	return out
+}
+
+// DiscoverAutomated is the shared tool catalog for automated callers. Source
+// restrictions remain enforced by the Gateway even if a caller knows a name.
+func (r *Registry) DiscoverAutomated(caller contracts.Caller) []contracts.Definition {
+	definitions := r.Discover(caller)
+	return slices.DeleteFunc(definitions, func(d contracts.Definition) bool {
+		return slices.Contains(d.Tags, "manual-only") || slices.Contains(d.Tags, "internal-only")
+	})
 }
 
 // RegisterEntities attaches the declared business entity model. Declarations own

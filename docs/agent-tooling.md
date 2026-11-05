@@ -37,6 +37,12 @@
 
 ## 避免错误地使用技术栈
 
+UI 模板以 [代码参考](code-reference/README.md) 提供，不注册演示页面。AI 页面先查 [AI 界面参考](ui-ai-patterns.md) 与官方 AI Elements，沿用既有服务端生命周期、审批与图引擎，UI 组合不引入第二套业务/Agent 实现。
+
+Pagination、NavigationMenu、Popover、RadioGroup、Toast、HoverCard、Dialog、Direction、Empty、Skeleton 等组合交互按 [交互模式](ui-interaction-patterns.md) 选型和验收，复用组件语义、键盘、焦点、portal 和状态能力；不把所有业务控件简化成 Button/Input/Select，也不为使用数量滥加组件。
+
+页面开发先选 [页面模板](page-templates.md)，再查 [组件使用指南](ui-component-guidelines.md)。官方资料从 [shadcn llms.txt](https://ui.shadcn.com/llms.txt) 发现，优先复用现有及官方组件、组合示例、Blocks、Charts 与 Registry；匹配本地 Base UI 和锁文件，不能只借用样式或混抄 Radix API。
+
 - 查询结果和后端实体不要放 Zustand；本地展开/选中/临时草稿不要全部塞 Query。
 - 普通表格不要提前引入 AG Grid；简单格式化不要提前引入日期库；不要并行引入多个 i18n 框架。
 - 生成 SDK 不等于业务逻辑已实现；Casbin 不等于 SQL 已过滤；前端隐藏按钮不等于后端已授权；前端 Zod 不等于服务端已验证。

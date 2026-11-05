@@ -1,6 +1,6 @@
 {
   "title": "MCP Server",
-  "description": "管理个人只读业务工具的访问凭证。",
+  "description": "管理个人 MCP 凭证，访问账号有权使用的业务能力。",
   "hub": {
     "title": "Agent 协作",
     "subtitle": "在同一页面切换远程业务 MCP 凭证、页面 MCP 连接和可分发的 WebSkills。",
@@ -63,7 +63,7 @@
   "catalogUnavailable": "无法加载工具目录；工具目录不可用时不能签发 Token。",
   "catalogBlocked": "工具目录尚未加载，无法确定允许的工具，请稍后重试。",
   "helper": "安装与连接诊断",
-  "helperHelp": "安装前在本机启动助手，输入终端配对码与个人 Token。诊断需要 context_get。助手会备份既有配置；安装完成不代表目标客户端已连接。",
+  "helperHelp": "安装前在本机启动助手，输入终端配对码与个人 Token。诊断需要 mcp_context_get。助手会备份既有配置；安装完成不代表目标客户端已连接。",
   "pairing": "本机助手配对码",
   "credential": "本次连接的 MCP Token",
   "diagnose": "测试远程连接",
@@ -110,5 +110,6 @@
   "emergencyHelp": "拥有专门管理权限时，可撤销当前工作区指定 Token，请向账号本人获取 Token ID。",
   "emergencyId": "待撤销的 Token ID",
   "adminPassword": "管理员确认密码",
-  "emergencyDone": "Token 已撤销。"
+  "emergencyDone": "Token 已撤销。",
+  "dynamicTools": "所有已有和新建令牌均可使用其绑定部门当前有权使用的能力，每次请求都会重新检查权限。"
 }

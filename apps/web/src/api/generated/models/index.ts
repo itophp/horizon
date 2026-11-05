@@ -20,6 +20,8 @@ export * from "./aIRunOrigin";
 export * from "./aiRunsParams";
 export * from "./aIRunStatus";
 export * from "./aIStatus";
+export * from "./aIStreamEvent";
+export * from "./aIStreamEventKind";
 export * from "./assistantAgentReply";
 export * from "./assistantAgentReplyMode";
 export * from "./assistantMessage";

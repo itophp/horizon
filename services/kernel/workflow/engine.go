@@ -29,9 +29,10 @@ type Engine struct {
 	cache       map[string]compose.Runnable[map[string]any, map[string]any]
 	// infos keeps the compiled graph of each definition for the read-only
 	// diagram view. It never feeds execution.
-	infos      map[string]*compose.GraphInfo
-	AgentModel ModelFactory
-	err        error
+	infos        map[string]*compose.GraphInfo
+	AgentModel   ModelFactory
+	Observations ObservationSink
+	err          error
 }
 
 func New(core *governance.Core, definitions []Definition) *Engine {

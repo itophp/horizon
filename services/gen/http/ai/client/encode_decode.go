@@ -369,6 +369,182 @@ func DecodeRunResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody
 	}
 }
 
+// BuildRunStreamRequest instantiates a HTTP request object with method and
+// path set to call the "ai" service "runStream" endpoint
+func (c *Client) BuildRunStreamRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RunStreamAiPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("ai", "runStream", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeRunStreamRequest returns an encoder for requests sent to the ai
+// runStream server.
+func EncodeRunStreamRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*ai.RunStreamPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("ai", "runStream", "*ai.RunStreamPayload", v)
+		}
+		{
+			head := p.Cookie
+			req.Header.Set("Cookie", head)
+		}
+		body := NewRunStreamRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("ai", "runStream", err)
+		}
+		return nil
+	}
+}
+
+// DecodeRunStreamResponse returns a decoder for responses returned by the ai
+// runStream endpoint. restoreBody controls whether the response body should be
+// restored after having been read.
+// DecodeRunStreamResponse may return the following errors:
+//   - "unauthenticated" (type *ai.IAMProblem): http.StatusUnauthorized
+//   - "forbidden" (type *ai.IAMProblem): http.StatusForbidden
+//   - "invalid" (type *ai.IAMProblem): http.StatusBadRequest
+//   - "not_found" (type *ai.IAMProblem): http.StatusNotFound
+//   - "unavailable" (type *ai.IAMProblem): http.StatusServiceUnavailable
+//   - "internal" (type *ai.IAMProblem): http.StatusInternalServerError
+//   - error: internal error
+func DecodeRunStreamResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("ai", "runStream", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body RunStreamResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			res := NewRunStreamAIStreamEventOK(&body)
+			return res, nil
+		case http.StatusUnauthorized:
+			var (
+				body RunStreamUnauthenticatedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamUnauthenticatedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			return nil, NewRunStreamUnauthenticated(&body)
+		case http.StatusForbidden:
+			var (
+				body RunStreamForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			return nil, NewRunStreamForbidden(&body)
+		case http.StatusBadRequest:
+			var (
+				body RunStreamInvalidResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamInvalidResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			return nil, NewRunStreamInvalid(&body)
+		case http.StatusNotFound:
+			var (
+				body RunStreamNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			return nil, NewRunStreamNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body RunStreamUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			return nil, NewRunStreamUnavailable(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RunStreamInternalResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			err = ValidateRunStreamInternalResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "runStream", err)
+			}
+			return nil, NewRunStreamInternal(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "runStream", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("ai", "runStream", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildRunsRequest instantiates a HTTP request object with method and path set
 // to call the "ai" service "runs" endpoint
 func (c *Client) BuildRunsRequest(ctx context.Context, v any) (*http.Request, error) {
@@ -439,7 +615,7 @@ func DecodeRunsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBod
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body []*AIRunResponse
+				body []*AIRun
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
@@ -448,7 +624,7 @@ func DecodeRunsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBod
 			}
 			for _, e := range body {
 				if e != nil {
-					if err2 := validateAIRunResponse(e, "body[*]"); err2 != nil {
+					if err2 := validateAIRun(e, "body[*]"); err2 != nil {
 						err = goa.MergeErrors(err, err2)
 					}
 				}
@@ -1369,9 +1545,9 @@ func unmarshalCapabilityInvocationToAiCapabilityInvocation(v *CapabilityInvocati
 	return res
 }
 
-// unmarshalAIRunResponseToAiAIRun builds a value of type *ai.AIRun from a
-// value of type *AIRunResponse.
-func unmarshalAIRunResponseToAiAIRun(v *AIRunResponse) *ai.AIRun {
+// unmarshalAIRunToAiAIRun builds a value of type *ai.AIRun from a value of
+// type *AIRun.
+func unmarshalAIRunToAiAIRun(v *AIRun) *ai.AIRun {
 	res := &ai.AIRun{
 		ID:                 *v.ID,
 		Question:           *v.Question,

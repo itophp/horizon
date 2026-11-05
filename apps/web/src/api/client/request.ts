@@ -21,10 +21,10 @@ export function requestTimeout(url: string): number {
   return longRunning ? 180000 : 10000;
 }
 // No automatic mutation retries. The session stays in an HttpOnly cookie; only its CSRF nonce is held in memory.
-export async function request<T>(
+export async function openResponse(
   url: string,
   options: RequestInit = {},
-): Promise<T> {
+): Promise<Response> {
   const timeout = requestTimeout(url);
   const signal = options.signal
     ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)])
@@ -56,6 +56,14 @@ export async function request<T>(
       window.dispatchEvent(new Event("baseline:unauthenticated"));
     throw new ApiError(codes[response.status] ?? "internal", response.status);
   }
+  return response;
+}
+
+export async function request<T>(
+  url: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await openResponse(url, options);
   const body = response.status === 204 ? "" : await response.text();
   const data: unknown = body.length === 0 ? undefined : JSON.parse(body);
   return { data, status: response.status, headers: response.headers } as T;

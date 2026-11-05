@@ -1,12 +1,13 @@
+import { SpaceNavigation } from "./space-navigation";
+import { ArrowLeft } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { MemberForm } from "./forms";
+import { DriveSelect } from "./select";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useSession } from "@/features/administration/auth";
 import {
   DataTable,
@@ -14,23 +15,16 @@ import {
   ErrorBanner,
   Loading,
   PageHeading,
+  RowActions,
   type AdminColumn,
 } from "@/features/administration/shared";
 import {
-  driveMemberAdd,
   driveMemberChange,
   driveMemberRemove,
   driveMembers,
   driveSpaces,
   type DriveMember,
 } from "@/lib/capabilities";
-
-const memberSchema = z.object({
-  targetType: z.enum(["account", "department"]),
-  targetId: z.number().int().positive(),
-  role: z.enum(["admin", "editor", "viewer"]),
-});
-type Values = z.infer<typeof memberSchema>;
 
 export function DriveMembersPage() {
   const { t } = useTranslation(["drive", "admin"]);
@@ -85,31 +79,32 @@ export function DriveMembersPage() {
       id: "role",
       header: t("drive:role"),
       cell: (row) => (
-        <select
-          className="toolbar-select"
-          aria-label={t("drive:changeRole")}
+        <DriveSelect
+          label={t("drive:changeRole")}
           value={row.role}
           disabled={change.isPending}
-          onChange={(event) =>
-            change.mutate({
-              id: row.id,
-              role: event.target.value as DriveMember["role"],
-            })
-          }
-        >
-          <option value="admin">{t("drive:roles.admin")}</option>
-          <option value="editor">{t("drive:roles.editor")}</option>
-          <option value="viewer">{t("drive:roles.viewer")}</option>
-        </select>
+          onValueChange={(role) => change.mutate({ id: row.id, role })}
+          options={(["admin", "editor", "viewer"] as const).map((value) => ({
+            value,
+            label: t(`drive:roles.${value}`),
+          }))}
+        />
       ),
     },
     {
       id: "actions",
       header: t("drive:actions"),
       cell: (row) => (
-        <Button type="button" variant="ghost" onClick={() => setRemoving(row)}>
-          {t("drive:remove")}
-        </Button>
+        <RowActions
+          actions={[
+            {
+              icon: <Trash2 size={14} />,
+              label: t("drive:remove"),
+              danger: true,
+              onClick: () => setRemoving(row),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -130,9 +125,18 @@ export function DriveMembersPage() {
         title={t("drive:members")}
         subtitle={t("drive:editDescription")}
       >
-        <Link to={`/drive/${spaceId}`}>{t("drive:back")}</Link>
+        <Button variant="outline" render={<Link to={`/drive/${spaceId}`} />}>
+          <ArrowLeft />
+          {t("drive:open")}
+        </Button>
         <Button onClick={() => setAdding(true)}>{t("drive:addMember")}</Button>
       </PageHeading>
+      {spaces.data?.data.items.find((space) => space.id === spaceId) && (
+        <SpaceNavigation
+          space={spaces.data.data.items.find((space) => space.id === spaceId)!}
+          current="members"
+        />
+      )}
       {query.isError && <ErrorBanner error={query.error} />}
       {change.isError && <ErrorBanner error={change.error} />}
       <DataTable rows={query.data?.data.items ?? []} columns={columns} />
@@ -175,78 +179,5 @@ export function DriveMembersPage() {
         </EditorDialog>
       )}
     </>
-  );
-}
-
-function MemberForm({
-  spaceId,
-  onClose,
-  onSaved,
-}: {
-  spaceId: number;
-  onClose: () => void;
-  onSaved: () => Promise<unknown>;
-}) {
-  const { t } = useTranslation("drive");
-  const form = useForm<Values>({
-    resolver: zodResolver(memberSchema),
-    defaultValues: { targetType: "account", targetId: 0, role: "viewer" },
-  });
-  const add = useMutation({
-    mutationFn: (value: Values) =>
-      driveMemberAdd(spaceId, value.targetType, value.targetId, value.role),
-    onSuccess: async () => {
-      await onSaved();
-      onClose();
-    },
-  });
-  return (
-    <EditorDialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      title={t("addMember")}
-      description={t("editDescription")}
-    >
-      <form onSubmit={form.handleSubmit((value) => add.mutate(value))}>
-        <label htmlFor="drive-member-type">{t("targetType")}</label>
-        <select
-          id="drive-member-type"
-          className="toolbar-select"
-          {...form.register("targetType")}
-        >
-          <option value="account">{t("account")}</option>
-          <option value="department">{t("department")}</option>
-        </select>
-        <label htmlFor="drive-member-id">{t("targetId")}</label>
-        <Input
-          id="drive-member-id"
-          type="number"
-          min={1}
-          {...form.register("targetId", { valueAsNumber: true })}
-        />
-        {form.formState.errors.targetId && <p role="alert">{t("required")}</p>}
-        <label htmlFor="drive-member-role">{t("role")}</label>
-        <select
-          id="drive-member-role"
-          className="toolbar-select"
-          {...form.register("role")}
-        >
-          <option value="admin">{t("roles.admin")}</option>
-          <option value="editor">{t("roles.editor")}</option>
-          <option value="viewer">{t("roles.viewer")}</option>
-        </select>
-        {add.isError && <ErrorBanner error={add.error} />}
-        <div className="editor-footer">
-          <Button type="button" variant="outline" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button type="submit" disabled={add.isPending}>
-            {t("save")}
-          </Button>
-        </div>
-      </form>
-    </EditorDialog>
   );
 }

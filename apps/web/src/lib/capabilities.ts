@@ -28,6 +28,67 @@ import type {
   EffectiveConfiguration,
   FileContent,
 } from "@/api/generated/models";
+import type {
+  MemoryActivityCollectInput,
+  MemoryActivityCollectOutput,
+  MemoryEventListInput,
+  MemoryEventListOutput,
+  MemoryIngestionFailuresOutput,
+  MemoryIngestionReplayOutput,
+  MemoryIngestionReplayRangeInput,
+  MemoryIngestionReplayRangeOutput,
+  MemoryItemCreateInput,
+  MemoryItemCreateOutput,
+  MemoryItemGetOutput,
+  MemoryItemListInput,
+  MemoryItemListOutput,
+  MemoryItemCorrectInput,
+  MemoryItemCorrectOutput,
+  MemoryItemArchiveOutput,
+  MemoryItemDeleteOutput,
+  MemoryItemSourcesOutput,
+  MemoryProjectCreateInput,
+  MemoryProjectCreateOutput,
+  MemoryProjectListInput,
+  MemoryProjectListOutput,
+  MemoryProjectGetOutput,
+  MemoryProjectSourcesOutput,
+  MemoryProjectCorrectInput,
+  MemoryProjectCorrectOutput,
+  MemoryProjectArchiveOutput,
+  MemoryProjectDeleteOutput,
+  MemoryPolicyListOutput,
+  MemoryPolicySetInput,
+  MemoryPolicySetOutput,
+  MemoryGroupCreateInput,
+  MemoryGroupCreateOutput,
+  MemoryGroupListInput,
+  MemoryGroupListOutput,
+  MemoryGroupGetInput,
+  MemoryGroupGetOutput,
+  MemoryGroupSourcesOutput,
+  MemoryGroupSourcesInput,
+  MemoryGroupCorrectInput,
+  MemoryGroupCorrectOutput,
+  MemoryGroupArchiveInput,
+  MemoryGroupArchiveOutput,
+  MemoryGroupDeleteOutput,
+  MemoryGroupDeleteInput,
+  MemoryEntityCreateInput,
+  MemoryEntityCreateOutput,
+  MemoryEntityListInput,
+  MemoryEntityListOutput,
+  MemoryEntityGetInput,
+  MemoryEntityGetOutput,
+  MemoryEntitySourcesOutput,
+  MemoryEntitySourcesInput,
+  MemoryEntityCorrectInput,
+  MemoryEntityCorrectOutput,
+  MemoryEntityArchiveInput,
+  MemoryEntityArchiveOutput,
+  MemoryEntityDeleteOutput,
+  MemoryEntityDeleteInput,
+} from "@/api/generated/capability-memory";
 
 export type KnowledgeDocument = {
   id: number;
@@ -44,6 +105,144 @@ export type CapabilityResponse<T> = {
 };
 
 const emptyHeaders = new Headers();
+
+export type ActivityObservation = MemoryActivityCollectInput["events"][number];
+
+export const collectActivity = (events: ActivityObservation[], key: string) =>
+  invoke<MemoryActivityCollectOutput>(
+    "memory.activity.collect",
+    { events },
+    key,
+  );
+
+export type MemoryPartition = MemoryItemCreateInput["partition"];
+export type MemoryItem = MemoryItemGetOutput;
+export type MemoryEvent = MemoryEventListOutput["events"][number];
+export type MemorySource = MemoryItemSourcesOutput["sources"][number];
+
+export const memoryCreate = (input: MemoryItemCreateInput, key?: string) =>
+  invoke<MemoryItemCreateOutput>("memory.item.create", input, key);
+export const memoryGet = (id: number) =>
+  invoke<MemoryItemGetOutput>("memory.item.get", { id });
+export const memoryList = (input: MemoryItemListInput = {}) =>
+  invoke<MemoryItemListOutput>("memory.item.list", input);
+export const memoryCorrect = (input: MemoryItemCorrectInput, key?: string) =>
+  invoke<MemoryItemCorrectOutput>("memory.item.correct", input, key);
+export const memoryArchive = (id: number, version: number, key?: string) =>
+  invoke<MemoryItemArchiveOutput>("memory.item.archive", { id, version }, key);
+export const memoryDelete = (id: number, version: number, key?: string) =>
+  invoke<MemoryItemDeleteOutput>("memory.item.delete", { id, version }, key);
+export const memorySources = (id: number) =>
+  invoke<MemoryItemSourcesOutput>("memory.item.sources", { id });
+export const memoryEvents = (input: MemoryEventListInput = {}) =>
+  invoke<MemoryEventListOutput>("memory.event.list", input);
+export const memoryIngestionFailures = (limit?: number) =>
+  invoke<MemoryIngestionFailuresOutput>(
+    "memory.ingestion.failures",
+    limit === undefined ? {} : { limit },
+  );
+export const memoryReplay = (eventId: string, key?: string) =>
+  invoke<MemoryIngestionReplayOutput>(
+    "memory.ingestion.replay",
+    { eventId },
+    key,
+  );
+export const memoryReplayRange = (
+  input: MemoryIngestionReplayRangeInput,
+  key?: string,
+) =>
+  invoke<MemoryIngestionReplayRangeOutput>(
+    "memory.ingestion.replay_range",
+    input,
+    key,
+  );
+export const projectMemoryCreate = (
+  input: MemoryProjectCreateInput,
+  key?: string,
+) => invoke<MemoryProjectCreateOutput>("memory.project.create", input, key);
+export const projectMemoryList = (input: MemoryProjectListInput) =>
+  invoke<MemoryProjectListOutput>("memory.project.list", input);
+export const projectMemoryGet = (projectId: number, id: number) =>
+  invoke<MemoryProjectGetOutput>("memory.project.get", { projectId, id });
+export const projectMemorySources = (projectId: number, id: number) =>
+  invoke<MemoryProjectSourcesOutput>("memory.project.sources", {
+    projectId,
+    id,
+  });
+export const projectMemoryCorrect = (
+  input: MemoryProjectCorrectInput,
+  key?: string,
+) => invoke<MemoryProjectCorrectOutput>("memory.project.correct", input, key);
+export const projectMemoryArchive = (
+  projectId: number,
+  id: number,
+  version: number,
+  key?: string,
+) =>
+  invoke<MemoryProjectArchiveOutput>(
+    "memory.project.archive",
+    { projectId, id, version },
+    key,
+  );
+export const projectMemoryDelete = (
+  projectId: number,
+  id: number,
+  version: number,
+  key?: string,
+) =>
+  invoke<MemoryProjectDeleteOutput>(
+    "memory.project.delete",
+    { projectId, id, version },
+    key,
+  );
+export const memoryPolicies = () =>
+  invoke<MemoryPolicyListOutput>("memory.policy.list");
+export const memoryPolicySet = (input: MemoryPolicySetInput, key?: string) =>
+  invoke<MemoryPolicySetOutput>("memory.policy.set", input, key);
+export const groupMemoryCreate = (
+  input: MemoryGroupCreateInput,
+  key?: string,
+) => invoke<MemoryGroupCreateOutput>("memory.group.create", input, key);
+export const groupMemoryList = (input: MemoryGroupListInput) =>
+  invoke<MemoryGroupListOutput>("memory.group.list", input);
+export const groupMemoryGet = (input: MemoryGroupGetInput) =>
+  invoke<MemoryGroupGetOutput>("memory.group.get", input);
+export const groupMemorySources = (input: MemoryGroupSourcesInput) =>
+  invoke<MemoryGroupSourcesOutput>("memory.group.sources", input);
+export const groupMemoryCorrect = (
+  input: MemoryGroupCorrectInput,
+  key?: string,
+) => invoke<MemoryGroupCorrectOutput>("memory.group.correct", input, key);
+export const groupMemoryArchive = (
+  input: MemoryGroupArchiveInput,
+  key?: string,
+) => invoke<MemoryGroupArchiveOutput>("memory.group.archive", input, key);
+export const groupMemoryDelete = (
+  input: MemoryGroupDeleteInput,
+  key?: string,
+) => invoke<MemoryGroupDeleteOutput>("memory.group.delete", input, key);
+export const entityMemoryCreate = (
+  input: MemoryEntityCreateInput,
+  key?: string,
+) => invoke<MemoryEntityCreateOutput>("memory.entity.create", input, key);
+export const entityMemoryList = (input: MemoryEntityListInput) =>
+  invoke<MemoryEntityListOutput>("memory.entity.list", input);
+export const entityMemoryGet = (input: MemoryEntityGetInput) =>
+  invoke<MemoryEntityGetOutput>("memory.entity.get", input);
+export const entityMemorySources = (input: MemoryEntitySourcesInput) =>
+  invoke<MemoryEntitySourcesOutput>("memory.entity.sources", input);
+export const entityMemoryCorrect = (
+  input: MemoryEntityCorrectInput,
+  key?: string,
+) => invoke<MemoryEntityCorrectOutput>("memory.entity.correct", input, key);
+export const entityMemoryArchive = (
+  input: MemoryEntityArchiveInput,
+  key?: string,
+) => invoke<MemoryEntityArchiveOutput>("memory.entity.archive", input, key);
+export const entityMemoryDelete = (
+  input: MemoryEntityDeleteInput,
+  key?: string,
+) => invoke<MemoryEntityDeleteOutput>("memory.entity.delete", input, key);
 
 function identifier(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {

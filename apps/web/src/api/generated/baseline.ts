@@ -26,6 +26,7 @@ import type {
   AIRun,
   AIRunEvent,
   AIStatus,
+  AIStreamEvent,
   AdminSnapshot,
   AgentRequestBody,
   AiConversationsParams,
@@ -1955,6 +1956,172 @@ export const useAiRun = <TError = IAMProblem, TContext = unknown>(
   TContext
 > => {
   return useMutation(getAiRunMutationOptions(options), queryClient);
+};
+
+export type aiRunStreamResponse200 = {
+  data: AIStreamEvent;
+  status: 200;
+};
+
+export type aiRunStreamResponse400 = {
+  data: IAMProblem;
+  status: 400;
+};
+
+export type aiRunStreamResponse401 = {
+  data: IAMProblem;
+  status: 401;
+};
+
+export type aiRunStreamResponse403 = {
+  data: IAMProblem;
+  status: 403;
+};
+
+export type aiRunStreamResponse404 = {
+  data: IAMProblem;
+  status: 404;
+};
+
+export type aiRunStreamResponse500 = {
+  data: IAMProblem;
+  status: 500;
+};
+
+export type aiRunStreamResponse503 = {
+  data: IAMProblem;
+  status: 503;
+};
+
+export type aiRunStreamResponseSuccess = aiRunStreamResponse200 & {
+  headers: Headers;
+};
+export type aiRunStreamResponseError = (
+  | aiRunStreamResponse400
+  | aiRunStreamResponse401
+  | aiRunStreamResponse403
+  | aiRunStreamResponse404
+  | aiRunStreamResponse500
+  | aiRunStreamResponse503
+) & {
+  headers: Headers;
+};
+
+export type aiRunStreamResponse =
+  aiRunStreamResponseSuccess | aiRunStreamResponseError;
+
+export const getAiRunStreamUrl = () => {
+  return `/api/ai/runs/stream`;
+};
+
+/**
+ * Execute one agent task. Business actions inside it go through the capability gateway.
+ * @summary runStream ai
+ */
+export const aiRunStream = async (
+  runRequestBody: RunRequestBody,
+  options?: Parameters<typeof request>[1],
+): Promise<aiRunStreamResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return request<aiRunStreamResponse>(getAiRunStreamUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(runRequestBody),
+  });
+};
+
+export const getAiRunStreamMutationKey = () => ["aiRunStream"] as const;
+
+export const getAiRunStreamMutationOptions = <
+  TError = IAMProblem,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof aiRunStream>>,
+    TError,
+    AiRunStreamMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof request>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof aiRunStream>>,
+  TError,
+  AiRunStreamMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAiRunStreamMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof aiRunStream>>,
+    AiRunStreamMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return aiRunStream(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AiRunStreamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof aiRunStream>>
+>;
+export type AiRunStreamMutationBody = RunRequestBody;
+export type AiRunStreamMutationError = IAMProblem;
+export type AiRunStreamMutationVariables = { data: RunRequestBody };
+
+/**
+ * @summary runStream ai
+ */
+export const useAiRunStream = <TError = IAMProblem, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof aiRunStream>>,
+      TError,
+      AiRunStreamMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof request>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof aiRunStream>>,
+  TError,
+  AiRunStreamMutationVariables,
+  TContext
+> => {
+  return useMutation(getAiRunStreamMutationOptions(options), queryClient);
 };
 
 export type aiRunDetailResponse200 = {

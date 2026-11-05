@@ -22,6 +22,14 @@ type RunRequestBody struct {
 	Page      *AIPageRequestBody `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
 }
 
+// RunStreamRequestBody is the type of the "ai" service "runStream" endpoint
+// HTTP request body.
+type RunStreamRequestBody struct {
+	Question  *string            `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+	SessionID *string            `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
+	Page      *AIPageRequestBody `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
+}
+
 // UpdateConversationRequestBody is the type of the "ai" service
 // "updateConversation" endpoint HTTP request body.
 type UpdateConversationRequestBody struct {
@@ -76,9 +84,21 @@ type RunResponseBody struct {
 	Invocations        []*CapabilityInvocation `form:"invocations" json:"invocations" xml:"invocations"`
 }
 
+// RunStreamResponseBody is the type of the "ai" service "runStream" endpoint
+// HTTP response body.
+type RunStreamResponseBody struct {
+	Sequence   int    `form:"sequence" json:"sequence" xml:"sequence"`
+	Kind       string `form:"kind" json:"kind" xml:"kind"`
+	Delta      string `form:"delta" json:"delta" xml:"delta"`
+	Capability string `form:"capability" json:"capability" xml:"capability"`
+	Status     string `form:"status" json:"status" xml:"status"`
+	ErrorCode  string `form:"errorCode" json:"errorCode" xml:"errorCode"`
+	Run        *AIRun `form:"run,omitempty" json:"run,omitempty" xml:"run,omitempty"`
+}
+
 // RunsResponseBody is the type of the "ai" service "runs" endpoint HTTP
 // response body.
-type RunsResponseBody []*AIRunResponse
+type RunsResponseBody []*AIRun
 
 // ConversationsResponseBody is the type of the "ai" service "conversations"
 // endpoint HTTP response body.
@@ -205,6 +225,42 @@ type RunUnavailableResponseBody struct {
 // RunInternalResponseBody is the type of the "ai" service "run" endpoint HTTP
 // response body for the "internal" error.
 type RunInternalResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunStreamUnauthenticatedResponseBody is the type of the "ai" service
+// "runStream" endpoint HTTP response body for the "unauthenticated" error.
+type RunStreamUnauthenticatedResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunStreamForbiddenResponseBody is the type of the "ai" service "runStream"
+// endpoint HTTP response body for the "forbidden" error.
+type RunStreamForbiddenResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunStreamInvalidResponseBody is the type of the "ai" service "runStream"
+// endpoint HTTP response body for the "invalid" error.
+type RunStreamInvalidResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunStreamNotFoundResponseBody is the type of the "ai" service "runStream"
+// endpoint HTTP response body for the "not_found" error.
+type RunStreamNotFoundResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunStreamUnavailableResponseBody is the type of the "ai" service "runStream"
+// endpoint HTTP response body for the "unavailable" error.
+type RunStreamUnavailableResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunStreamInternalResponseBody is the type of the "ai" service "runStream"
+// endpoint HTTP response body for the "internal" error.
+type RunStreamInternalResponseBody struct {
 	Code string `form:"code" json:"code" xml:"code"`
 }
 
@@ -410,8 +466,8 @@ type CapabilityInvocation struct {
 	FinishedAt    string `form:"finishedAt" json:"finishedAt" xml:"finishedAt"`
 }
 
-// AIRunResponse is used to define fields on response body types.
-type AIRunResponse struct {
+// AIRun is used to define fields on response body types.
+type AIRun struct {
 	ID                 int64                   `form:"id" json:"id" xml:"id"`
 	Question           string                  `form:"question" json:"question" xml:"question"`
 	Answer             string                  `form:"answer" json:"answer" xml:"answer"`
@@ -517,16 +573,33 @@ func NewRunResponseBody(res *ai.AIRun) *RunResponseBody {
 	return body
 }
 
+// NewRunStreamResponseBody builds the HTTP response body from the result of
+// the "runStream" endpoint of the "ai" service.
+func NewRunStreamResponseBody(res *ai.AIStreamEvent) *RunStreamResponseBody {
+	body := &RunStreamResponseBody{
+		Sequence:   res.Sequence,
+		Kind:       res.Kind,
+		Delta:      res.Delta,
+		Capability: res.Capability,
+		Status:     res.Status,
+		ErrorCode:  res.ErrorCode,
+	}
+	if res.Run != nil {
+		body.Run = marshalAiAIRunToAIRun(res.Run)
+	}
+	return body
+}
+
 // NewRunsResponseBody builds the HTTP response body from the result of the
 // "runs" endpoint of the "ai" service.
-func NewRunsResponseBody(res []*ai.AIRun) []*AIRunResponse {
-	body := make([]*AIRunResponse, len(res))
+func NewRunsResponseBody(res []*ai.AIRun) []*AIRun {
+	body := make([]*AIRun, len(res))
 	for i, val := range res {
 		if val == nil {
 			body[i] = nil
 			continue
 		}
-		body[i] = marshalAiAIRunToAIRunResponse(val)
+		body[i] = marshalAiAIRunToAIRun(val)
 	}
 	return body
 }
@@ -720,6 +793,60 @@ func NewRunUnavailableResponseBody(res *ai.IAMProblem) *RunUnavailableResponseBo
 // the "run" endpoint of the "ai" service.
 func NewRunInternalResponseBody(res *ai.IAMProblem) *RunInternalResponseBody {
 	body := &RunInternalResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunStreamUnauthenticatedResponseBody builds the HTTP response body from
+// the result of the "runStream" endpoint of the "ai" service.
+func NewRunStreamUnauthenticatedResponseBody(res *ai.IAMProblem) *RunStreamUnauthenticatedResponseBody {
+	body := &RunStreamUnauthenticatedResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunStreamForbiddenResponseBody builds the HTTP response body from the
+// result of the "runStream" endpoint of the "ai" service.
+func NewRunStreamForbiddenResponseBody(res *ai.IAMProblem) *RunStreamForbiddenResponseBody {
+	body := &RunStreamForbiddenResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunStreamInvalidResponseBody builds the HTTP response body from the
+// result of the "runStream" endpoint of the "ai" service.
+func NewRunStreamInvalidResponseBody(res *ai.IAMProblem) *RunStreamInvalidResponseBody {
+	body := &RunStreamInvalidResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunStreamNotFoundResponseBody builds the HTTP response body from the
+// result of the "runStream" endpoint of the "ai" service.
+func NewRunStreamNotFoundResponseBody(res *ai.IAMProblem) *RunStreamNotFoundResponseBody {
+	body := &RunStreamNotFoundResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunStreamUnavailableResponseBody builds the HTTP response body from the
+// result of the "runStream" endpoint of the "ai" service.
+func NewRunStreamUnavailableResponseBody(res *ai.IAMProblem) *RunStreamUnavailableResponseBody {
+	body := &RunStreamUnavailableResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunStreamInternalResponseBody builds the HTTP response body from the
+// result of the "runStream" endpoint of the "ai" service.
+func NewRunStreamInternalResponseBody(res *ai.IAMProblem) *RunStreamInternalResponseBody {
+	body := &RunStreamInternalResponseBody{
 		Code: res.Code,
 	}
 	return body
@@ -1018,6 +1145,20 @@ func NewRunPayload(body *RunRequestBody, cookie string) *ai.RunPayload {
 	return v
 }
 
+// NewRunStreamPayload builds a ai service runStream endpoint payload.
+func NewRunStreamPayload(body *RunStreamRequestBody, cookie string) *ai.RunStreamPayload {
+	v := &ai.RunStreamPayload{
+		Question:  *body.Question,
+		SessionID: body.SessionID,
+	}
+	if body.Page != nil {
+		v.Page = unmarshalAIPageRequestBodyToAiAIPage(body.Page)
+	}
+	v.Cookie = cookie
+
+	return v
+}
+
 // NewRunsPayload builds a ai service runs endpoint payload.
 func NewRunsPayload(limit int, sessionID *string, cookie string) *ai.RunsPayload {
 	v := &ai.RunsPayload{}
@@ -1072,6 +1213,33 @@ func NewUpdateConversationPayload(body *UpdateConversationRequestBody, sessionID
 
 // ValidateRunRequestBody runs the validations defined on RunRequestBody
 func ValidateRunRequestBody(body *RunRequestBody) (err error) {
+	if body.Question == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("question", "body"))
+	}
+	if body.Question != nil {
+		if utf8.RuneCountInString(*body.Question) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Question) > 4000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 4000, false))
+		}
+	}
+	if body.SessionID != nil {
+		if utf8.RuneCountInString(*body.SessionID) > 80 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.sessionId", *body.SessionID, utf8.RuneCountInString(*body.SessionID), 80, false))
+		}
+	}
+	if body.Page != nil {
+		if err2 := validateAIPageRequestBody(body.Page, "body.page"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateRunStreamRequestBody runs the validations defined on
+// RunStreamRequestBody
+func ValidateRunStreamRequestBody(body *RunStreamRequestBody) (err error) {
 	if body.Question == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("question", "body"))
 	}

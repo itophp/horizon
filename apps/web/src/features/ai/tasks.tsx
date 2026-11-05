@@ -1,13 +1,12 @@
+import { TaskControls, type TaskSort } from "./task-controls";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Archive,
-  ArchiveRestore,
-  Check,
-  ListFilter,
-  Pencil,
-  X,
-} from "lucide-react";
+import { Archive, ArchiveRestore, Check, Pencil, X } from "lucide-react";
 import type { AIConversation } from "@/api/generated/models";
 import { ErrorBanner } from "@/features/administration/shared";
 import { formatMoment } from "@/lib/capability";
@@ -15,7 +14,7 @@ import { formatMoment } from "@/lib/capability";
 // Task list orders. The server returns conversations newest first; the list
 // keeps that as the default and offers the two orders an owner actually needs:
 // the oldest thread and an alphabetical scan of renamed titles.
-export type TaskSort = "recent" | "oldest" | "title";
+export type { TaskSort } from "./task-controls";
 
 export function sortTasks(
   tasks: AIConversation[],
@@ -44,7 +43,15 @@ export function TaskList({
   onOpen,
   onRename,
   onArchive,
+  loading = false,
+  loadError,
+  onRetry,
+  runningSessionIds = new Set<string>(),
 }: {
+  loading?: boolean;
+  loadError?: unknown;
+  onRetry?: () => void;
+  runningSessionIds?: ReadonlySet<string>;
   tasks: AIConversation[];
   active: string | null;
   onNew: () => void;
@@ -115,53 +122,39 @@ export function TaskList({
     <aside className="ai-tasks" aria-label={t("tasks.title")}>
       <div className="ai-tasks-heading">
         <strong>{t("tasks.title")}</strong>
-        <button
+        <Button
           type="button"
-          className="ai-task-new"
+          variant="outline"
+          size="sm"
           onClick={() => onNew()}
           aria-pressed={active === null}
         >
           {t("tasks.new")}
-        </button>
+        </Button>
       </div>
-      <div className="ai-tasks-tools">
-        <div className="ai-task-views">
-          <button
-            type="button"
-            aria-pressed={view === "active"}
-            onClick={() => setView("active")}
-          >
-            {t("tasks.views.active")}
-            <small>{activeCount}</small>
-          </button>
-          <button
-            type="button"
-            aria-pressed={view === "archived"}
-            onClick={() => setView("archived")}
-          >
-            {t("tasks.views.archived")}
-            <small>{archivedCount}</small>
-          </button>
-        </div>
-        <label className="ai-task-sort">
-          <ListFilter size={13} aria-hidden="true" />
-          <span className="sr-only">{t("tasks.sort.label")}</span>
-          <select
-            aria-label={t("tasks.sort.label")}
-            value={sort}
-            onChange={(event) => setSort(event.target.value as TaskSort)}
-          >
-            <option value="recent">{t("tasks.sort.recent")}</option>
-            <option value="oldest">{t("tasks.sort.oldest")}</option>
-            <option value="title">{t("tasks.sort.title")}</option>
-          </select>
-        </label>
-      </div>
+      <TaskControls
+        view={view}
+        setView={setView}
+        sort={sort}
+        setSort={setSort}
+        activeCount={activeCount}
+        archivedCount={archivedCount}
+      />
       {!!error && <ErrorBanner error={error} />}
-      {!visible.length ? (
-        <p className="gov-empty">
-          {view === "archived" ? t("tasks.archivedEmpty") : t("tasks.empty")}
-        </p>
+      {loadError ? (
+        <ErrorBanner error={loadError} onRetry={onRetry} />
+      ) : loading ? (
+        <Skeleton className="h-24 w-full" />
+      ) : !visible.length ? (
+        <Empty className="border-0 p-4">
+          <EmptyHeader>
+            <EmptyDescription>
+              {view === "archived"
+                ? t("tasks.archivedEmpty")
+                : t("tasks.empty")}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className="ai-task-list">
           {visible.map((task) => (
@@ -177,7 +170,7 @@ export function TaskList({
                     void commit(task.sessionId);
                   }}
                 >
-                  <input
+                  <Input
                     autoFocus
                     value={draft}
                     maxLength={200}
@@ -187,57 +180,71 @@ export function TaskList({
                       if (event.key === "Escape") stopRename();
                     }}
                   />
-                  <button
+                  <Button
                     type="submit"
-                    className="ai-task-icon"
+                    variant="ghost"
+                    size="icon-xs"
                     aria-label={t("tasks.renameSave")}
                     title={t("tasks.renameSave")}
                     disabled={!draft.trim() || pending === task.sessionId}
                   >
                     <Check size={13} aria-hidden="true" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="ai-task-icon"
+                    variant="ghost"
+                    size="icon-xs"
                     aria-label={t("tasks.renameCancel")}
                     title={t("tasks.renameCancel")}
                     onClick={stopRename}
                   >
                     <X size={13} aria-hidden="true" />
-                  </button>
+                  </Button>
                 </form>
               ) : (
                 <>
-                  <button
+                  <Button
                     type="button"
-                    className="ai-task-open"
+                    variant="ghost"
+                    className="ai-task-open h-auto items-start whitespace-normal"
                     aria-current={
                       active === task.sessionId ? "true" : undefined
                     }
                     onClick={() => onOpen(task.sessionId)}
                   >
                     <strong>{task.title}</strong>
+                    {runningSessionIds.has(task.sessionId) && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Loader2
+                          className="size-3 animate-spin motion-reduce:animate-none"
+                          aria-hidden="true"
+                        />
+                        {t("workbench.running")}
+                      </span>
+                    )}
                     <small>
                       {t("tasks.meta", {
                         count: task.messageCount,
                         time: formatMoment(i18n.language, task.updatedAt),
                       })}
                     </small>
-                  </button>
+                  </Button>
                   <div className="ai-task-actions">
-                    <button
+                    <Button
                       type="button"
-                      className="ai-task-icon"
+                      variant="ghost"
+                      size="icon-xs"
                       aria-label={t("tasks.renameTask", { title: task.title })}
                       title={t("tasks.rename")}
                       disabled={pending === task.sessionId}
                       onClick={() => startRename(task)}
                     >
                       <Pencil size={13} aria-hidden="true" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="ai-task-icon"
+                      variant="ghost"
+                      size="icon-xs"
                       aria-label={
                         task.archived
                           ? t("tasks.restoreTask", { title: task.title })
@@ -254,7 +261,7 @@ export function TaskList({
                       ) : (
                         <Archive size={13} aria-hidden="true" />
                       )}
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}

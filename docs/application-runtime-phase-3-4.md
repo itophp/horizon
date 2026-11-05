@@ -43,3 +43,9 @@
 日志：`/tmp/runtime-m34-go12.log`、`/tmp/runtime-m34-rtl7.log`、`/tmp/runtime-m34-ci2.log`、`/tmp/runtime-m34-security2.log`。日志为本地临时证据，不是远程 CI 结果。
 
 E2E 未执行（按当前指示暂停）。未推送、未发布、未触发远程 CI。Memory 留待下一轮；Phase 5 专用视图未计入完成声明。未新增依赖。
+
+## 远程合并补记
+
+2026-11-05：已合入远程 Memory Center（7f2282c）及动态 MCP 目录（0eb446f）。上文“Memory 下一轮”是合并前 Runtime Adapter 的范围记录；Memory Center 服务现已存在，其专用能力和原安全边界已保留，Runtime Memory Context Adapter 尚未接入。远程使用迁移 00026_memory_events，本地尚未部署的 Runtime 迁移顺延为 00027_application_runtime，避免重复迁移号。AI 的原生 runStream 与 Runtime runEvents 分别保留，不将两套读取协议混用。
+
+合并验证：`make ci-fast` 通过，前端 42 文件/175 项通过，Go/生成一致性/实体/流程/构建通过；`TestRuntime|TestMemory` 真实 PostgreSQL 定向集成通过。完整 `make test-security` 的专项单测通过，但数据库回归仍失败：DriveDepartmentAndAccountGrants、DriveLastEffectiveAdmin、ExampleLifecycle、GroupMemoryUsesFormalReadAndWriteScopes、OrchestrationDurableApprovalGraphAndADK、PluginPermissionGatewayTenantAndDeny、ProjectMembershipRules。MCPNativeClients 按其独立目标规则跳过。未通过部分保留待修复，不阻止按用户要求保存合并检查点，也不视为 M3/M4 完成。日志 `/tmp/runtime-memory-ci3.log`、`/tmp/runtime-memory-db.log`、`/tmp/runtime-memory-security.log`。E2E 仍暂停，未推送。

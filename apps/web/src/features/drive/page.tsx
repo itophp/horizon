@@ -1,3 +1,11 @@
+import { ArrowUpRight, FolderPlus, HardDrive, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -5,17 +13,14 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/features/administration/auth";
 import {
-  DataTable,
   ErrorBanner,
   Loading,
   PageHeading,
-  type AdminColumn,
 } from "@/features/administration/shared";
 import {
   drivePersonalEnsure,
   driveSpaceCreate,
   driveSpaces,
-  type DriveSpace,
 } from "@/lib/capabilities";
 import { NameDialog } from "./name-dialog";
 
@@ -44,28 +49,6 @@ export function DrivePage() {
     enabled: canUse,
     retry: false,
   });
-  const columns: AdminColumn<DriveSpace>[] = [
-    {
-      id: "name",
-      header: t("drive:name"),
-      cell: (row) => (
-        <Link to={`/drive/${row.id}`}>
-          {row.kind === "personal" ? t("drive:personal") : row.name}
-        </Link>
-      ),
-    },
-    {
-      id: "kind",
-      header: t("drive:kind"),
-      cell: (row) =>
-        t(row.kind === "personal" ? "drive:personal" : "drive:shared"),
-    },
-    {
-      id: "role",
-      header: t("drive:role"),
-      cell: (row) => t(`drive:roles.${row.role}`),
-    },
-  ];
   if (!canUse)
     return <div className="admin-empty">{t("admin:errors.forbidden")}</div>;
   if (query.isPending) return <Loading />;
@@ -73,7 +56,8 @@ export function DrivePage() {
     <>
       <PageHeading title={t("drive:heading")} subtitle={t("drive:description")}>
         {session.permissions.includes("drive:create") && (
-          <Button onClick={() => setCreating(true)}>
+          <Button type="button" onClick={() => setCreating(true)}>
+            <FolderPlus />
             {t("drive:createSpace")}
           </Button>
         )}
@@ -87,7 +71,53 @@ export function DrivePage() {
           }}
         />
       )}
-      <DataTable rows={query.data?.data.items ?? []} columns={columns} />
+      {query.data?.data.items.length === 0 && (
+        <div className="admin-empty">{t("drive:noSpaces")}</div>
+      )}
+      <div className="role-card-grid">
+        {query.data?.data.items.map((space) => (
+          <Card key={space.id} className="role-card">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4">
+                <span className="flex size-10 items-center justify-center rounded-lg bg-muted">
+                  {space.kind === "personal" ? (
+                    <HardDrive aria-hidden="true" size={20} />
+                  ) : (
+                    <Users aria-hidden="true" size={20} />
+                  )}
+                </span>
+                <Badge variant="outline">
+                  {t(`drive:roles.${space.role}`)}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <h2 className="truncate">
+                <Link
+                  className="hover:underline focus-visible:underline"
+                  to={`/drive/${space.id}`}
+                >
+                  {space.kind === "personal" ? t("drive:personal") : space.name}
+                </Link>
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t(
+                  space.kind === "personal" ? "drive:personal" : "drive:shared",
+                )}
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button
+                variant="ghost"
+                render={<Link to={`/drive/${space.id}`} />}
+              >
+                {t("drive:open")}
+                <ArrowUpRight aria-hidden="true" />
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
       {creating && (
         <NameDialog
           title={t("drive:createSpace")}

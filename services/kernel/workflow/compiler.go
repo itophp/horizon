@@ -124,7 +124,7 @@ type receipt struct {
 	Data       map[string]any `json:"data,omitempty"`
 }
 
-func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, iteration int) (map[string]any, error) {
+func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, iteration int) (output map[string]any, stepErr error) {
 	state, err := current(ctx)
 	if err != nil {
 		return nil, err
@@ -135,6 +135,28 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 	}
 	if row.Status != "running" && row.Status != "awaiting_approval" {
 		return nil, contracts.Problem("cancelled")
+	}
+	interrupted := false
+	if e.Observations != nil {
+		started := time.Now()
+		e.observeStep(state, row, s, iteration, "started", started)
+		defer func() {
+			failure := recover()
+			phase := "completed"
+			if failure != nil {
+				phase = "failed"
+			} else if stepErr != nil {
+				if interrupted {
+					phase = "interrupted"
+				} else {
+					phase = "failed"
+				}
+			}
+			e.observeStep(state, row, s, iteration, phase, time.Now())
+			if failure != nil {
+				panic(failure)
+			}
+		}()
 	}
 	principal, err := e.Core.Identity.PrincipalForTask(ctx, state.Tenant, state.Account, row.DepartmentID)
 	if err != nil {
@@ -177,7 +199,7 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 	}
 
 	if s.Agent != nil {
-		return e.agent(ctx, s, args)
+		return e.agent(ctx, s, args, func() { interrupted = true })
 	}
 	key := "node:" + s.ID + ":" + strconv.Itoa(iteration)
 	raw, ok, err := store.Get(ctx, key)
@@ -209,6 +231,7 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 			if inv.Status == "awaiting_approval" && timeExpired(inv.CreatedAt) {
 				return nil, contracts.Problem("expired")
 			}
+			interrupted = true
 			return nil, compose.Interrupt(ctx, "awaiting_approval")
 		default:
 			code := inv.ErrorCode
@@ -239,6 +262,7 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 		return nil, err
 	}
 	if result.Status == contracts.StatusAwaitingApproval {
+		interrupted = true
 		return nil, compose.Interrupt(ctx, "awaiting_approval")
 	}
 	if result.Status != contracts.StatusSucceeded {

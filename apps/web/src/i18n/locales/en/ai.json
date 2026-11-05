@@ -38,7 +38,20 @@
     "pendingMeta": "{{time}} · run #{{run}}",
     "disabled": "The agent is not enabled for this workspace yet. An administrator can turn it on and configure the model under System settings.",
     "openSettings": "Open system settings",
-    "modelFailed": "The model did not answer. Check that the token under System settings is valid and that the agent endpoint is reachable; the failed task is kept in Run history."
+    "modelFailed": "The model did not answer. Check that the token under System settings is valid and that the agent endpoint is reachable; the failed task is kept in Run history.",
+    "conversation": "Conversation",
+    "loadingHistory": "Loading conversation",
+    "welcome": "What would you like to accomplish?",
+    "you": "You",
+    "assistant": "Assistant",
+    "latest": "Back to latest message",
+    "inputHint": "Enter to send · Shift + Enter for a new line",
+    "stop": "Stop waiting",
+    "stopped": "Stopped waiting for the response. The server task may still finish; check its recorded result before retrying.",
+    "running": "Running",
+    "progress": "Execution progress",
+    "planning": "Understanding the request and selecting authorized capabilities",
+    "flow": "Agent → {{capability}} → {{status}}"
   },
   "trace": {
     "title": "Execution steps",
@@ -141,7 +154,7 @@
     "archivedEmpty": "No archived tasks.",
     "meta": "{{count}} turns · {{time}}",
     "views": {
-      "active": "Active",
+      "active": "Unarchived",
       "archived": "Archived"
     },
     "sort": {

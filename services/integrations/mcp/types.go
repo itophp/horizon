@@ -16,7 +16,7 @@ type CreatePayload struct {
 	Name         string   `json:"name"`
 	DepartmentID int64    `json:"departmentId"`
 	Days         int      `json:"days"`
-	Tools        []string `json:"tools"`
+	Tools        []string `json:"tools"` // Deprecated: ignored; access follows current permissions.
 }
 type ListPayload struct {
 }
@@ -35,7 +35,7 @@ type MCPToken struct {
 	DepartmentID int64    `json:"departmentId"`
 	Name         string   `json:"name"`
 	Prefix       string   `json:"prefix"`
-	Tools        []string `json:"tools"`
+	Tools        []string `json:"tools"` // Deprecated: ignored; access follows current permissions.
 	CreatedAt    string   `json:"createdAt"`
 	ExpiresAt    string   `json:"expiresAt"`
 	RevokedAt    string   `json:"revokedAt"`

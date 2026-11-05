@@ -33,3 +33,7 @@ description: "Change PostgreSQL schema, Goose migrations, sqlc queries, pgx repo
 公共设置/字典的最新范围按 [ADR 007](../../../docs/decisions/007-global-governance.md)，取代 ADR 005 的组织配置继承/字典覆盖：统一工作空间管理，个人白名单偏好独立。管理要求正式权限及共享资源 ALL 范围，旧部门授权不得自动扩权；文件、消息、动态字典来源仍执行原资源数据范围。业务需要设置项、字典选项、上传、读取、下载或通知时，先使用 [baseline-shared-capabilities](../baseline-shared-capabilities/SKILL.md)，复用现有服务/SDK，不复制实现。
 
 设置定时发布按 [ADR 010](../../../docs/decisions/010-settings-schedules.md)：正式 publish/ALL，敏感单次 settings.schedule 证明在排期事务消费，到期重建原部门 Principal 并复查权限/摘要/依赖/版本；行锁与 savepoint 保证配置和结果原子提交，取消/重启/并发不能重复发布。UI 明示设备时区并转 UTC，使用生成 SDK；后台不借旧会话或临时权执行。修改时同步公共能力与权限规则并覆盖真实数据库、状态和取消测试。
+
+## Memory Center 数据范围
+
+记忆事件按租户和事件 ID 去重，持久日志消费者按逐事件 inbox 发现，不能使用可能漏掉乱序提交的 ID 水位。项目 SQL 复核租户与当前成员；部门/组织 SQL 应用可信 IAM 范围交集；业务实体 SQL 复核原对象所有者。纠正、来源和删除副本使用同等范围，不能只按记忆 ID 操作。保留策略仅记录配置，未经明确实施和验证不得自动清理原始审计或事件。

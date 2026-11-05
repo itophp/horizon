@@ -1,3 +1,6 @@
+import { SpaceNavigation } from "./space-navigation";
+import { ArrowLeft } from "lucide-react";
+import { Trash2, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -11,6 +14,7 @@ import {
   Loading,
   PageHeading,
   ShortDate,
+  RowActions,
   type AdminColumn,
 } from "@/features/administration/shared";
 import {
@@ -83,24 +87,25 @@ export function DriveTrashPage() {
       id: "actions",
       header: t("drive:actions"),
       cell: (row) => (
-        <>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setSelected(row)}
-          >
-            {t("drive:restore")}
-          </Button>
-          {canPurge && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setPurging(row)}
-            >
-              {t("drive:purge")}
-            </Button>
-          )}
-        </>
+        <RowActions
+          actions={[
+            {
+              icon: <RotateCcw size={14} />,
+              label: t("drive:restore"),
+              onClick: () => setSelected(row),
+            },
+            ...(canPurge
+              ? [
+                  {
+                    icon: <Trash2 size={14} />,
+                    label: t("drive:purge"),
+                    danger: true,
+                    onClick: () => setPurging(row),
+                  },
+                ]
+              : []),
+          ]}
+        />
       ),
     },
   ];
@@ -121,8 +126,17 @@ export function DriveTrashPage() {
         title={t("drive:trashTitle")}
         subtitle={t("drive:editDescription")}
       >
-        <Link to={`/drive/${spaceId}`}>{t("drive:back")}</Link>
+        <Button variant="outline" render={<Link to={`/drive/${spaceId}`} />}>
+          <ArrowLeft />
+          {t("drive:open")}
+        </Button>
       </PageHeading>
+      {spaces.data?.data.items.find((space) => space.id === spaceId) && (
+        <SpaceNavigation
+          space={spaces.data.data.items.find((space) => space.id === spaceId)!}
+          current="trash"
+        />
+      )}
       {query.isError && <ErrorBanner error={query.error} />}
       <DataTable rows={query.data?.data.items ?? []} columns={columns} />
       {selected && name === undefined && (

@@ -97,6 +97,9 @@ func (a *capabilityAdapter) Invoke(ctx context.Context, payload *gen.InvokePaylo
 	if payload.CorrelationID != nil {
 		correlation = *payload.CorrelationID
 	}
+	if correlation == "" {
+		correlation, _ = ctx.Value(requestCorrelationKey{}).(string)
+	}
 	if payload.CausationID != nil {
 		causation = *payload.CausationID
 	}

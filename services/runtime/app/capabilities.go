@@ -17,6 +17,7 @@ import (
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
+	"baseline/services/api/system/memory"
 	"baseline/services/api/system/notifications"
 	"baseline/services/api/system/orchestration"
 	"baseline/services/api/system/settings"
@@ -35,6 +36,7 @@ type CapabilityModules struct {
 	Orchestration *runtime.Engine
 	Documents     *knowledge.Store
 	Knowledge     *knowledge.Service
+	Memory        *memory.Module
 }
 
 func (m CapabilityModules) Entries() []registry.Entry {
@@ -79,6 +81,10 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	entries = append(entries, notifications.New(m.Core).Entries()...)
 	entries = append(entries, m.MCP.Entries()...)
 	entries = append(entries, example.New(m.Core.Pool).Entries()...)
+	if m.Memory == nil {
+		m.Memory = memory.New(m.Core.Pool)
+	}
+	entries = append(entries, m.Memory.Entries()...)
 	entries = append(entries, m.Documents.Entries()...)
 	entries = append(entries, m.Knowledge.Entries()...)
 	definitions := []contracts.Definition{}

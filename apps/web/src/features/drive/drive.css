@@ -1,0 +1,79 @@
+/* Keep resource navigation independent of the legacy global nav rules. */
+.drive-space-navigation {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--app-line);
+}
+.drive-space-navigation > a[data-slot="button"] {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+  height: 32px;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--app-muted);
+  font-size: 13px;
+}
+.drive-space-navigation > a[aria-current="page"] {
+  background: var(--secondary);
+  color: var(--app-ink);
+}
+.drive-folder-path {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  min-width: 0;
+}
+.drive-folder-path > [data-slot="button"] {
+  flex: 0 1 auto;
+  width: auto;
+  justify-content: flex-start;
+  padding: 0 8px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.drive-toolbar.standalone-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.drive-toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.drive-toolbar > .toolbar-right {
+  margin-left: auto;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .drive-toolbar-filters {
+    width: 100%;
+  }
+  .drive-toolbar-filters > .list-search {
+    width: 100%;
+  }
+  .drive-toolbar > .toolbar-right {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+}

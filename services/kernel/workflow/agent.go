@@ -18,7 +18,7 @@ import (
 
 type ModelFactory func(context.Context) (model.ToolCallingChatModel, error)
 
-func (e *Engine) agent(ctx context.Context, s Step, args contracts.Input) (map[string]any, error) {
+func (e *Engine) agent(ctx context.Context, s Step, args contracts.Input, onInterrupt func()) (map[string]any, error) {
 	state, err := current(ctx)
 	if err != nil {
 		return nil, err
@@ -91,6 +91,7 @@ func (e *Engine) agent(ctx context.Context, s Step, args contracts.Input) (map[s
 			return nil, event.Err
 		}
 		if event.Action != nil && event.Action.Interrupted != nil {
+			onInterrupt()
 			return nil, compose.Interrupt(ctx, "awaiting_agent_approval")
 		}
 		if event.Output != nil && event.Output.MessageOutput != nil && event.Output.MessageOutput.Role == schema.Assistant {

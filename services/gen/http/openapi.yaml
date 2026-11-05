@@ -892,6 +892,73 @@ paths:
                 - http
             security:
                 - browser_session_header_Cookie: []
+    /api/ai/runs/stream:
+        post:
+            tags:
+                - ai
+            summary: runStream ai
+            description: Execute one agent task. Business actions inside it go through the capability gateway.
+            operationId: ai#runStream
+            parameters:
+                - name: RunStreamRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/AiRunStreamRequestBody'
+                    required:
+                        - question
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/AIStreamEvent'
+                        required:
+                            - sequence
+                            - kind
+                            - delta
+                            - capability
+                            - status
+                            - errorCode
+                "400":
+                    description: 'invalid: Bad Request response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "401":
+                    description: 'unauthenticated: Unauthorized response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "403":
+                    description: 'forbidden: Forbidden response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "404":
+                    description: 'not_found: Not Found response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "500":
+                    description: 'internal: Internal Server Error response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+                "503":
+                    description: 'unavailable: Service Unavailable response.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
+            schemes:
+                - http
+            security:
+                - browser_session_header_Cookie: []
     /api/ai/status:
         get:
             tags:
@@ -2554,6 +2621,111 @@ definitions:
             - averageDurationMs
             - promptTokens
             - completionTokens
+    AIStreamEvent:
+        title: AIStreamEvent
+        type: object
+        properties:
+            capability:
+                type: string
+                example: Quidem dicta amet sunt illum.
+            delta:
+                type: string
+                example: Vitae incidunt ipsam quia.
+            errorCode:
+                type: string
+                example: Ipsam inventore adipisci.
+            kind:
+                type: string
+                example: completed
+                enum:
+                    - started
+                    - planning
+                    - tool_start
+                    - tool_end
+                    - answer_delta
+                    - completed
+                    - failed
+            run:
+                $ref: '#/definitions/AIRun'
+            sequence:
+                type: integer
+                example: 2472347303600054734
+                format: int64
+            status:
+                type: string
+                example: In sed voluptatem.
+        description: Ordered public execution progress. No private reasoning or raw tool inputs/outputs.
+        example:
+            capability: Quidem dicta amet sunt illum.
+            delta: Vitae incidunt ipsam quia.
+            errorCode: Ipsam inventore adipisci.
+            kind: completed
+            run:
+                agent: Vero molestiae culpa dignissimos.
+                answer: Quis expedita.
+                causationId: Culpa placeat voluptatem qui animi facilis vel.
+                completionTokens: 5529367383786657361
+                correlationId: Rem odit dolores unde dicta placeat error.
+                createdAt: Natus quibusdam.
+                durationMs: 8755897376742758011
+                errorCode: Dolor unde blanditiis quod.
+                eventId: Ex in at minima dolorem fugiat ea.
+                finishedAt: Provident occaecati.
+                id: 4997798868657085553
+                instructionVersion: Qui qui eligendi modi.
+                invocations:
+                    - approvalId: 6243873934051831685
+                      capability: Vel explicabo ipsum nemo sed aut aut.
+                      causationId: Labore qui et aliquid.
+                      correlationId: Iste explicabo et aperiam possimus a nihil.
+                      createdAt: Quis commodi.
+                      durationMs: 3019834645638402625
+                      errorCode: Vitae sunt ut rem voluptate unde.
+                      finishedAt: Aut distinctio beatae architecto.
+                      input: Sit illum non voluptates.
+                      inputDigest: Deserunt inventore.
+                      invocationId: Laudantium qui voluptatem voluptas vel quam optio.
+                      origin: approval
+                      result: Repellat fugiat non aliquam dolorum.
+                      status: awaiting_approval
+                      traceId: Eum aut.
+                      triggerDepth: 3328960312055392617
+                      version: Asperiores voluptatum blanditiis.
+                    - approvalId: 6243873934051831685
+                      capability: Vel explicabo ipsum nemo sed aut aut.
+                      causationId: Labore qui et aliquid.
+                      correlationId: Iste explicabo et aperiam possimus a nihil.
+                      createdAt: Quis commodi.
+                      durationMs: 3019834645638402625
+                      errorCode: Vitae sunt ut rem voluptate unde.
+                      finishedAt: Aut distinctio beatae architecto.
+                      input: Sit illum non voluptates.
+                      inputDigest: Deserunt inventore.
+                      invocationId: Laudantium qui voluptatem voluptas vel quam optio.
+                      origin: approval
+                      result: Repellat fugiat non aliquam dolorum.
+                      status: awaiting_approval
+                      traceId: Eum aut.
+                      triggerDepth: 3328960312055392617
+                      version: Asperiores voluptatum blanditiis.
+                model: Aut aut ullam animi recusandae vel nihil.
+                origin: api
+                promptTokens: 1254517976634839703
+                question: Delectus vero enim perspiciatis provident doloremque.
+                status: awaiting_approval
+                toolCalls: 6046268502009396699
+                traceId: Quisquam quidem qui eos qui aut rerum.
+                triggerDepth: 1543835788976309250
+                triggerPolicy: Atque rerum vel commodi similique deleniti sunt.
+            sequence: 2472347303600054734
+            status: In sed voluptatem.
+        required:
+            - sequence
+            - kind
+            - delta
+            - capability
+            - status
+            - errorCode
     AccountRecord:
         title: AccountRecord
         type: object
@@ -3734,6 +3906,37 @@ definitions:
                     - 8292885423084348597
             question: q
             sessionId: 2vr
+        required:
+            - question
+    AiRunStreamRequestBody:
+        title: AiRunStreamRequestBody
+        type: object
+        properties:
+            page:
+                $ref: '#/definitions/AIPage'
+            question:
+                type: string
+                example: sm
+                minLength: 1
+                maxLength: 4000
+            sessionId:
+                type: string
+                example: i6d
+                maxLength: 80
+        example:
+            page:
+                applicationId: 2y7
+                entity: w7q
+                entityId: 5722665807259745387
+                metadataVersion: knc
+                pageId: kp6
+                route: xh0
+                selection:
+                    - 8615325486438952813
+                    - 3615004802301163038
+                    - 8292885423084348597
+            question: sm
+            sessionId: i6d
         required:
             - question
     AiUpdateConversationRequestBody:

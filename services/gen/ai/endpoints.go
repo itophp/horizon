@@ -18,11 +18,21 @@ import (
 type Endpoints struct {
 	Status             goa.Endpoint
 	Run                goa.Endpoint
+	RunStream          goa.Endpoint
 	Runs               goa.Endpoint
 	Conversations      goa.Endpoint
 	RunEvents          goa.Endpoint
 	RunDetail          goa.Endpoint
 	UpdateConversation goa.Endpoint
+}
+
+// RunStreamEndpointInput holds both the payload and the server stream of the
+// "runStream" method.
+type RunStreamEndpointInput struct {
+	// Payload is the method payload.
+	Payload *RunStreamPayload
+	// Stream is the server stream used by the "runStream" method to send data.
+	Stream RunStreamServerStream
 }
 
 // RunEventsEndpointInput holds both the payload and the server stream of the
@@ -41,6 +51,7 @@ func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
 		Status:             NewStatusEndpoint(s, a.APIKeyAuth),
 		Run:                NewRunEndpoint(s, a.APIKeyAuth),
+		RunStream:          NewRunStreamEndpoint(s, a.APIKeyAuth),
 		Runs:               NewRunsEndpoint(s, a.APIKeyAuth),
 		Conversations:      NewConversationsEndpoint(s, a.APIKeyAuth),
 		RunEvents:          NewRunEventsEndpoint(s, a.APIKeyAuth),
@@ -53,6 +64,7 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Status = m(e.Status)
 	e.Run = m(e.Run)
+	e.RunStream = m(e.RunStream)
 	e.Runs = m(e.Runs)
 	e.Conversations = m(e.Conversations)
 	e.RunEvents = m(e.RunEvents)
@@ -95,6 +107,25 @@ func NewRunEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoin
 			return nil, err
 		}
 		return s.Run(ctx, p)
+	}
+}
+
+// NewRunStreamEndpoint returns an endpoint function that calls the method
+// "runStream" of service "ai".
+func NewRunStreamEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		ep := req.(*RunStreamEndpointInput)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "browser_session",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, string(ep.Payload.Cookie), &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.RunStream(ctx, ep.Payload, ep.Stream)
 	}
 }
 

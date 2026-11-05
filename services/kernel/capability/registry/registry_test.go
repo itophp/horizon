@@ -46,6 +46,22 @@ func TestNewRejectsInvalidCatalogs(t *testing.T) {
 	}
 }
 
+func TestInternalCapabilityRequiresPinnedOrchestrationParent(t *testing.T) {
+	parent := definition("example.composition.list", "1.0.0")
+	parent.Layer = contracts.LayerOrchestration
+	child := definition("example.data.list", "1.0.0")
+	child.Tags = []string{"internal-only", "parent:example.composition.list@1.0.0"}
+	if err := New([]Entry{{Definition: parent, Handler: handler()}, {Definition: child, Handler: handler()}}).Err(); err != nil {
+		t.Fatalf("valid parent rejected: %v", err)
+	}
+	for _, tags := range [][]string{{"internal-only"}, {"parent:example.composition.list@1.0.0"}, {"internal-only", "parent:example.composition.list@2.0.0"}} {
+		child.Tags = tags
+		if err := New([]Entry{{Definition: parent, Handler: handler()}, {Definition: child, Handler: handler()}}).Err(); err == nil {
+			t.Fatalf("unsafe tags accepted: %v", tags)
+		}
+	}
+}
+
 func TestResolveSelectsNewestVersion(t *testing.T) {
 	registry := New([]Entry{
 		{Definition: definition("example.record.list", "1.0.0"), Handler: handler()},
@@ -87,6 +103,38 @@ func TestDiscoverFiltersByPermission(t *testing.T) {
 	}
 	if all := registry.Discover(contracts.Caller{Admin: true}); len(all) != 2 {
 		t.Fatalf("administrator must see both, got %d", len(all))
+	}
+}
+
+func TestDiscoverAutomatedUsesPermissionsAndSourceRestrictions(t *testing.T) {
+	read := definition("example.read", "1.0.0")
+	read.Permission = "example:read"
+	write := definition("example.write", "1.0.0")
+	write.Permission = "example:write"
+	manual := definition("example.manual", "1.0.0")
+	manual.Tags = []string{"manual-only"}
+	parent := definition("example.parent", "1.0.0")
+	parent.Layer = contracts.LayerOrchestration
+	child := definition("example.child", "1.0.0")
+	child.Tags = []string{"internal-only", "parent:example.parent@1.0.0"}
+	r := New([]Entry{{Definition: read, Handler: handler()}, {Definition: write, Handler: handler()},
+		{Definition: manual, Handler: handler()}, {Definition: parent, Handler: handler()}, {Definition: child, Handler: handler()}})
+	if err := r.Err(); err != nil {
+		t.Fatal(err)
+	}
+	names := map[string]bool{}
+	for _, d := range r.DiscoverAutomated(contracts.Caller{Grants: []string{"example:read"}}) {
+		names[d.Name] = true
+	}
+	if !names[read.Name] || !names[parent.Name] || names[write.Name] || names[manual.Name] || names[child.Name] {
+		t.Fatalf("unexpected automated catalog: %v", names)
+	}
+	names = map[string]bool{}
+	for _, d := range r.DiscoverAutomated(contracts.Caller{Grants: []string{"example:write"}}) {
+		names[d.Name] = true
+	}
+	if names[read.Name] || !names[write.Name] {
+		t.Fatalf("grant change not reflected: %v", names)
 	}
 }
 

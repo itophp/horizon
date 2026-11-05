@@ -1,53 +1,30 @@
-import { useMemo, useRef, useState } from "react";
+import { ArrowLeft, HardDrive, ChevronRight, Folder } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { SpaceNavigation } from "./space-navigation";
+import { UploadStatus } from "./upload-progress";
+import { DriveToolbar } from "./toolbar";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FolderOpen, Move, Pencil, Trash2 } from "lucide-react";
+import { DriveItemsTable, type Item, type DriveDialog } from "./items-table";
 import { useTranslation } from "react-i18next";
 import { Link, useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/features/administration/auth";
 import {
-  DataTable,
-  EditorDialog,
   ErrorBanner,
-  ListSearch,
   Loading,
   PageHeading,
-  RowActions,
-  type AdminColumn,
 } from "@/features/administration/shared";
 import {
-  driveFileMove,
-  driveFileRename,
-  driveFileTrash,
   driveFiles,
-  driveFolderCreate,
-  driveFolderMove,
   driveFolderPath,
-  driveFolderRename,
-  driveFolderTrash,
   driveFolders,
   driveSpaces,
   driveSpaceUsage,
   driveUploadCancel,
-  type DriveFile,
 } from "@/lib/capabilities";
-import { MoveDialog } from "./move-dialog";
-import { NameDialog } from "./name-dialog";
-import {
-  downloadDriveFile,
-  uploadDriveFile,
-  type UploadProgress,
-} from "./transfer";
-
-type Item = {
-  id: number;
-  objectId: number;
-  name: string;
-  kind: "folder" | "file";
-  file?: DriveFile;
-};
-type Dialog =
-  { action: "rename" | "move" | "trash"; item: Item } | { action: "create" };
+import { ItemDialogs } from "./item-dialogs";
+import { uploadDriveFile, type UploadProgress } from "./transfer";
 
 export function DriveDetailPage() {
   const { t, i18n } = useTranslation(["drive", "admin"]);
@@ -68,11 +45,10 @@ export function DriveDetailPage() {
     spaceId > 0 &&
     Number.isSafeInteger(folderId) &&
     folderId >= 0;
-  const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [dialog, setDialog] = useState<DriveDialog | null>(null);
   const [progress, setProgress] = useState<UploadProgress>();
   const progressKey = useRef(uploadKey);
   const [transferError, setTransferError] = useState<unknown>();
-  const fileInput = useRef<HTMLInputElement>(null);
   const refresh = () =>
     client.invalidateQueries({ queryKey: ["drive", identity] });
   const spaces = useQuery({
@@ -130,16 +106,6 @@ export function DriveDetailPage() {
     },
     onError: setTransferError,
   });
-  const discard = useMutation({
-    mutationFn: async (item: Item) =>
-      item.kind === "folder"
-        ? driveFolderTrash(spaceId, item.objectId)
-        : driveFileTrash(spaceId, item.objectId),
-    onSuccess: async () => {
-      setDialog(null);
-      await refresh();
-    },
-  });
   const cancelUpload = useMutation({
     mutationFn: (uploadId: number) => driveUploadCancel(spaceId, uploadId),
     onSuccess: () => {
@@ -185,100 +151,25 @@ export function DriveDetailPage() {
         return a.name.localeCompare(b.name, i18n.language, { numeric: true });
       });
   }, [folders.data, files.data, kind, search, sort, i18n.language]);
-  function filter(key: string, value: string) {
-    setParams(
-      (old) => {
-        const next = new URLSearchParams(old);
-        if (value && value !== "all") next.set(key, value);
-        else next.delete(key);
-        return next;
-      },
-      { replace: true },
-    );
-  }
-  const columns: AdminColumn<Item>[] = [
-    {
-      id: "name",
-      header: t("drive:name"),
-      cell: (item) =>
-        item.kind === "folder" ? (
-          <Button
-            type="button"
-            variant="link"
-            onClick={() => filter("folder", String(item.objectId))}
-          >
-            <FolderOpen size={14} />
-            {item.name}
-          </Button>
-        ) : (
-          item.name
-        ),
+  const filter = useCallback(
+    (key: string, value: string) => {
+      setParams(
+        (old) => {
+          const next = new URLSearchParams(old);
+          if (value && value !== "all") next.set(key, value);
+          else next.delete(key);
+          return next;
+        },
+        { replace: true },
+      );
     },
-    {
-      id: "kind",
-      header: t("drive:kind"),
-      cell: (item) => t(item.kind === "folder" ? "drive:folder" : "drive:file"),
-    },
-    {
-      id: "size",
-      header: t("drive:size"),
-      cell: (item) =>
-        item.file
-          ? t("drive:sizeBytes", {
-              value: new Intl.NumberFormat(i18n.language).format(
-                item.file.size,
-              ),
-            })
-          : "—",
-    },
-    {
-      id: "actions",
-      header: t("drive:actions"),
-      cell: (item) => (
-        <RowActions
-          actions={[
-            ...(item.file
-              ? [
-                  {
-                    label: t("drive:download"),
-                    icon: <Download size={14} />,
-                    onClick: () => {
-                      void downloadDriveFile(spaceId, item.file!).catch(
-                        setTransferError,
-                      );
-                    },
-                  },
-                ]
-              : []),
-            ...(canEdit
-              ? [
-                  {
-                    label: t("drive:rename"),
-                    icon: <Pencil size={14} />,
-                    onClick: () => setDialog({ action: "rename", item }),
-                  },
-                  {
-                    label: t("drive:move"),
-                    icon: <Move size={14} />,
-                    onClick: () => setDialog({ action: "move", item }),
-                  },
-                  {
-                    label: t("drive:trash"),
-                    icon: <Trash2 size={14} />,
-                    danger: true,
-                    onClick: () => setDialog({ action: "trash", item }),
-                  },
-                ]
-              : []),
-          ]}
-        />
-      ),
-    },
-  ];
+    [setParams],
+  );
   if (!canUse)
     return <div className="admin-empty">{t("admin:errors.forbidden")}</div>;
   if (spaces.isPending || folders.isPending || files.isPending)
     return <Loading />;
+  if (spaces.isError) return <ErrorBanner error={spaces.error} />;
   if (!space)
     return <div className="admin-empty">{t("admin:errors.not_found")}</div>;
   const errorCode = transferError instanceof Error ? transferError.message : "";
@@ -298,35 +189,46 @@ export function DriveDetailPage() {
         title={space.kind === "personal" ? t("drive:personal") : space.name}
         subtitle={t("drive:description")}
       >
-        <Link to="/drive">{t("drive:back")}</Link>
-        {space.role === "admin" && space.kind === "shared" && (
-          <Link to={`/drive/${spaceId}/members`}>{t("drive:members")}</Link>
-        )}
-        {canEdit && (
-          <Link to={`/drive/${spaceId}/trash`}>{t("drive:trashTitle")}</Link>
-        )}
+        <Button variant="outline" render={<Link to="/drive" />}>
+          <ArrowLeft />
+          {t("drive:back")}
+        </Button>
       </PageHeading>
-      {usage.isError && <ErrorBanner error={usage.error} />}
-      {usage.data && (
-        <p>
-          {t(
-            usage.data.data.quotaBytes
-              ? "drive:capacityLimited"
-              : "drive:capacityUnlimited",
-            {
-              used: new Intl.NumberFormat(i18n.language).format(
-                usage.data.data.usedBytes,
-              ),
-              pending: new Intl.NumberFormat(i18n.language).format(
-                usage.data.data.pendingBytes,
-              ),
-              quota: new Intl.NumberFormat(i18n.language).format(
-                usage.data.data.quotaBytes,
-              ),
-            },
+      <section className="admin-panel mb-5 flex flex-wrap items-center gap-4 p-4">
+        <span className="flex size-10 items-center justify-center rounded-lg bg-muted">
+          <HardDrive aria-hidden="true" size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap gap-2">
+            <Badge variant="secondary">
+              {t(space.kind === "personal" ? "drive:personal" : "drive:shared")}
+            </Badge>
+            <Badge variant="outline">{t(`drive:roles.${space.role}`)}</Badge>
+          </div>
+          {usage.isError && <ErrorBanner error={usage.error} />}
+          {usage.data && (
+            <p className="text-sm text-muted-foreground">
+              {t(
+                usage.data.data.quotaBytes
+                  ? "drive:capacityLimited"
+                  : "drive:capacityUnlimited",
+                {
+                  used: new Intl.NumberFormat(i18n.language).format(
+                    usage.data.data.usedBytes,
+                  ),
+                  pending: new Intl.NumberFormat(i18n.language).format(
+                    usage.data.data.pendingBytes,
+                  ),
+                  quota: new Intl.NumberFormat(i18n.language).format(
+                    usage.data.data.quotaBytes,
+                  ),
+                },
+              )}
+            </p>
           )}
-        </p>
-      )}
+        </div>
+      </section>
+      <SpaceNavigation space={space} current="files" />
       {folders.isError && <ErrorBanner error={folders.error} />}
       {files.isError && <ErrorBanner error={files.error} />}
       {path.isError && <ErrorBanner error={path.error} />}
@@ -337,12 +239,13 @@ export function DriveDetailPage() {
       ) : (
         Boolean(transferError) && <ErrorBanner error={transferError} />
       )}
-      <nav aria-label={t("drive:root")}>
+      <nav className="drive-folder-path" aria-label={t("drive:root")}>
         <Button
           variant="link"
           type="button"
           onClick={() => filter("folder", "0")}
         >
+          <Folder aria-hidden="true" size={16} />
           {t("drive:root")}
         </Button>
         {path.data?.data.items.map((entry) => (
@@ -352,165 +255,52 @@ export function DriveDetailPage() {
             key={entry.id}
             onClick={() => filter("folder", String(entry.id))}
           >
+            <ChevronRight aria-hidden="true" size={14} />
             {entry.name}
           </Button>
         ))}
       </nav>
-      <div className="standalone-toolbar">
-        <ListSearch value={search} onChange={(value) => filter("q", value)} />
-        <select
-          className="toolbar-select"
-          aria-label={t("drive:kind")}
-          value={kind}
-          onChange={(event) => filter("type", event.target.value)}
-        >
-          <option value="all">{t("admin:actions.all")}</option>
-          <option value="folder">{t("drive:folder")}</option>
-          <option value="file">{t("drive:file")}</option>
-        </select>
-        <select
-          className="toolbar-select"
-          aria-label={t("drive:sort")}
-          value={sort}
-          onChange={(event) => filter("sort", event.target.value)}
-        >
-          <option value="name">{t("drive:sortName")}</option>
-          <option value="size">{t("drive:sortSize")}</option>
-          <option value="uploaded">{t("drive:sortUploaded")}</option>
-        </select>
-        {canEdit && (
-          <div className="toolbar-right">
-            <Button
-              type="button"
-              onClick={() => setDialog({ action: "create" })}
-            >
-              {t("drive:createFolder")}
-            </Button>
-            <input
-              ref={fileInput}
-              type="file"
-              multiple
-              hidden
-              aria-label={t("drive:upload")}
-              onChange={(event) => {
-                const selected = Array.from(event.target.files ?? []);
-                event.target.value = "";
-                if (selected.length) {
-                  setTransferError(undefined);
-                  upload.mutate(selected);
-                }
-              }}
-            />
-            <Button
-              type="button"
-              disabled={upload.isPending}
-              onClick={() => fileInput.current?.click()}
-            >
-              {progress ? t("drive:selectSameFile") : t("drive:upload")}
-            </Button>
-          </div>
-        )}
-      </div>
-      {progress && (
-        <div>
-          <p role="status">
-            {t("drive:uploadProgress", {
-              uploaded: progress.uploaded,
-              total: progress.total,
-            })}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={upload.isPending || cancelUpload.isPending}
-            onClick={() => cancelUpload.mutate(progress.uploadId)}
-          >
-            {t("drive:cancel")}
-          </Button>
-          {Boolean(transferError) && (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={upload.isPending || cancelUpload.isPending}
-              onClick={() => {
-                sessionStorage.removeItem(progressKey.current);
-                setProgress(undefined);
-                setTransferError(undefined);
-              }}
-            >
-              {t("drive:forgetUpload")}
-            </Button>
-          )}
-          {Boolean(transferError) && <p>{t("drive:forgetUploadHint")}</p>}
-        </div>
-      )}
-      <DataTable rows={rows} columns={columns} />
-      {dialog?.action === "create" && (
-        <NameDialog
-          title={t("drive:createFolder")}
-          onClose={() => setDialog(null)}
-          onSave={async (name) => {
-            await driveFolderCreate(spaceId, folderId, name);
-            await refresh();
-          }}
-        />
-      )}
-      {dialog?.action === "rename" && (
-        <NameDialog
-          title={t("drive:rename")}
-          initial={dialog.item.name}
-          onClose={() => setDialog(null)}
-          onSave={async (name) => {
-            if (dialog.item.kind === "folder")
-              await driveFolderRename(spaceId, dialog.item.objectId, name);
-            else await driveFileRename(spaceId, dialog.item.objectId, name);
-            await refresh();
-          }}
-        />
-      )}
-      {dialog?.action === "move" && (
-        <MoveDialog
-          spaceId={spaceId}
-          identity={identity}
-          onClose={() => setDialog(null)}
-          onSave={async (destination) => {
-            if (dialog.item.kind === "folder")
-              await driveFolderMove(spaceId, dialog.item.objectId, destination);
-            else
-              await driveFileMove(spaceId, dialog.item.objectId, destination);
-            await refresh();
-          }}
-        />
-      )}
-      {dialog?.action === "trash" && (
-        <EditorDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setDialog(null);
-          }}
-          title={t("drive:trash")}
-          description={t("drive:confirmTrash")}
-        >
-          {discard.isError && <ErrorBanner error={discard.error} />}
-          <div className="editor-footer">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDialog(null)}
-            >
-              {t("drive:cancel")}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={discard.isPending}
-              onClick={() => discard.mutate(dialog.item)}
-            >
-              {t("drive:trash")}
-            </Button>
-          </div>
-        </EditorDialog>
-      )}
+      <DriveToolbar
+        search={search}
+        kind={kind}
+        sort={sort}
+        filter={filter}
+        canEdit={canEdit}
+        uploading={upload.isPending}
+        resuming={Boolean(progress)}
+        onCreate={() => setDialog({ action: "create" })}
+        onUpload={(files) => {
+          setTransferError(undefined);
+          upload.mutate(files);
+        }}
+      />
+      <UploadStatus
+        progress={progress}
+        busy={upload.isPending || cancelUpload.isPending}
+        error={Boolean(transferError)}
+        cancel={(id) => cancelUpload.mutate(id)}
+        forget={() => {
+          sessionStorage.removeItem(progressKey.current);
+          setProgress(undefined);
+          setTransferError(undefined);
+        }}
+      />
+      <DriveItemsTable
+        rows={rows}
+        spaceId={spaceId}
+        canEdit={canEdit}
+        filter={filter}
+        setDialog={setDialog}
+        setTransferError={setTransferError}
+      />
+      <ItemDialogs
+        dialog={dialog}
+        setDialog={setDialog}
+        spaceId={spaceId}
+        folderId={folderId}
+        identity={identity}
+        refresh={refresh}
+      />
     </>
   );
 }

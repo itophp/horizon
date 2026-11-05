@@ -84,6 +84,58 @@ func BuildRunPayload(aiRunBody *string, aiRunCookie *string) (*ai.RunPayload, er
 	return v, nil
 }
 
+// BuildRunStreamPayload builds the payload for the ai runStream endpoint from
+// CLI flags.
+func BuildRunStreamPayload(aiRunStreamBody *string, aiRunStreamCookie *string) (*ai.RunStreamPayload, error) {
+	var err error
+	var body RunStreamRequestBody
+	{
+		if aiRunStreamBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*aiRunStreamBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"sm\",\n      \"sessionId\": \"i6d\"\n   }'")
+		}
+		if utf8.RuneCountInString(body.Question) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
+		}
+		if utf8.RuneCountInString(body.Question) > 4000 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 4000, false))
+		}
+		if body.SessionID != nil {
+			if utf8.RuneCountInString(*body.SessionID) > 80 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.sessionId", *body.SessionID, utf8.RuneCountInString(*body.SessionID), 80, false))
+			}
+		}
+		if body.Page != nil {
+			if err2 := validateAIPageRequestBody(body.Page, "body.page"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var cookie string
+	{
+		if aiRunStreamCookie == nil {
+			return nil, fmt.Errorf("missing required flag --cookie")
+		}
+		cookie = *aiRunStreamCookie
+	}
+	v := &ai.RunStreamPayload{
+		Question:  body.Question,
+		SessionID: body.SessionID,
+	}
+	if body.Page != nil {
+		v.Page = marshalAIPageRequestBodyToAiAIPage(body.Page)
+	}
+	v.Cookie = cookie
+
+	return v, nil
+}
+
 // BuildRunsPayload builds the payload for the ai runs endpoint from CLI flags.
 func BuildRunsPayload(aiRunsLimit string, aiRunsSessionID *string, aiRunsCookie *string) (*ai.RunsPayload, error) {
 	var err error

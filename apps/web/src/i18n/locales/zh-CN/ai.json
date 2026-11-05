@@ -38,7 +38,20 @@
     "pendingMeta": "{{time}} · 执行 #{{run}}",
     "disabled": "当前工作区尚未启用智能体。管理员可在「系统设置」中开启并配置模型。",
     "openSettings": "前往系统设置",
-    "modelFailed": "模型没有返回结果。请到「系统设置」检查 Token 是否有效、智能体接口地址是否可达；这次失败的执行已保留在执行记录里。"
+    "modelFailed": "模型没有返回结果。请到「系统设置」检查 Token 是否有效、智能体接口地址是否可达；这次失败的执行已保留在执行记录里。",
+    "conversation": "对话内容",
+    "loadingHistory": "正在加载对话",
+    "welcome": "今天想完成什么？",
+    "you": "你",
+    "assistant": "助手",
+    "latest": "回到最新消息",
+    "inputHint": "Enter 发送 · Shift + Enter 换行",
+    "stop": "停止等待",
+    "stopped": "已停止等待响应。服务端任务仍可能完成，重试前请查看已记录的结果。",
+    "running": "执行中",
+    "progress": "执行过程与数据流",
+    "planning": "正在理解请求并选择已授权的能力",
+    "flow": "Agent → {{capability}} → {{status}}"
   },
   "trace": {
     "title": "执行步骤",
@@ -141,7 +154,7 @@
     "archivedEmpty": "没有已归档的任务。",
     "meta": "{{count}} 轮对话 · {{time}}",
     "views": {
-      "active": "进行中",
+      "active": "未归档",
       "archived": "已归档"
     },
     "sort": {

@@ -6,6 +6,7 @@ import (
 	"baseline/services/api/kernel/plugin"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
+	memorysystem "baseline/services/api/system/memory"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -57,12 +58,16 @@ func handlerWithCore(systemService system.Service, options governance.Options, c
 	systemhttp.Mount(mux, systemhttp.New(system.NewEndpoints(systemService), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, errors, nil))
 	var identityGuard func(http.ResponseWriter, *http.Request) (*http.Request, bool)
 	start := func(context.Context) {}
+	var observer *memorysystem.Observer
 	if len(identities) > 0 {
 		identityGuard = mountIdentity(mux, identities[0], errors)
 		if core == nil || core.Pool == nil {
 			core = governance.New(identities[0].Database(), identities[0], options)
 		}
-		start = mountGovernance(mux, core, plugins, errors)
+		observer = memorysystem.NewObserver(core.Pool)
+		start = mountGovernance(mux, core, plugins, observer, errors)
+		startGovernance := start
+		start = func(ctx context.Context) { startGovernance(ctx); go observer.Run(ctx) }
 	}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
@@ -72,9 +77,13 @@ func handlerWithCore(systemService system.Service, options governance.Options, c
 			return
 		}
 		id := hex.EncodeToString(raw[:])
+		r = r.WithContext(context.WithValue(r.Context(), requestCorrelationKey{}, "req_"+id))
 		w.Header().Set("X-Request-ID", id)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Cache-Control", "no-store")
+		if r.URL.Path == "/api/ai/runs/stream" {
+			w.Header().Set("X-Accel-Buffering", "no")
+		}
 		w.Header().Set("Referrer-Policy", "same-origin")
 		w.Header().Set("X-Frame-Options", "DENY")
 		// Paths and credentials are deliberately excluded from logs. No permissive CORS; the console proxies same-origin /api.
@@ -87,6 +96,17 @@ func handlerWithCore(systemService system.Service, options governance.Options, c
 				return
 			}
 			r = next
+		}
+		if p, err := identity.Current(r.Context()); err == nil && observer != nil {
+			recorded := &statusWriter{ResponseWriter: w}
+			w = recorded
+			defer func() {
+				failure := recover()
+				observeHTTP(observer, p, r, id, started, recorded, failure != nil)
+				if failure != nil {
+					panic(failure)
+				}
+			}()
 		}
 		// A capability invocation may carry a base64 attachment; every other
 		// endpoint keeps the small default body.
