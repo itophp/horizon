@@ -95,7 +95,6 @@ beforeEach(async () => {
   api.list.mockReset();
   api.permissions = [];
   api.list.mockResolvedValue({ status: 200, data: [], headers: new Headers() });
-
 });
 
 it("associates every validation error with its own field", async () => {
@@ -166,7 +165,9 @@ it("explains that credentials follow current permissions without selecting tools
   const user = userEvent.setup();
   show();
   await openCreate(user);
-  expect(screen.getAllByText(/Access is checked on each request/).length).toBeGreaterThan(0);
+  expect(
+    screen.getAllByText(/Access is checked on each request/).length,
+  ).toBeGreaterThan(0);
   expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 });
 

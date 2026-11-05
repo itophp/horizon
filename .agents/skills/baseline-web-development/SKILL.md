@@ -45,3 +45,7 @@ description: "Build or modify React pages, navigation, shared UI, forms, tables,
 ## Memory Center 前端接入
 
 Memory Center 使用从模块 Definition 生成的 capability-memory 类型和生成的通用 Gateway SDK，不能手写重复 DTO 或裸 fetch。活动采集仅使用服务端白名单页面与动作，不上传 URL 参数、表单值或页面内容；采样率使用共享设置，切换账号或部门时停止并清空旧队列。新增权限标签维护双语并验证临时权限不会暴露它们。
+
+## 远程 MCP 动态目录（现行）
+
+远程 MCP 与 AI 助手共享自动化能力目录；Token 绑定本人和部门，每次请求重建当前正式权限，不再使用历史固化工具集合。业务调用仍经 Gateway 并执行来源、数据范围、审批和幂等检查；人工及内部专用能力不向自动化暴露。变更时验证授权、越权直接调用、撤权及界面提示，详见 docs/security.md 和 docs/decisions/011-remote-mcp.md（从仓库根解析）。

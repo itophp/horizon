@@ -83,3 +83,7 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 ## 内置插件权限目录
 
 内置插件可经 kernel/plugin Registrar 声明权限定义；身份服务实例必须在启动工作线程、处理请求或重建 Principal 前校验并合并插件权限。与内置身份目录冲突即失败，重复配置仅允许完全相同的目录；注册不授予权限。会话、部门切换、临时权限及 PrincipalForTask 必须使用同一实例目录，未知权限默认拒绝，deny 优先；不得使用进程级可变目录或信任插件输入作为调用身份。新增权限需声明 scope/临时授权语义，并覆盖 Gateway 允许/拒绝、跨租户、撤权和身份重建。
+
+## 远程 MCP 动态能力目录（现行）
+
+远程 MCP 与 AI 助手共享自动化能力发现；Token 绑定账号和部门，每次请求按当前正式权限重建目录，历史固化工具集合不再限制能力。业务调用必须经 Gateway，并保持来源、数据范围、审批和幂等检查；手动和内部专用能力不进入自动化目录。权限变更须覆盖发现、猜测调用和撤权后的拒绝。详见 docs/security.md 和 docs/decisions/011-remote-mcp.md（从仓库根解析）。

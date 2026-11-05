@@ -1,5 +1,8 @@
 # 远程业务 MCP 接入与恢复
 
+> **现行行为（2026-11-05）**：远程 MCP 与 AI 助手使用同一自动化能力目录，按凭证绑定部门的当前正式权限动态发现，不再固定 Token 工具集合；旧 Token 同样适用。人工专用和内部专用能力不在自动化目录中，业务调用仍由 Gateway 检查权限、来源、范围、幂等和审批。`tools` 是兼容旧客户端的忽略字段。旧工具名称已更换为能力工具名称；使用 `mcp_context_get` 检查配对身份，使用标准 `tools/list` 发现能力。需要安全重试写入时，在 MCP 请求 `_meta.idempotencyKey` 提供稳定键；未提供时每次调用生成新键，不能保证跨请求重试去重。以下历史阶段描述如有冲突，以本段为准。
+
+
 ## 服务与账号
 
 部署现有 Go 服务并执行新增迁移，前端代理精确 `/mcp` 至 Go。生产使用 HTTPS、COOKIE_SECURE=true 和 HTTPS PUBLIC_APP_URL，代理保留原 Host 与 Authorization；不要记录请求正文/Authorization。开发使用 `make migrate` 与既有启动命令；测试使用隔离 schema，不迁移开发库代替验收。

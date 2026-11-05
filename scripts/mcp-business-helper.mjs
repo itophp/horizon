@@ -61,6 +61,7 @@ export async function diagnose(url, token, expected) {
     const response = JSON.parse(item?.text || "null");
     const context = response?.data;
     if (
+      response?.status !== "succeeded" ||
       !context ||
       context.accountId !== expected.accountId ||
       context.departmentId !== expected.departmentId

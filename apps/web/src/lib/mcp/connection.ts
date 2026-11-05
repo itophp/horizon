@@ -75,11 +75,17 @@ export async function diagnoseRemote(token: string) {
     );
     const tools = await client.listTools({}, { timeout: 10000 });
     const result = await client.callTool(
-      { name: "context_get", arguments: {} },
+      { name: "mcp_context_get", arguments: {} },
       undefined,
       { timeout: 10000 },
     );
-    if (result.isError) throw new Error("context_failed");
+    if (
+      result.isError ||
+      !z
+        .object({ status: z.literal("succeeded") })
+        .safeParse(result.structuredContent).success
+    )
+      throw new Error("context_failed");
     return { toolCount: tools.tools.length };
   } finally {
     await client.close();

@@ -63,7 +63,7 @@
   "catalogUnavailable": "The tool catalog cannot be loaded; no token can be issued without it.",
   "catalogBlocked": "The tool catalog is not loaded yet, so the allowed tools are unknown. Try again shortly.",
   "helper": "Install and diagnose",
-  "helperHelp": "Run the helper locally to install. Enter its pairing key and your Token. Diagnosis requires context_get. Existing configuration is backed up; installation alone does not prove the target client is connected.",
+  "helperHelp": "Run the helper locally to install. Enter its pairing key and your Token. Diagnosis requires mcp_context_get. Existing configuration is backed up; installation alone does not prove the target client is connected.",
   "pairing": "Local helper pairing key",
   "credential": "MCP Token for this connection",
   "diagnose": "Test remote connection",
@@ -111,5 +111,5 @@
   "emergencyId": "Token ID to revoke",
   "adminPassword": "Administrator password",
   "emergencyDone": "Token revoked.",
-  "dynamicTools": "This credential can use capabilities available to the selected department. Access is checked on each request."
+  "dynamicTools": "All existing and new tokens can use capabilities currently permitted to their bound department. Access is checked on each request."
 }

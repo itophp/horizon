@@ -85,3 +85,7 @@ Eino Workflow/Graph/ADK 的业务节点仍经 Gateway；嵌套来源强制 Origi
 ## Memory Center 范围与来源
 
 个人记忆仅本人；项目记忆先经 Gateway 的 project.get 授权，并由 SQL 复核项目成员关系；部门和组织取正式 IAM 读取与更新范围交集，写事务内解析并在 SQL 中限制。业务实体目前仅支持 example_record，先调用 example.record.get，再按租户与所有者过滤。未知资源默认拒绝。记忆正文不进入调用审计、事件或模型历史；读取结果禁止持久化，访问审计不得记录正文。memory 权限不可临时授予，权限目录不自动授予已有角色；覆盖跨租户、越权、撤权和来源隔离。
+
+## 远程 MCP 动态目录（现行）
+
+远程 MCP 与 AI 助手共享自动化能力目录；Token 绑定本人和部门，每次请求重建当前正式权限，不再使用历史固化工具集合。业务调用仍经 Gateway 并执行来源、数据范围、审批和幂等检查；人工及内部专用能力不向自动化暴露。变更时验证授权、越权直接调用、撤权及界面提示，详见 docs/security.md 和 docs/decisions/011-remote-mcp.md（从仓库根解析）。
