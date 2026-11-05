@@ -462,10 +462,13 @@ type CapabilityEventResponse struct {
 // RuntimeInvocationReferenceRequestBody is used to define fields on request
 // body types.
 type RuntimeInvocationReferenceRequestBody struct {
-	ApplicationID        string `form:"applicationId" json:"applicationId" xml:"applicationId"`
-	PageID               string `form:"pageId" json:"pageId" xml:"pageId"`
-	MetadataVersion      string `form:"metadataVersion" json:"metadataVersion" xml:"metadataVersion"`
-	InstallationRevision int64  `form:"installationRevision" json:"installationRevision" xml:"installationRevision"`
+	ApplicationID        string  `form:"applicationId" json:"applicationId" xml:"applicationId"`
+	PageID               string  `form:"pageId" json:"pageId" xml:"pageId"`
+	MetadataVersion      string  `form:"metadataVersion" json:"metadataVersion" xml:"metadataVersion"`
+	InstallationRevision int64   `form:"installationRevision" json:"installationRevision" xml:"installationRevision"`
+	ApplicationVersion   *string `form:"applicationVersion,omitempty" json:"applicationVersion,omitempty" xml:"applicationVersion,omitempty"`
+	DefinitionDigest     *string `form:"definitionDigest,omitempty" json:"definitionDigest,omitempty" xml:"definitionDigest,omitempty"`
+	CatalogRevision      *int64  `form:"catalogRevision,omitempty" json:"catalogRevision,omitempty" xml:"catalogRevision,omitempty"`
 }
 
 // NewInvokeRequestBody builds the HTTP request body from the payload of the
@@ -2255,6 +2258,17 @@ func ValidateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationRefere
 	if body.InstallationRevision < 1 {
 		err = goa.MergeErrors(err, goa.InvalidRangeError("body.installationRevision", body.InstallationRevision, 1, true))
 	}
+	if body.ApplicationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.applicationVersion", *body.ApplicationVersion, "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"))
+	}
+	if body.DefinitionDigest != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.definitionDigest", *body.DefinitionDigest, "^[a-f0-9]{64}$"))
+	}
+	if body.CatalogRevision != nil {
+		if *body.CatalogRevision < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.catalogRevision", *body.CatalogRevision, 1, true))
+		}
+	}
 	return
 }
 
@@ -2277,6 +2291,17 @@ func validateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationRefere
 	err = goa.MergeErrors(err, goa.ValidatePattern(path+".metadataVersion", body.MetadataVersion, "^[a-f0-9]{64}$"))
 	if body.InstallationRevision < 1 {
 		err = goa.MergeErrors(err, goa.InvalidRangeError(path+".installationRevision", body.InstallationRevision, 1, true))
+	}
+	if body.ApplicationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern(path+".applicationVersion", *body.ApplicationVersion, "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"))
+	}
+	if body.DefinitionDigest != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern(path+".definitionDigest", *body.DefinitionDigest, "^[a-f0-9]{64}$"))
+	}
+	if body.CatalogRevision != nil {
+		if *body.CatalogRevision < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError(path+".catalogRevision", *body.CatalogRevision, 1, true))
+		}
 	}
 	return
 }

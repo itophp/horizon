@@ -53,6 +53,17 @@ export function TaskPanel({ runId }: { runId: number }) {
     );
   }, [runId, identity, client]);
   const run = query.data?.status === 200 ? query.data.data : undefined;
+  const terminal =
+    run && ["completed", "failed", "cancelled"].includes(run.status);
+  useEffect(() => {
+    if (terminal)
+      void client.invalidateQueries({
+        predicate: (query) =>
+          typeof query.queryKey[0] === "string" &&
+          (query.queryKey[0] === "runtime-v2" ||
+            query.queryKey[0].startsWith("runtime-design")),
+      });
+  }, [terminal, client]);
   return (
     <section
       className="admin-panel"

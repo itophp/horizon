@@ -113,6 +113,12 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 				return nil, contracts.Problem("unauthenticated")
 			}
 		}
+		if p.TokenHash != "" && request.Origin == contracts.OriginHumanUI {
+			refreshed, e = g.identity.PrincipalForSessionInvocation(ctx, p.TenantID, p.Account.ID, p.Account.DepartmentID, p.TokenHash)
+			if e != nil {
+				return nil, e
+			}
+		}
 		refreshed.CSRF = p.CSRF
 		refreshed.TokenHash = p.TokenHash
 		p = refreshed
@@ -129,6 +135,9 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 		request.IdempotencyKey = ""
 	}
 	definition := entry.Definition
+	if slices.Contains(definition.Tags, "system-only") && (p.Account.ID != 0 || request.Origin != contracts.OriginEvent) {
+		return nil, contracts.Problem("forbidden")
+	}
 	if !definition.AllowsOrigin(request.Origin) {
 		return nil, contracts.Problem("forbidden")
 	}

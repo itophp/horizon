@@ -114,6 +114,15 @@ func (a *capabilityAdapter) Invoke(ctx context.Context, payload *gen.InvokePaylo
 	var runtimeRef *contracts.RuntimeReference
 	if payload.Runtime != nil {
 		runtimeRef = &contracts.RuntimeReference{ApplicationID: payload.Runtime.ApplicationID, PageID: payload.Runtime.PageID, MetadataVersion: payload.Runtime.MetadataVersion, InstallationRevision: payload.Runtime.InstallationRevision}
+		if payload.Runtime.ApplicationVersion != nil {
+			runtimeRef.ApplicationVersion = *payload.Runtime.ApplicationVersion
+		}
+		if payload.Runtime.DefinitionDigest != nil {
+			runtimeRef.DefinitionDigest = *payload.Runtime.DefinitionDigest
+		}
+		if payload.Runtime.CatalogRevision != nil {
+			runtimeRef.CatalogRevision = *payload.Runtime.CatalogRevision
+		}
 	}
 	result, err := a.gateway.Invoke(ctx, gateway.Request{
 		Runtime: runtimeRef,

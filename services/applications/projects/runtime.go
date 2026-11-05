@@ -102,6 +102,7 @@ func RuntimeApplication() ar.ApplicationV2 {
 		safe(app.Pages[i].Table.Columns)
 	}
 	app.AgentTools = []ar.CapabilityRef{ar.Ref("project.list"), ar.Ref("project.get"), ar.Ref("project.task.list")}
+	app.Navigation = []ar.Navigation{{PageID: "project.list", LabelKey: "projects:heading", Icon: "boxes"}}
 	return ar.Canonical(app)
 }
 func join(values []string, sep string) string {

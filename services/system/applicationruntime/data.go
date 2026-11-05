@@ -20,6 +20,9 @@ func (m *Module) dataEntries() []registry.Entry {
 	for _, kind := range []string{"data.read", "context.resolve", "action.invoke"} {
 		write := kind == "action.invoke"
 		props := map[string]*contracts.Schema{"applicationId": contracts.Str(1, 80), "pageId": contracts.Str(1, 100), "metadataVersion": contracts.Str(0, 100), "providerId": contracts.Str(0, 100), "input": obj(), "filter": ar.Schema(ar.FilterExpression{}), "select": {Type: "array", Items: contracts.Str(1, 100)}, "runId": contracts.Int(1, 1<<53), "recordId": contracts.Int(1, 1<<53), "selection": {Type: "array", Items: contracts.Int(1, 1<<53)}, "actionId": contracts.Str(1, 100), "form": obj(), "query": obj(), "route": obj()}
+		if kind == "data.read" {
+			props["previewVersion"] = contracts.Str(1, 50)
+		}
 		required := []string{"applicationId", "pageId"}
 		if kind == "data.read" {
 			required = append(required, "providerId", "input")
@@ -43,14 +46,41 @@ func (m *Module) dataEntries() []registry.Entry {
 	return out
 }
 func (m *Module) activePage(ctx context.Context, p *identity.Principal, in contracts.Input) (ar.ApplicationV2, ar.PageV2, error) {
-	for _, app := range m.contributions() {
+	apps, loadErr := m.publishedCatalog(ctx)
+	if loadErr != nil {
+		return ar.ApplicationV2{}, ar.PageV2{}, loadErr
+	}
+	if preview, ok := in["previewVersion"].(string); ok && preview != "" {
+		if !p.CanPermanent("applications:design") {
+			return ar.ApplicationV2{}, ar.PageV2{}, contracts.Problem("forbidden")
+		}
+		row, e := dbgen.New(m.Pool).RuntimeDefinitionGet(ctx, dbgen.RuntimeDefinitionGetParams{TenantID: p.TenantID, ApplicationID: in["applicationId"].(string), Version: preview})
+		if e != nil {
+			return ar.ApplicationV2{}, ar.PageV2{}, e
+		}
+		candidate, e := decodeDefinition(row.Definition)
+		if e != nil {
+			return candidate, ar.PageV2{}, e
+		}
+		available := candidate.Source == runtimeHost && candidate.PluginVersion == "1.0.0"
+		for _, source := range m.contributions() {
+			if source.ID == candidate.ID && source.Source == candidate.Source && source.PluginVersion == candidate.PluginVersion {
+				available = true
+			}
+		}
+		if !available {
+			return candidate, ar.PageV2{}, contracts.Problem("unavailable")
+		}
+		apps = []ar.ApplicationV2{candidate}
+	}
+	for _, app := range apps {
 		if app.ID != in["applicationId"] || !p.Can(app.Permission) {
 			continue
 		}
 		if m.Pool != nil {
 			install, err := dbgen.New(m.Pool).RuntimeInstallation(ctx, dbgen.RuntimeInstallationParams{TenantID: p.TenantID, PluginID: app.Source})
 			state, se := dbgen.New(m.Pool).RuntimeApplication(ctx, dbgen.RuntimeApplicationParams{TenantID: p.TenantID, ApplicationID: app.ID})
-			if err != nil || se != nil || install.Status != "enabled" || install.Version != app.PluginVersion || !state.Enabled {
+			if err != nil || se != nil || install.Status != "enabled" || (install.Version != app.PluginVersion && in["previewVersion"] == nil) || (!state.Enabled && in["previewVersion"] == nil) {
 				return app, ar.PageV2{}, contracts.Problem("unavailable")
 			}
 		}
@@ -286,7 +316,7 @@ func (m *Module) dispatchData(ctx context.Context, kind string, in contracts.Inp
 		}
 		return contracts.Output{}, contracts.Problem("not_found")
 	}
-	semantic := ar.SemanticContext{ApplicationID: app.ID, ApplicationVersion: app.Version, MetadataVersion: app.MetadataVersion, PageID: page.ID, PageType: page.Type, EntityRef: page.EntityRef, Selection: selection, References: []ar.RecordReference{}, AvailableActions: []ar.SemanticAction{}, Source: app.Source, Locale: "", Timezone: "", Fields: []ar.SemanticField{}}
+	semantic := ar.SemanticContext{ApplicationID: app.ID, ApplicationVersion: app.ApplicationVersion, MetadataVersion: app.MetadataVersion, PageID: page.ID, PageType: page.Type, EntityRef: page.EntityRef, Selection: selection, References: []ar.RecordReference{}, AvailableActions: []ar.SemanticAction{}, Source: app.Source, Locale: "", Timezone: "", Fields: []ar.SemanticField{}}
 	if record != nil {
 		semantic.RecordID = fmt.Sprint(record["id"])
 	}
@@ -452,7 +482,11 @@ func (m *Module) AgentProfile(ctx context.Context) ([]string, error) {
 	}
 	out := []string{}
 	seen := map[string]string{}
-	for _, app := range m.contributions() {
+	apps, loadErr := m.publishedCatalog(ctx)
+	if loadErr != nil {
+		return nil, loadErr
+	}
+	for _, app := range apps {
 		if !p.Can(app.Permission) {
 			continue
 		}
@@ -481,7 +515,14 @@ func (m *Module) ValidateInvocation(ctx context.Context, ref *contracts.RuntimeR
 	if err != nil {
 		return err
 	}
-	for _, app := range m.contributions() {
+	apps, loadErr := m.publishedCatalogWith(ctx, q, p.TenantID)
+	if loadErr != nil {
+		return loadErr
+	}
+	for _, app := range apps {
+		if (ref.ApplicationVersion != "" && app.ApplicationVersion != ref.ApplicationVersion) || (ref.DefinitionDigest != "" && app.DefinitionDigest != ref.DefinitionDigest) {
+			continue
+		}
 		if app.ID != ref.ApplicationID || app.MetadataVersion != ref.MetadataVersion || !p.Can(app.Permission) {
 			continue
 		}
@@ -492,6 +533,9 @@ func (m *Module) ValidateInvocation(ctx context.Context, ref *contracts.RuntimeR
 		state, e := q.RuntimeApplication(ctx, dbgen.RuntimeApplicationParams{TenantID: p.TenantID, ApplicationID: app.ID})
 		if e != nil || !state.Enabled {
 			return contracts.Problem("unavailable")
+		}
+		if ref.CatalogRevision > 0 && app.CatalogRevision != ref.CatalogRevision {
+			return contracts.Problem("conflict")
 		}
 		for _, page := range app.Pages {
 			if page.ID != ref.PageID || !p.Can(page.Permission) {

@@ -482,6 +482,9 @@ type RuntimeInvocationReferenceRequestBody struct {
 	PageID               *string `form:"pageId,omitempty" json:"pageId,omitempty" xml:"pageId,omitempty"`
 	MetadataVersion      *string `form:"metadataVersion,omitempty" json:"metadataVersion,omitempty" xml:"metadataVersion,omitempty"`
 	InstallationRevision *int64  `form:"installationRevision,omitempty" json:"installationRevision,omitempty" xml:"installationRevision,omitempty"`
+	ApplicationVersion   *string `form:"applicationVersion,omitempty" json:"applicationVersion,omitempty" xml:"applicationVersion,omitempty"`
+	DefinitionDigest     *string `form:"definitionDigest,omitempty" json:"definitionDigest,omitempty" xml:"definitionDigest,omitempty"`
+	CatalogRevision      *int64  `form:"catalogRevision,omitempty" json:"catalogRevision,omitempty" xml:"catalogRevision,omitempty"`
 }
 
 // NewDefinitionsResponseBody builds the HTTP response body from the result of
@@ -1212,6 +1215,17 @@ func ValidateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationRefere
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.installationRevision", *body.InstallationRevision, 1, true))
 		}
 	}
+	if body.ApplicationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.applicationVersion", *body.ApplicationVersion, "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"))
+	}
+	if body.DefinitionDigest != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.definitionDigest", *body.DefinitionDigest, "^[a-f0-9]{64}$"))
+	}
+	if body.CatalogRevision != nil {
+		if *body.CatalogRevision < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.catalogRevision", *body.CatalogRevision, 1, true))
+		}
+	}
 	return
 }
 
@@ -1253,6 +1267,17 @@ func validateRuntimeInvocationReferenceRequestBody(body *RuntimeInvocationRefere
 	if body.InstallationRevision != nil {
 		if *body.InstallationRevision < 1 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError(path+".installationRevision", *body.InstallationRevision, 1, true))
+		}
+	}
+	if body.ApplicationVersion != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern(path+".applicationVersion", *body.ApplicationVersion, "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"))
+	}
+	if body.DefinitionDigest != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern(path+".definitionDigest", *body.DefinitionDigest, "^[a-f0-9]{64}$"))
+	}
+	if body.CatalogRevision != nil {
+		if *body.CatalogRevision < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError(path+".catalogRevision", *body.CatalogRevision, 1, true))
 		}
 	}
 	return

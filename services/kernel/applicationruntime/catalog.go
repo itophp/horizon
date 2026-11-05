@@ -68,7 +68,7 @@ func Assemble(sources []ApplicationV2, entities []contracts.Entity, definitions 
 		}
 		apps[ai] = normalized
 		app := &apps[ai]
-		if ids[app.ID] || app.ID == "" || app.Source == "" || app.Permission == "" || app.SchemaVersion != "2.1" || app.RuntimeCompatibility != "2.1" {
+		if ids[app.ID] || app.ID == "" || app.Source == "" || app.Permission == "" || app.SchemaVersion != "2.2" || app.RuntimeCompatibility != "2.2" {
 			return nil, fmt.Errorf("schema_invalid: application %s", app.ID)
 		}
 		ids[app.ID] = true
@@ -95,7 +95,7 @@ func Assemble(sources []ApplicationV2, entities []contracts.Entity, definitions 
 		actionIDs := map[string]bool{}
 		for pi := range app.Pages {
 			p := &app.Pages[pi]
-			if pageIDs[p.ID] || p.ID == "" || p.SchemaVersion != "2.1" || p.Permission == "" {
+			if pageIDs[p.ID] || p.ID == "" || p.SchemaVersion != "2.2" || p.Permission == "" {
 				return nil, fmt.Errorf("schema_invalid: page %s", p.ID)
 			}
 			pageIDs[p.ID] = true
@@ -286,7 +286,7 @@ func Assemble(sources []ApplicationV2, entities []contracts.Entity, definitions 
 		}
 		extIDs := map[string]bool{}
 		for _, x := range app.Extensions {
-			if extIDs[x.ID] || x.Source != app.Source || x.Version == "" || (x.RuntimeCompatibility != "2.0" && x.RuntimeCompatibility != "2.1") {
+			if extIDs[x.ID] || (x.Source != app.Source && app.Source != "builtin:runtime-host") || x.Version == "" || (x.RuntimeCompatibility != "2.0" && x.RuntimeCompatibility != "2.1" && x.RuntimeCompatibility != "2.2") {
 				return nil, fmt.Errorf("schema_invalid: extension")
 			}
 			extIDs[x.ID] = true

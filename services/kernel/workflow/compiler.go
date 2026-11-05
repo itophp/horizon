@@ -245,6 +245,7 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 	if state.AgentTools {
 		origin = contracts.OriginAgent
 	}
+	ctx = gateway.WithTaskReference(ctx, gateway.TaskReference{RunID: state.ID, TenantID: state.Tenant, AccountID: state.Account, DepartmentID: row.DepartmentID})
 	result, err := e.gateway.Invoke(ctx, gateway.Request{Name: s.Capability, Version: s.Version, Input: args, Origin: origin, CorrelationID: state.Manifest.Correlation, CausationID: state.Manifest.Parent, TriggerDepth: state.Manifest.Depth + 1, IdempotencyKey: fmt.Sprintf("orch:%d:%s:%d", state.ID, s.ID, iteration)})
 	if err != nil {
 		return nil, err

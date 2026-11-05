@@ -98,7 +98,7 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 // commit together. Executors that own their transaction still get events, just
 // in a following transaction; that gap is documented as best effort.
 func (g *Gateway) execute(ctx context.Context, p *identity.Principal, entry registry.Entry, request Request, invocationID, traceID string) (contracts.Output, []string, error) {
-	ctx = withInvocation(ctx, InvocationContext{Capability: entry.Definition.Name, Version: entry.Definition.Version, InvocationID: invocationID, CorrelationID: traceID, Depth: request.TriggerDepth, IdempotencyKey: request.IdempotencyKey, Origin: request.Origin, InTransaction: entry.Handler.ExecuteTx != nil})
+	ctx = withInvocation(ctx, InvocationContext{CausationID: request.CausationID, Capability: entry.Definition.Name, Version: entry.Definition.Version, InvocationID: invocationID, CorrelationID: traceID, Depth: request.TriggerDepth, IdempotencyKey: request.IdempotencyKey, Origin: request.Origin, InTransaction: entry.Handler.ExecuteTx != nil})
 	meta := outbox.Meta{
 		InvocationID: invocationID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
 		CorrelationID: traceID, CausationID: request.CausationID, Depth: request.TriggerDepth,

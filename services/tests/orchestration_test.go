@@ -289,7 +289,11 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 		t.Fatal(err)
 	}
 	tick()
-	if status(revokedID) != "failed" {
+	var revokedStatus string
+	if err := pool.QueryRow(ctx, `SELECT status FROM ai_runs WHERE tenant_id='tenant-a' AND id=$1`, revokedID).Scan(&revokedStatus); err != nil {
+		t.Fatal(err)
+	}
+	if revokedStatus != "failed" {
 		t.Fatal("revoked actor continued workflow")
 	}
 

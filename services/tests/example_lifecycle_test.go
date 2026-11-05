@@ -167,7 +167,7 @@ func TestExampleLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	foreignResult, err := g.Invoke(identity.WithPrincipal(ctx, foreign), gateway.Request{Name: "example.record.get", Input: contracts.Input{"id": recordID}, Origin: contracts.OriginHumanUI})
-	if err != nil || foreignResult.Status != contracts.StatusFailed || foreignResult.ErrorCode != "not_found" {
+	if contracts.Code(err) != "forbidden" {
 		t.Fatalf("cross-account detail visible: %+v %v", foreignResult, err)
 	}
 

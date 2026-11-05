@@ -5,7 +5,7 @@ export const runtimeDeploymentCandidates = [
     dependencyVersions: [],
     pluginId: "builtin:articles",
     version: "1.0.0",
-    digest: "0a2a06886b5afea5785215a12f7bc00bed69f2b3d3fb6d033e325528ff07a1c9",
+    digest: "080c9b25411f40abcf8996c6f0670ccb643b0904ca53f20c9a180740c1cf01d9",
     applications: ["articles"],
     dependencies: [],
   },
@@ -13,7 +13,7 @@ export const runtimeDeploymentCandidates = [
     dependencyVersions: [],
     pluginId: "com.horizon.projects",
     version: "1.0.0",
-    digest: "abbc889debe6890f73ddb43ed2536702d47bdee2e0f2c26510f3ee7ed1973779",
+    digest: "c2c79ca9edbbb58194348881527d1bd54e18faf13662eae996d18f7d8f338c5b",
     applications: ["projects"],
     dependencies: [],
   },
@@ -61,6 +61,13 @@ export interface RuntimeApplication {
   pages: RuntimePage[];
 }
 export interface RuntimeApplicationV2 {
+  catalogRevision?: number;
+  previewVersion?: string;
+  applicationVersion?: string;
+  definitionDigest?: string;
+  definitionRevision?: number;
+  messages?: RuntimeLocaleMessage[];
+  theme?: RuntimeThemeToken[];
   pluginVersion?: string;
   pluginDependencies?: RuntimePluginDependency[];
   agentTools?: RuntimeCapabilityRef[];
@@ -81,6 +88,15 @@ export interface RuntimeApplicationV2 {
   pages: RuntimePageV2[];
   providers: RuntimeProvider[];
   extensions: RuntimeExtensionV2[];
+}
+export interface RuntimeLocaleMessage {
+  key: string;
+  en: string;
+  zhCN: string;
+}
+export interface RuntimeThemeToken {
+  name: string;
+  value: string;
 }
 export interface RuntimePluginDependency {
   id: string;
@@ -354,6 +370,73 @@ export interface RuntimeCompatibilityReport {
   issues: string[];
   candidate: RuntimeCandidate;
 }
+export interface RuntimeDefinitionView {
+  enabled: boolean;
+  application: RuntimeApplicationV2;
+  version: string;
+  digest: string;
+  revision: number;
+  publishedVersion: string;
+  proposalVersion: string;
+  readOnly: boolean;
+}
+export interface RuntimeDefinitionList {
+  items: RuntimeDefinitionSummary[];
+}
+export interface RuntimeDefinitionSummary {
+  labelKey: string;
+  labelEn: string;
+  labelZhCN: string;
+  applicationId: string;
+  version: string;
+  digest: string;
+  revision: number;
+}
+export interface RuntimeDefinitionChange {
+  section: string;
+  id: string;
+  operation: string;
+  value: string;
+}
+export interface RuntimeDefinitionBaselineList {
+  items: RuntimeDefinitionBaseline[];
+}
+export interface RuntimeDefinitionBaseline {
+  digest: string;
+  version: string;
+  pluginVersion: string;
+}
+export interface RuntimeDefinitionHistory {
+  items: RuntimeDefinitionHistoryItem[];
+}
+export interface RuntimeDefinitionHistoryItem {
+  version: string;
+  parentVersion: string;
+  digest: string;
+  source: string;
+  createdAt: string;
+}
+export interface RuntimeDefinitionDiff {
+  baseVersion: string;
+  candidateVersion: string;
+  baseDefinition: RuntimeApplicationV2;
+  candidateDefinition: RuntimeApplicationV2;
+  changes: RuntimeDefinitionImpact[];
+}
+export interface RuntimeDefinitionImpact {
+  section: string;
+  id: string;
+  change: string;
+}
+export interface RuntimeDefinitionMergeReport {
+  compatible: boolean;
+  targetDigest: string;
+  conflicts: string[];
+}
+export interface RuntimeDefinitionValidation {
+  valid: boolean;
+  code: string;
+}
 export const runtimeFieldSchema: z.ZodType<RuntimeField> = z
   .object({
     link: z.boolean(),
@@ -402,6 +485,13 @@ export const runtimeApplicationSchema: z.ZodType<RuntimeApplication> = z
   .strict();
 export const runtimeApplicationV2Schema: z.ZodType<RuntimeApplicationV2> = z
   .object({
+    catalogRevision: z.number().int().optional(),
+    previewVersion: z.string().optional(),
+    applicationVersion: z.string().optional(),
+    definitionDigest: z.string().optional(),
+    definitionRevision: z.number().int().optional(),
+    messages: z.array(z.lazy(() => runtimeLocaleMessageSchema)).optional(),
+    theme: z.array(z.lazy(() => runtimeThemeTokenSchema)).optional(),
     pluginVersion: z.string().optional(),
     pluginDependencies: z
       .array(z.lazy(() => runtimePluginDependencySchema))
@@ -427,6 +517,12 @@ export const runtimeApplicationV2Schema: z.ZodType<RuntimeApplicationV2> = z
     providers: z.array(z.lazy(() => runtimeProviderSchema)),
     extensions: z.array(z.lazy(() => runtimeExtensionV2Schema)),
   })
+  .strict();
+export const runtimeLocaleMessageSchema: z.ZodType<RuntimeLocaleMessage> = z
+  .object({ key: z.string(), en: z.string(), zhCN: z.string() })
+  .strict();
+export const runtimeThemeTokenSchema: z.ZodType<RuntimeThemeToken> = z
+  .object({ name: z.string(), value: z.string() })
   .strict();
 export const runtimePluginDependencySchema: z.ZodType<RuntimePluginDependency> =
   z.object({ id: z.string(), version: z.string() }).strict();
@@ -735,3 +831,90 @@ export const runtimeCompatibilityReportSchema: z.ZodType<RuntimeCompatibilityRep
       candidate: z.lazy(() => runtimeCandidateSchema),
     })
     .strict();
+export const runtimeDefinitionViewSchema: z.ZodType<RuntimeDefinitionView> = z
+  .object({
+    enabled: z.boolean(),
+    application: z.lazy(() => runtimeApplicationV2Schema),
+    version: z.string(),
+    digest: z.string(),
+    revision: z.number().int(),
+    publishedVersion: z.string(),
+    proposalVersion: z.string(),
+    readOnly: z.boolean(),
+  })
+  .strict();
+export const runtimeDefinitionListSchema: z.ZodType<RuntimeDefinitionList> = z
+  .object({ items: z.array(z.lazy(() => runtimeDefinitionSummarySchema)) })
+  .strict();
+export const runtimeDefinitionSummarySchema: z.ZodType<RuntimeDefinitionSummary> =
+  z
+    .object({
+      labelKey: z.string(),
+      labelEn: z.string(),
+      labelZhCN: z.string(),
+      applicationId: z.string(),
+      version: z.string(),
+      digest: z.string(),
+      revision: z.number().int(),
+    })
+    .strict();
+export const runtimeDefinitionChangeSchema: z.ZodType<RuntimeDefinitionChange> =
+  z
+    .object({
+      section: z.string(),
+      id: z.string(),
+      operation: z.string(),
+      value: z.string(),
+    })
+    .strict();
+export const runtimeDefinitionBaselineListSchema: z.ZodType<RuntimeDefinitionBaselineList> =
+  z
+    .object({ items: z.array(z.lazy(() => runtimeDefinitionBaselineSchema)) })
+    .strict();
+export const runtimeDefinitionBaselineSchema: z.ZodType<RuntimeDefinitionBaseline> =
+  z
+    .object({
+      digest: z.string(),
+      version: z.string(),
+      pluginVersion: z.string(),
+    })
+    .strict();
+export const runtimeDefinitionHistorySchema: z.ZodType<RuntimeDefinitionHistory> =
+  z
+    .object({
+      items: z.array(z.lazy(() => runtimeDefinitionHistoryItemSchema)),
+    })
+    .strict();
+export const runtimeDefinitionHistoryItemSchema: z.ZodType<RuntimeDefinitionHistoryItem> =
+  z
+    .object({
+      version: z.string(),
+      parentVersion: z.string(),
+      digest: z.string(),
+      source: z.string(),
+      createdAt: z.string(),
+    })
+    .strict();
+export const runtimeDefinitionDiffSchema: z.ZodType<RuntimeDefinitionDiff> = z
+  .object({
+    baseVersion: z.string(),
+    candidateVersion: z.string(),
+    baseDefinition: z.lazy(() => runtimeApplicationV2Schema),
+    candidateDefinition: z.lazy(() => runtimeApplicationV2Schema),
+    changes: z.array(z.lazy(() => runtimeDefinitionImpactSchema)),
+  })
+  .strict();
+export const runtimeDefinitionImpactSchema: z.ZodType<RuntimeDefinitionImpact> =
+  z
+    .object({ section: z.string(), id: z.string(), change: z.string() })
+    .strict();
+export const runtimeDefinitionMergeReportSchema: z.ZodType<RuntimeDefinitionMergeReport> =
+  z
+    .object({
+      compatible: z.boolean(),
+      targetDigest: z.string(),
+      conflicts: z.array(z.string()),
+    })
+    .strict();
+export const runtimeDefinitionValidationSchema: z.ZodType<RuntimeDefinitionValidation> =
+  z.object({ valid: z.boolean(), code: z.string() }).strict();

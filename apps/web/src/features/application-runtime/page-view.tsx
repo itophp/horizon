@@ -169,7 +169,7 @@ export function PageView({
       JSON.stringify(query.queryKey[6]) === JSON.stringify(queryState)
         ? previous
         : undefined,
-    enabled: !readOnly,
+    enabled: !readOnly || !!application.previewVersion,
     staleTime: provider.staleTimeMs ?? 0,
     refetchInterval: provider.pollInterval || false,
   });

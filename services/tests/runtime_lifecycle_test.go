@@ -54,9 +54,21 @@ func TestRuntimeLifecycleEnforcedAcrossEntries(t *testing.T) {
 	invoke("application.runtime.installation.enable", map[string]any{"pluginId": "com.horizon.projects", "revision": 7})
 	invoke("project.get", map[string]any{"id": id})
 	definition := invoke("application.runtime.resolve", map[string]any{"applicationId": "projects"})
-	if definition["schemaVersion"] != "2.1" {
+	if definition["schemaVersion"] != "2.2" {
 		t.Fatal(definition["schemaVersion"])
 	}
+	// A reinstall retains the individual application's disabled flag; enabling
+	// its package cannot silently re-enable an administrator-disabled application.
+	invoke("application.runtime.application.disable", map[string]any{"pluginId": "com.horizon.projects", "applicationId": "projects", "revision": 8})
+	invoke("application.runtime.installation.uninstall", map[string]any{"pluginId": "com.horizon.projects", "revision": 9})
+	reinstalled := invokeCapability(t, root, "application.runtime.installation.install", map[string]any{"input": map[string]any{"pluginId": "com.horizon.projects", "version": "1.0.0"}, "idempotencyKey": "second-reinstall"})
+	if reinstalled.Status != "succeeded" {
+		t.Fatal(reinstalled)
+	}
+	invoke("application.runtime.installation.enable", map[string]any{"pluginId": "com.horizon.projects", "revision": 11})
+	checkStatus(t, root.invoke(t, "project.get", map[string]any{"id": id}, true), 503)
+	invoke("application.runtime.application.enable", map[string]any{"pluginId": "com.horizon.projects", "applicationId": "projects", "revision": 12})
+	invoke("project.get", map[string]any{"id": id})
 }
 
 func TestRuntimeContextAndStaleUIReference(t *testing.T) {

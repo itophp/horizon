@@ -13,6 +13,7 @@ import (
 )
 
 type Module struct {
+	Entities     []contracts.Entity
 	Applications []ar.ApplicationV2
 	Versions     []ar.ApplicationV2
 	Pool         *pgxpool.Pool
@@ -61,7 +62,11 @@ func (m *Module) Entries() []registry.Entry {
 				return contracts.Output{}, err
 			}
 			apps := []ar.ApplicationV2{}
-			for _, source := range m.contributions() {
+			sources, err := m.publishedCatalog(ctx)
+			if err != nil {
+				return contracts.Output{}, err
+			}
+			for _, source := range sources {
 				if !p.Can(source.Permission) {
 					continue
 				}
@@ -197,7 +202,7 @@ func (m *Module) Entries() []registry.Entry {
 			return contracts.Output{}, contracts.Problem("not_found")
 		}}})
 	}
-	return append(append(entries, m.lifecycleEntries()...), m.dataEntries()...)
+	return append(append(append(append(entries, m.lifecycleEntries()...), m.dataEntries()...), m.reconcileEntry()), append(m.definitionEntries(), m.createDefinitionEntry())...)
 }
 func projection(value any) (contracts.Output, error) {
 	raw, err := json.Marshal(value)

@@ -7,12 +7,19 @@
         "version": "1.0.0"
       }
     ],
-    "schemaVersion": "2.1",
+    "navigation": [
+      {
+        "pageId": "article.list",
+        "labelKey": "articles:heading",
+        "icon": "boxes"
+      }
+    ],
+    "schemaVersion": "2.2",
     "id": "articles",
     "version": "1.0.0",
-    "metadataVersion": "a2db405150e82aeec2d955db5f47b20cec126c8f75361f1c3fb50d8b4fa6424f",
+    "metadataVersion": "1d831892f2bcbe237be91a57c42b5ae6fc536666f0f26e49210b8a47bd5c4f44",
     "source": "builtin:articles",
-    "runtimeCompatibility": "2.1",
+    "runtimeCompatibility": "2.2",
     "labelKey": "articles:heading",
     "permission": "articles:read",
     "route": "/articles",
@@ -20,7 +27,7 @@
     "pages": [
       {
         "view": "",
-        "schemaVersion": "2.1",
+        "schemaVersion": "2.2",
         "id": "article.list",
         "type": "list",
         "mode": "metadata",
@@ -628,7 +635,7 @@
       },
       {
         "view": "",
-        "schemaVersion": "2.1",
+        "schemaVersion": "2.2",
         "id": "article.detail",
         "type": "detail",
         "mode": "metadata",
@@ -1711,12 +1718,19 @@
         "version": "1.0.0"
       }
     ],
-    "schemaVersion": "2.1",
+    "navigation": [
+      {
+        "pageId": "project.list",
+        "labelKey": "projects:heading",
+        "icon": "boxes"
+      }
+    ],
+    "schemaVersion": "2.2",
     "id": "projects",
     "version": "1.0.0",
-    "metadataVersion": "03e66a41b88ba472afe2564a4ea20a9f9f57825ca34f6b4097b1a90714961628",
+    "metadataVersion": "f752d75af3f6a90efd6fa8fe72743303dfa6ed64f73864c9e1672e546acc3cfe",
     "source": "com.horizon.projects",
-    "runtimeCompatibility": "2.1",
+    "runtimeCompatibility": "2.2",
     "labelKey": "projects:heading",
     "permission": "projects:read",
     "route": "/projects",
@@ -1724,7 +1738,7 @@
     "pages": [
       {
         "view": "",
-        "schemaVersion": "2.1",
+        "schemaVersion": "2.2",
         "id": "project.list",
         "type": "list",
         "mode": "metadata",
@@ -2640,7 +2654,7 @@
           }
         ],
         "view": "",
-        "schemaVersion": "2.1",
+        "schemaVersion": "2.2",
         "id": "project.detail",
         "type": "detail",
         "mode": "hybrid",
@@ -3940,7 +3954,7 @@
       },
       {
         "view": "",
-        "schemaVersion": "2.1",
+        "schemaVersion": "2.2",
         "id": "project.tasks",
         "type": "list",
         "mode": "metadata",
@@ -5462,7 +5476,7 @@
       },
       {
         "view": "",
-        "schemaVersion": "2.1",
+        "schemaVersion": "2.2",
         "id": "task.detail",
         "type": "detail",
         "mode": "metadata",

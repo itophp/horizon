@@ -78,6 +78,13 @@ func TestPluginPermissionGatewayTenantAndDeny(t *testing.T) {
 	gw := gateway.New(gateway.Options{Registry: catalog, Identity: iam, Pool: h.pool, Approvals: approval.NewStore(h.pool), Audit: audit.NewStore(h.pool), Events: eventhub.NewStore(h.pool)})
 	account := &genidentity.AccountRecord{ID: actor.id, Status: "active", OrganizationID: h.rootAccount.OrganizationID, DepartmentID: h.rootAccount.DepartmentID}
 	invoke := func(tenant string, grants ...*genidentity.PermissionGrant) (*contracts.Result, error) {
+		raw, err := json.Marshal(append([]*genidentity.PermissionGrant{}, grants...))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides=$2 WHERE tenant_id=$3 AND id=$1`, account.ID, raw, tenant); err != nil {
+			t.Fatal(err)
+		}
 		principal, err := iam.NewPrincipal(account, tenant, grants)
 		if err != nil {
 			t.Fatal(err)
@@ -141,5 +148,5 @@ func TestPluginPermissionGatewayTenantAndDeny(t *testing.T) {
 		t.Fatalf("explicit deny: %v", err)
 	}
 	result, err = invoke("tenant-other", grant)
-	rejected(t, result, err, "not_found")
+	rejected(t, result, err, "forbidden")
 }

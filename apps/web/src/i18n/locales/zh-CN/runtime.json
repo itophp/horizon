@@ -88,5 +88,51 @@
     "awaiting_approval": "等待审批"
   },
   "analyze": "分析",
-  "draftCopy": "复制保留的草稿"
+  "draftCopy": "复制保留的草稿",
+  "design": {
+    "heading": "应用设计",
+    "hint": "通过内置 Agent 生成版本化候选，审查后人工发布。",
+    "application": "应用",
+    "request": "描述修改需求",
+    "generate": "生成候选",
+    "version": "版本 {{version}}",
+    "published": "已发布版本：{{version}}",
+    "refresh": "刷新版本",
+    "definition": "定义内容",
+    "publish": "发布候选",
+    "publishHint": "确认此版本的内容后，将其发布给应用用户。",
+    "preview": "只读预览",
+    "previewHint": "读取能力可加载已授权数据，业务写入已禁用。",
+    "new": "创建应用",
+    "enable": "启用应用",
+    "disable": "停用应用",
+    "baseline": "部署基线",
+    "baselineVersion": "应用 {{version}} · 部署包 {{pluginVersion}}",
+    "rebase": "生成合并候选",
+    "history": "版本历史",
+    "rollback": "恢复此版本",
+    "discard": "放弃候选",
+    "diff": "与已发布版本对比",
+    "historyHint": "此操作绑定已选择的版本和当前修订。恢复历史内容会创建新配置版本。",
+    "conflicts": "请先解决以下声明冲突，再生成合并候选。",
+    "impact": "{{section}} · {{id}}：{{change}}",
+    "sections": {
+      "pages": "页面",
+      "actions": "动作",
+      "forms": "表单",
+      "providers": "数据源",
+      "navigation": "导航",
+      "messages": "翻译",
+      "theme": "主题"
+    },
+    "changes": {
+      "added": "新增",
+      "updated": "修改",
+      "removed": "删除"
+    },
+    "validated": "定义校验通过",
+    "previewPage": "预览页面",
+    "previewParameter": "路由参数：{{name}}",
+    "previewLoad": "加载授权预览"
+  }
 }

@@ -1211,6 +1211,9 @@ func unmarshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocation
 		PageID:               *v.PageID,
 		MetadataVersion:      *v.MetadataVersion,
 		InstallationRevision: *v.InstallationRevision,
+		ApplicationVersion:   v.ApplicationVersion,
+		DefinitionDigest:     v.DefinitionDigest,
+		CatalogRevision:      v.CatalogRevision,
 	}
 
 	return res

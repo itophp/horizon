@@ -215,6 +215,9 @@ type RuntimeInvocationReference struct {
 	PageID               string
 	MetadataVersion      string
 	InstallationRevision int64
+	ApplicationVersion   *string
+	DefinitionDigest     *string
+	CatalogRevision      *int64
 }
 
 // Error returns an error description.

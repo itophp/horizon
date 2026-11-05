@@ -10,13 +10,18 @@ import (
 var routePattern = regexp.MustCompile(`^/[a-zA-Z0-9_:/-]*$`)
 var appVersionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
 
+// CoreFieldComponents is shared by validation and the authorized design catalog.
+func CoreFieldComponents() []string {
+	return []string{"text", "textarea", "string", "integer", "number", "boolean", "enum", "date", "reference", "timestamp", "money", "time", "datetime", "multiselect", "file", "subtable", "switch"}
+}
+
 func validateReferences(app ApplicationV2, definitions map[string]contracts.Definition) error {
 	if !appVersionPattern.MatchString(app.Version) {
 		return fmt.Errorf("schema_invalid: application version")
 	}
 	extensions := map[string]ExtensionV2{}
 	for _, x := range app.Extensions {
-		if x.Entry == "" || x.RuntimeCompatibility != "2.0" && x.RuntimeCompatibility != "2.1" {
+		if x.Entry == "" || x.RuntimeCompatibility != "2.0" && x.RuntimeCompatibility != "2.1" && x.RuntimeCompatibility != "2.2" {
 			return fmt.Errorf("plugin_incompatible")
 		}
 		extensions[x.ID] = x
@@ -120,7 +125,7 @@ func validateReferences(app ApplicationV2, definitions map[string]contracts.Defi
 			allFields = append(allFields, form.Edit.Fields...)
 		}
 		for _, f := range allFields {
-			core := strings.Contains("|text|textarea|string|integer|number|boolean|enum|date|reference|timestamp|money|time|datetime|multiselect|file|subtable|switch|", "|"+f.Component+"|")
+			core := includes(CoreFieldComponents(), f.Component)
 			if core {
 				if f.ComponentVersion != "2.0" {
 					return fmt.Errorf("schema_version_unsupported: component")

@@ -874,12 +874,64 @@ type ProjectTaskBrief struct {
 	CreatedAt pgtype.Timestamptz
 }
 
+type RuntimeApplicationChange struct {
+	ID             int64
+	TenantID       string
+	ApplicationID  string
+	Action         string
+	Version        string
+	Digest         string
+	DiagnosticCode string
+	AccountID      int64
+	CorrelationID  string
+	CreatedAt      pgtype.Timestamptz
+}
+
+type RuntimeApplicationHead struct {
+	TenantID          string
+	ApplicationID     string
+	PluginID          string
+	PublishedVersion  string
+	ProposalVersion   string
+	RouteRoot         string
+	BaseDigest        string
+	Revision          int64
+	NextConfiguration int64
+	Compatibility     string
+}
+
 type RuntimeApplicationState struct {
 	TenantID      string
 	ApplicationID string
 	PluginID      string
 	Enabled       bool
 	Revision      int64
+}
+
+type RuntimeApplicationVersion struct {
+	TenantID      string
+	ApplicationID string
+	Version       string
+	ParentVersion string
+	BaseDigest    string
+	Definition    []byte
+	Digest        string
+	Source        string
+	CreatedBy     int64
+	AgentRunID    pgtype.Int8
+	CorrelationID string
+	CreatedAt     pgtype.Timestamptz
+}
+
+type RuntimeDeploymentSnapshot struct {
+	Digest          string
+	PluginID        string
+	PluginVersion   string
+	ApplicationID   string
+	BaseVersion     string
+	Definition      []byte
+	ContractsDigest string
+	CreatedAt       pgtype.Timestamptz
 }
 
 type RuntimeInstallation struct {

@@ -71,5 +71,6 @@ func RuntimeApplication() ar.ApplicationV2 {
 		safe(app.Pages[i].Table.Columns)
 	}
 	app.AgentTools = []ar.CapabilityRef{ar.Ref("article.list")}
+	app.Navigation = []ar.Navigation{{PageID: "article.list", LabelKey: "articles:heading", Icon: "boxes"}}
 	return ar.Canonical(app)
 }

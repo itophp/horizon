@@ -51,7 +51,7 @@ func (a *Adapter) Tools(contexts ...context.Context) []tool.BaseTool {
 	}
 	out := make([]tool.BaseTool, 0, len(definitions))
 	for _, definition := range definitions {
-		if slices.Contains(definition.Tags, "manual-only") || slices.Contains(definition.Tags, "internal-only") || !definition.AllowsOrigin(contracts.OriginAgent) {
+		if slices.Contains(definition.Tags, "system-only") || slices.Contains(definition.Tags, "manual-only") || slices.Contains(definition.Tags, "internal-only") || !definition.AllowsOrigin(contracts.OriginAgent) {
 			continue
 		}
 		out = append(out, &capabilityTool{definition: definition, adapter: a})
@@ -95,6 +95,9 @@ func (t *capabilityTool) InvokableRun(ctx context.Context, argumentsInJSON strin
 		key = fmt.Sprintf("run:%d:%s:%s", t.adapter.RunID, t.definition.Name, contracts.Digest(input))
 	}
 	observe("running")
+	if t.adapter.RunID > 0 {
+		ctx = gateway.WithTaskReference(ctx, gateway.TaskReference{RunID: t.adapter.RunID, TenantID: t.adapter.Caller.TenantID, AccountID: t.adapter.Caller.AccountID, DepartmentID: t.adapter.Caller.DepartmentID})
+	}
 	result, err := t.adapter.Gateway.Invoke(ctx, gateway.Request{
 		Name: t.definition.Name, Version: t.definition.Version, Input: input,
 		IdempotencyKey: key, Origin: contracts.OriginAgent,

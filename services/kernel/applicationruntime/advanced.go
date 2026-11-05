@@ -8,6 +8,9 @@ import (
 )
 
 func validateAdvanced(app ApplicationV2, defs map[string]contracts.Definition) error {
+	if err := validatePresentation(app); err != nil {
+		return err
+	}
 	if !appVersionPattern.MatchString(app.PluginVersion) {
 		return fmt.Errorf("schema_invalid: plugin version")
 	}

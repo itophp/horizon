@@ -111,6 +111,9 @@ export function useDispatcher() {
           pageId: ctx.page.id,
           metadataVersion: ctx.application.metadataVersion,
           installationRevision: ctx.application.installationRevision ?? 1,
+          applicationVersion: ctx.application.applicationVersion,
+          definitionDigest: ctx.application.definitionDigest,
+          catalogRevision: ctx.application.catalogRevision,
         },
       );
     } catch (error) {

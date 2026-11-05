@@ -84,6 +84,52 @@ export class ContributionResources {
           }
         });
       }
+      if (application.messages?.length) {
+        const namespace = application.messages[0].key.split(":")[0];
+        const key = `${application.source}:messages:${namespace}`;
+        let lease = this.leases.get(key);
+        if (!lease) {
+          const resources = {
+            en: Object.fromEntries(
+              application.messages.map((message) => [
+                message.key.split(":").slice(1).join(":"),
+                message.en,
+              ]),
+            ),
+            "zh-CN": Object.fromEntries(
+              application.messages.map((message) => [
+                message.key.split(":").slice(1).join(":"),
+                message.zhCN,
+              ]),
+            ),
+          };
+          lease = {
+            count: 0,
+            release: localeContribution(
+              {
+                source: application.source,
+                entry: key,
+                version:
+                  application.applicationVersion ?? application.metadataVersion,
+              },
+              namespace,
+              resources,
+            ).activate(application),
+          };
+          this.leases.set(key, lease);
+        }
+        lease.count++;
+        releases.push(() => {
+          const current = this.leases.get(key);
+          if (current && --current.count === 0) {
+            try {
+              current.release();
+            } finally {
+              this.leases.delete(key);
+            }
+          }
+        });
+      }
       this.revisions.set(
         application.metadataVersion,
         (this.revisions.get(application.metadataVersion) ?? 0) + 1,
@@ -136,10 +182,16 @@ export function ContributionBoundary({
       <div>
         {state.error !== undefined && <Diagnostic error={state.error} />}
       </div>
-      {children(
-        effective,
-        !enabled || effective !== application || state.error !== undefined,
-      )}
+      <div
+        style={Object.fromEntries(
+          (effective.theme ?? []).map((token) => [token.name, token.value]),
+        )}
+      >
+        {children(
+          effective,
+          !enabled || effective !== application || state.error !== undefined,
+        )}
+      </div>
     </>
   );
 }

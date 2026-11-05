@@ -87,6 +87,8 @@ Application Runtime 检查 metadata 字段投影、组件白名单与版本；�
 Runtime v2 的通用目录能力可不绑定单个业务权限，但必须先建立可信 Principal，再按应用/页面/Provider/命令/扩展的真实权限做服务端投影。它不读取业务记录或授予动作权限。派生字段只读，创建和编辑独立裁剪；正文/草稿不得进入语义快照。批量恢复使用稳定操作 ID 与子幂等键，外层信封保留 Gateway 的重放语义；部分失败重试只选择失败子集，不能扩大租户或成员范围。
 ## Memory Center 范围与来源
 
+Runtime 数据库定义使用正式 applications:design 修改候选，正式 applications:manage 人工发布/回退；定义不能注册执行代码或扩大原能力权限。发布绑定不可变版本、摘要和当前修订，Agent 固定工具集不含发布/生命周期操作。system-only 启动登记只接受系统账号和事件来源，并从自动化目录剔除。Gateway 刷新人类会话时从数据库重载有效临时授权，PermanentGrants 保持正式权限，后台及审批恢复不借临时会话授权。参见 docs/application-runtime-database.md（从仓库根解析）。
+
 个人记忆仅本人；项目记忆先经 Gateway 的 project.get 授权，并由 SQL 复核项目成员关系；部门和组织取正式 IAM 读取与更新范围交集，写事务内解析并在 SQL 中限制。业务实体目前仅支持 example_record，先调用 example.record.get，再按租户与所有者过滤。未知资源默认拒绝。记忆正文不进入调用审计、事件或模型历史；读取结果禁止持久化，访问审计不得记录正文。memory 权限不可临时授予，权限目录不自动授予已有角色；覆盖跨租户、越权、撤权和来源隔离。
 
 ## 远程 MCP 动态目录（现行）

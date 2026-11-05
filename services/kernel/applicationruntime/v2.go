@@ -178,6 +178,13 @@ type ExtensionV2 struct {
 	Dependencies         []string `json:"dependencies"`
 }
 type ApplicationV2 struct {
+	CatalogRevision      int64                 `json:"catalogRevision,omitempty"`
+	PreviewVersion       string                `json:"previewVersion,omitempty"`
+	ApplicationVersion   string                `json:"applicationVersion,omitempty"`
+	DefinitionDigest     string                `json:"definitionDigest,omitempty"`
+	DefinitionRevision   int64                 `json:"definitionRevision,omitempty"`
+	Messages             []LocaleMessage       `json:"messages,omitempty"`
+	Theme                []ThemeToken          `json:"theme,omitempty"`
 	PluginVersion        string                `json:"pluginVersion,omitempty"`
 	PluginDependencies   []PluginDependency    `json:"pluginDependencies,omitempty"`
 	AgentTools           []CapabilityRef       `json:"agentTools,omitempty"`
@@ -272,23 +279,23 @@ type ComponentDefinition struct {
 
 // NormalizeV21 is an in-memory upgrade; entity and database schemas are unchanged.
 func NormalizeV21(app ApplicationV2) (ApplicationV2, error) {
-	if app.SchemaVersion != "2.0" && app.SchemaVersion != "2.1" {
+	if app.SchemaVersion != "2.0" && app.SchemaVersion != "2.1" && app.SchemaVersion != "2.2" {
 		return app, fmt.Errorf("schema_version_unsupported")
 	}
-	if app.RuntimeCompatibility != "2.0" && app.RuntimeCompatibility != "2.1" {
+	if app.RuntimeCompatibility != "2.0" && app.RuntimeCompatibility != "2.1" && app.RuntimeCompatibility != "2.2" {
 		return app, fmt.Errorf("plugin_incompatible")
 	}
 	app = Canonical(app)
 	if app.PluginVersion == "" {
 		app.PluginVersion = app.Version
 	}
-	app.SchemaVersion = "2.1"
-	app.RuntimeCompatibility = "2.1"
+	app.SchemaVersion = "2.2"
+	app.RuntimeCompatibility = "2.2"
 	for i := range app.Pages {
-		if app.Pages[i].SchemaVersion != "2.0" && app.Pages[i].SchemaVersion != "2.1" {
+		if app.Pages[i].SchemaVersion != "2.0" && app.Pages[i].SchemaVersion != "2.1" && app.Pages[i].SchemaVersion != "2.2" {
 			return app, fmt.Errorf("schema_version_unsupported")
 		}
-		app.Pages[i].SchemaVersion = "2.1"
+		app.Pages[i].SchemaVersion = "2.2"
 	}
 	return app, nil
 }
@@ -302,4 +309,14 @@ type RelatedBinding struct {
 	EntityRef  string `json:"entityRef"`
 	ProviderID string `json:"providerId"`
 	MaxItems   int    `json:"maxItems"`
+}
+
+type LocaleMessage struct {
+	Key  string `json:"key"`
+	En   string `json:"en"`
+	ZhCN string `json:"zhCN"`
+}
+type ThemeToken struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }

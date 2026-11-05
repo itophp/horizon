@@ -93,3 +93,5 @@ OpenAI 官方说明：AGENTS 按根到当前目录组合；从根启动不等于
 Application Runtime 页面先检查 `services/applications/articles/pages.go` 的贡献示例和 `kernel/applicationruntime` Adapter。公共 Go 契约经 `cmd/runtimespec` 生成 TypeScript/Zod；运行 `make generate`，禁止修改 `apps/web/src/api/generated/runtime.ts`。页面绑定现有能力，不新增通用 SQL CRUD。实现与边界见 [第一阶段说明](application-runtime-phase-1.md)。
 
 Runtime v2 任务同时核对装配语义、Provider/创建编辑绑定、表达式类型和真实入口；生成示例与 TS/Zod 都通过 cmd/runtimespec 更新。新业务优先贡献定义，不在通用渲染器增加业务字段/权限常量。批量组合使用 Gateway 与独立子事务，验证逐项范围和幂等。参见 [M1/M2 实施说明](application-runtime-phase-2.md) 和 [ADR 018](decisions/018-runtime-v2-and-action-dispatch.md)。
+
+Runtime 数据库版本与设计 Agent 改动同时核对 [数据库定义实施记录](application-runtime-database.md)：不可变快照、事务发布指针、正式设计/管理权限、稳定 ID 修改和部署代码引用。不得将数据库内容当作新执行代码或权限授予。

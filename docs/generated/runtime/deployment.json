@@ -3,7 +3,7 @@
     "dependencyVersions": [],
     "pluginId": "builtin:articles",
     "version": "1.0.0",
-    "digest": "0a2a06886b5afea5785215a12f7bc00bed69f2b3d3fb6d033e325528ff07a1c9",
+    "digest": "080c9b25411f40abcf8996c6f0670ccb643b0904ca53f20c9a180740c1cf01d9",
     "applications": [
       "articles"
     ],
@@ -13,7 +13,7 @@
     "dependencyVersions": [],
     "pluginId": "com.horizon.projects",
     "version": "1.0.0",
-    "digest": "abbc889debe6890f73ddb43ed2536702d47bdee2e0f2c26510f3ee7ed1973779",
+    "digest": "c2c79ca9edbbb58194348881527d1bd54e18faf13662eae996d18f7d8f338c5b",
     "applications": [
       "projects"
     ],

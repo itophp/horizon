@@ -4028,6 +4028,9 @@ paths:
                             input: Nam praesentium hic velit officia debitis enim.
                             runtime:
                                 applicationId: "9"
+                                applicationVersion: 1.7.00.34
+                                catalogRevision: 1575874148522468624
+                                definitionDigest: 2e57bc2fba7db27a035a9e911fd569fe237ce41e8a7665888d062a680ca5b1e7
                                 installationRevision: 8502953085697194992
                                 metadataVersion: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
                                 pageId: ka4
@@ -7909,6 +7912,9 @@ components:
                 input: Nam praesentium hic velit officia debitis enim.
                 runtime:
                     applicationId: "9"
+                    applicationVersion: 1.7.00.34
+                    catalogRevision: 1575874148522468624
+                    definitionDigest: 2e57bc2fba7db27a035a9e911fd569fe237ce41e8a7665888d062a680ca5b1e7
                     installationRevision: 8502953085697194992
                     metadataVersion: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
                     pageId: ka4
@@ -8536,6 +8542,19 @@ components:
                     example: "9"
                     minLength: 1
                     maxLength: 80
+                applicationVersion:
+                    type: string
+                    example: 1.7.00.34
+                    pattern: ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$
+                catalogRevision:
+                    type: integer
+                    example: 1575874148522468624
+                    format: int64
+                    minimum: 1
+                definitionDigest:
+                    type: string
+                    example: 2e57bc2fba7db27a035a9e911fd569fe237ce41e8a7665888d062a680ca5b1e7
+                    pattern: ^[a-f0-9]{64}$
                 installationRevision:
                     type: integer
                     example: 8502953085697194992
@@ -8553,6 +8572,9 @@ components:
             description: UI definition freshness reference; never an identity or permission grant.
             example:
                 applicationId: "9"
+                applicationVersion: 1.7.00.34
+                catalogRevision: 1575874148522468624
+                definitionDigest: 2e57bc2fba7db27a035a9e911fd569fe237ce41e8a7665888d062a680ca5b1e7
                 installationRevision: 8502953085697194992
                 metadataVersion: d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14
                 pageId: ka4

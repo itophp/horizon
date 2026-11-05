@@ -33,6 +33,7 @@ func (m *Module) lifecycleEntries() []registry.Entry {
 		}
 		read := action == "list" || action == "get" || action == "check"
 		props := map[string]*contracts.Schema{"pluginId": contracts.Str(1, 100), "version": contracts.Str(1, 40), "revision": contracts.Int(1, 1<<53), "applicationId": contracts.Str(1, 100)}
+		props["definitions"] = &contracts.Schema{Type: "array", Items: contracts.Object(map[string]*contracts.Schema{"applicationId": contracts.Str(1, 100), "version": contracts.Str(1, 50), "digest": contracts.Str(1, 100), "revision": contracts.Int(1, 1<<53)}, "applicationId", "version", "digest", "revision")}
 		required := []string{}
 		if action != "list" {
 			required = append(required, "pluginId")
@@ -178,8 +179,24 @@ func (m *Module) lifecycleWrite(ctx context.Context, tx pgx.Tx, action string, i
 	}
 	q := dbgen.New(tx)
 	id := in["pluginId"].(string)
+	if id == runtimeHost && !strings.HasPrefix(action, "application.") {
+		return contracts.Output{}, contracts.Problem("forbidden")
+	}
 	version, _ := in["version"].(string)
 	candidate, known := m.candidate(id, version)
+	if id == runtimeHost {
+		states, e := q.RuntimeApplications(ctx, p.TenantID)
+		if e != nil {
+			return contracts.Output{}, e
+		}
+		candidate = ar.Candidate{PluginID: runtimeHost, Version: "1.0.0", Applications: []string{}, Dependencies: []string{}, DependencyVersions: []ar.PluginDependency{}}
+		for _, state := range states {
+			if state.PluginID == runtimeHost {
+				candidate.Applications = append(candidate.Applications, state.ApplicationID)
+			}
+		}
+		known = true
+	}
 	if !known {
 		return contracts.Output{}, contracts.Problem("unavailable")
 	}
@@ -193,7 +210,9 @@ func (m *Module) lifecycleWrite(ctx context.Context, tx pgx.Tx, action string, i
 		return contracts.Output{}, err
 	}
 	if action != "install" && action != "upgrade" && action != "rollback" && !missing {
-		candidate, known = m.candidate(id, old.Version)
+		if id != runtimeHost {
+			candidate, known = m.candidate(id, old.Version)
+		}
 		if !known {
 			return contracts.Output{}, contracts.Problem("unavailable")
 		}
@@ -231,7 +250,11 @@ func (m *Module) lifecycleWrite(ctx context.Context, tx pgx.Tx, action string, i
 		}
 	}
 	if action == "application.disable" {
-		for _, dependent := range m.contributions() {
+		published, e := m.publishedCatalogWith(ctx, q, p.TenantID)
+		if e != nil {
+			return contracts.Output{}, e
+		}
+		for _, dependent := range published {
 			for _, dep := range dependent.Dependencies {
 				if dep != in["applicationId"] {
 					continue
@@ -311,7 +334,17 @@ func (m *Module) lifecycleWrite(ctx context.Context, tx pgx.Tx, action string, i
 			continue
 		}
 		if strings.HasPrefix(action, "application.") || action == "install" {
-			if err = q.RuntimeSetApplication(ctx, dbgen.RuntimeSetApplicationParams{TenantID: p.TenantID, ApplicationID: app, PluginID: id, Enabled: action != "application.disable"}); err != nil {
+			enabled := action != "application.disable"
+			if action == "install" && !missing {
+				state, e := q.RuntimeApplication(ctx, dbgen.RuntimeApplicationParams{TenantID: p.TenantID, ApplicationID: app})
+				if e != nil && e != pgx.ErrNoRows {
+					return contracts.Output{}, e
+				}
+				if e == nil {
+					enabled = state.Enabled
+				}
+			}
+			if err = q.RuntimeSetApplication(ctx, dbgen.RuntimeSetApplicationParams{TenantID: p.TenantID, ApplicationID: app, PluginID: id, Enabled: enabled}); err != nil {
 				return contracts.Output{}, err
 			}
 		}
@@ -327,8 +360,15 @@ func (m *Module) lifecycleWrite(ctx context.Context, tx pgx.Tx, action string, i
 			return contracts.Output{}, contracts.Problem("invalid")
 		}
 	}
+	if err = m.lifecycleDefinitions(ctx, q, p, action, candidate, in); err != nil {
+		return contracts.Output{}, err
+	}
 	if err = q.RuntimeRecordHistory(ctx, dbgen.RuntimeRecordHistoryParams{TenantID: p.TenantID, PluginID: id, AccountID: p.Account.ID, Action: action, Version: candidate.Version, Revision: revision}); err != nil {
 		return contracts.Output{}, err
 	}
-	return contracts.Output{Data: ar.Installation{PluginID: id, Version: candidate.Version, Status: status, Revision: revision, Digest: candidate.Digest, PreviousVersion: previous}, Events: []contracts.Event{{Type: "application.runtime.installation.changed", AggregateType: "runtime_installation", AggregateID: id, Payload: map[string]any{"pluginId": id, "revision": strconv.FormatInt(revision, 10), "action": action}}}}, nil
+	catalogRevision, err := q.RuntimeCatalogRevision(ctx, p.TenantID)
+	if err != nil {
+		return contracts.Output{}, err
+	}
+	return contracts.Output{Data: ar.Installation{PluginID: id, Version: candidate.Version, Status: status, Revision: revision, Digest: candidate.Digest, PreviousVersion: previous}, Events: []contracts.Event{{Type: "application.runtime.installation.changed", AggregateType: "runtime_installation", AggregateID: id, Payload: map[string]any{"pluginId": id, "revision": strconv.FormatInt(revision, 10), "action": action, "catalogRevision": catalogRevision}}}}, nil
 }

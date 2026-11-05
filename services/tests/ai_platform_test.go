@@ -64,7 +64,7 @@ func TestCapabilityGatewayClosedLoop(t *testing.T) {
 		t.Fatalf("business write missing: %d %v", stored, err)
 	}
 	var pending int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM cap_outbox WHERE tenant_id='tenant-a' AND status='pending'").Scan(&pending); err != nil || pending != 1 {
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM cap_outbox WHERE tenant_id='tenant-a' AND status='pending' AND event_type='example.record.created'").Scan(&pending); err != nil || pending != 1 {
 		t.Fatalf("outbox row missing: %d %v", pending, err)
 	}
 

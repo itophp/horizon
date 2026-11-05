@@ -39,6 +39,9 @@ var RuntimeInvocationReference = Type("RuntimeInvocationReference", func() {
 	Attribute("pageId", String, func() { MinLength(1); MaxLength(100) })
 	Attribute("metadataVersion", String, func() { Pattern("^[a-f0-9]{64}$") })
 	Attribute("installationRevision", Int64, func() { Minimum(1) })
+	Attribute("applicationVersion", String, func() { Pattern("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$") })
+	Attribute("definitionDigest", String, func() { Pattern("^[a-f0-9]{64}$") })
+	Attribute("catalogRevision", Int64, func() { Minimum(1) })
 	Required("applicationId", "pageId", "metadataVersion", "installationRevision")
 })
 

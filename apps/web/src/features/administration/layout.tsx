@@ -2,7 +2,6 @@ import { RuntimeShellSlot } from "@/features/application-runtime/shell-slot";
 import { useApplicationCatalog } from "@/features/application-runtime/catalog";
 import { WorkspaceHost } from "@/features/application-runtime/workspace";
 import { canShowMenu } from "@/app/plugins/registry";
-import { frontendExtensions } from "@/app/plugins/builtins";
 import { WebMcpProvider } from "@/features/webmcp/provider";
 import { AssistantProvider } from "@/features/assistant/provider";
 import { AssistantLauncher } from "@/features/assistant/widget";
@@ -35,7 +34,6 @@ import {
   ChevronDown,
   LogOut,
   UserRound,
-  BookOpen,
   ArrowUpRight,
   X,
   Command,
@@ -144,7 +142,11 @@ export function AdminLayout() {
           ? [
               {
                 to: page.route,
-                label: t(nav.labelKey),
+                label:
+                  application.messages?.find(
+                    (message) => message.key === nav.labelKey,
+                  )?.[i18n.language.startsWith("zh") ? "zhCN" : "en"] ??
+                  t(nav.labelKey),
                 icon: Boxes,
                 permissions: [application.permission],
               },
@@ -163,26 +165,6 @@ export function AdminLayout() {
       label: t("drive:heading"),
       icon: HardDrive,
       permissions: ["drive:use"],
-    },
-    ...frontendExtensions.menus
-      .filter((menu) =>
-        applicationCatalog.data?.items.some(
-          (application) => application.route === menu.to,
-        ),
-      )
-      .map((menu) => ({
-        ...menu,
-        label: t(menu.labelKey),
-      })),
-    {
-      to: applicationCatalog.data?.items.some(
-        (application) => application.id === "articles",
-      )
-        ? "/articles"
-        : "",
-      label: t("articles:heading"),
-      icon: BookOpen,
-      permissions: ["articles:read"],
     },
     {
       to: "/ai",

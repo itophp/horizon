@@ -179,6 +179,8 @@ type TxExecutor func(ctx context.Context, tx pgx.Tx, in Input) (Output, error)
 
 // Handler binds one definition to its implementation. Exactly one field is set.
 type RuntimeReference struct {
+	ApplicationVersion, DefinitionDigest   string
+	CatalogRevision                        int64
 	ApplicationID, PageID, MetadataVersion string
 	InstallationRevision                   int64
 }

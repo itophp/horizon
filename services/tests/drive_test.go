@@ -254,6 +254,9 @@ func TestDriveDepartmentAndAccountGrants(t *testing.T) {
 	if _, err := h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides='[{"permission":"drive:use","effect":"allow","scope":"ALL"}]'::jsonb WHERE tenant_id='tenant-a' AND id=$1`, owner.id); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides=overrides || '[{"permission":"drive:create","effect":"allow","scope":"ALL"}]'::jsonb WHERE tenant_id='tenant-a' AND id=$1`, owner.id); err != nil {
+		t.Fatal(err)
+	}
 	space := rowID(t, h.ok(t, owner, "drive.space.create", map[string]any{"name": "Department"}))
 	departmentGrant := rowID(t, h.ok(t, owner, "drive.member.add", map[string]any{"spaceId": space, "targetType": "department", "targetId": h.rootAccount.DepartmentID, "role": "viewer"}))
 	accountGrant := rowID(t, h.ok(t, owner, "drive.member.add", map[string]any{"spaceId": space, "targetType": "account", "targetId": member.id, "role": "editor"}))
@@ -341,6 +344,9 @@ func TestDriveLastEffectiveAdmin(t *testing.T) {
 	owner := h.account(t, "drive-admin-owner", "drive:use", "drive:create")
 	other := h.account(t, "drive-admin-other", "drive:use")
 	if _, err := h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides='[{"permission":"drive:use","effect":"allow","scope":"ALL"}]'::jsonb WHERE tenant_id='tenant-a' AND id IN ($1,$2)`, owner.id, other.id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides=overrides || '[{"permission":"drive:create","effect":"allow","scope":"ALL"}]'::jsonb WHERE tenant_id='tenant-a' AND id=$1`, owner.id); err != nil {
 		t.Fatal(err)
 	}
 	space := rowID(t, h.ok(t, owner, "drive.space.create", map[string]any{"name": "Admin handover"}))

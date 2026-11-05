@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { Settings2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -146,6 +147,9 @@ export function InstallationsPage() {
   return (
     <>
       <PageHeading title={t("applications")} subtitle={t("installationHint")} />
+      {session.permissions.includes("applications:design") && (
+        <Link to="/applications/design">{t("design.heading")}</Link>
+      )}
       {q.isPending ? (
         <Loading />
       ) : q.isError ? (

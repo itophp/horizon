@@ -1,6 +1,10 @@
 {
-  "memory_event": { "label": "Memory event" },
-  "memory_event_inbox": { "label": "Memory event processing" },
+  "memory_event": {
+    "label": "Memory event"
+  },
+  "memory_event_inbox": {
+    "label": "Memory event processing"
+  },
   "memory_item": {
     "label": "Memory",
     "states": {
@@ -9,16 +13,36 @@
       "deleted": "Deleted"
     }
   },
-  "memory_source": { "label": "Memory source" },
-  "memory_relation": { "label": "Memory relation" },
-  "memory_correction": { "label": "Memory correction" },
-  "memory_access_audit": { "label": "Memory access audit" },
-  "memory_partition_policy": { "label": "Memory partition policy" },
-  "drive_space": { "label": "Drive space" },
-  "drive_member": { "label": "Drive member" },
-  "drive_folder": { "label": "Drive folder" },
-  "drive_file": { "label": "Drive file" },
-  "drive_trash_batch": { "label": "Drive deletion" },
+  "memory_source": {
+    "label": "Memory source"
+  },
+  "memory_relation": {
+    "label": "Memory relation"
+  },
+  "memory_correction": {
+    "label": "Memory correction"
+  },
+  "memory_access_audit": {
+    "label": "Memory access audit"
+  },
+  "memory_partition_policy": {
+    "label": "Memory partition policy"
+  },
+  "drive_space": {
+    "label": "Drive space"
+  },
+  "drive_member": {
+    "label": "Drive member"
+  },
+  "drive_folder": {
+    "label": "Drive folder"
+  },
+  "drive_file": {
+    "label": "Drive file"
+  },
+  "drive_trash_batch": {
+    "label": "Drive deletion"
+  },
   "drive_upload": {
     "label": "Drive upload",
     "states": {
@@ -173,5 +197,17 @@
   },
   "runtime_invocation_dependency": {
     "label": "Invocation application dependency"
+  },
+  "runtime_deployment_snapshot": {
+    "label": "Deployment snapshot"
+  },
+  "runtime_application_head": {
+    "label": "Application definition"
+  },
+  "runtime_application_version": {
+    "label": "Application version"
+  },
+  "runtime_application_change": {
+    "label": "Application change"
   }
 }

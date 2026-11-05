@@ -162,7 +162,7 @@ func (r *Registry) Discover(caller contracts.Caller) []contracts.Definition {
 func (r *Registry) DiscoverAutomated(caller contracts.Caller) []contracts.Definition {
 	definitions := r.Discover(caller)
 	return slices.DeleteFunc(definitions, func(d contracts.Definition) bool {
-		return slices.Contains(d.Tags, "manual-only") || slices.Contains(d.Tags, "internal-only")
+		return slices.Contains(d.Tags, "manual-only") || slices.Contains(d.Tags, "internal-only") || slices.Contains(d.Tags, "system-only")
 	})
 }
 

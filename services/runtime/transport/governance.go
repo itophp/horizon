@@ -112,6 +112,9 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	runtimeModule.Invoke = func(ctx context.Context, name, version string, input contracts.Input, key string) (*contracts.Result, error) {
 		return dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input, IdempotencyKey: key})
 	}
+	if err := runtimeModule.Reconcile(context.Background(), dispatcher); err != nil {
+		panic(err)
+	}
 	memoryModule.AttachGateway(dispatcher)
 	if err := orchestrator.Attach(dispatcher, catalog); err != nil {
 		panic("invalid workflow definitions")

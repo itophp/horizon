@@ -35,6 +35,9 @@ export async function readProvider(
             application.pages.find((page) => page.provider === provider.id)?.id,
           metadataVersion: application.metadataVersion,
           providerId: provider.id,
+          ...(application.previewVersion
+            ? { previewVersion: application.previewVersion }
+            : {}),
           input,
         }
       : input,

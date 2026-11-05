@@ -37,6 +37,10 @@ func (g *Gateway) available(ctx context.Context, q *dbgen.Queries, p *identity.P
 		if err != nil || !row.Enabled {
 			return contracts.Problem("unavailable")
 		}
+		head, e := q.RuntimeDefinitionHead(ctx, dbgen.RuntimeDefinitionHeadParams{TenantID: p.TenantID, ApplicationID: d.Application})
+		if e != nil || head.Compatibility != "compatible" || head.PublishedVersion == "" {
+			return contracts.Problem("unavailable")
+		}
 	}
 	return nil
 }

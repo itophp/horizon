@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"testing"
@@ -33,6 +34,13 @@ func TestGroupMemoryUsesFormalReadAndWriteScopes(t *testing.T) {
 		{Permission: "memory:read", Effect: "allow", Scope: "ALL"}, {Permission: "memory:write", Effect: "allow", Scope: "ALL"},
 		{Permission: "departments:read", Effect: "allow", Scope: "DEPARTMENT"}, {Permission: "departments:update", Effect: "allow", Scope: "ORGANIZATION"},
 		{Permission: "organizations:read", Effect: "allow", Scope: "ORGANIZATION"}, {Permission: "organizations:update", Effect: "allow", Scope: "ORGANIZATION"},
+	}
+	raw, err := json.Marshal(grants)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides=$2 WHERE tenant_id='tenant-a' AND id=$1`, base.id, raw); err != nil {
+		t.Fatal(err)
 	}
 	p, err := h.iam.NewPrincipal(account, "tenant-a", grants)
 	if err != nil {
@@ -103,9 +111,15 @@ func TestGroupMemoryUsesFormalReadAndWriteScopes(t *testing.T) {
 	}
 	temporary.PermanentGrants = []*genidentity.PermissionGrant{{Permission: "memory:read", Effect: "allow", Scope: "ALL"}}
 	temporary.TemporaryScopes["departments:read"] = []identity.Scope{{TenantID: "tenant-a", DeptIDs: []int64{account.DepartmentID}}}
+	if _, err = h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides='[{"permission":"memory:read","effect":"allow","scope":"ALL"}]'::jsonb WHERE tenant_id='tenant-a' AND id=$1`, account.ID); err != nil {
+		t.Fatal(err)
+	}
 	temporaryActor := projectActor{name: "temporary", id: account.ID, ctx: identity.WithPrincipal(context.Background(), temporary)}
 	if _, err := h.call(t, temporaryActor, "memory.group.get", map[string]any{"scopeType": "department", "scopeId": account.DepartmentID, "id": id}); err == nil {
 		t.Fatal("temporary resource grant allowed group memory access")
+	}
+	if _, err = h.pool.Exec(context.Background(), `UPDATE iam_accounts SET overrides=$2 WHERE tenant_id='tenant-a' AND id=$1`, account.ID, raw); err != nil {
+		t.Fatal(err)
 	}
 	h.ok(t, actor, "memory.group.correct", map[string]any{"scopeType": "department", "scopeId": account.DepartmentID, "id": id, "version": 1, "title": "Corrected", "summary": ""})
 	if _, err := h.call(t, actor, "memory.group.correct", map[string]any{"scopeType": "department", "scopeId": account.DepartmentID, "id": id, "version": 1, "title": "Stale", "summary": ""}); err == nil {

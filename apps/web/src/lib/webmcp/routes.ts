@@ -2,6 +2,12 @@
 // deliberately disconnects before entering them.
 export const webMcpRoutes = [
   {
+    path: "/applications/design",
+    module: "runtime",
+    permission: "applications:design",
+    connected: false,
+  },
+  {
     path: "/applications",
     module: "runtime",
     permission: "applications:read",

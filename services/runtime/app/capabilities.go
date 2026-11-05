@@ -109,6 +109,7 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	if m.Runtime == nil {
 		m.Runtime = &armodule.Module{}
 	}
+	m.Runtime.Entities = EntitiesWithPlugins(m.Plugins)
 	m.Runtime.Applications = applications
 	m.Runtime.Versions = versions
 	m.Runtime.Pool = m.Core.Pool

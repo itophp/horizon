@@ -201,6 +201,20 @@ func (q *Queries) RuntimeBindRun(ctx context.Context, arg RuntimeBindRunParams) 
 	return err
 }
 
+const runtimeCatalogRevision = `-- name: RuntimeCatalogRevision :one
+SELECT ((SELECT COALESCE(sum(i.revision),0) FROM runtime_installations i WHERE i.tenant_id=$1)
++ (SELECT COALESCE(sum(a.revision),0) FROM runtime_application_states a WHERE a.tenant_id=$1))::bigint AS revision
+`
+
+// These append-only identities retain tombstones; their revisions never decrease.
+// Draft head revisions are deliberately excluded from effective catalog freshness.
+func (q *Queries) RuntimeCatalogRevision(ctx context.Context, tenantID string) (int64, error) {
+	row := q.db.QueryRow(ctx, runtimeCatalogRevision, tenantID)
+	var revision int64
+	err := row.Scan(&revision)
+	return revision, err
+}
+
 const runtimeChangeInstallation = `-- name: RuntimeChangeInstallation :execrows
 UPDATE runtime_installations SET version=$4,status=$5,digest=$6,previous_version=$7,revision=revision+1,updated_at=now()
 WHERE tenant_id=$1 AND plugin_id=$2 AND revision=$3
@@ -454,11 +468,27 @@ const runtimeProvisionTenant = `-- name: RuntimeProvisionTenant :exec
 WITH installations AS (
  INSERT INTO runtime_installations(tenant_id,plugin_id,version,status)
  SELECT $1::text,plugin_id,version,CASE WHEN enabled THEN 'enabled' ELSE 'installed' END
- FROM runtime_installation_templates ON CONFLICT DO NOTHING RETURNING tenant_id,plugin_id
-)
-INSERT INTO runtime_application_states(tenant_id,application_id,plugin_id)
+ FROM runtime_installation_templates ON CONFLICT DO NOTHING RETURNING tenant_id,plugin_id,version
+), states AS (
+ INSERT INTO runtime_application_states(tenant_id,application_id,plugin_id)
  SELECT i.tenant_id,t.application_id,i.plugin_id FROM installations i
  JOIN runtime_installation_templates t ON t.plugin_id=i.plugin_id ON CONFLICT DO NOTHING
+ RETURNING tenant_id,application_id,plugin_id
+), heads AS (
+ INSERT INTO runtime_application_heads(tenant_id,application_id,plugin_id,base_digest,route_root,published_version)
+ SELECT st.tenant_id,st.application_id,st.plugin_id,s.digest,s.definition->>'route',s.base_version||'.0'
+ FROM states st JOIN installations i ON i.tenant_id=st.tenant_id AND i.plugin_id=st.plugin_id
+ JOIN runtime_deployment_snapshots s ON s.plugin_id=st.plugin_id AND s.plugin_version=i.version AND s.application_id=st.application_id
+ ON CONFLICT DO NOTHING RETURNING tenant_id,application_id,base_digest
+), versions AS (
+ INSERT INTO runtime_application_versions(tenant_id,application_id,version,base_digest,definition,digest,source,created_by)
+ SELECT h.tenant_id,h.application_id,s.base_version||'.0',s.digest,
+ jsonb_set(s.definition,'{applicationVersion}',to_jsonb(s.base_version||'.0')),
+ encode(sha256(convert_to(jsonb_set(s.definition,'{applicationVersion}',to_jsonb(s.base_version||'.0'))::text,'UTF8')),'hex'),
+ 'deployment',0 FROM heads h JOIN runtime_deployment_snapshots s ON s.digest=h.base_digest
+ RETURNING tenant_id,application_id,version
+)
+SELECT count(*) FROM versions
 `
 
 func (q *Queries) RuntimeProvisionTenant(ctx context.Context, tenantID string) error {
@@ -493,19 +523,23 @@ func (q *Queries) RuntimeRecordHistory(ctx context.Context, arg RuntimeRecordHis
 }
 
 const runtimeScopeStamp = `-- name: RuntimeScopeStamp :many
-SELECT i.plugin_id,i.version,i.status,i.revision,a.application_id,a.enabled,a.revision AS application_revision
+SELECT i.plugin_id,i.version,i.status,i.revision,a.application_id,a.enabled,a.revision AS application_revision,
+ COALESCE(h.published_version,'')::text AS published_version,COALESCE(h.compatibility,'')::text AS definition_compatibility
 FROM runtime_installations i JOIN runtime_application_states a ON a.tenant_id=i.tenant_id AND a.plugin_id=i.plugin_id
+LEFT JOIN runtime_application_heads h ON h.tenant_id=a.tenant_id AND h.application_id=a.application_id
 WHERE i.tenant_id=$1 ORDER BY i.plugin_id,a.application_id
 `
 
 type RuntimeScopeStampRow struct {
-	PluginID            string
-	Version             string
-	Status              string
-	Revision            int64
-	ApplicationID       string
-	Enabled             bool
-	ApplicationRevision int64
+	PluginID                string
+	Version                 string
+	Status                  string
+	Revision                int64
+	ApplicationID           string
+	Enabled                 bool
+	ApplicationRevision     int64
+	PublishedVersion        string
+	DefinitionCompatibility string
 }
 
 func (q *Queries) RuntimeScopeStamp(ctx context.Context, tenantID string) ([]RuntimeScopeStampRow, error) {
@@ -525,6 +559,8 @@ func (q *Queries) RuntimeScopeStamp(ctx context.Context, tenantID string) ([]Run
 			&i.ApplicationID,
 			&i.Enabled,
 			&i.ApplicationRevision,
+			&i.PublishedVersion,
+			&i.DefinitionCompatibility,
 		); err != nil {
 			return nil, err
 		}

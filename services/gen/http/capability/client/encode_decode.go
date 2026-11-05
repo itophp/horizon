@@ -1462,6 +1462,9 @@ func marshalCapabilityRuntimeInvocationReferenceToRuntimeInvocationReferenceRequ
 		PageID:               v.PageID,
 		MetadataVersion:      v.MetadataVersion,
 		InstallationRevision: v.InstallationRevision,
+		ApplicationVersion:   v.ApplicationVersion,
+		DefinitionDigest:     v.DefinitionDigest,
+		CatalogRevision:      v.CatalogRevision,
 	}
 
 	return res
@@ -1476,6 +1479,9 @@ func marshalRuntimeInvocationReferenceRequestBodyToCapabilityRuntimeInvocationRe
 		PageID:               v.PageID,
 		MetadataVersion:      v.MetadataVersion,
 		InstallationRevision: v.InstallationRevision,
+		ApplicationVersion:   v.ApplicationVersion,
+		DefinitionDigest:     v.DefinitionDigest,
+		CatalogRevision:      v.CatalogRevision,
 	}
 
 	return res

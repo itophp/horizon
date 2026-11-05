@@ -1,3 +1,4 @@
+import { preparePresentation } from "./presentation";
 import { contributionResources } from "./contributions";
 import { componentRegistry, type RecordData } from "./components";
 export {
@@ -113,8 +114,8 @@ export const extensions = new ExtensionRegistry();
 export function validateDefinition(raw: unknown) {
   const app = runtimeApplicationV2Schema.parse(raw);
   if (
-    !["2.0", "2.1"].includes(app.schemaVersion) ||
-    !["2.0", "2.1"].includes(app.runtimeCompatibility)
+    !["2.0", "2.1", "2.2"].includes(app.schemaVersion) ||
+    !["2.0", "2.1", "2.2"].includes(app.runtimeCompatibility)
   )
     throw new Error("schema_version_unsupported");
   const ids = new Set<string>();
@@ -165,7 +166,7 @@ export function validateDefinition(raw: unknown) {
         throw new Error("plugin_incompatible");
     }
   }
-  return app;
+  return preparePresentation(app);
 }
 const diagnosticCodes = new Set([
   "schema_invalid",
@@ -285,7 +286,8 @@ export function semanticContext(ctx: ViewContext) {
     });
   return runtimeSemanticContextSchema.parse({
     applicationId: ctx.application.id,
-    applicationVersion: ctx.application.version,
+    applicationVersion:
+      ctx.application.applicationVersion ?? ctx.application.version,
     metadataVersion: ctx.application.metadataVersion,
     pageId: ctx.page.id,
     pageType: ctx.page.type,

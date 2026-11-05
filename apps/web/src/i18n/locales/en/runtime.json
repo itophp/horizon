@@ -88,5 +88,51 @@
     "awaiting_approval": "Awaiting approval"
   },
   "analyze": "Analyze",
-  "draftCopy": "Copy retained draft"
+  "draftCopy": "Copy retained draft",
+  "design": {
+    "heading": "Application design",
+    "hint": "Generate a versioned proposal with the built-in agent, then review and publish it.",
+    "application": "Application",
+    "request": "Describe the change",
+    "generate": "Generate proposal",
+    "version": "Version {{version}}",
+    "published": "Published version: {{version}}",
+    "refresh": "Refresh version",
+    "definition": "Definition",
+    "publish": "Publish candidate",
+    "publishHint": "Review this exact version before making it available to users.",
+    "preview": "Read-only preview",
+    "previewHint": "Read providers may load authorized data. Business writes are disabled.",
+    "new": "Create application",
+    "enable": "Enable application",
+    "disable": "Disable application",
+    "baseline": "Deployment baseline",
+    "baselineVersion": "Application {{version}} · package {{pluginVersion}}",
+    "rebase": "Generate merged candidate",
+    "history": "Version history",
+    "rollback": "Restore this version",
+    "discard": "Discard candidate",
+    "diff": "Compare with published version",
+    "historyHint": "This operation uses the selected version and the current revision. Restoring creates a new configuration version.",
+    "conflicts": "Resolve the conflicting declarations before generating a merged candidate.",
+    "impact": "{{section}} · {{id}}: {{change}}",
+    "sections": {
+      "pages": "Pages",
+      "actions": "Actions",
+      "forms": "Forms",
+      "providers": "Providers",
+      "navigation": "Navigation",
+      "messages": "Messages",
+      "theme": "Theme"
+    },
+    "changes": {
+      "added": "Added",
+      "updated": "Updated",
+      "removed": "Removed"
+    },
+    "validated": "Definition validation passed",
+    "previewPage": "Preview page",
+    "previewParameter": "Route parameter: {{name}}",
+    "previewLoad": "Load authorized preview"
+  }
 }

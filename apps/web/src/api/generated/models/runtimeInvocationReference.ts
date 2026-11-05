@@ -15,6 +15,12 @@ export interface RuntimeInvocationReference {
    * @maxLength 80
    */
   applicationId: string;
+  /** @pattern ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ */
+  applicationVersion?: string;
+  /** @minimum 1 */
+  catalogRevision?: number;
+  /** @pattern ^[a-f0-9]{64}$ */
+  definitionDigest?: string;
   /** @minimum 1 */
   installationRevision: number;
   /** @pattern ^[a-f0-9]{64}$ */

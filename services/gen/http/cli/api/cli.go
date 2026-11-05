@@ -1061,7 +1061,7 @@ func capabilityInvokeUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invoke --body '{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"runtime\": {\n         \"applicationId\": \"9\",\n         \"installationRevision\": 8502953085697194992,\n         \"metadataVersion\": \"d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14\",\n         \"pageId\": \"ka4\"\n      },\n      \"version\": \"a58\"\n   }' --name \"0k\" --cookie \"Voluptatum aut culpa.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "capability invoke --body '{\n      \"causationId\": \"6zz\",\n      \"correlationId\": \"ja4\",\n      \"idempotencyKey\": \"yqh\",\n      \"input\": \"Nam praesentium hic velit officia debitis enim.\",\n      \"runtime\": {\n         \"applicationId\": \"9\",\n         \"applicationVersion\": \"1.7.00.34\",\n         \"catalogRevision\": 1575874148522468624,\n         \"definitionDigest\": \"2e57bc2fba7db27a035a9e911fd569fe237ce41e8a7665888d062a680ca5b1e7\",\n         \"installationRevision\": 8502953085697194992,\n         \"metadataVersion\": \"d381b35ef1ee7401cbad64ca844d52605e16ea69bd0a758c0bc98e5bd0b29d14\",\n         \"pageId\": \"ka4\"\n      },\n      \"version\": \"a58\"\n   }' --name \"0k\" --cookie \"Voluptatum aut culpa.\"")
 }
 
 func capabilityInvocationsUsage() {

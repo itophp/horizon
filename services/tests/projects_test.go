@@ -343,8 +343,8 @@ func TestProjectMembershipRules(t *testing.T) {
 		Name: "project.get", Version: "1.0.0", Input: contracts.Input{"id": projectID},
 		Origin: contracts.OriginHumanUI,
 	})
-	if crossErr != nil || crossResult == nil || crossResult.Status == contracts.StatusSucceeded || crossResult.ErrorCode != "not_found" {
-		t.Fatalf("cross tenant read must be not_found, got result=%+v err=%v", crossResult, crossErr)
+	if contracts.Code(crossErr) != "forbidden" {
+		t.Fatalf("forged cross tenant identity must be forbidden, got result=%+v err=%v", crossResult, crossErr)
 	}
 }
 

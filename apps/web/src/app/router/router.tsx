@@ -1,3 +1,4 @@
+import { ApplicationDesignPage } from "@/features/application-runtime/design-page";
 import { DynamicApplicationRoute } from "@/features/application-runtime/route";
 import { frontendExtensions } from "@/app/plugins/builtins";
 import { InstallationsPage } from "@/features/application-runtime/installations";
@@ -85,6 +86,10 @@ export const router = createBrowserRouter([
             children: [
               { path: "/", element: <DefaultWorkspace /> },
               { path: "/applications", element: <InstallationsPage /> },
+              {
+                path: "/applications/design",
+                element: <ApplicationDesignPage />,
+              },
               { path: "*", element: <DynamicApplicationRoute /> },
               { path: "/analytics", element: <DashboardPage /> },
               { path: "/capabilities", element: <CapabilityPage /> },

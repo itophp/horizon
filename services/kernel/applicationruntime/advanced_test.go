@@ -2,6 +2,8 @@ package applicationruntime_test
 
 import (
 	ar "baseline/services/api/kernel/applicationruntime"
+	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -18,7 +20,7 @@ func TestDeploymentRetainsVersionsWithoutReplacingContracts(t *testing.T) {
 		if app.ID == old.ID && app.Version == old.Version {
 			t.Fatal("old candidate selected as current")
 		}
-		if app.SchemaVersion != "2.1" {
+		if app.SchemaVersion != "2.2" {
 			t.Fatal(app.SchemaVersion)
 		}
 	}
@@ -49,5 +51,30 @@ func TestMappingInterpreterRejectsMissingPathsAndPrototypeAccess(t *testing.T) {
 	result, err := ar.Map([]ar.Mapping{ar.Bind("id", "$context.record.id"), ar.Const("approved", "false")}, map[string]any{"record": map[string]any{"id": 7}})
 	if err != nil || result["id"] != 7 || result["approved"] != false {
 		t.Fatal(result, err)
+	}
+}
+
+func TestDynamicCloneValidation(t *testing.T) {
+	sources, entities, defs := fixture()
+	compiled, e := ar.Assemble(sources, entities, defs)
+	if e != nil {
+		t.Fatal(e)
+	}
+	app := ar.Canonical(compiled[1])
+	app.ID = "app_test"
+	app.Source = "builtin:runtime-host"
+	app.Version = "0.1.0"
+	app.ApplicationVersion = "0.1.0.0"
+	app.PluginVersion = "1.0.0"
+	app.Components = nil
+	app.AgentTools = nil
+	app.PluginDependencies = nil
+	raw, _ := json.Marshal(app)
+	raw = []byte(strings.ReplaceAll(string(raw), "/projects", "/apps/operations"))
+	if err := json.Unmarshal(raw, &app); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ar.Assemble(append(sources, app), entities, defs); err != nil {
+		t.Fatal(err)
 	}
 }
