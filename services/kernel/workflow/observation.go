@@ -15,6 +15,9 @@ type ObservationSink interface{ Submit(canonical.Envelope) }
 
 func (e *Engine) observeStep(state execution, row dbgen.AIGetRunRow, step Step, iteration int, phase string, occurred time.Time) {
 	kind := "capability"
+	if step.Graph != nil {
+		kind = "graph"
+	}
 	if step.Agent != nil {
 		kind = "agent"
 	}

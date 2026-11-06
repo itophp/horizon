@@ -7,11 +7,13 @@ import (
 	"baseline/services/api/ai/triggers"
 	gencapability "baseline/services/api/gen/capability"
 	genidentity "baseline/services/api/gen/identity"
+	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/eventhub"
 	"baseline/services/api/kernel/outbox"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -233,6 +235,15 @@ INSERT INTO cap_invocations (tenant_id, account_id, department_id, invocation_id
 VALUES ('tenant-a', $1, $2, $3, 'example.record.archive', '1.0.0', 'agent', 'awaiting_approval', $4::jsonb, $5, 'trace-approval', 'trace-approval')`,
 			root.ID, root.DepartmentID, invocationID,
 			fmt.Sprintf(`{"id":%d}`, recordID), digest); err != nil {
+			t.Fatal(err)
+		}
+		// This fixture books an approval directly; include the same immutable
+		// execution identity that Gateway booking now stores atomically.
+		binding, err := json.Marshal(contracts.DefaultExecutionBinding(contracts.Definition{Name: "example.record.archive", Version: "1.0.0"}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = pool.Exec(ctx, `INSERT INTO cap_execution_records(tenant_id,invocation_id,account_id,binding) VALUES('tenant-a',$1,$2,$3)`, invocationID, root.ID, binding); err != nil {
 			t.Fatal(err)
 		}
 		var approvalID int64

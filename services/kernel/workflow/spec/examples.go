@@ -7,6 +7,8 @@ import "baseline/services/api/kernel/capability/contracts"
 func Builtins() []Definition {
 	return []Definition{
 		LifecycleExample(),
+		ExampleArchivePlan(),
+		ExampleGraphArchivePlan(),
 		ArticlePublish(),
 		{Name: "example-create-archive", Version: "1.0.0", Input: contracts.Object(map[string]*contracts.Schema{"title": {Type: "string"}}, "title"), Steps: []Step{
 			{ID: "create", Capability: "example.record.create", Version: "1.0.0", Input: map[string]Mapping{"title": {From: "input", Field: "title"}}},
@@ -63,4 +65,25 @@ func RuntimeAnalysis(name, app, page, readTool string) Definition {
 // ApplicationAnalyses are included only by deployments with the Runtime modules.
 func ApplicationAnalyses() []Definition {
 	return []Definition{RuntimeAnalysis("article", "articles", "article.detail", "article.list@1.0.0"), RuntimeAnalysis("project", "projects", "project.detail", "project.task.list@1.0.0")}
+}
+
+// ExampleArchivePlan can replace example.record.archive without changing its I/O.
+func ExampleArchivePlan() Definition {
+	min := float64(1)
+	return Definition{Name: "example-archive-plan", Version: "1.0.0", Input: contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer", Minimum: &min}}, "id"), Steps: []Step{
+		{ID: "check", Capability: "example.record.get", Version: "1.0.0", Input: map[string]Mapping{"id": {From: "input", Field: "id"}}},
+		{ID: "archive", Capability: "example.record.archive", Version: "1.0.0", CallMode: "invoke_native", DependsOn: []string{"check"}, Input: map[string]Mapping{"id": {From: "input", Field: "id"}}},
+	}}
+}
+
+// ExampleGraphArchivePlan consumes the Graph's typed decision in deterministic
+// Eino branches. Neither branch bypasses the archive capability's risk policy.
+func ExampleGraphArchivePlan() Definition {
+	g := BuiltinGraphs()[0]
+	risk := Step{ID: "risk", Graph: g.Reference(), Input: map[string]Mapping{"id": {From: "input", Field: "id"}}}
+	native := Step{ID: "safe", Capability: "example.record.archive", Version: "1.0.0", CallMode: "invoke_native", Input: map[string]Mapping{"id": {From: "input", Field: "id"}}, When: &When{From: "risk", Field: "decision", Equals: "safe"}}
+	review := native
+	review.ID = "review"
+	review.When = &When{From: "risk", Field: "decision", Equals: "review"}
+	return Definition{Name: "example-archive-graph-plan", Version: "1.0.0", FreshContext: true, Input: g.Input, Steps: []Step{risk, native, review}}
 }

@@ -29,6 +29,9 @@ func PermissionCatalog() []*genidentity.PermissionDefinition {
 			out = append(out, &genidentity.PermissionDefinition{Code: resource + ":" + action, Module: "system", Function: resource, Action: action, ScopeConfigurable: resource != "memory" && resource != "applications" && resource != "drive" && resource != "articles" && resource != "orchestration" && resource != "settings" && (resource != "dictionaries" || action == "use"), TemporaryEligible: resource == "files" && action == "read" || resource == "dictionaries" && action == "use"})
 		}
 	}
+	for _, action := range []string{"read", "edit", "validate", "publish", "bind", "rollback", "records"} {
+		out = append(out, &genidentity.PermissionDefinition{Code: "executionPlans:" + action, Module: "system", Function: "executionPlans", Action: action, ScopeConfigurable: false, TemporaryEligible: false})
+	}
 	sort.SliceStable(out[18:], func(i, j int) bool { return out[18+i].Code < out[18+j].Code })
 	return out
 }

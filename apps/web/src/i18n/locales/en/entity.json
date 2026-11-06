@@ -209,5 +209,23 @@
   },
   "runtime_application_change": {
     "label": "Application change"
+  },
+  "execution_plan": {
+    "label": "Execution plan",
+    "states": {
+      "draft": "Draft",
+      "validated": "Validated",
+      "published": "Published",
+      "archived": "Archived"
+    }
+  },
+  "execution_binding": {
+    "label": "Execution binding"
+  },
+  "execution_binding_change": {
+    "label": "Binding change"
+  },
+  "execution_record": {
+    "label": "Execution record"
   }
 }

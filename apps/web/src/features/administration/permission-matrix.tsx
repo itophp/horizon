@@ -46,6 +46,7 @@ export function permissionFunctionLabel(key: string, t: TFunction) {
     notifications: t("governance:messages"),
     mcp: t("mcp:title"),
     orchestration: t("governance:orchestration"),
+    executionPlans: t("governance:executionPlans"),
     memory: t("governance:groups.memory"),
   };
   const pluginKey = frontendExtensions.permissionFunctions[key];
@@ -142,6 +143,8 @@ export function PermissionMatrix({
     onChange(next);
   }
   function permissionActionLabel(definition: PermissionDefinition) {
+    if (definition.function === "executionPlans")
+      return t(`governance:executionPlanPermissions.${definition.action}`);
     if (definition.function === "memory")
       return t(`governance:memoryPermissions.${definition.action}`);
     const pluginKey = frontendExtensions.permissionActions[definition.code];

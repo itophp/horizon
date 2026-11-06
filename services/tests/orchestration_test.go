@@ -26,7 +26,10 @@ import (
 	"testing"
 )
 
-type workflowModel struct{ tools []*schema.ToolInfo }
+type workflowModel struct {
+	tools         []*schema.ToolInfo
+	preferredTool string
+}
 
 type workflowObservations struct {
 	mu     sync.Mutex
@@ -40,7 +43,7 @@ func (o *workflowObservations) Submit(event canonical.Envelope) {
 }
 
 func (m *workflowModel) WithTools(tools []*schema.ToolInfo) (model.ToolCallingChatModel, error) {
-	return &workflowModel{tools: tools}, nil
+	return &workflowModel{tools: tools, preferredTool: m.preferredTool}, nil
 }
 func (m *workflowModel) Generate(_ context.Context, in []*schema.Message, opts ...model.Option) (*schema.Message, error) {
 	for _, msg := range in {
@@ -53,6 +56,19 @@ func (m *workflowModel) Generate(_ context.Context, in []*schema.Message, opts .
 	args := `{}`
 	if len(tools) > 0 {
 		name = tools[0].Name
+	}
+	if m.preferredTool != "" {
+		found := false
+		for _, t := range tools {
+			if t.Name == m.preferredTool {
+				name = t.Name
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, errors.New("expected test tool is unavailable")
+		}
 	}
 	if name == "example_record_archive" || name == "example_record_get" {
 		for _, msg := range in {

@@ -139,6 +139,58 @@ type CapEvent struct {
 	CreatedAt     pgtype.Timestamptz
 }
 
+type CapExecutionBinding struct {
+	TenantID          string
+	Capability        string
+	CapabilityVersion string
+	PlanTenantID      string
+	PlanID            string
+	PlanVersion       int64
+	Revision          int64
+	UpdatedBy         int64
+	UpdatedAt         pgtype.Timestamptz
+}
+
+type CapExecutionBindingChange struct {
+	ID                int64
+	TenantID          string
+	Capability        string
+	CapabilityVersion string
+	PlanID            string
+	PlanVersion       int64
+	Revision          int64
+	Action            string
+	Reason            string
+	AccountID         int64
+	CreatedAt         pgtype.Timestamptz
+}
+
+type CapExecutionPlan struct {
+	TenantID          string
+	PlanID            string
+	Version           int64
+	Capability        string
+	CapabilityVersion string
+	Name              string
+	Mode              string
+	ImplementationRef string
+	ContractHash      string
+	Status            string
+	CreatedBy         int64
+	CreatedAt         pgtype.Timestamptz
+	PublishedBy       int64
+	PublishedAt       pgtype.Timestamptz
+	WorkflowHash      string
+}
+
+type CapExecutionRecord struct {
+	TenantID     string
+	InvocationID string
+	AccountID    int64
+	Binding      []byte
+	RunID        pgtype.Int8
+}
+
 type CapInvocation struct {
 	ID                int64
 	TenantID          string

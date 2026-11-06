@@ -10,6 +10,7 @@ import (
 	"baseline/services/api/kernel/plugin"
 	"baseline/services/api/system/applicationruntime"
 	"baseline/services/api/system/dictionaries"
+	"baseline/services/api/system/executionplans"
 	"baseline/services/api/system/files"
 	"baseline/services/api/system/identity"
 	"baseline/services/api/system/memory"
@@ -25,7 +26,7 @@ func Entities() []contracts.Entity { return EntitiesWithPlugins(BuiltinPlugins(n
 
 // EntitiesWithPlugins builds metadata from the same registered plugins as capabilities.
 func EntitiesWithPlugins(plugins *plugin.Manager) []contracts.Entity {
-	out := applicationruntime.Entities()
+	out := append(applicationruntime.Entities(), executionplans.Entities()...)
 	out = append(out, articles.Entities()...)
 	out = append(out, drive.Entities()...)
 	out = append(out, plugins.Catalog.Entities...)

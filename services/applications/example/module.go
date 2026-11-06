@@ -1,5 +1,5 @@
 // Package example is the reference business module of the platform. It proves
-// the contract end to end with three capabilities (read, create, state change),
+// the contract end to end with scoped reads, writes and an advisory assessment,
 // a transactional outbox event and an event-triggered AI review. It is
 // deliberately small: a real MES/ERP module plugs into the same interfaces.
 package example
@@ -11,6 +11,7 @@ import (
 
 	"baseline/services/api/internal/repository/dbgen"
 	"baseline/services/api/kernel/capability/contracts"
+	"baseline/services/api/kernel/capability/gateway"
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/system/identity"
 
@@ -32,7 +33,12 @@ const (
 )
 
 // Module is the example business module.
-type Module struct{ pool *pgxpool.Pool }
+type Module struct {
+	pool    *pgxpool.Pool
+	gateway *gateway.Gateway
+}
+
+func (m *Module) AttachGateway(g *gateway.Gateway) { m.gateway = g }
 
 // New builds the module.
 func New(pool *pgxpool.Pool) *Module { return &Module{pool: pool} }
@@ -44,6 +50,7 @@ func (m *Module) Entries() []registry.Entry {
 		{Definition: createDefinition(), Handler: contracts.Handler{ExecuteTx: m.create}},
 		{Definition: archiveDefinition(), Handler: contracts.Handler{ExecuteTx: m.archive}},
 		{Definition: getDefinition(), Handler: contracts.Handler{Execute: m.get}},
+		{Definition: assessmentDefinition(), Handler: contracts.Handler{Execute: m.assess}},
 	}
 }
 
@@ -224,4 +231,25 @@ func (m *Module) get(ctx context.Context, in contracts.Input) (contracts.Output,
 }
 func getDefinition() contracts.Definition {
 	return contracts.Definition{Layer: contracts.LayerAtomic, Name: "example.record.get", Version: "1.0.0", Title: "Inspect own example record", Description: "Read your reference record and whether it is ready for review; an archived record is not ready.", Domain: "example", Entity: "example_record", Permission: ReadPermission, Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true, Executor: "go:example.get", Input: contracts.Object(map[string]*contracts.Schema{"id": contracts.Int(1, 1<<53)}, "id"), Output: contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer"}, "title": {Type: "string"}, "status": {Type: "string"}, "ready": {Type: "boolean"}}, "id", "title", "status", "ready"), Loggable: []string{"id"}}
+}
+
+func assessmentDefinition() contracts.Definition {
+	return contracts.Definition{Layer: contracts.LayerOrchestration, Kind: contracts.KindService, Name: "example.record.assess", Version: "1.0.0", Title: "Assess example record", Description: "Return a conservative review recommendation for an authorized example record. A compatible registered Graph may replace the default assessment.", Domain: "example", Entity: "example_record", Permission: ReadPermission, Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true, Executor: "go:example.assess", Input: contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer", Minimum: floatPointer(1)}}, "id"), Output: contracts.Object(map[string]*contracts.Schema{"decision": {Type: "string", Enum: []string{"safe", "review"}}}, "decision"), Loggable: []string{"id"}}
+}
+func (m *Module) assess(ctx context.Context, in contracts.Input) (contracts.Output, error) {
+	if m.gateway == nil {
+		return contracts.Output{}, contracts.Problem("unavailable")
+	}
+	result, err := m.gateway.Invoke(ctx, gateway.Request{Name: "example.record.get", Version: "1.0.0", Input: in})
+	if err != nil {
+		return contracts.Output{}, err
+	}
+	if result.Status != contracts.StatusSucceeded {
+		code := result.ErrorCode
+		if code == "" {
+			code = "unavailable"
+		}
+		return contracts.Output{}, contracts.Problem(code)
+	}
+	return contracts.Output{Data: map[string]any{"decision": "review"}}, nil
 }

@@ -121,3 +121,16 @@ Runtime v2 的空 permission 目录能力只允许已认证身份进入，具体
 Runtime 版本按租户保存不可变完整定义和发布指针，不能保存某个用户裁剪后的投影作为公共版本。定义修改须具备正式 applications:design，发布/回退须具备正式 applications:manage，且仅允许人类入口；版本摘要与修订条件绑定人工确认的具体候选。定义及变更正文不进入调用审计、Outbox 或追踪，记录版本与摘要即可。system-only 启动登记能力在 Gateway 和执行端同时限制系统账号与事件来源，不进入 MCP/Agent 发现。设计 Agent 的固定工具集只生成候选。
 
 Gateway 对人类会话实时重建正式及数据库中有效的临时授权，临时授权与 PermanentGrants 保持分离；后台和审批恢复不借用会话临时权限。撤权、过期和部门变化继续重新检查，不信任调用方持有的旧 Principal。
+
+## Capability 执行方案管理
+
+执行方案管理使用独立 `executionPlans:read/edit/validate/publish/bind/rollback/records` 正式权限（不可临时授予），同时校验目标能力权限。所有管理动作是 manual-only，不进入 Agent/MCP 自动化目录，已知名称直接调用仍由 Gateway 检查来源和权限。平台 Direct 方案不可由租户修改；草稿版本不可原地改变定义，发布与绑定分离。租户绑定 SQL 强制 tenant 条件，更新带 expectedRevision，变更历史和 Outbox 随事务提交。执行方案在调用创建及审批受理时持久化，审批用原账号/部门重建身份并加载原方案；切换绑定只影响新调用。执行记录查询强制 tenant+account，不包含原业务输入输出。当前支持 Direct、受控注册 Workflow 与仅替换同契约只读能力的 Graph。
+
+Workflow Plan 的 Native/Pinned 选择只在可信 Go 调用器中提供，客户端 Request 不接受执行模式。Native 核对当前租户/账号/runId/原始 invocation 与目标能力；Pinned 仅选当前租户或部署 Direct 的已发布版本，两者仍通过 Gateway 的完整校验。发布/绑定检查节点权限、自动化来源、Schema、摘要及可检测依赖循环，切换租户绑定串行校验。Workflow 受理与基础设施运行记录原子提交，原调用保持 executing，最终结果只来自已成功、同账号且 causation 绑定原调用的 Native 记录；失败/取消不能覆盖已成功结果。敏感临时结果、Agent、补偿和人工/内部/系统专用节点不开放给 Workflow Plan 模板。
+
+Graph Adapter 仅消费注册引用与摘要。固定工具限定低风险、非 TransientResult、无 OutputAccess 的原子只读能力，排除人工/内部/系统专用；每次经 Gateway 选择 Direct V1 并重新授权，禁止借活动编排扩大为写入。模型无工具集合，任何 ToolCall 均拒绝；严格输出 Schema 校验后才交给确定性 Workflow 分支，模型不能降低 Native 风险确认。独立 Graph Plan 仅替换同 I/O 契约的非敏感临时结果只读能力，不能产生业务事件；只读 Workflow 也不得新增写节点。调用/输出/上下文字节与绝对超时预算在调用前持久化到原有加密检查点，重启不重置预算；不持久化模型原始答复或提供商错误。参考能力 example.record.assess 复用 example:read，通过 Gateway 读取本人示例记录，默认 Direct 只给保守复核建议；没有新增权限或写操作。
+
+Graph 模型支出前校验当前任务与原调用绑定，并刷新原能力正式权限及激活状态；拥有数据源读取权限不代表拥有原业务能力权限。独立 Graph 结果完成时再次执行该检查并使用当前字段权限投影。
+
+
+执行方案工作台的引用搜索/编译图检查继承 read 和目标权限，并重新校验当前节点权限及摘要；结构预检使用 validate，仅检查输入和元数据，不执行真实业务或模型，也不发布/验证草稿状态。执行记录与节点轨迹使用 records，SQL 强制 tenant+account+invocation，轨迹仅投影实际步骤起止及时间，禁止返回原始 payload。前端缓存隔离租户/账号/部门/授权版本，绑定弹窗保留原 revision，冲突不得静默改为新修订；图上本地编辑不得作为完整 DSL 上传。新端点仍人工专用，不扩大 MCP/WebMCP 暴露。

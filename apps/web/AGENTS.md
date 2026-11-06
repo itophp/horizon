@@ -53,7 +53,7 @@
 - 合并页面用页内标签承载各自职责：组织管理 = 组织架构 / 部门，权限管理 = 角色授权 / 账号独立授权 / 角色管理，系统设置 = 系统配置 / 字段管理，Agent 协作 = MCP Server / WebMCP / WebSkills 三个标签。新增能力按归属追加标签，不要再起平行菜单项。
 - 标签可见性与默认标签由正式读取权限决定（organizations:read 或 departments:read、access:manage 或 roles:read、settings:read 或 dictionaries:read），前端隐藏只是体验，服务端授权不变。搜索等页内状态更新保留 URL 其他参数，避免切换标签丢失。
 - 旧路由 `/departments`、`/roles`、`/dictionaries`、`/webmcp`、`/mcp-settings` 只做重定向，不恢复页面组件；新增或调整入口时同步 WebMCP 路由清单与对应 E2E spec（只在授权范围内执行）。
-- 业务能力页 `/capabilities` 是页面按钮接入能力的基准：按钮通过 `@/lib/capabilities` 调用 Gateway，必须带稳定的 `idempotencyKey`；页面不得直接调用业务接口或自行判断审批。列表、事件与调用轨迹读服务端返回值，事件上的 AI 状态只展示不猜测。
+- 业务能力页 `/capabilities` 及方案详情遵循 docs/security.md：按钮通过 `@/lib/capabilities` 调用 Gateway，必须带稳定的 `idempotencyKey`；页面不得直接调用业务接口或自行判断审批。列表、事件与调用轨迹读服务端返回值，事件上的 AI 状态只展示不猜测。
 - 流程编排页 `/orchestration` 的运行目录与编译图只读：目录与编译图来自 `orchestration.workflow.list` / `orchestration.workflow.diagram`，运行、取消与审批复用既有能力与审批队列；前端可在当前视图建立本地草稿：控制／分支线插入节点、节点两侧新增带 when 的同级分支，支持节点移除、自动重连及撤销和重置；移除不能猜测替代条件或字段输出，仍有引用时明确拒绝。必须明确尚未保存／发布，原字段映射不得丢失，运行操作仍只执行已注册版本，不得把投影当完整 DSL 上传。X6 支持平移、缩放及节点选择，节点属性与连线类型来自服务端投影，输入 Schema 单独查看。不推断节点业务语义，未编译节点必须显式标注；不得按同名能力的调用记录推断具体步骤已完成。
 - 业务模块（设置、字典、文件、通知、MCP、账号）的按钮只调用 `apps/web/src/lib/capabilities.ts`；禁止直接 `fetch` 旧 REST 路径，也禁止按模块另写调用层。业务类型在 `apps/web/src/api/types.ts`，会话/能力类型仍在生成的 models 中。
 - AI 工作台是单一页面 `/ai`，用 `?tab=chat|runs` 承载对话与执行记录；入口按 `assistant:use` 显示。审批队列属于 capability 服务，AI 页只展示与决策，不复制审批逻辑。风险等级、审批状态、执行轨迹必须读服务端返回值；审批卡片只展示服务端投影的参数，不得回传或渲染审批载荷正文。详见 [ADR 015](../../docs/decisions/015-capability-centric-platform.md)。

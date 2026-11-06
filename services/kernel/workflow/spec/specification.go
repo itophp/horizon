@@ -16,7 +16,7 @@ import (
 func SpecificationSchema() (*js.Schema, error) {
 	refs := map[reflect.Type]*js.Schema{}
 	types := map[string]reflect.Type{
-		"Mapping": reflect.TypeFor[Mapping](), "Poll": reflect.TypeFor[Poll](), "Agent": reflect.TypeFor[Agent](),
+		"GraphReference": reflect.TypeFor[GraphReference](), "Mapping": reflect.TypeFor[Mapping](), "Poll": reflect.TypeFor[Poll](), "Agent": reflect.TypeFor[Agent](),
 		"Compensation": reflect.TypeFor[Compensation](), "Step": reflect.TypeFor[Step](), "When": reflect.TypeFor[When](),
 	}
 	for name, t := range types {
@@ -86,9 +86,12 @@ func SpecificationSchema() (*js.Schema, error) {
 	step.Properties["maxAttempts"].Minimum = number(0)
 	step.Properties["maxAttempts"].Maximum = number(MaxReadAttempts)
 	step.OneOf = []*js.Schema{
-		{Required: []string{"capability", "version"}, Not: &js.Schema{Required: []string{"agent"}}},
-		{Required: []string{"agent"}, Not: &js.Schema{AnyOf: []*js.Schema{{Required: []string{"capability"}}, {Required: []string{"version"}}, {Required: []string{"poll"}}, {Required: []string{"maxAttempts"}}, {Required: []string{"compensation"}}}}},
+		{Required: []string{"capability", "version"}, Not: &js.Schema{AnyOf: []*js.Schema{{Required: []string{"agent"}}, {Required: []string{"graph"}}}}},
+		{Required: []string{"agent"}, Not: &js.Schema{AnyOf: []*js.Schema{{Required: []string{"graph"}}, {Required: []string{"capability"}}, {Required: []string{"version"}}, {Required: []string{"poll"}}, {Required: []string{"maxAttempts"}}, {Required: []string{"compensation"}}}}},
 	}
+	step.OneOf = append(step.OneOf, &js.Schema{Required: []string{"graph"}, Not: &js.Schema{AnyOf: []*js.Schema{{Required: []string{"agent"}}, {Required: []string{"capability"}}, {Required: []string{"version"}}, {Required: []string{"callMode"}}, {Required: []string{"planId"}}, {Required: []string{"planVersion"}}, {Required: []string{"poll"}}, {Required: []string{"maxAttempts"}}, {Required: []string{"compensation"}}}}})
+	boundedText(root.Defs["GraphReference"].Properties["ref"], 1, 81)
+	root.Defs["GraphReference"].Properties["hash"].Pattern = "^[0-9a-f]{64}$"
 	step.If = &js.Schema{Required: []string{"poll"}}
 	step.Then = &js.Schema{Properties: map[string]*js.Schema{"maxAttempts": {Maximum: number(1)}}}
 	poll := root.Defs["Poll"]

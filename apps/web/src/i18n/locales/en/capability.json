@@ -145,6 +145,10 @@
     "example_record_get": {
       "title": "Inspect own example record",
       "description": "Read a record you created and whether it is ready for review. Archived records are not ready."
+    },
+    "example_record_assess": {
+      "title": "Assess example record",
+      "description": "Return a conservative review recommendation, or use a published read-only Graph with the same contract."
     }
   },
   "demo": {
@@ -173,5 +177,102 @@
       "review": "Agent review query",
       "archive": "Approve and archive"
     }
+  },
+  "plans": {
+    "entry": "Execution plans",
+    "subtitle": "Manage immutable versions and choose the execution plan for new calls.",
+    "back": "Back to capabilities",
+    "forbidden": "Execution plan read permission is required.",
+    "unavailable": "Unavailable or not authorized",
+    "create": "Create draft",
+    "copy": "Copy as new draft version",
+    "draftHint": "Saving creates an immutable draft version. Validation, publication and activation are separate actions. Choose an authorized registered implementation; local canvas edits are not uploaded.",
+    "planName": "Plan name",
+    "planId": "Plan identifier",
+    "idInvalid": "Use a lowercase letter followed by lowercase letters, digits, dots, underscores or hyphens; at most 120 characters.",
+    "required": "Enter a value within the allowed length.",
+    "refRequired": "Select a registered implementation.",
+    "mode": "Execution mode",
+    "cancel": "Cancel",
+    "saveDraft": "Save draft",
+    "searchReference": "Search registered implementations",
+    "reference": "Registered implementation",
+    "chooseReference": "Choose an implementation",
+    "noReferences": "No compatible authorized implementation matches this search.",
+    "version": "V{{version}}",
+    "bind": "Set as default",
+    "rollback": "Roll back to this version",
+    "bindingHint": "Use {{name}} V{{version}} for new calls. The expected binding revision is {{revision}}. Existing runs keep their original plan.",
+    "reason": "Reason",
+    "inspect": "View plan",
+    "compare": "Differences from the current plan",
+    "inputSchema": "Input contract",
+    "outputSchema": "Output contract",
+    "budget": "Graph request limits",
+    "sampleInput": "Sample input JSON",
+    "preflight": "Check structure",
+    "preflightHint": "Checks input shape and current references only. No business reads, writes or model calls run. Passing does not guarantee a real invocation will succeed.",
+    "preflightPassed": "Structure checked. No business or model effects executed.",
+    "noDifferences": "This is the current execution plan.",
+    "field": "Field",
+    "current": "Current default plan",
+    "selected": "Selected version",
+    "none": "None",
+    "status": "Status",
+    "time": "Time",
+    "action": "Action",
+    "trace": "Trace",
+    "nodeEvents": "Node events",
+    "traceHint": "Actual workflow start/finish events only. Business inputs, outputs and model messages are excluded. A started event alone does not prove completion.",
+    "step": "Step",
+    "error": "Failure",
+    "saved": "Change saved. The lists have been refreshed.",
+    "revision": "Binding revision {{revision}}",
+    "versions": "Plan versions",
+    "history": "Binding history",
+    "records": "My execution records",
+    "active": "Active",
+    "scope": "Scope",
+    "actions": "Actions",
+    "validate": "Validate draft",
+    "publish": "Publish version",
+    "modes": {
+      "direct": "Direct",
+      "workflow": "Workflow",
+      "graph": "AI Graph"
+    },
+    "scopes": {
+      "platform": "Platform",
+      "tenant": "Tenant"
+    },
+    "states": {
+      "draft": "Draft",
+      "validated": "Validated",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "fields": {
+      "version": "Version",
+      "mode": "Execution mode",
+      "implementationRef": "Implementation",
+      "workflowHash": "Workflow hash",
+      "graphHash": "Graph hash"
+    },
+    "events": {
+      "STEP_STARTED": "Started",
+      "STEP_FINISHED": "Finished"
+    },
+    "runStates": {
+      "requested": "Requested",
+      "executing": "Executing",
+      "awaiting_approval": "Awaiting approval",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "running": "Running",
+      "completed": "Completed"
+    },
+    "namedVersion": "{{name}} · V{{version}}",
+    "bindingSummary": "{{name}} · {{mode}} · V{{version}} · {{scope}}"
   }
 }

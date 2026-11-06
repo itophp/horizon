@@ -27,6 +27,7 @@ Horizon 是面向企业应用的 AI 原生框架。它把业务实体、Schema �
 |---|---|---|
 | **交互与触发** | Application Runtime、页面、Agent、业务事件、外部 API、流程触发 | Runtime 承载应用、菜单、页面、表单与动作绑定；各入口接受人的意图与系统变化。 |
 | **任务与编排** | Workflow 主干、Graph 子图、ADK Agent 节点 | 将目标组织为可推进的任务：确定步骤、处理循环、开展受限的自主决策。简单动作可以直接调用能力。 |
+| **执行方案管理** | Capability Orchestration Center（能力编排中心） | 为能力版本管理 Direct / Workflow / Graph 方案、校验发布、Binding 切换与回滚，查看版本差异和本人节点轨迹。 |
 | **能力治理** | Capability Gateway | 对每次能力调用统一检查身份、权限、输入、风险和审批，并记录执行过程。 |
 | **能力体系** | Entity、Schema、能力模型、能力注册与触发 | 描述对象及其动作边界，使能力可理解、可发现、可复用，并将调用意图关联到明确的业务动作。 |
 | **业务执行** | 领域规则、数据操作、外部集成 | 执行被允许的动作，维护业务状态和数据边界，产生可确认的结果。 |
@@ -36,6 +37,34 @@ Horizon 是面向企业应用的 AI 原生框架。它把业务实体、Schema �
 | **业务扩展** | 插件 | 接入业务实体、能力、事件与界面，复用统一的能力契约与治理边界。 |
 
 这是职责视图。编排位于 Gateway 上方表示它组织工作；流程启动和每个业务节点仍须经过 Gateway。能力模型与注册支持执行，注册本身不代表已获授权。具体运行时顺序见技术文档。
+
+## Capability Orchestration Center：能力编排中心
+
+**Capability 定义业务动作，Execution Plan 定义该动作的执行方式，Binding 选择新调用使用的已发布方案。** 能力编排中心管理三者的关联，使同一个能力入口可以从原生执行切换到受控编排，而页面、Agent 和 API 继续使用原能力契约。
+
+```mermaid
+flowchart LR
+    ENTRY[页面 / Agent / API / 事件] --> GW[Capability Gateway]
+    REG[Registry：能力契约] -. 契约与政策 .-> GW
+    CENTER[Capability Orchestration Center<br/>草稿 / 校验 / 发布 / 绑定 / 回滚] -->|管理动作经 Gateway| GW
+    GW -->|解析并固定当前方案| PLAN[Execution Plan + Binding]
+    PLAN --> DIRECT[Direct：原生 Go 实现]
+    PLAN --> WORKFLOW[Workflow：复用 Eino Workflow]
+    PLAN --> GRAPH[Graph：兼容只读分析]
+    WORKFLOW -->|业务节点经 Gateway| GW
+    GRAPH -->|固定只读能力经 Gateway| GW
+```
+
+这是方案管理与运行时选择的关系图。Registry 继续负责唯一能力注册，Gateway 继续负责授权、审批、幂等、执行和审计，Workflow / Graph 继续由现有 Eino 引擎运行。能力编排中心通过已注册的管理能力维护方案及绑定，业务调用不必先访问管理页面。
+
+- **默认执行**：新能力自动拥有平台 Direct V1，原生动作和同步组合不需要再手工建租户方案。
+- **编排替换**：Workflow Plan 引用已注册的流程版本，节点组合已有能力，通过 Native 节点保留原业务结果；Graph Plan 仅替换输入输出契约一致的兼容只读能力。ADK 可用于既有业务 Workflow 的受限决策，当前不作为独立 Plan 模式，也不开放给受限 Workflow Plan 模板。
+- **版本生效**：草稿校验、发布与绑定分别进行；发布不自动生效。Binding 按修订条件切换，回滚只影响新调用，已经受理的调用和审批继续固定原方案。
+- **管理入口**：业务能力目录 → 执行方案，按独立正式权限及目标能力权限访问；支持注册实现搜索、编译图、版本差异、结构预检、绑定历史和本人节点轨迹。结构预检不运行真实业务或模型。
+
+当前支持平台默认与租户覆盖，方案保存固定注册引用和摘要。画布可编辑本地草图，完整在线 DSL 保存、业务模拟/单步调试、灰度及更多作用域仍待增强。开发流程为 **需求分析 → 能力发现与拆分 → 契约实现与注册 → 执行方案选型 → 校验/发布 → 授权范围内绑定 → 真实入口验证与回滚**；简单功能走默认 Direct 分支。
+
+详见 [能力与执行方案开发闭环](docs/agent-workflow.md#能力与执行方案开发闭环)、[架构中的执行方案管理](docs/architecture.md#capability-orchestration-center能力编排中心) 和 [当前实现与验证边界](docs/capability-flexible-orchestration-implementation.md)。
 
 ## AI-Native 如何体现在应用中
 
@@ -189,6 +218,7 @@ Skills 保存做事的方法，Schema 描述可交换的结构，Gateway 约束�
 
 - [本地开发与启动](docs/local-development.md)
 - [架构与运行机制](docs/architecture.md) · [Eino 编排方案](docs/orchestration-plan.md)
+- [Capability 执行方案实施记录](docs/capability-flexible-orchestration-implementation.md)（Direct/Workflow/Graph 方案、版本发布、租户绑定与审批固定方案）
 - [完整生命周期示例](docs/orchestration-example.md)
 - [Agent 开发步骤、提问与复用策略](docs/agent-workflow.md)
 - [能力拆分与组合](docs/capability-composition.md) · [任务与 Skill 路由](docs/agent-tooling.md)
@@ -214,3 +244,5 @@ M3/M4 当前实现、十三引擎差距与实际门禁结果见 [实施记录](d
 Runtime 数据库版本、四级配置修订和设计 Agent 的当前实现与待验收项见 [数据库定义实施记录](docs/application-runtime-database.md)。界面开发按 [Runtime 开发规范](docs/application-runtime-development.md) 选择配置/代码/混合路径，分别交付代码与配置发布状态。
 
 Memory Center 的采集、检索、来源和生命周期按独立的 [Memory 开发规范](docs/memory-center-development.md) 处理，不作为业务页面开发的默认步骤。
+
+执行方案管理入口：业务能力目录 → 执行方案（需 executionPlans:read 及目标能力权限）。本阶段管理界面与预检/轨迹边界见 [Phase 4 实施记录](docs/capability-flexible-orchestration-implementation.md#phase-4执行方案管理工作台)。

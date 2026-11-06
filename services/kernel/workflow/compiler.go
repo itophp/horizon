@@ -28,7 +28,7 @@ func (e *Engine) compileWithGraph(ctx context.Context, d Definition, withGraph b
 	if r, ok := e.cache[hash]; ok {
 		return r, e.infos[hash], nil
 	}
-	if err := d.Validate(e.registry); err != nil {
+	if err := d.ValidateWithGraphs(e.registry, e.graphs); err != nil {
 		return nil, nil, err
 	}
 	wf := compose.NewWorkflow[map[string]any, map[string]any]()
@@ -198,6 +198,9 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 		}
 	}
 
+	if s.Graph != nil {
+		return e.graph(ctx, s, args, iteration)
+	}
 	if s.Agent != nil {
 		return e.agent(ctx, s, args, func() { interrupted = true })
 	}
@@ -246,7 +249,17 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 		origin = contracts.OriginAgent
 	}
 	ctx = gateway.WithTaskReference(ctx, gateway.TaskReference{RunID: state.ID, TenantID: state.Tenant, AccountID: state.Account, DepartmentID: row.DepartmentID})
-	result, err := e.gateway.Invoke(ctx, gateway.Request{Name: s.Capability, Version: s.Version, Input: args, Origin: origin, CorrelationID: state.Manifest.Correlation, CausationID: state.Manifest.Parent, TriggerDepth: state.Manifest.Depth + 1, IdempotencyKey: fmt.Sprintf("orch:%d:%s:%d", state.ID, s.ID, iteration)})
+	request := gateway.Request{Name: s.Capability, Version: s.Version, Input: args, Origin: origin, CorrelationID: state.Manifest.Correlation, CausationID: state.Manifest.Parent, TriggerDepth: state.Manifest.Depth + 1, IdempotencyKey: fmt.Sprintf("orch:%d:%s:%d", state.ID, s.ID, iteration)}
+	var result *contracts.Result
+	switch s.CallMode {
+	case "invoke_native":
+		result, err = e.gateway.InvokeNative(ctx, request, state.Manifest.Parent)
+	case "invoke_pinned_plan":
+		result, err = e.gateway.InvokePinned(ctx, request, s.PlanID, s.PlanVersion)
+	default:
+		result, err = e.gateway.Invoke(ctx, request)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +275,7 @@ func (e *Engine) stepBody(ctx context.Context, s Step, values map[string]any, it
 	if err != nil {
 		return nil, err
 	}
-	if result.Status == contracts.StatusAwaitingApproval {
+	if result.Status == contracts.StatusAwaitingApproval || result.Status == contracts.StatusExecuting {
 		interrupted = true
 		return nil, compose.Interrupt(ctx, "awaiting_approval")
 	}

@@ -1,0 +1,68 @@
+{
+  "freshContext": true,
+  "name": "example-archive-graph-plan",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "integer",
+        "minimum": 1,
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "steps": [
+    {
+      "graph": {
+        "ref": "example-risk@1.0.0",
+        "hash": "b59a226f17676c78567d433f8a6f1231e2e6c031e9bf1fb9084634095e96cdc6"
+      },
+      "id": "risk",
+      "input": {
+        "id": {
+          "from": "input",
+          "field": "id"
+        }
+      }
+    },
+    {
+      "callMode": "invoke_native",
+      "id": "safe",
+      "capability": "example.record.archive",
+      "version": "1.0.0",
+      "input": {
+        "id": {
+          "from": "input",
+          "field": "id"
+        }
+      },
+      "when": {
+        "from": "risk",
+        "field": "decision",
+        "equals": "safe"
+      }
+    },
+    {
+      "callMode": "invoke_native",
+      "id": "review",
+      "capability": "example.record.archive",
+      "version": "1.0.0",
+      "input": {
+        "id": {
+          "from": "input",
+          "field": "id"
+        }
+      },
+      "when": {
+        "from": "risk",
+        "field": "decision",
+        "equals": "review"
+      }
+    }
+  ]
+}

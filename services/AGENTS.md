@@ -92,3 +92,7 @@ Runtime v2 目录解析必须按贡献中的实际权限投影，不能固定某
 远程 MCP 与 AI 助手共享自动化能力发现；Token 绑定账号和部门，每次请求按当前正式权限重建目录，历史固化工具集合不再限制能力。业务调用必须经 Gateway，并保持来源、数据范围、审批和幂等检查；手动和内部专用能力不进入自动化目录。权限变更须覆盖发现、猜测调用和撤权后的拒绝。详见 docs/security.md 和 docs/decisions/011-remote-mcp.md（从仓库根解析）。
 
 Runtime 2.2 定义存储见 docs/application-runtime-database.md（从仓库根解析）。数据库版本不可覆盖更新；生命周期状态和配置内容分别使用运行修订与四级版本，部署重启不得覆盖已发布定制。system-only 能力仅允许系统账号及事件来源，不能借用要求固定父能力的 internal-only 标签。
+
+## 执行方案管理
+
+`system/executionplans` 按 docs/security.md 实施独立正式权限、目标权限、人工专用和租户/本人隔离；绑定 revision、历史及 Outbox 同事务。Workflow/Graph 仅引用固定注册版本，受理原子写调用/运行/检查点并固定方案；Native 校验原 invocation/runId，Native/Pinned 均走完整 Gateway。只投影成功 Native 结果，不重复事件；恢复不读取新绑定。事务校验复用 Queries，不借池连接或调 Gateway。模板限制见 docs/capability-flexible-orchestration-implementation.md（链接从仓库根解析）。

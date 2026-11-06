@@ -20,6 +20,7 @@ type execution struct {
 	AgentTools bool
 }
 type manifest struct {
+	PlanResult     string         `json:"planResult,omitempty"`
 	AuthorityStamp string         `json:"authorityStamp,omitempty"`
 	Format         int            `json:"format"`
 	Definition     Definition     `json:"definition"`

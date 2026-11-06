@@ -388,9 +388,15 @@ func (q *Queries) CapCreateApproval(ctx context.Context, arg CapCreateApprovalPa
 }
 
 const capCreateInvocation = `-- name: CapCreateInvocation :one
+WITH invocation AS (
 INSERT INTO cap_invocations (tenant_id, account_id, department_id, invocation_id, capability, capability_version, origin, idempotency_key, status, input, input_digest, correlation_id, causation_id, trigger_depth, trace_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-RETURNING id, created_at
+RETURNING id, created_at, tenant_id, invocation_id, account_id
+), record AS (
+INSERT INTO cap_execution_records(tenant_id,invocation_id,account_id,binding)
+SELECT tenant_id,invocation_id,account_id,COALESCE($16::jsonb,'{}'::jsonb) FROM invocation
+)
+SELECT id,created_at FROM invocation
 `
 
 type CapCreateInvocationParams struct {
@@ -409,6 +415,7 @@ type CapCreateInvocationParams struct {
 	CausationID       string
 	TriggerDepth      int32
 	TraceID           string
+	ExecutionBinding  []byte
 }
 
 type CapCreateInvocationRow struct {
@@ -433,6 +440,7 @@ func (q *Queries) CapCreateInvocation(ctx context.Context, arg CapCreateInvocati
 		arg.CausationID,
 		arg.TriggerDepth,
 		arg.TraceID,
+		arg.ExecutionBinding,
 	)
 	var i CapCreateInvocationRow
 	err := row.Scan(&i.ID, &i.CreatedAt)

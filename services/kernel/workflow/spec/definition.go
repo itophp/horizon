@@ -17,6 +17,10 @@ type Mapping struct {
 	Field string `json:"field"`
 }
 type Step struct {
+	Graph        *GraphReference    `json:"graph,omitempty"`
+	CallMode     string             `json:"callMode,omitempty"`
+	PlanID       string             `json:"planId,omitempty"`
+	PlanVersion  int64              `json:"planVersion,omitempty"`
 	ID           string             `json:"id"`
 	Capability   string             `json:"capability,omitempty"`
 	Version      string             `json:"version,omitempty"`
@@ -81,6 +85,9 @@ func (d Definition) Hash() string { return contracts.Digest(contracts.Input{"def
 
 // Validate refuses malformed declarations and ambiguous business ordering.
 func (d Definition) Validate(r *registry.Registry) error {
+	return d.ValidateWithGraphs(r, BuiltinGraphs())
+}
+func (d Definition) ValidateWithGraphs(r *registry.Registry, graphs []GraphDefinition) error {
 	if err := validateShape(d); err != nil {
 		return err
 	}
@@ -95,6 +102,21 @@ func (d Definition) Validate(r *registry.Registry) error {
 		if _, ok := byID[s.ID]; ok {
 			return fmt.Errorf("duplicate step %s", s.ID)
 		}
+		switch s.CallMode {
+		case "", "resolve_active_plan", "invoke_native":
+			if s.PlanID != "" || s.PlanVersion != 0 {
+				return fmt.Errorf("unexpected plan selector")
+			}
+		case "invoke_pinned_plan":
+			if s.PlanID == "" || s.PlanVersion < 1 {
+				return fmt.Errorf("missing pinned plan")
+			}
+		default:
+			return fmt.Errorf("unsupported call mode")
+		}
+		if s.Agent != nil && s.CallMode != "" {
+			return fmt.Errorf("agent call mode unsupported")
+		}
 		byID[s.ID] = s
 	}
 	if d.ResultStep != "" {
@@ -106,6 +128,48 @@ func (d Definition) Validate(r *registry.Registry) error {
 	footprints := map[string][]contracts.Definition{}
 	outputs := map[string]*contracts.Schema{}
 	for _, s := range d.Steps {
+		if s.Graph != nil {
+			if s.Capability != "" || s.Version != "" || s.Agent != nil || s.Poll != nil || s.MaxAttempts != 0 || s.Compensation != nil || s.CallMode != "" || s.PlanID != "" || s.PlanVersion != 0 {
+				return fmt.Errorf("graph node cannot declare another executor")
+			}
+			var found *GraphDefinition
+			for _, g := range graphs {
+				if g.Key() == s.Graph.Ref {
+					copy := g
+					found = &copy
+					break
+				}
+			}
+			if found == nil || found.Hash() != s.Graph.Hash {
+				return fmt.Errorf("unknown or changed graph reference")
+			}
+			if err := found.Validate(r); err != nil {
+				return err
+			}
+			outputs[s.ID] = found.Output
+			for _, read := range found.Reads {
+				entry, _ := r.Resolve(read.Capability, read.Version)
+				footprints[s.ID] = append(footprints[s.ID], entry.Definition.Normalized())
+			}
+			for _, field := range found.Input.Required {
+				_, mapped := s.Input[field]
+				_, constant := s.Constants[field]
+				if !mapped && !constant {
+					return fmt.Errorf("missing graph input")
+				}
+			}
+			for field := range s.Input {
+				if _, ok := found.Input.Properties[field]; !ok {
+					return fmt.Errorf("unknown graph argument")
+				}
+			}
+			for field := range s.Constants {
+				if _, ok := found.Input.Properties[field]; !ok {
+					return fmt.Errorf("unknown graph constant")
+				}
+			}
+			continue
+		}
 		names := []string{s.Capability}
 		if s.MaxAttempts < 0 || s.MaxAttempts > MaxReadAttempts {
 			return fmt.Errorf("invalid retry bound")

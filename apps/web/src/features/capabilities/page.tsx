@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Loader2, Plus, RefreshCw } from "lucide-react";
@@ -516,6 +517,7 @@ function InvocationRow({
 }
 
 function Catalog({ contracts }: { contracts: CapabilityContract[] }) {
+  const session = useSession();
   const { t } = useTranslation(["capability", "entity"]);
   const [search, setSearch] = useState("");
   const [risk, setRisk] = useState("all");
@@ -582,6 +584,13 @@ function Catalog({ contracts }: { contracts: CapabilityContract[] }) {
                         {capabilityDescription(t, item.name, item.description)}
                       </small>
                       <code>{`${item.name}@${item.version}`}</code>
+                      {session.permissions.includes("executionPlans:read") && (
+                        <Link
+                          to={`/capabilities/${encodeURIComponent(item.name)}?version=${encodeURIComponent(item.version)}`}
+                        >
+                          {t("plans.entry")}
+                        </Link>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

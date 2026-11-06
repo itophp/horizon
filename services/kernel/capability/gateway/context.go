@@ -9,15 +9,16 @@ type invocationKey struct{}
 
 // InvocationContext is injected by Gateway, never decoded from business input.
 type InvocationContext struct {
-	CausationID    string
-	Capability     string
-	Version        string
-	InvocationID   string
-	CorrelationID  string
-	Depth          int
-	IdempotencyKey string
-	Origin         contracts.Origin
-	InTransaction  bool
+	ExecutionBinding contracts.ExecutionBinding
+	CausationID      string
+	Capability       string
+	Version          string
+	InvocationID     string
+	CorrelationID    string
+	Depth            int
+	IdempotencyKey   string
+	Origin           contracts.Origin
+	InTransaction    bool
 }
 
 func CurrentInvocation(ctx context.Context) (InvocationContext, bool) {

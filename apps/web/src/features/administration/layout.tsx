@@ -202,7 +202,7 @@ export function AdminLayout() {
       to: "/capabilities",
       label: t("capability:nav"),
       icon: Boxes,
-      permissions: ["example:read"],
+      permissions: ["example:read", "executionPlans:read"],
     },
     {
       to: "/orchestration",

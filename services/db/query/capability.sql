@@ -1,7 +1,13 @@
 -- name: CapCreateInvocation :one
+WITH invocation AS (
 INSERT INTO cap_invocations (tenant_id, account_id, department_id, invocation_id, capability, capability_version, origin, idempotency_key, status, input, input_digest, correlation_id, causation_id, trigger_depth, trace_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-RETURNING id, created_at;
+RETURNING id, created_at, tenant_id, invocation_id, account_id
+), record AS (
+INSERT INTO cap_execution_records(tenant_id,invocation_id,account_id,binding)
+SELECT tenant_id,invocation_id,account_id,COALESCE(sqlc.arg(execution_binding)::jsonb,'{}'::jsonb) FROM invocation
+)
+SELECT id,created_at FROM invocation;
 
 -- name: CapFindIdempotent :one
 SELECT id, invocation_id, capability, capability_version, status, result, error_code, approval_id, trace_id, created_at, finished_at, account_id, input_digest

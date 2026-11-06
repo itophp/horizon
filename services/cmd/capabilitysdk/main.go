@@ -114,4 +114,19 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	var plans strings.Builder
+	plans.WriteString("// Code generated from Execution Plan capability definitions. DO NOT EDIT.\n\n")
+	for _, entry := range entries {
+		d := entry.Definition
+		if !strings.HasPrefix(d.Name, "execution.plan.") {
+			continue
+		}
+		fmt.Fprintf(&plans, "export type %sInput = %s;\n", nameOf(d.Name), tsType(d.Input))
+		fmt.Fprintf(&plans, "export type %sOutput = %s;\n\n", nameOf(d.Name), tsType(d.Output))
+	}
+	if err := os.WriteFile("../apps/web/src/api/generated/capability-execution-plans.ts", []byte(plans.String()), 0644); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 }

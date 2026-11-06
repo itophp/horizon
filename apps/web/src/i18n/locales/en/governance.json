@@ -433,5 +433,15 @@
     "unavailable": "A required service or storage is unavailable.",
     "internal": "Publication failed; review the configuration and schedule again."
   },
-  "orchestration": "Workflow orchestration"
+  "orchestration": "Workflow orchestration",
+  "executionPlans": "Execution plans",
+  "executionPlanPermissions": {
+    "read": "Read plans",
+    "edit": "Create draft versions",
+    "validate": "Validate plans",
+    "publish": "Publish plans",
+    "bind": "Change binding",
+    "rollback": "Roll back binding",
+    "records": "Read own execution records"
+  }
 }

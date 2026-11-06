@@ -209,5 +209,23 @@
   },
   "runtime_application_change": {
     "label": "应用变更"
+  },
+  "execution_plan": {
+    "label": "执行方案",
+    "states": {
+      "draft": "草稿",
+      "validated": "已校验",
+      "published": "已发布",
+      "archived": "已归档"
+    }
+  },
+  "execution_binding": {
+    "label": "执行方案绑定"
+  },
+  "execution_binding_change": {
+    "label": "绑定变更"
+  },
+  "execution_record": {
+    "label": "执行记录"
   }
 }

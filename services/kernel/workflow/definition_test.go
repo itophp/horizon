@@ -63,3 +63,28 @@ func TestPollAndAgentBounds(t *testing.T) {
 		t.Fatal("unbounded agent accepted")
 	}
 }
+
+func TestCapabilityNodeCallModes(t *testing.T) {
+	r := testCatalog()
+	for _, mode := range []string{"", "resolve_active_plan", "invoke_native", "invoke_pinned_plan"} {
+		s := Step{ID: "read", Capability: "read", Version: "1", CallMode: mode}
+		if mode == "invoke_pinned_plan" {
+			s.PlanID = "read-plan"
+			s.PlanVersion = 1
+		}
+		d := Definition{Name: "test", Version: "1", Input: contracts.Object(nil), Steps: []Step{s}}
+		if err := d.Validate(r); err != nil {
+			t.Fatal(mode, err)
+		}
+	}
+	for _, s := range []Step{
+		{ID: "read", Capability: "read", Version: "1", CallMode: "unknown"},
+		{ID: "read", Capability: "read", Version: "1", CallMode: "invoke_pinned_plan"},
+		{ID: "read", Capability: "read", Version: "1", CallMode: "invoke_native", PlanID: "unexpected", PlanVersion: 1},
+	} {
+		d := Definition{Name: "test", Version: "1", Input: contracts.Object(nil), Steps: []Step{s}}
+		if err := d.Validate(r); err == nil {
+			t.Fatal("invalid call mode accepted", s)
+		}
+	}
+}

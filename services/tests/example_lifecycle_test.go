@@ -50,7 +50,7 @@ func (l *lifecycleLauncher) RunTrigger(ctx context.Context, in harness.TriggerIn
 		return nil, err
 	}
 	adapter := &aitools.Adapter{Gateway: l.g, Registry: l.r, Caller: contracts.Caller{Grants: []string{example.ReadPermission}}, TraceID: run.TraceID, RunID: run.ID, Depth: run.TriggerDepth}
-	agent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{Name: "event_review", Description: "Read the archived reference record", Model: &workflowModel{}, MaxIterations: 3, ToolsConfig: adk.ToolsConfig{ToolsNodeConfig: compose.ToolsNodeConfig{Tools: adapter.Tools(), ExecuteSequentially: true}}})
+	agent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{Name: "event_review", Description: "Read the archived reference record", Model: &workflowModel{preferredTool: "example_record_get"}, MaxIterations: 3, ToolsConfig: adk.ToolsConfig{ToolsNodeConfig: compose.ToolsNodeConfig{Tools: adapter.Tools(), ExecuteSequentially: true}}})
 	if err != nil {
 		return nil, err
 	}

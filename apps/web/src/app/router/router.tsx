@@ -41,6 +41,11 @@ import { Shell } from "../layouts/shell";
 import { Overview } from "@/features/example/overview";
 // The graph canvas pulls in React Flow and dagre, so the orchestration page is
 // split out instead of inflating the first screen bundle.
+const CapabilityPlansPage = lazy(() =>
+  import("@/features/execution-plans/page").then((module) => ({
+    default: module.CapabilityPlansPage,
+  })),
+);
 const OrchestrationPage = lazy(() =>
   import("@/features/orchestration/page").then((module) => ({
     default: module.OrchestrationPage,
@@ -93,6 +98,14 @@ export const router = createBrowserRouter([
               { path: "*", element: <DynamicApplicationRoute /> },
               { path: "/analytics", element: <DashboardPage /> },
               { path: "/capabilities", element: <CapabilityPage /> },
+              {
+                path: "/capabilities/:name",
+                element: (
+                  <Suspense fallback={<Loading />}>
+                    <CapabilityPlansPage />
+                  </Suspense>
+                ),
+              },
               {
                 path: "/orchestration",
                 element: (

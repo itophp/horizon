@@ -146,7 +146,8 @@
         "Schema sources and behavior evidence",
         "Existing capability discovery and reuse",
         "Runtime configuration, code or hybrid selection",
-        "Separate code and application configuration delivery"
+        "Separate code and application configuration delivery",
+        "Capability contract → Execution Plan → authorized Binding activation and rollback; default Direct needs no duplicate plan"
       ],
       "gates": ["fast", "complete"]
     },
@@ -312,7 +313,8 @@
         "Generated JSON Schema",
         "Shared capability catalog",
         "Business human tasks versus risk approval",
-        "Explicit engine selection and resume evidence"
+        "Explicit engine selection and resume evidence",
+        "Capability contract → Execution Plan → authorized Binding activation and rollback; default Direct needs no duplicate plan"
       ],
       "gates": [
         "rules",

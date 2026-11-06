@@ -3,6 +3,7 @@
 // result, so a page button and an agent tool run the same code path.
 import { capabilityInvoke } from "@/api/generated/baseline";
 import { ApiError } from "@/api/client/request";
+import type * as EP from "@/api/generated/capability-execution-plans";
 import type {
   ChangeEntry,
   ChangeRecord,
@@ -260,11 +261,16 @@ async function invoke<T>(
   name: string,
   input: Record<string, unknown> = {},
   idempotencyKey?: string,
+  signal?: AbortSignal,
 ): Promise<CapabilityResponse<T>> {
-  const response = await capabilityInvoke(name, {
-    input,
-    idempotencyKey: idempotencyKey ?? identifier(),
-  });
+  const response = await capabilityInvoke(
+    name,
+    {
+      input,
+      idempotencyKey: idempotencyKey ?? identifier(),
+    },
+    { signal },
+  );
   const result = response.data as CapabilityResult;
   if (result.status === "awaiting_approval") {
     throw new ApiError("approval_required", 409);
@@ -988,3 +994,76 @@ export const runtimeExecute = (
       throw new ApiError("unavailable", response.status);
     return response.data;
   });
+
+// Execution-plan DTOs are generated from module Definition schemas.
+export const executionPlans = {
+  list: (input: EP.ExecutionPlanListInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanListOutput>(
+      "execution.plan.list",
+      input,
+      undefined,
+      signal,
+    ),
+  binding: (input: EP.ExecutionPlanBindingInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanBindingOutput>(
+      "execution.plan.binding",
+      input,
+      undefined,
+      signal,
+    ),
+  history: (input: EP.ExecutionPlanHistoryInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanHistoryOutput>(
+      "execution.plan.history",
+      input,
+      undefined,
+      signal,
+    ),
+  records: (input: EP.ExecutionPlanRecordsInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanRecordsOutput>(
+      "execution.plan.records",
+      input,
+      undefined,
+      signal,
+    ),
+  references: (input: EP.ExecutionPlanReferencesInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanReferencesOutput>(
+      "execution.plan.references",
+      input,
+      undefined,
+      signal,
+    ),
+  inspect: (input: EP.ExecutionPlanInspectInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanInspectOutput>(
+      "execution.plan.inspect",
+      input,
+      undefined,
+      signal,
+    ),
+  trace: (input: EP.ExecutionPlanTraceInput, signal?: AbortSignal) =>
+    invoke<EP.ExecutionPlanTraceOutput>(
+      "execution.plan.trace",
+      input,
+      undefined,
+      signal,
+    ),
+  create: (input: EP.ExecutionPlanCreateInput, key: string) =>
+    invoke<EP.ExecutionPlanCreateOutput>("execution.plan.create", input, key),
+  validate: (input: EP.ExecutionPlanValidateInput, key: string) =>
+    invoke<EP.ExecutionPlanValidateOutput>(
+      "execution.plan.validate",
+      input,
+      key,
+    ),
+  publish: (input: EP.ExecutionPlanPublishInput, key: string) =>
+    invoke<EP.ExecutionPlanPublishOutput>("execution.plan.publish", input, key),
+  bind: (input: EP.ExecutionPlanBindInput, key: string) =>
+    invoke<EP.ExecutionPlanBindOutput>("execution.plan.bind", input, key),
+  rollback: (input: EP.ExecutionPlanRollbackInput, key: string) =>
+    invoke<EP.ExecutionPlanRollbackOutput>(
+      "execution.plan.rollback",
+      input,
+      key,
+    ),
+  preflight: (input: EP.ExecutionPlanPreflightInput) =>
+    invoke<EP.ExecutionPlanPreflightOutput>("execution.plan.preflight", input),
+};

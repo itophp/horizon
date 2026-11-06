@@ -9,6 +9,7 @@ import (
 	"baseline/services/api/internal/repository/dbgen"
 	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/registry"
+	"baseline/services/api/kernel/executionplan"
 	"baseline/services/api/kernel/outbox"
 	"baseline/services/api/system/governance"
 	"baseline/services/api/system/identity"
@@ -19,9 +20,10 @@ import (
 
 // storedResult is the durable projection returned on idempotent replay.
 type storedResult struct {
-	Data     any      `json:"data"`
-	Summary  string   `json:"summary"`
-	EventIDs []string `json:"eventIds"`
+	ExecutionBinding *contracts.ExecutionBinding `json:"executionBinding,omitempty"`
+	Data             any                         `json:"data"`
+	Summary          string                      `json:"summary"`
+	EventIDs         []string                    `json:"eventIds"`
 }
 
 // run books, executes and closes one invocation. The approval resumption path
@@ -30,10 +32,21 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 	started := g.now()
 	q := dbgen.New(g.pool)
 	if resumed {
-		if err := q.CapResumeInvocation(ctx, dbgen.CapResumeInvocationParams{TenantID: p.TenantID, InvocationID: invocationID}); err != nil {
+		raw, err := q.ExecutionGetRecord(ctx, dbgen.ExecutionGetRecordParams{TenantID: p.TenantID, InvocationID: invocationID, AccountID: p.Account.ID})
+		if err != nil {
 			return nil, err
 		}
-	} else {
+		request.executionBinding, err = executionplan.Decode(raw, entry.Definition)
+		if err != nil {
+			return nil, err
+		}
+
+		if request.executionBinding.Plan.Mode != "workflow" && request.executionBinding.Plan.Mode != "graph" {
+			if err := q.CapResumeInvocation(ctx, dbgen.CapResumeInvocationParams{TenantID: p.TenantID, InvocationID: invocationID}); err != nil {
+				return nil, err
+			}
+		}
+	} else if request.executionBinding.Plan.Mode != "workflow" && request.executionBinding.Plan.Mode != "graph" {
 		input := redacted
 		if len(input) == 0 {
 			input = json.RawMessage(`{}`)
@@ -44,7 +57,7 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 			Origin: string(request.Origin), IdempotencyKey: request.IdempotencyKey,
 			Status: string(contracts.StatusExecuting), Input: input, InputDigest: digest,
 			CorrelationID: traceID, CausationID: request.CausationID,
-			TriggerDepth: int32(request.TriggerDepth), TraceID: traceID,
+			TriggerDepth: int32(request.TriggerDepth), TraceID: traceID, ExecutionBinding: bindingJSON(request.executionBinding),
 		}); err != nil {
 			// A concurrent retry with the same key loses the unique index race;
 			// return the winner's stored outcome instead of a 500.
@@ -56,6 +69,10 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 			return nil, err
 		}
 	}
+	if request.executionBinding.Plan.Mode == "workflow" || request.executionBinding.Plan.Mode == "graph" {
+		return g.startWorkflowInvocation(ctx, p, entry, request, invocationID, traceID, digest, redacted, resumed)
+	}
+
 	output, eventIDs, err := g.execute(ctx, p, entry, request, invocationID, traceID)
 	if err != nil {
 		code := mapCode(err)
@@ -76,7 +93,8 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 		_ = g.finish(ctx, p.TenantID, invocationID, contracts.StatusFailed, nil, "internal", time.Since(started))
 		return nil, err
 	}
-	stored := storedResult{Data: output.Data, Summary: output.Summary, EventIDs: eventIDs}
+	binding := request.executionBinding
+	stored := storedResult{ExecutionBinding: &binding, Data: output.Data, Summary: output.Summary, EventIDs: eventIDs}
 	if entry.Definition.TransientResult {
 		stored.Data = nil
 	}
@@ -98,7 +116,11 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 // commit together. Executors that own their transaction still get events, just
 // in a following transaction; that gap is documented as best effort.
 func (g *Gateway) execute(ctx context.Context, p *identity.Principal, entry registry.Entry, request Request, invocationID, traceID string) (contracts.Output, []string, error) {
-	ctx = withInvocation(ctx, InvocationContext{CausationID: request.CausationID, Capability: entry.Definition.Name, Version: entry.Definition.Version, InvocationID: invocationID, CorrelationID: traceID, Depth: request.TriggerDepth, IdempotencyKey: request.IdempotencyKey, Origin: request.Origin, InTransaction: entry.Handler.ExecuteTx != nil})
+	binding := request.executionBinding
+	if binding.Plan.Mode != "direct" || binding.Plan.ImplementationRef != entry.Definition.Key() {
+		return contracts.Output{}, nil, contracts.Problem("unavailable")
+	}
+	ctx = withInvocation(ctx, InvocationContext{ExecutionBinding: binding, CausationID: request.CausationID, Capability: entry.Definition.Name, Version: entry.Definition.Version, InvocationID: invocationID, CorrelationID: traceID, Depth: request.TriggerDepth, IdempotencyKey: request.IdempotencyKey, Origin: request.Origin, InTransaction: entry.Handler.ExecuteTx != nil})
 	meta := outbox.Meta{
 		InvocationID: invocationID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
 		CorrelationID: traceID, CausationID: request.CausationID, Depth: request.TriggerDepth,
@@ -214,4 +236,9 @@ func mapCode(err error) string {
 		return "not_found"
 	}
 	return governance.Code(err)
+}
+
+func bindingJSON(binding contracts.ExecutionBinding) []byte {
+	raw, _ := json.Marshal(binding) // Contains only scalar, serialization-safe metadata.
+	return raw
 }

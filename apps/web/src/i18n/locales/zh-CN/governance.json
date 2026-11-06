@@ -433,5 +433,15 @@
     "unavailable": "依赖服务或存储当前不可用。",
     "internal": "发布失败，请检查配置后重新排期。"
   },
-  "orchestration": "流程编排"
+  "orchestration": "流程编排",
+  "executionPlans": "执行方案",
+  "executionPlanPermissions": {
+    "read": "查看方案",
+    "edit": "创建草稿版本",
+    "validate": "校验方案",
+    "publish": "发布方案",
+    "bind": "切换绑定",
+    "rollback": "回滚绑定",
+    "records": "查看本人执行记录"
+  }
 }

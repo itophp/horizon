@@ -98,3 +98,13 @@ Runtime 数据库定义使用正式 applications:design 修改候选，正式 ap
 ## Memory 工程使用边界
 
 按 [Memory 开发规范](../../../docs/memory-center-development.md) 核对材料范围和渠道授权。经验不得覆盖现行用户指令、代码契约或能力政策，源引用访问时仍需重新授权；业务项目作用域不能自动授予代码仓库访问权。当前人工专用能力保持原渠道，开发 Agent 检索/沉淀只有实际能力、允许渠道与材料范围均具备时才能使用。规范维护本身不新增能力或权限。
+
+## Capability 执行方案
+
+执行方案管理使用 executionPlans 的独立正式权限，且检查目标能力权限；不可临时授予。管理能力 manual-only，平台 Direct 方案由部署生成，租户只修改自身绑定。绑定更新必须条件比较 revision，变更历史、Outbox 与指针同事务提交。调用/待审批受理时固定方案身份，恢复重建原申请人权限并读取固定记录，不读取当前绑定。记录查询强制 tenant+account；未接入的运行模式默认拒绝。规则见 docs/security.md（从仓库根解析）。
+
+Workflow Plan 的 Native 调用还须证明当前可信任务 runId 绑定原 invocation 和相同能力；Pinned 仅接受当前租户/部署已发布版本，均不得绕过完整 Gateway。模板拒绝敏感临时结果、Agent、补偿及人工/内部/系统专用节点。受理原子写调用、固定方案与运行头；结果仅投影实际成功 Native 的同账号/同因果记录。绑定循环校验串行且复用同一事务 Queries，不在事务内借池连接或调 Gateway。
+
+Graph 引用须固定版本及摘要；仅允许声明的低风险、非敏感临时结果、无字段权限投影的原子只读工具，经 Gateway 固定 Direct V1 并实时授权。模型不选工具，ToolCall 拒绝，结构化结果不替代 Native 风险策略。独立 Graph Plan 限相同 I/O 的只读能力，只读 Workflow 不得新增写节点；预算须在外部调用前持久化，重启不重置。完整约束见 docs/security.md（仓库根路径）。
+
+方案工作台引用搜索/编译图须复查目标和节点权限，结构预检不得执行业务或模型。轨迹仅投影本人实际步骤起止，不返回 payload。绑定冲突保留原 revision；本地画布不能冒充完整 DSL 保存。具体边界见 docs/security.md。

@@ -1,6 +1,6 @@
 ---
 name: baseline-capability-composition
-description: "决定一个功能拆成哪些能力、以及能力之间如何互相调用。用于持久化流程/编排定义，以及新增或改造可独立执行的功能（HTTP 接口、页面动作、定时任务、事件处理、Agent/MCP 动作）、需要复用已有数据查询、或发现业务层绕过 Gateway 直连数据库/SDK 时。不适用于纯计算函数、DTO 转换或单表字段改名。"
+description: "决定一个功能拆成哪些能力、能力如何互调及如何选择和接入执行方案。用于持久化流程/编排定义，以及新增或改造可独立执行的功能（HTTP 接口、页面动作、定时任务、事件处理、Agent/MCP 动作）、需要复用已有数据查询、或发现业务层绕过 Gateway 直连数据库/SDK 时。不适用于纯计算函数、DTO 转换或单表字段改名。"
 ---
 
 # 能力拆分与组合
@@ -78,6 +78,18 @@ description: "决定一个功能拆成哪些能力、以及能力之间如何互
 - 原子能力及业务数据先完成，版本化流程定义再注册/生成/检查；用真实业务入口启动、重启恢复、重复事件、旧版本决定等用例证明接入。不能以通用示例或注入 Classify stub 的测试替代实际业务 Eino 路径。
 
 
+## 将业务能力接入执行方案
+
+拆分和复用完成后，按 [能力与执行方案开发闭环](../../../docs/agent-workflow.md#能力与执行方案开发闭环) 确定目标能力的执行实现。Capability 定义动作契约，Execution Plan 属于该能力版本，Binding 选择生效方案；Workflow Plan 的节点引用其他能力。不要把“将能力加入节点”和“为能力绑定执行方案”当作同一操作。
+
+- 原生或同步 Go 组合使用默认 Direct V1；`Layer` 是能力职责，不是 Plan 模式。新增能力只在所属模块 Entries 注册一次，由共享 `app.CapabilityModules` 装配；不另建 Registry、Gateway 或调度器。
+- 需替换原子动作的前后流程时，先核对 Workflow Plan 的同输入契约、Native 结果与当前模板限制。Native 通过完整 Gateway 执行原能力，不直接调 Handler，也不让 Active Plan 再次选中自身。普通业务流程与 Capability 替换方案分别判断；含 ADK、补偿或业务人工信号的流程不能因已有 Workflow 支持就宣称可作 Plan 模板。
+- 独立 Graph Plan 只用于输入输出契约完全一致的兼容只读能力；写动作通过 Workflow 的 Graph 节点分析，再由确定性能力执行，风险确认不由模型决定。固定工具、预算与摘要沿现有引擎校验。
+- Workflow/Graph 定义由部署 Go 源注册，共享 `app.WorkflowDefinitions()` / `app.GraphDefinitions()`；方案仅保存固定引用/摘要。管理入口复用 `system/executionplans.Entries()`，解析复用 `kernel/executionplan`。远程搜索、编译图和结构预检不代表业务执行通过，本地画布投影不能作为完整 DSL 上传。
+- 替代方案经 create → validate → publish，发布不切换 Binding；bind/rollback 使用读到的 expectedRevision，冲突不静默换修订。所有管理动作仍经 Gateway，人工专用及管理/目标/节点权限不因流程自动开放。运行环境切换须在任务授权范围内；隔离测试可验证完整生命周期。
+
+交付核对默认方案或替代方案的实际解析、同能力入口接入和回滚；进行中的调用、审批与运行继续固定原版本。行为与验证边界见 [实施记录](../../../docs/capability-flexible-orchestration-implementation.md) 和 [安全规范](../../../docs/security.md#capability-执行方案管理)。
+
 ## 持久化流程与调用上下文
 
 Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapability、父调用和深度+1，事务内互调直接拒绝。旧“两层以内”临时限制已撤销；MaxDepth 仍须运行时检查。
@@ -88,7 +100,7 @@ Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapa
 
 ## 以真实契约生成流程
 
-先阅读 [完整示例](../../../docs/orchestration-example.md) 和 [Schema 路线](../../../docs/agent-generation-plan.md)。`docs/generated/workflows/workflow.schema.json`、`*.workflow.json` 从纯规格包 ai/orchestration/spec 的 Go Definition/Step 与共享常量生成，禁止手改导出文件。
+先阅读 [完整示例](../../../docs/orchestration-example.md) 和 [Schema 路线](../../../docs/agent-generation-plan.md)。`docs/generated/workflows/workflow.schema.json`、`*.workflow.json` 从纯规格包 kernel/workflow/spec 的 Go Definition/Step 与共享常量生成，禁止手改导出文件。
 
 1. 先选原子动作与权限边界；字段、版本、依赖使用当前能力目录，不猜能力名称。
 2. 候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件>` 校验（脚本工作目录 services）。它不执行也不注册定义；结构合法不代表授权、SQL 范围或业务顺序正确。

@@ -1,6 +1,6 @@
 # AI-Native 概念架构与运行机制
 
-以 2026-11-05 工作区代码为依据。Horizon 为单仓库、单 Go 服务的能力中心框架：能力是业务契约，Gateway 是业务执行入口，Eino 提供持久化流程和 Agent 执行，事件将已提交事实与后续 AI 行为连接起来。图展示当前框架结构，不表示所有业务模块已完成同等程度的接入。
+以 2026-11-06 工作区代码为依据。Horizon 为单仓库、单 Go 服务的能力中心框架：能力是业务契约，Gateway 是业务执行入口，Eino 提供持久化流程和 Agent 执行，事件将已提交事实与后续 AI 行为连接起来。图展示当前框架结构，不表示所有业务模块已完成同等程度的接入。
 
 ![系统概念架构：功能模块与层级](assets/horizon-system-architecture.svg)
 
@@ -11,6 +11,7 @@
 概念主线与 README 保持一致：**交互与触发 → 任务与编排 → Gateway → 能力体系 → 业务执行 → 业务事实与运行记忆 → 事件反馈**。简单动作可直达 Gateway，不强制经过编排。
 
 - 任务与编排层使用 Eino Workflow、Graph、ADK，分别组织业务主干、局部循环与受限决策。
+- Capability Orchestration Center 管理能力版本的 Execution Plan 与 Binding，复用 Registry 契约、Gateway 管理入口和现有 Eino 引擎；运行时由 Gateway 解析并固定方案，不要求每次调用先访问管理页面。
 - Gateway 是统一执行边界；能力体系在其后展开为模型、注册和触发。模型描述契约，注册使能力可发现并绑定执行者，触发将当前调用关联到已注册动作。
 - Entity 与 Schema 是这套能力语言的核心：实体声明对象字段、关系与状态，Schema 描述能力输入输出和流程结构。实体需要对照迁移校验，操作参数按具体动作投影；结构校验不替代权限与业务规则。README 的关系图、任务闭环、调用时序和审核分支图分别解释这些概念如何协作。
 - 业务执行产生结果，持久化保存业务事实和恢复状态；事件异步驱动后续 Agent 或专用业务路径。
@@ -38,7 +39,9 @@ flowchart TD
     RESOLVE --> CHECK[Gateway 按契约准入：权限 / Schema / 幂等 / 风险策略]
     CHECK -->|拒绝| ERROR[稳定错误 / 不执行业务]
     CHECK -->|需确认| WAIT[保存待审批 / 返回确认状态]
-    CHECK -->|允许| DISPATCH[按能力分派执行]
+    CHECK -->|允许| SELECT[解析并固定 Execution Plan / Binding]
+    CENTER[Capability Orchestration Center：方案版本 / 发布 / 绑定 / 回滚] -. 管理能力经 Gateway 维护方案 .-> GW
+    SELECT --> DISPATCH[按 Direct / Workflow / Graph 方案分派执行]
     WAIT -. 人工决定后重建身份与重新授权 .-> GW
     DISPATCH --> ATOM[原子能力：领域规则 / 数据范围 / 查询或事务写]
     DISPATCH --> COMPOSE[同步组合：Go Executor]
@@ -139,3 +142,11 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 `make ci-fast` 为非浏览器门禁；SQL/权限改动加真实隔离 PostgreSQL 验证，`make test-security` 包含数据库集成集合。浏览器 E2E 依现行指示暂停；推送会触发远程 CI 的浏览器阶段，因此本地提交不等于推送授权。
 
 模型、原生客户端、浏览器与远程 CI 验收分别记录。本地启动及手动流程按钮见 [README](../README.md)，实现细节见 [编排方案](orchestration-plan.md)、[安全约定](security.md) 和 [测试矩阵](testing.md)。
+
+## Capability Orchestration Center：能力编排中心
+
+Gateway 在身份、契约、幂等及策略检查后解析执行方案：优先当前租户绑定，无覆盖时用部署注册生成的 Direct V1。调用与审批受理将方案身份与调用记录同时写入；审批恢复读取固定记录并重建原申请人权限。`kernel/executionplan` 负责持久化解析，`system/executionplans` 贡献管理能力，不替换现有 Registry、Gateway 或 Workflow。当前支持 Direct、注册引用的 Workflow 与兼容只读 Graph；Workflow 受理在同一事务写调用与固定运行记录，先返回 executing，最终只投影成功 Native 的业务结果。Native/Pinned 节点仍走完整 Gateway，Graph 通过固定引用接入 Eino 的有界模型纠错子图，只读工具经 Gateway 固定 Direct 版本；独立 Graph Plan 仅替换契约完全一致的只读能力，复用同一持久化队列和预算检查点。详见 [实施记录](capability-flexible-orchestration-implementation.md)。
+
+能力编排中心的控制面由 `system/executionplans` 的管理能力和 `features/execution-plans` 工作台组成，`kernel/executionplan` 管理持久化与解析。方案与绑定存储在 `cap_execution_plans` / `cap_execution_bindings`，变更历史和 `cap_execution_records` 连接版本选择与实际 invocation/run。平台默认 Direct V1 自动生成；替代方案从已注册 Go Workflow/Graph 引用创建，校验、发布、绑定分别执行。Binding 使用 revision 比较更新，已受理调用不受后续切换影响。
+
+入口在业务能力目录下，支持版本管理、远程引用搜索、编译图、本地草图、结构预检、版本比较、历史及本人实际节点事件。结构预检无业务或模型执行，不能证明真实流程成功；在线完整 DSL 保存、业务模拟/单步执行、灰度和更多作用域尚未提供。所有管理能力人工专用，权限与目标/节点授权、租户/本人范围继续由服务端强制执行。开发时如何从业务用例形成能力、方案及绑定，见 [开发闭环](agent-workflow.md#能力与执行方案开发闭环)。

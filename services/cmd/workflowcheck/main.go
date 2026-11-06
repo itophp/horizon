@@ -35,7 +35,7 @@ func run(file string) error {
 	if catalog.Err() != nil {
 		return fmt.Errorf("capability catalog invalid")
 	}
-	if err = d.Validate(catalog); err != nil {
+	if err = d.ValidateWithGraphs(catalog, app.GraphDefinitions()); err != nil {
 		return err
 	}
 	fmt.Printf("workflow valid: %s@%s (not executed or authorized)\n", d.Name, d.Version)

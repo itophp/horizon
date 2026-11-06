@@ -21,6 +21,7 @@ import (
 	"baseline/services/api/kernel/capability/contracts"
 	"baseline/services/api/kernel/capability/registry"
 	"baseline/services/api/kernel/eventhub"
+	"baseline/services/api/kernel/executionplan"
 	canonical "baseline/services/api/kernel/memory"
 	"baseline/services/api/kernel/policy"
 	"baseline/services/api/system/identity"
@@ -39,15 +40,16 @@ const (
 // Request is one invocation request. Security fields are not part of it: the
 // principal comes from the trusted context, the origin from the adapter.
 type Request struct {
-	Runtime        *contracts.RuntimeReference
-	Name           string
-	Version        string
-	Input          contracts.Input
-	IdempotencyKey string
-	Origin         contracts.Origin
-	CorrelationID  string
-	CausationID    string
-	TriggerDepth   int
+	executionBinding contracts.ExecutionBinding
+	Runtime          *contracts.RuntimeReference
+	Name             string
+	Version          string
+	Input            contracts.Input
+	IdempotencyKey   string
+	Origin           contracts.Origin
+	CorrelationID    string
+	CausationID      string
+	TriggerDepth     int
 }
 
 // Options wires the gateway.
@@ -67,15 +69,16 @@ type ObservationSink interface{ Submit(canonical.Envelope) }
 
 // Gateway executes capabilities.
 type Gateway struct {
-	runtimeCheck func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
-	registry     *registry.Registry
-	identity     *identity.Service
-	pool         *pgxpool.Pool
-	approvals    *approval.Store
-	audit        *audit.Store
-	events       *eventhub.Store
-	now          func() time.Time
-	observations ObservationSink
+	workflowPlans WorkflowPlanRuntime
+	runtimeCheck  func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
+	registry      *registry.Registry
+	identity      *identity.Service
+	pool          *pgxpool.Pool
+	approvals     *approval.Store
+	audit         *audit.Store
+	events        *eventhub.Store
+	now           func() time.Time
+	observations  ObservationSink
 }
 
 // New builds a gateway.
@@ -94,6 +97,9 @@ func New(options Options) *Gateway {
 // outcomes. Request level denials (unauthenticated, forbidden, invalid, not
 // found, conflict) are returned as coded errors so the transport can map them.
 func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Result, error) {
+	return g.invoke(ctx, request, nil)
+}
+func (g *Gateway) invoke(ctx context.Context, request Request, selection *contracts.ExecutionBinding) (*contracts.Result, error) {
 	parent, hasParent := CurrentInvocation(ctx)
 	if err := inheritRequest(ctx, &request); err != nil {
 		return nil, err
@@ -202,6 +208,14 @@ func (g *Gateway) Invoke(ctx context.Context, request Request) (*contracts.Resul
 			}, nil
 		}
 	}
+	if selection != nil {
+		request.executionBinding = *selection
+	} else {
+		request.executionBinding, err = executionplan.Resolve(ctx, dbgen.New(g.pool), p.TenantID, definition)
+	}
+	if err != nil {
+		return nil, err
+	}
 	traceID := strings.TrimSpace(request.CorrelationID)
 	if traceID == "" {
 		traceID = identifier("trace_")
@@ -282,6 +296,13 @@ func (g *Gateway) replay(ctx context.Context, p *identity.Principal, definition 
 	case contracts.StatusAwaitingApproval:
 		result.ApprovalID = row.ApprovalID
 	case contracts.StatusExecuting, contracts.StatusRequested:
+		run, e := dbgen.New(g.pool).ExecutionRunForInvocation(ctx, dbgen.ExecutionRunForInvocationParams{TenantID: p.TenantID, AccountID: p.Account.ID, InvocationID: row.InvocationID})
+		if e != nil {
+			return nil, true, e
+		}
+		if run.Valid {
+			return result, true, nil
+		}
 		return nil, true, contracts.Problem("conflict")
 	}
 	return result, true, nil
@@ -334,7 +355,7 @@ func (g *Gateway) requestApproval(ctx context.Context, p *identity.Principal, en
 		Origin: string(request.Origin), IdempotencyKey: request.IdempotencyKey,
 		Status: string(contracts.StatusAwaitingApproval), Input: redacted, InputDigest: digest,
 		CorrelationID: traceID, CausationID: request.CausationID, TriggerDepth: int32(request.TriggerDepth),
-		TraceID: traceID,
+		TraceID: traceID, ExecutionBinding: bindingJSON(request.executionBinding),
 	}); err != nil {
 		if isUnique(err) && request.IdempotencyKey != "" {
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
