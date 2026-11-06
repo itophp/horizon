@@ -59,6 +59,8 @@ description: "Implement or change a feature in this repository; route affected l
 
 规范维护只修改规则和文档，不据此新增业务能力、权限、迁移或页面。
 
+交付记录写入对应实施文档或验收记录，不因每次功能完成、阶段推进或测试通过而修改 README。仅稳定的项目定位、架构、核心能力或使用入口发生变化时更新对应章节；README 以开源协议结尾，不追加改动日志。详见 [文档维护规则](../../../docs/AGENTS.md)。
+
 ## 按涉及层实现
 
 
