@@ -31,6 +31,14 @@
 
 表中“何时执行”表示覆盖要求，执行时机统一遵循上方批次规则，不表示每个功能都立即执行。文档-only 批次运行 check-rules 并审查语义，不为无关改动启动慢测试。前端快速迭代可先运行受影响 Vitest，后端先运行相关包 go test。纯布局变更用可观察交互/可访问性验证，不编写只镜像 CSS 常量的测试。
 
+### Application Runtime 验证
+
+按 [Runtime 开发规范](application-runtime-development.md) 区分代码和配置交付。在线纯配置对精确候选校验结构/引用/类型/权限并展示差异和隔离预览，实际发布后核对版本/摘要、入口及旧提交/工具失效；离线结果不能冒充生效。没有代码变更时不为菜单调整自动执行代码生成或全量 CI；受影响业务动作与权限仍需行为证据。引擎、贡献、组件和契约代码按阶段执行 ci-fast，SQL/权限变化追加对应专项。
+
+### Memory Center 验证
+
+按 [Memory 开发规范](memory-center-development.md) 和实际任务覆盖最小投影、来源授权、去重/迟提交/重放、范围、撤权、纠正/删除/过期和可靠性。未实现的来源或 Agent 接入不能以通用消费者测试代替验收；不要求页面或应用配置发布证据。仅文档/规则/Skill 修改执行 check-rules 与必要的作者校验，不启动业务、数据库或浏览器测试。
+
 ### 浏览器集合的加速入口
 
 `test-e2e-changed`、`test-e2e-smoke` 与 `test-e2e-parallel` 只为缩短等待，不等于全量：只有 `make test-e2e` 和 `make ci` 代表完整浏览器集合。用前两个交付时必须写明选中的文件、未重跑的集合和理由，不能宣称全量通过。在 E2E 暂停期内只有 `test-e2e-changed` 默认可用，`test-e2e-smoke` 需要理由，`test-e2e-parallel` 与 `make test-e2e` 需要授权。

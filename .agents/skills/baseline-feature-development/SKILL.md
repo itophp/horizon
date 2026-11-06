@@ -41,6 +41,16 @@ description: "Implement or change a feature in this repository; route affected l
 
 不能只复用框架却复制已有 SQL、校验或业务流程；页面、Agent、Workflow、MCP 不分别实现同一动作。也不为复用扩大权限、弱化事务或加纯透传层。工程复用选择由 Agent 完成，只有业务/授权含义有未决变化时询问用户；能力存在不代表每个调用渠道已获准使用。
 
+## Application Runtime 页面选型
+
+涉及业务界面先使用 [baseline-application-runtime](../baseline-application-runtime/SKILL.md) 检查已有实体、能力、Provider 和可信组件，选择配置、代码或混合路径，再决定是否写专用 React 页面。部署基线与数据库已发布定制分开管理；代码交付、候选保存、配置发布及生效验证分别报告。详见 [Runtime 开发规范](../../../docs/application-runtime-development.md)。
+
+## Memory Center 任务路由
+
+只有任务明确涉及事件采集、长期记忆、检索、来源、作用域、生命周期治理或 Agent 记忆上下文，才使用 [baseline-memory-integration](../baseline-memory-integration/SKILL.md)。它是独立基础服务，不随业务页面开发自动接入，也不要求普通任务填写 Memory 影响或“不适用”。现有人工专用能力保持原渠道；详见 [Memory 开发规范](../../../docs/memory-center-development.md)。
+
+规范维护只修改规则和文档，不据此新增业务能力、权限、迁移或页面。
+
 ## 按涉及层实现
 
 

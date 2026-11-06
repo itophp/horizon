@@ -64,6 +64,16 @@
       "name": "baseline-capability-composition",
       "file": ".agents/skills/baseline-capability-composition/SKILL.md",
       "kind": "project"
+    },
+    {
+      "name": "baseline-application-runtime",
+      "file": ".agents/skills/baseline-application-runtime/SKILL.md",
+      "kind": "project"
+    },
+    {
+      "name": "baseline-memory-integration",
+      "file": ".agents/skills/baseline-memory-integration/SKILL.md",
+      "kind": "project"
     }
   ],
   "references": [
@@ -96,7 +106,11 @@
     "docs/orchestration-plan.md",
     "docs/entity-model.md",
     "docs/orchestration-example.md",
-    "docs/agent-generation-plan.md"
+    "docs/agent-generation-plan.md",
+    "docs/application-runtime-database.md",
+    "docs/memory-center-ai-handoff.md",
+    "docs/application-runtime-development.md",
+    "docs/memory-center-development.md"
   ],
   "gates": {
     "rules": "check-rules",
@@ -130,7 +144,9 @@
         "Business states and conditional clarification",
         "Capability and engine decisions",
         "Schema sources and behavior evidence",
-        "Existing capability discovery and reuse"
+        "Existing capability discovery and reuse",
+        "Runtime configuration, code or hybrid selection",
+        "Separate code and application configuration delivery"
       ],
       "gates": ["fast", "complete"]
     },
@@ -148,7 +164,7 @@
     },
     {
       "id": "web",
-      "skills": ["baseline-web-development"],
+      "skills": ["baseline-web-development", "baseline-application-runtime"],
       "instructions": [
         "apps/web/AGENTS.md",
         "apps/web/src/components/ui/AGENTS.md"
@@ -212,7 +228,11 @@
         "scripts/AGENTS.md",
         ".agents/skills/AGENTS.md"
       ],
-      "tools": ["Repository rule checker", "Skill Creator author validation"],
+      "tools": [
+        "Repository rule checker",
+        "Skill Creator author validation",
+        "Documentation scope excludes runtime implementation"
+      ],
       "gates": ["rules"]
     },
     {
@@ -302,6 +322,42 @@
         "security",
         "fast"
       ]
+    },
+    {
+      "id": "application-runtime",
+      "skills": [
+        "baseline-application-runtime",
+        "baseline-security",
+        "baseline-quality-gates"
+      ],
+      "instructions": ["AGENTS.md", "services/AGENTS.md", "apps/web/AGENTS.md"],
+      "tools": [
+        "Published database definitions versus deployment baselines",
+        "Configuration, code and hybrid paths",
+        "Exact candidate validation, diff, isolated preview and human publication",
+        "Code gates only for affected source changes; configuration checks for online changes"
+      ],
+      "gates": ["rules", "fast", "generated"]
+    },
+    {
+      "id": "memory-integration",
+      "skills": [
+        "baseline-memory-integration",
+        "baseline-security",
+        "baseline-quality-gates"
+      ],
+      "instructions": [
+        "AGENTS.md",
+        "services/AGENTS.md",
+        "services/tests/AGENTS.md"
+      ],
+      "tools": [
+        "Independent collection, ingestion, retrieval and memory governance",
+        "Source authorization, scope, freshness and correction",
+        "Current manual-only channel constraints",
+        "Agent memory access only through implemented authorized interfaces"
+      ],
+      "gates": ["rules", "fast", "security"]
     }
   ]
 }

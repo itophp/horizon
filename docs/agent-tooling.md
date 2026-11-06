@@ -6,6 +6,10 @@
 
 所有业务功能先执行 [能力发现与复用](agent-workflow.md#能力复用优先先发现再复用最后新增)，记录需求动作对应的现有能力，优先直接复用、组合或兼容扩展，再决定是否新增；能力存在不代表当前用户、Agent 或 MCP 客户端已获准执行。
 
+业务界面按 [Runtime 开发规范](application-runtime-development.md) 选择配置、代码或混合路径，使用 baseline-application-runtime；它负责应用定义、组件和配置发布。
+
+Memory 是独立基础服务。只有明确的采集、记忆检索、来源、作用域、生命周期或 Agent 记忆需求时，按 [Memory 开发规范](memory-center-development.md) 加载 baseline-memory-integration。普通页面开发不附带 Memory 评估或接入要求。
+
 ## 根据任务选择
 
 | 任务 | 重点框架/工具与职责 | 使用的 Skill | 读取的目录规则 | 必要验证 |
@@ -16,6 +20,8 @@
 | 柔性编排：流程编排、循环子图、Agent 自主决策、Schema | Workflow 是唯一主干（节点为能力，依赖由显式映射/DependsOn 确定，Reads/Writes 检查冲突），Graph 只做循环子图，ADK 只做决策；叶子统一经 Gateway | baseline-capability-composition | [柔性编排方案](orchestration-plan.md)、[ADR 016](decisions/016-capability-taxonomy-and-orchestration.md) | check-workflows、check-generated、test-orchestration-example；依赖冲突、审批恢复、循环上限、深度保护 |
 | 事件、Outbox、AI Trigger | 事务 Outbox → Relay → Event Hub → Trigger 去重/深度 → AI 任务 | baseline-feature-development + baseline-database-change + baseline-security | ADR 015、`db/AGENTS.md` | Relay/去重/深度集成测试、事件投影与租户隔离 |
 | 新建/修改完整功能 | 业务状态/角色→条件澄清→能力/事务/引擎决策→源契约→生成与实现→入口/页面→行为验证 | baseline-feature-development，再选以下相关项 | [开发步骤与问题矩阵](agent-workflow.md)、根到目标路径的 AGENTS | 对照架构决策检查实际入口；按批次累计待验项；阶段验收 ci-fast，按风险追加 SQL/安全；浏览器按现行规则 |
+| Runtime 页面选型、配置候选、贡献与生命周期 | 已有能力/组件 → 配置、代码或混合；已发布数据库版本与部署基线分离；候选/人工发布分别交付 | baseline-application-runtime；涉及代码再加载 web/security/i18n 等 | [Runtime 规范](application-runtime-development.md)、[实现边界](application-runtime-database.md)、目标目录规则 | 纯配置校验/差异/隔离预览/授权生效验证；引擎代码按阶段 fast 与相关专项 |
+| Memory 采集、来源、作用域、经验及 Agent 上下文 | 复用现有采集；区分事件、长期记忆、工程经验和业务事实；现有人工专用渠道保持约束 | baseline-memory-integration；按层加载 composition/security/database | [Memory 规范](memory-center-development.md)、[当前边界](memory-center-ai-handoff.md)、security | 接入代码验证最小投影、去重、来源授权、跨租户/撤权/纠正/过期；仅规范跑 rules |
 | 业务配置、字典选项、附件上传/读取/下载、消息通知 | 复用共享治理服务、注册表、生成 SDK 和受控存储 | baseline-shared-capabilities，再按层加载 web/security/database/Goa | docs/shared-capabilities.md、目标目录规则 | 消费者生效、来源越权、历史引用和文件授权；跨层 ci-fast 加相关集成/安全 |
 | 页面、路由、共享布局 | React + React Router；复用 shadcn + Tailwind tokens | baseline-web-development | apps/web | ESLint、TS、相关组件测试、build；跨层交互在授权范围内跑映射命中的单个 spec |
 | 表单、校验、提交 | React Hook Form + Zod；服务端 Goa 校验；TanStack Query mutation/失效 | baseline-web-development；有新文案加 internationalization | apps/web、涉及 API 时 services/design | 无效/有效输入、pending/error/success、相关 HTTP 测试 |

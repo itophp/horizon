@@ -17,22 +17,22 @@ Horizon 是面向企业应用的 AI 原生框架。它把业务实体、Schema �
 
 前端设计与开发：[设计系统](docs/design-system.md) · [页面模板与布局](docs/page-templates.md) · [组件使用指南](docs/ui-component-guidelines.md) · [组合与交互模式](docs/ui-interaction-patterns.md) · [代码参考](docs/code-reference/README.md) · [AI 界面参考](docs/ui-ai-patterns.md)。
 
-![Horizon AI-Native 概念架构](docs/assets/horizon-capability-architecture.svg)
+![Horizon 应用、能力与记忆概念架构](docs/assets/horizon-application-capability-memory.svg)
 
-[查看 SVG 原图](docs/assets/horizon-capability-architecture.svg) · [查看概念与运行机制说明](docs/architecture.md)
+[查看 SVG 原图](docs/assets/horizon-application-capability-memory.svg) · [查看概念与运行机制说明](docs/architecture.md)
 
 从上到下，框架把“谁发起工作”“如何组织任务”“什么动作被允许”“能力如何执行”和“结果如何继续驱动业务”连接起来。
 
 | 层次 | 核心概念 | 在协作中承担什么职责 |
 |---|---|---|
-| **交互与触发** | 页面、Agent、业务事件、外部 API、流程触发 | 接受人的意图与系统变化，为工作提供入口。 |
+| **交互与触发** | Application Runtime、页面、Agent、业务事件、外部 API、流程触发 | Runtime 承载应用、菜单、页面、表单与动作绑定；各入口接受人的意图与系统变化。 |
 | **任务与编排** | Workflow 主干、Graph 子图、ADK Agent 节点 | 将目标组织为可推进的任务：确定步骤、处理循环、开展受限的自主决策。简单动作可以直接调用能力。 |
 | **能力治理** | Capability Gateway | 对每次能力调用统一检查身份、权限、输入、风险和审批，并记录执行过程。 |
 | **能力体系** | Entity、Schema、能力模型、能力注册与触发 | 描述对象及其动作边界，使能力可理解、可发现、可复用，并将调用意图关联到明确的业务动作。 |
 | **业务执行** | 领域规则、数据操作、外部集成 | 执行被允许的动作，维护业务状态和数据边界，产生可确认的结果。 |
-| **业务事实与运行记忆** | 业务数据、任务状态、执行记录、恢复上下文 | 保存发生过什么、当前进行到哪里，为查询、追踪和恢复提供依据。 |
+| **业务事实与运行状态** | 业务数据、任务状态、执行记录、恢复上下文 | 保存发生过什么、当前进行到哪里，为查询、追踪和恢复提供依据。 |
 | **事件与反馈** | 业务事件、触发策略、后续行动 | 将已发生的事实送回任务与决策环节，形成下一轮受治理的行动。 |
-| **核心记忆机制** | Memory Center（规划） | 跨任务、业务与事件沉淀经验，并为 Agent 和流程提供受权限约束的上下文，连接事实反馈与后续行动。 |
+| **核心记忆机制** | Memory Center | 采集事件与运行元数据，支持人工记忆管理、来源追溯与作用域治理；自动提炼、向量检索、Agent 记忆使用和自动清理仍待接入。 |
 | **业务扩展** | 插件 | 接入业务实体、能力、事件与界面，复用统一的能力契约与治理边界。 |
 
 这是职责视图。编排位于 Gateway 上方表示它组织工作；流程启动和每个业务节点仍须经过 Gateway。能力模型与注册支持执行，注册本身不代表已获授权。具体运行时顺序见技术文档。
@@ -211,4 +211,6 @@ Runtime v2 的多应用装配、项目接入和声明式 Action 见 [M1/M2 实�
 
 M3/M4 当前实现、十三引擎差距与实际门禁结果见 [实施记录](docs/application-runtime-phase-3-4.md)；本阶段尚未完成联合验收。
 
-Runtime 数据库版本、四级配置修订和设计 Agent 的当前实现与待验收项见 [数据库定义实施记录](docs/application-runtime-database.md)。
+Runtime 数据库版本、四级配置修订和设计 Agent 的当前实现与待验收项见 [数据库定义实施记录](docs/application-runtime-database.md)。界面开发按 [Runtime 开发规范](docs/application-runtime-development.md) 选择配置/代码/混合路径，分别交付代码与配置发布状态。
+
+Memory Center 的采集、检索、来源和生命周期按独立的 [Memory 开发规范](docs/memory-center-development.md) 处理，不作为业务页面开发的默认步骤。

@@ -54,3 +54,13 @@ description: "Select and run appropriate frontend, Go, database, generation and 
 通知/治理可用 playwright.governance.config.ts 的独立端口、构建及报告目录验收，仍使用完整生产应用、真实 Go 与隔离 PostgreSQL。选择此配置只代表所选相关用例通过，不代表默认全量浏览器集合；命令与边界见 docs/testing.md。
 
 设置定时发布按 [ADR 010](../../../docs/decisions/010-settings-schedules.md)：正式 publish/ALL，敏感单次 settings.schedule 证明在排期事务消费，到期重建原部门 Principal 并复查权限/摘要/依赖/版本；行锁与 savepoint 保证配置和结果原子提交，取消/重启/并发不能重复发布。UI 明示设备时区并转 UTC，使用生成 SDK；后台不借旧会话或临时权执行。修改时同步公共能力与权限规则并覆盖真实数据库、状态和取消测试。
+
+## Application Runtime 验收
+
+按 [Runtime 开发规范](../../../docs/application-runtime-development.md#验证与交付) 区分代码与配置。在线纯配置使用精确候选校验、差异/隔离预览和授权生效验证，不自动执行代码生成或全量 CI；引擎/组件/贡献代码仍按阶段执行 ci-fast 与对应专项。报告 Git revision、应用版本/摘要及候选/发布/生效状态。
+
+## Memory Center 验证
+
+按 [Memory 开发规范](../../../docs/memory-center-development.md#验证与交付) 验证实际来源、最小投影、去重、范围、撤权、纠正/删除/有效期及恢复。通用摄取测试不能证明特定来源或 Agent 接入已完成；交付说明来源、作用域、可靠性和允许渠道，不要求应用配置发布证据。
+
+仅文档/规则/Skill 修改执行 check-rules 与必要作者校验，不生成业务代码或启动数据库/浏览器。

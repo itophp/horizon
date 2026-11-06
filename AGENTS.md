@@ -59,6 +59,8 @@ services/
 | 持久化流程、Graph、ADK、流程 Schema | baseline-capability-composition + baseline-security | [完整示例](docs/orchestration-example.md)、[Schema 路线](docs/agent-generation-plan.md) |
 | 新增事件、Trigger 策略、去重/深度 | baseline-feature-development + baseline-security + baseline-database-change | ADR 015、`db/AGENTS.md` |
 | 页面/表单/表格/SDK 消费 | baseline-web-development | `apps/web/AGENTS.md` |
+| Runtime | baseline-application-runtime | [规范](docs/application-runtime-development.md) |
+| Memory | baseline-memory-integration | [规范](docs/memory-center-development.md) |
 | 会话/系统/公开投影契约 | goa-service-designer | `services/design/AGENTS.md` |
 | 新增/修改表结构、实体声明、状态流转 | baseline-entity-model + baseline-database-change | [实体模型](docs/entity-model.md)、`services/AGENTS.md`、`services/db/AGENTS.md` |
 | 迁移/查询/事务/范围过滤 | baseline-database-change | `services/db/AGENTS.md` |
