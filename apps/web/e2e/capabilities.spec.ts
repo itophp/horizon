@@ -24,7 +24,9 @@ test.beforeEach(async ({ page }) => {
 test("console button drives the capability loop and the AI trigger", async ({
   page,
 }, testInfo) => {
-  test.setTimeout(180000);
+  // A cold local Chrome run can spend over three minutes on the authenticated
+  // write and event round trip. Individual assertions retain their own limits.
+  test.setTimeout(300000);
   const errors: string[] = [];
   const consoleErrors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -32,7 +34,11 @@ test("console button drives the capability loop and the AI trigger", async ({
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await signIn(page);
+  await page
+    .getByRole("button", { name: "Advanced settings", exact: true })
+    .click();
   await page
     .getByRole("link", { name: "Business capabilities", exact: true })
     .click();
@@ -40,6 +46,16 @@ test("console button drives the capability loop and the AI trigger", async ({
   await expect(
     page.getByRole("heading", { name: "Business capabilities", exact: true }),
   ).toBeVisible();
+
+  const runtime = page.locator('[data-layout-id="capabilities"]');
+  await expect(runtime).toBeVisible();
+  const columns = runtime.locator('[data-layout-id="capability-columns"]');
+  await expect(columns).toHaveCSS("grid-template-columns", /px 320px$/);
+  await expect(columns).toHaveCSS("column-gap", "16px");
+  await testInfo.attach("capability-console-desktop", {
+    body: await page.screenshot(),
+    contentType: "image/png",
+  });
 
   const title = `E2E record ${Date.now()}`;
   await page.getByLabel("Record title").fill(title);
@@ -69,6 +85,13 @@ test("console button drives the capability loop and the AI trigger", async ({
   await expect(
     page.getByRole("cell", { name: "Confirm once" }).first(),
   ).toBeVisible();
+
+  await page.setViewportSize({ width: 768, height: 1000 });
+  await expect(columns).toHaveCSS("grid-template-columns", /^\d+(?:\.\d+)?px$/);
+  await testInfo.attach("capability-console-narrow", {
+    body: await page.screenshot(),
+    contentType: "image/png",
+  });
 
   expect(errors).toEqual([]);
   expect(

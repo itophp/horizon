@@ -133,6 +133,7 @@
   "currentValue": "当前值",
   "draftValue": "草稿值",
   "key": "设置项",
+  "fieldOperation": "{{field}} · 操作",
   "operation": "操作",
   "set": "设置值",
   "reset": "恢复默认值",
@@ -272,7 +273,10 @@
     "run": "启动流程",
     "cancel": "取消流程",
     "write": "编写文章",
-    "review": "审核文章"
+    "review": "审核文章",
+    "design": "设计",
+    "manage": "管理",
+    "archive": "归档"
   },
   "noLogo": "默认品牌标志",
   "logoHint": "在附件管理上传 PNG/JPEG Logo 后，在此选择。",

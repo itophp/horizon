@@ -114,6 +114,10 @@
     "forbidden": "Closed to agents"
   },
   "definitions": {
+    "settings_history_rollback": {
+      "title": "Roll settings back",
+      "description": "Create a new revision from a published settings version."
+    },
     "knowledge_search": {
       "title": "Knowledge search",
       "description": "Search the workspace knowledge base for rules, configuration and uploaded documents."

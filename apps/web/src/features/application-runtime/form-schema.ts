@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { RuntimeFieldV2 } from "@/api/generated/runtime";
 import { evaluate, type Scope } from "./expression";
-import type { RecordData } from "./v2-registry";
+import type { RecordData } from "./components";
 export function formSchema(fields: RuntimeFieldV2[], scope: Scope) {
   return z.record(z.string(), z.unknown()).superRefine((values, refinement) => {
     for (const f of fields) {
@@ -27,6 +27,7 @@ export function formSchema(fields: RuntimeFieldV2[], scope: Scope) {
           typeof value !== "number" ||
           !Number.isFinite(value) ||
           (f.type !== "number" && !Number.isInteger(value)) ||
+          (f.type === "reference" && f.required && value <= 0) ||
           (f.minimum !== undefined && Number(value) < f.minimum) ||
           (f.maximum !== undefined && Number(value) > f.maximum);
       else if (f.type === "boolean") invalid ||= typeof value !== "boolean";

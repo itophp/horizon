@@ -1,4 +1,3 @@
-import { RuntimeShellSlot } from "@/features/application-runtime/shell-slot";
 import { useApplicationCatalog } from "@/features/application-runtime/catalog";
 import { WorkspaceHost } from "@/features/application-runtime/workspace";
 import { canShowMenu } from "@/app/plugins/registry";
@@ -134,25 +133,43 @@ export function AdminLayout() {
     return () => window.removeEventListener("keydown", shortcut);
   }, []);
   const applicationCatalog = useApplicationCatalog();
+  const hasRuntimePage = (route: string) =>
+    applicationCatalog.data?.items.some((application) =>
+      application.protocol?.pages.some((page) => page.route === route),
+    ) ?? false;
+  const runtimeIcons: Record<string, typeof Boxes> = {
+    boxes: Boxes,
+    dashboard: LayoutDashboard,
+    users: Users,
+    network: Building2,
+    shield: KeyRound,
+  };
   const links = [
     ...(applicationCatalog.data?.items ?? []).flatMap((application) =>
-      (application.navigation ?? []).flatMap((nav) => {
-        const page = application.pages.find((page) => page.id === nav.pageId);
-        return page && !page.route.includes(":")
-          ? [
-              {
-                to: page.route,
-                label:
-                  application.messages?.find(
-                    (message) => message.key === nav.labelKey,
-                  )?.[i18n.language.startsWith("zh") ? "zhCN" : "en"] ??
-                  t(nav.labelKey),
-                icon: Boxes,
-                permissions: [application.permission],
-              },
-            ]
-          : [];
-      }),
+      (application.navigation ?? []).flatMap(
+        (nav: { pageId: string; labelKey: string; icon?: string }) => {
+          const page = (application.protocol?.pages ?? application.pages).find(
+            (page: { id: string; route: string }) => page.id === nav.pageId,
+          );
+          return page && !page.route.includes(":")
+            ? [
+                {
+                  to: page.route,
+                  label:
+                    application.messages?.find(
+                      (message) => message.key === nav.labelKey,
+                    )?.[i18n.language.startsWith("zh") ? "zhCN" : "en"] ??
+                    t(nav.labelKey),
+                  icon: runtimeIcons[nav.icon ?? "boxes"] ?? Boxes,
+                  permissions:
+                    application.permission === "authenticated"
+                      ? []
+                      : [application.permission],
+                },
+              ]
+            : [];
+        },
+      ),
     ),
     {
       to: "/applications",
@@ -173,28 +190,10 @@ export function AdminLayout() {
       permissions: ["assistant:use"],
     },
     {
-      to: "/analytics",
-      label: t("admin:nav.statistics"),
-      icon: LayoutDashboard,
-      permissions: [],
-    },
-    {
-      to: "/accounts",
-      label: t("admin:nav.accounts"),
-      icon: Users,
-      permissions: ["accounts:read"],
-    },
-    {
-      to: "/organizations",
-      label: t("admin:nav.organizations"),
-      icon: Building2,
-      permissions: ["organizations:read", "departments:read"],
-    },
-    {
-      to: "/permissions",
-      label: t("admin:nav.permissions"),
-      icon: KeyRound,
-      permissions: ["access:manage", "roles:read"],
+      to: hasRuntimePage("/settings") ? "/settings" : "",
+      label: t("governance:settings"),
+      icon: Settings2,
+      permissions: ["settings:read", "dictionaries:read"],
     },
   ];
   const advancedLinks = [
@@ -209,12 +208,6 @@ export function AdminLayout() {
       label: t("orchestration:nav"),
       icon: Workflow,
       permissions: ["orchestration:read"],
-    },
-    {
-      to: "/settings",
-      label: t("governance:settings"),
-      icon: Settings2,
-      permissions: ["settings:read", "dictionaries:read"],
     },
   ];
   const permitted = (items: typeof links) =>
@@ -321,7 +314,6 @@ export function AdminLayout() {
             </select>
           </div>
           <nav className="console-nav" aria-label={t("navigation:main")}>
-            <RuntimeShellSlot slot="navigation" />
             <div className="nav-section-label">{t("admin:nav.workspace")}</div>
             {permitted(links.slice(0, 3)).map((link) => (
               <NavLink
@@ -393,10 +385,12 @@ export function AdminLayout() {
                   <UserRound size={15} />
                   {t("admin:profile.title")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/mcp")}>
-                  <Command size={15} />
-                  {t("mcp:hub.nav")}
-                </DropdownMenuItem>
+                {hasRuntimePage("/mcp") && (
+                  <DropdownMenuItem onClick={() => navigate("/mcp")}>
+                    <Command size={15} />
+                    {t("mcp:hub.nav")}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => {
                     setLogoutError(null);
@@ -505,18 +499,19 @@ export function AdminLayout() {
               >
                 {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
               </button>
-              <button
-                className="icon-button"
-                onClick={() => navigate("/preferences")}
-                aria-label={t("governance:preferences")}
-              >
-                <Settings2 size={17} />
-              </button>
+              {hasRuntimePage("/preferences") && (
+                <button
+                  className="icon-button"
+                  onClick={() => navigate("/preferences")}
+                  aria-label={t("governance:preferences")}
+                >
+                  <Settings2 size={17} />
+                </button>
+              )}
             </div>
           </header>
           <main className="console-content" id="admin-content">
             {!!logoutError && <ErrorBanner error={logoutError} />}
-            <RuntimeShellSlot slot="toolbar" />
             <WorkspaceHost />
           </main>
           <footer className="console-footer">

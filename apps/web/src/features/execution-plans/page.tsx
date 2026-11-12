@@ -69,7 +69,7 @@ export function CapabilityPlansPage() {
   );
 }
 function PlanWorkspace({ contract }: { contract: CapabilityContract }) {
-  const { t } = useTranslation("capability");
+  const { t, i18n } = useTranslation("capability");
   const session = useSession();
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
@@ -168,7 +168,11 @@ function PlanWorkspace({ contract }: { contract: CapabilityContract }) {
   return (
     <>
       <PageHeading
-        title={capabilityLabel(t, contract.name)}
+        title={capabilityLabel(
+          i18n,
+          contract.name,
+          contract.title || contract.name,
+        )}
         subtitle={t("plans.subtitle")}
       >
         <Link to="/capabilities">{t("plans.back")}</Link>

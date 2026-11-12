@@ -2,7 +2,7 @@
 
 状态：已实现（2026-11-03）
 分支：`feat/project-management-example`
-模块：`services/applications/projects`（Domain `projects`，能力前缀 `project.`）
+模块：`applications/projects`（Domain `projects`，能力前缀 `project.`）
 涉及层：迁移、sqlc 查询、实体声明、能力目录、权限目录、AI Trigger、前端页面
 
 本文档最初是实施前的契约，现已按 P0–P3 落地。§15 记录实际实现与验证结果，§6、§11 中两处语义修正也在那里说明。
@@ -461,13 +461,13 @@ P2 与 P3 可并行，但 P3 依赖 P0 的能力契约。
 
 | 层 | 文件 |
 |---|---|
-| 迁移 | `services/db/migrations/00024_projects.sql`（四张业务表 + 简报 + trigger policy） |
-| 查询 | `services/db/query/projects.sql` → `internal/repository/dbgen/projects.sql.go`（sqlc） |
+| 迁移 | `foundation/db/migrations/00024_projects.sql`（四张业务表 + 简报 + trigger policy） |
+| 查询 | `foundation/db/query/projects.sql` → `internal/repository/dbgen/projects.sql.go`（sqlc） |
 | 实体 | `applications/projects/{entities,entity_project,entity_project_member,entity_project_plan,entity_project_task,entity_project_task_brief}.go` |
 | 能力 | `applications/projects/{module,schemas,project,plan,task}.go`（22 个原子能力） |
 | 装配 | `system/identity/catalog.go`（3 个权限点）、`runtime/app/{capabilities,entities}.go` |
 | 前端 | `apps/web/src/features/projects/{page,fields,members,plans,tasks}.tsx`、`lib/capabilities.ts`、路由、菜单、`i18n/locales/*/projects.json`、`entity.json`、`lib/webmcp/routes.ts` |
-| 测试 | `services/tests/projects_test.go`（5 个集成用例） |
+| 测试 | `foundation/tests/projects_test.go`（5 个集成用例） |
 
 ### 两处语义修正（与初稿不同）
 

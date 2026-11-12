@@ -5,7 +5,9 @@ description: "Implement or change a feature in this repository; route affected l
 
 # 功能开发路由
 
-先读根 AGENTS.md 和 [任务工具矩阵](../../../docs/agent-tooling.md)。修改任何路径前，读取根到目标文件父目录之间的 AGENTS.md；不要假设未进入的子目录规则已经加载。
+先读 [根规则](../../../AGENTS.md) 和 [任务工具矩阵](../../../docs/agent-tooling.md)。业务模块从 [应用规则](../../../applications/AGENTS.md) 进入；涉及底座能力、装配、传输或 SQL 时读 [底座规则](../../../foundation/AGENTS.md) 及对应子目录规则；涉及前端读 [Web 规则](../../../apps/web/AGENTS.md)。修改文件前读取从根到其父目录沿途所有 AGENTS.md。
+
+业务功能必须放在 `applications/<module>/`：已有业务在所属模块内扩展，新增独立业务建立应用模块。业务逻辑、实体、能力定义和 Runtime 应用贡献由该模块维护。涉及共享 SQL、底座装配或 Web 组件时，按对应目录规则同步改动。
 
 涉及 MCP 的能力变更按现有能力契约与安全规则核对工具暴露、授权及受影响的消费者。
 
@@ -44,6 +46,8 @@ description: "Implement or change a feature in this repository; route affected l
 - 两类任务均保留现有架构和安全门禁；只记录影响判断、方案及验证，不为未受影响能力重新制作完整清单或流程文档。关键业务或授权语义不明确时，先确认后实施依赖部分。
 
 ## 先复用当前提供的能力
+
+分析 Capability、Workflow、Graph、Runtime Application 或 Page Schema 前，必须先用 Horizon CLI。需要发现条目时，运行 `./horizon-cli <类型>`（类型为 `capability`、`workflow`、`graph`、`application` 或 `page`），批量读完整定义时加 `--full`。分析类型结构或具体契约时，运行 `./horizon-cli <类型> schema [标识@版本]`。CLI 未构建或定义刚改动时，从根目录用 `go run ./foundation/cmd/horizon-cli` 执行相同参数。命令和输出见 [Horizon CLI](../../../docs/local-development.md#horizon-cli)。
 
 在新增能力或写业务逻辑前，执行 [能力发现与复用步骤](../../../docs/agent-workflow.md#能力复用优先先发现再复用最后新增)。搜索实际 Entries/Definition、共享装配与流程、Schema 和测试，核对版本、输入输出、权限/范围、风险/审批、幂等、事务/事件及敏感数据。优先直接复用已有动作，其次经 Gateway 组合，再考虑在原模块兼容扩展；确有独立业务缺口才新增。在架构决策中简述“需求动作 → 已有候选/版本 → 复用、组合、扩展或新增及原因”。
 

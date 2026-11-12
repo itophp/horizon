@@ -49,17 +49,6 @@
   padding: 1rem;
   border-radius: var(--radius);
 }
-.runtime-workspace-tabs {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.runtime-workspace-tabs > span {
-  display: inline-flex;
-  flex-shrink: 0;
-}
 @media (max-width: 640px) {
   .runtime-layout-split,
   .runtime-master-detail {
@@ -67,9 +56,6 @@
   }
   .runtime-master-detail:has(> section) > :first-child {
     display: none;
-  }
-  .runtime-workspace-tabs {
-    max-width: 100%;
   }
 }
 
@@ -82,4 +68,257 @@
   width: min(100vw, 42rem);
   height: 100dvh;
   overflow-y: auto;
+}
+
+/* One surface groups the query, results and paging; emphasis belongs to content. */
+.runtime-list {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+  overflow: clip;
+}
+.runtime-list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.runtime-list-toolbar > label {
+  display: grid;
+  gap: 8px;
+  min-width: 140px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.runtime-list-toolbar > label:has([data-slot="input"]) {
+  flex: 1 1 240px;
+  max-width: 360px;
+}
+.runtime-list-toolbar [data-slot="select-trigger"] {
+  width: 100%;
+}
+.runtime-list-actions {
+  margin-inline-start: auto;
+}
+.runtime-list-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.runtime-list td a {
+  font-weight: 500;
+  text-underline-offset: 4px;
+}
+.runtime-list td a:hover {
+  text-decoration: underline;
+}
+.runtime-column-settings {
+  display: grid;
+  gap: 16px;
+}
+.runtime-column-settings label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .runtime-list-toolbar {
+    padding: 16px;
+    gap: 12px;
+  }
+  .runtime-list-toolbar > label {
+    flex: 1 1 140px;
+  }
+  .runtime-list-toolbar > label:has([data-slot="input"]) {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .runtime-list-actions {
+    margin-inline-start: 0;
+  }
+}
+/* Composition 2.3: tokens and bounded layout options, never user CSS. */
+.runtime-ui-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.runtime-ui-row,
+.runtime-ui-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.runtime-ui-grid,
+.runtime-ui-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+.runtime-ui-cols-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+.runtime-ui-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.runtime-ui-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.runtime-ui-ratio-main-aside {
+  grid-template-columns: minmax(0, 3fr) minmax(240px, 1fr);
+}
+.runtime-ui-ratio-aside-main {
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
+}
+.runtime-ui-gap-none {
+  gap: 0;
+}
+.runtime-ui-gap-sm {
+  gap: 8px;
+}
+.runtime-ui-gap-md {
+  gap: 16px;
+}
+.runtime-ui-gap-lg {
+  gap: 24px;
+}
+.runtime-ui-child {
+  min-width: 0;
+  max-width: 100%;
+}
+.runtime-ui-row > .runtime-ui-child {
+  flex: 1 1 200px;
+}
+.runtime-ui-width-reading {
+  max-width: 80ch;
+  width: 100%;
+  margin-inline: auto;
+}
+.runtime-ui-width-form {
+  max-width: 960px;
+  width: 100%;
+  margin-inline: auto;
+}
+.runtime-ui-section {
+  padding-block: 12px;
+}
+.runtime-ui-section > h2 {
+  font-size: 16px;
+  font-weight: 550;
+  margin-bottom: 16px;
+}
+.runtime-ui-toolbar > .runtime-ui-child {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.runtime-ui-open {
+  min-width: 0;
+}
+.runtime-ui-open > .runtime-ui-child {
+  margin-bottom: 12px;
+}
+.runtime-ui-child > [data-slot="card"] {
+  box-shadow: none;
+}
+.runtime-markdown {
+  font-size: 14px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.runtime-markdown p {
+  white-space: pre-wrap;
+  margin: 0 0 16px;
+}
+.runtime-markdown h1,
+.runtime-markdown h2,
+.runtime-markdown h3 {
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 24px 0 12px;
+}
+.runtime-markdown h1 {
+  font-size: 26px;
+}
+.runtime-markdown h2 {
+  font-size: 21px;
+}
+.runtime-markdown h3 {
+  font-size: 17px;
+}
+.runtime-markdown pre {
+  padding: 16px;
+  background: var(--muted);
+  overflow: auto;
+  border-radius: 8px;
+}
+.runtime-markdown ul,
+.runtime-markdown ol {
+  padding-inline-start: 24px;
+  margin-block: 12px;
+}
+.runtime-markdown ul {
+  list-style: disc;
+}
+.runtime-markdown ol {
+  list-style: decimal;
+}
+.runtime-markdown a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.runtime-markdown table {
+  display: block;
+  overflow: auto;
+  border-collapse: collapse;
+}
+.runtime-markdown td,
+.runtime-markdown th {
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+.runtime-markdown blockquote {
+  border-inline-start: 3px solid var(--border);
+  padding-inline-start: 16px;
+  color: var(--muted-foreground);
+}
+@media (max-width: 768px) {
+  .runtime-ui-grid,
+  .runtime-ui-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .runtime-ui-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .runtime-ui-row > .runtime-ui-child {
+    flex: auto;
+  }
+  .runtime-ui-toolbar {
+    align-items: stretch;
+  }
+  .runtime-ui-toolbar > .runtime-ui-child {
+    width: 100%;
+  }
+}
+.runtime-sheet {
+  padding: 24px;
+  max-width: 42rem !important;
+  width: min(100vw, 42rem) !important;
+  overflow: auto;
+}
+.runtime-sheet [data-slot="sheet-header"] {
+  padding: 0;
 }

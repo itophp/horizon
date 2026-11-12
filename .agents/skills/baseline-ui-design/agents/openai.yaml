@@ -1,0 +1,4 @@
+interface:
+  display_name: "业务页面 UI 设计"
+  short_description: "Design task-driven Runtime layouts and review visual quality"
+  default_prompt: "Use $baseline-ui-design to plan and review this business page."

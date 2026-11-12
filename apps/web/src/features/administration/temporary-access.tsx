@@ -22,7 +22,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { useSession } from "./auth";
 import { PermissionMatrix, permissionFunctionLabel } from "./permission-matrix";
-import { FormField } from "./forms";
+import { FormField } from "@/components/shared/form-field";
 import {
   PageHeading,
   DataTable,

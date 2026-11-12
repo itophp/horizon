@@ -119,7 +119,7 @@ Gateway 风险确认与业务人工审核分别设计。前者允许执行一个
 
 | 唯一事实源 | 作用 | 生成 / 验证 |
 |---|---|---|
-| Goa `services/design` | 会话、系统、公开投影、能力/AI 传输信封 | Goa/OpenAPI/Orval |
+| Goa `foundation/design` | 会话、系统、公开投影、能力/AI 传输信封 | Goa/OpenAPI/Orval |
 | 模块 Definition/Entries | 业务输入输出与执行政策 | Schema 校验、Registry、工具适配；对外允许集另行维护 |
 | SQL migrations/query | 物理结构与范围查询 | Goose、sqlc、隔离 PostgreSQL 测试 |
 | 模块 entity_*.go | 字段分类、关系与状态语义 | metadata 对照迁移和能力做 E1–E10 校验 |

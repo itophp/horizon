@@ -4,8 +4,6 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
-import { ListTree, SlidersHorizontal } from "lucide-react";
 import {
   filesList,
   settingsWorkspace,
@@ -16,11 +14,7 @@ import {
 import type { ConfigEntry } from "@/api/generated/models";
 import type { ConfigTarget, ConfigDefinition, ChangeEntry } from "@/api/types";
 import { useSession } from "@/features/administration/auth";
-import {
-  PageHeading,
-  ErrorBanner,
-  Loading,
-} from "@/features/administration/shared";
+import { ErrorBanner, Loading } from "@/features/administration/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +25,6 @@ import {
   downloadContent,
 } from "./shared";
 import { useConfiguration } from "./runtime";
-import { DictionarySection } from "./dictionaries";
 
 const personalDefinitions: ConfigDefinition[] = [
   ...[
@@ -55,18 +48,17 @@ const personalDefinitions: ConfigDefinition[] = [
     sensitive: false,
   })),
 ];
-export function SettingsPage({ personal = false }: { personal?: boolean }) {
+export function SettingsConfigPanel({
+  personal = false,
+  readOnly = false,
+}: {
+  personal?: boolean;
+  readOnly?: boolean;
+}) {
   const { t } = useTranslation("governance");
   const session = useSession();
   const runtime = useConfiguration();
-  const [params, setParams] = useSearchParams();
   const canSettings = session.permissions.includes("settings:read");
-  const canDictionaries = session.permissions.includes("dictionaries:read");
-  const views: ("config" | "fields")[] = [];
-  if (canSettings) views.push("config");
-  if (canDictionaries) views.push("fields");
-  const requested = params.get("tab");
-  const view = views.find((item) => item === requested) ?? views[0];
   const target = { kind: "workspace" as const, id: 0 };
   const task = useGovTask();
   const query = useQuery({
@@ -76,30 +68,29 @@ export function SettingsPage({ personal = false }: { personal?: boolean }) {
     enabled: !personal && canSettings,
     retry: false,
   });
-  if (!personal && !views.length) return <NoAccess />;
+  if (!personal && !canSettings) return <NoAccess />;
   const data = query.data?.status === 200 ? query.data.data : undefined;
-  const showConfig = personal || view === "config";
   return (
     <>
-      <PageHeading
-        title={t(personal ? "preferences" : "settings")}
-        subtitle={t(personal ? "preferencesHint" : "settingsHint")}
-      >
-        {!personal &&
-          view === "config" &&
-          session.permissions.includes("settings:export") && (
+      {!personal && (
+        <div className="gov-toolbar">
+          <span className="muted-text">
+            {t("revision", { version: data?.revision ?? 0 })}
+          </span>
+          {!readOnly && session.permissions.includes("settings:export") && (
             <Button
               variant="outline"
+              disabled={task.isPending}
               onClick={() =>
                 task.mutate(async () => {
-                  const r = await settingsExport({
+                  const response = await settingsExport({
                     targetKind: target.kind,
                     targetId: target.id,
                   });
-                  if (r.status === 200)
+                  if (response.status === 200)
                     downloadContent(
                       "settings.json",
-                      JSON.stringify(r.data, null, 2),
+                      JSON.stringify(response.data, null, 2),
                       "application/json",
                     );
                 })
@@ -108,70 +99,43 @@ export function SettingsPage({ personal = false }: { personal?: boolean }) {
               {t("export")}
             </Button>
           )}
-      </PageHeading>
-      {!personal && views.length > 1 && (
-        <div className="admin-page-tabs">
-          <button
-            className={view === "config" ? "active" : ""}
-            onClick={() => setParams({ tab: "config" })}
-          >
-            <SlidersHorizontal size={15} />
-            {t("generalTab")}
-          </button>
-          <button
-            className={view === "fields" ? "active" : ""}
-            onClick={() => setParams({ tab: "fields" })}
-          >
-            <ListTree size={15} />
-            {t("fieldsTab")}
-          </button>
         </div>
       )}
-      {!showConfig ? (
-        <DictionarySection />
+      {task.error && <ErrorBanner error={task.error} />}{" "}
+      {personal ? (
+        <SettingsForm
+          key={runtime.entries.length ? "ready" : "loading"}
+          definitions={personalDefinitions}
+          entries={runtime.entries}
+          target={{ kind: "account", id: session.account.id }}
+          revision={0}
+          readOnly={readOnly}
+          personal
+        />
+      ) : query.isPending ? (
+        <Loading />
+      ) : query.error ? (
+        <ErrorBanner error={query.error} onRetry={() => void query.refetch()} />
       ) : (
-        <>
-          {!personal && (
-            <div className="gov-toolbar">
-              <span className="muted-text">
-                {t("revision", { version: data?.revision ?? 0 })}
-              </span>
-            </div>
-          )}
-          {task.error && <ErrorBanner error={task.error} />}{" "}
-          {personal ? (
+        data && (
+          <>
             <SettingsForm
-              key={runtime.entries.length ? "ready" : "loading"}
-              definitions={personalDefinitions}
-              entries={runtime.entries}
-              target={{ kind: "account", id: session.account.id }}
-              revision={0}
-              personal
+              key={`${target.kind}:${target.id}:${data.revision}`}
+              definitions={data.definitions}
+              entries={data.entries}
+              target={target}
+              revision={data.revision}
+              readOnly={readOnly}
             />
-          ) : query.isPending ? (
-            <Loading />
-          ) : query.error ? (
-            <ErrorBanner error={query.error} />
-          ) : (
-            data && (
-              <>
-                <SettingsForm
-                  key={`${target.kind}:${target.id}:${data.revision}`}
-                  definitions={data.definitions}
-                  entries={data.entries}
-                  target={target}
-                  revision={data.revision}
-                />
-                <ChangeHistory
-                  drafts={data.drafts}
-                  history={data.history}
-                  domain="settings"
-                  revision={data.revision}
-                />
-              </>
-            )
-          )}
-        </>
+            <ChangeHistory
+              drafts={data.drafts}
+              history={data.history}
+              domain="settings"
+              revision={data.revision}
+              readOnly={readOnly}
+            />
+          </>
+        )
       )}
     </>
   );
@@ -192,19 +156,22 @@ function SettingsForm({
   target,
   revision,
   personal = false,
+  readOnly = false,
 }: {
   definitions: ConfigDefinition[];
   entries: ConfigEntry[];
   target: ConfigTarget;
   revision: number;
   personal?: boolean;
+  readOnly?: boolean;
 }) {
   const { t } = useTranslation("governance");
   const session = useSession();
   const task = useGovTask();
   const [group, setGroup] = useState(definitions[0]?.group ?? "display");
   const [notice, setNotice] = useState(false);
-  const writable = personal || session.permissions.includes("settings:update");
+  const writable =
+    !readOnly && (personal || session.permissions.includes("settings:update"));
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -232,6 +199,7 @@ function SettingsForm({
     <form
       className="gov-settings"
       onSubmit={form.handleSubmit((values) => {
+        if (!writable) return;
         if (!personal && values.reason.trim().length < 5) {
           form.setError("reason", { message: "invalid" });
           return;

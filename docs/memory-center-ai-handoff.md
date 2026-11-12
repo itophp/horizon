@@ -10,14 +10,14 @@
 
 | 位置 | 内容 |
 | --- | --- |
-| `services/kernel/memory/event.go` | Canonical Event Envelope、Collector、事件类型及载荷白名单策略。 |
-| `services/db/migrations/00026_memory_events.sql`、`services/db/query/memory.sql` | 事件、消费进度、记忆、来源、关系、纠正、审计、保留策略，以及租户和范围约束查询。`dbgen` 由 sqlc 生成。 |
-| `services/system/memory/` | 能力注册、实体声明、消费器、观察队列、记忆管理、范围授权、保留策略和重放。 |
-| `services/runtime/app/capabilities.go`、`entities.go` | 模块及实体装配。 |
-| `services/runtime/transport/memory_observation.go`、`services/kernel/capability/gateway/observation.go`、`services/kernel/workflow/observation.go` | HTTP、Gateway 和 Workflow 观测接入。 |
+| `foundation/kernel/memory/event.go` | Canonical Event Envelope、Collector、事件类型及载荷白名单策略。 |
+| `foundation/db/migrations/00026_memory_events.sql`、`foundation/db/query/memory.sql` | 事件、消费进度、记忆、来源、关系、纠正、审计、保留策略，以及租户和范围约束查询。`dbgen` 由 sqlc 生成。 |
+| `foundation/system/memory/` | 能力注册、实体声明、消费器、观察队列、记忆管理、范围授权、保留策略和重放。 |
+| `foundation/runtime/app/capabilities.go`、`entities.go` | 模块及实体装配。 |
+| `foundation/runtime/transport/memory_observation.go`、`foundation/kernel/capability/gateway/observation.go`、`foundation/kernel/workflow/observation.go` | HTTP、Gateway 和 Workflow 观测接入。 |
 | `apps/web/src/lib/activity.ts`、`features/administration/activity-capture.tsx` | 已验证会话的页面访问和白名单交互采集；配置项为 `memory.activitySamplePercent`。 |
-| `services/cmd/capabilitysdk/`、`apps/web/src/api/generated/capability-memory.ts`、`apps/web/src/lib/capabilities.ts` | 从能力定义生成的 TypeScript 类型及 Gateway 调用包装。禁止手改生成文件。 |
-| `services/tests/memory_*_test.go` | 隔离 PostgreSQL 上的 Memory 功能、授权、消费和恢复测试。 |
+| `foundation/cmd/capabilitysdk/`、`apps/web/src/api/generated/capability-memory.ts`、`apps/web/src/lib/capabilities.ts` | 从能力定义生成的 TypeScript 类型及 Gateway 调用包装。禁止手改生成文件。 |
+| `foundation/tests/memory_*_test.go` | 隔离 PostgreSQL 上的 Memory 功能、授权、消费和恢复测试。 |
 
 ## 已实现行为与边界
 

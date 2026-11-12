@@ -44,7 +44,7 @@ export function TaskPanel({ runId }: { runId: number }) {
         if (!Number.isSafeInteger(n) || n < sequence) return;
         sequence = n;
         if (["RUN_FINISHED", "RUN_ERROR"].includes(event.type))
-          void client.invalidateQueries({ queryKey: ["runtime-v2"] });
+          void client.invalidateQueries({ queryKey: ["protocol-v3"] });
         void client.invalidateQueries({
           queryKey: ["runtime-task", identity, runId],
         });
@@ -60,7 +60,7 @@ export function TaskPanel({ runId }: { runId: number }) {
       void client.invalidateQueries({
         predicate: (query) =>
           typeof query.queryKey[0] === "string" &&
-          (query.queryKey[0] === "runtime-v2" ||
+          (query.queryKey[0] === "protocol-v3" ||
             query.queryKey[0].startsWith("runtime-design")),
       });
   }, [terminal, client]);

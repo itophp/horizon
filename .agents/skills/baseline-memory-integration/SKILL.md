@@ -5,7 +5,7 @@ description: "开发或评估 Memory Center 的采集、摄取、检索、来源
 
 # Memory Center 开发与接入
 
-先读 [Memory 开发规范](../../../docs/memory-center-development.md)、[当前实现边界](../../../docs/memory-center-ai-handoff.md)及 [安全约定](../../../docs/security.md#memory-center-当前实现边界)。按涉及层加载 security、database-change、capability-composition；人工管理界面确有修改时再加载 web-development。
+先读 [Memory 开发规范](../../../docs/memory-center-development.md)、[当前实现边界](../../../docs/memory-center-ai-handoff.md)及 [安全约定](../../../docs/security.md#memory-center-当前实现边界)。实现位于 `foundation/kernel/memory/` 和 `foundation/system/memory/`，按 [底座规则](../../../foundation/AGENTS.md) 与实际采集调用方核对。按涉及层加载 security、database-change、capability-composition；人工管理界面确有修改时再加载 web-development。
 
 1. 明确记忆用途、读取者、作用域、敏感分类、来源、有效期和纠正/撤销机制。Memory 独立于业务界面开发，不为普通页面增加记忆步骤，也不要求无记忆需求的任务填“不适用”。
 2. 检查实际 Entries、范围 SQL、采集点、消费器和测试。复用已有 HTTP/Gateway、事务 Outbox、Agent/Workflow 采集；事件摄取不等于长期记忆，内存观测队列不等于持久审计。未知来源和资源默认拒绝。

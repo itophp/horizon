@@ -13,7 +13,7 @@
 | 品牌 Logo | brandingLogo（部署绑定公开）/ settingsLogo（本人有效品牌） | 已发布品牌绑定，不能公开任意上传文件 |
 | 通知 | notificationsInbox / notificationsMessage / notificationsRead / 本人偏好 | notifications.Service、事务事件及持久化投递；新事件类型需扩展受控契约 |
 
-唯一 API 源为 services/design，SQL 源为 services/db/migrations 与 query，客户端使用 apps/web/src/api/generated；生成物不可手改。页面与业务服务不能直接写 gov_values、手工拼选项、裸 fetch 上传、公开服务器目录或自行发送 SMTP。
+唯一 API 源为 foundation/design，SQL 源为 foundation/db/migrations 与 query，客户端使用 apps/web/src/api/generated；生成物不可手改。页面与业务服务不能直接写 gov_values、手工拼选项、裸 fetch 上传、公开服务器目录或自行发送 SMTP。
 
 新增参数必须有后端真实消费者、受控默认值/验证和双语文案；敏感值仅服务端读取。静态字典与受控动态实体选项分开，关键状态/权限枚举保留契约。文件关联如果需要业务实体级权限，先扩展统一绑定和授权 SQL，不能只隐藏链接。
 

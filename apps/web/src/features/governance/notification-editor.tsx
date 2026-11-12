@@ -61,10 +61,16 @@ export function NotificationEditor({
   value,
   onChange,
   readOnly,
+  inputId,
+  ariaLabel,
+  onBlur,
 }: {
   value: string;
   onChange: (markdown: string) => void;
   readOnly?: boolean;
+  inputId?: string;
+  ariaLabel?: string;
+  onBlur?: () => void;
 }) {
   const { t } = useTranslation("governance");
   const translate = useCallback<Translation>(
@@ -78,8 +84,14 @@ export function NotificationEditor({
     [t],
   );
   return (
-    <div className="notification-editor-shell">
+    <div
+      className="notification-editor-shell"
+      id={inputId}
+      role="group"
+      aria-label={ariaLabel}
+    >
       <MDXEditor
+        onBlur={onBlur}
         className="notification-editor notification-editor-surface"
         contentEditableClassName="notification-editor-content"
         markdown={value}

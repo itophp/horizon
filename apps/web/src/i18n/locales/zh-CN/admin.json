@@ -73,6 +73,13 @@
     "shortcut": "K"
   },
   "overview": {
+    "noRecentActivity": "暂无最近创建记录。",
+    "activityKind": {
+      "account": "账号",
+      "organization": "组织",
+      "department": "部门",
+      "role": "角色"
+    },
     "eyebrow": "运营数据一览",
     "title": "数据统计",
     "subtitle": "掌握账号、组织与权限，让日常管理更清晰。",
@@ -91,6 +98,8 @@
     "chartSubtitle": "最近 7 天的累计账号数量",
     "sevenDays": "最近 7 天",
     "distribution": "部门账号分布",
+    "departmentShare": "部门成员占比",
+    "departmentShareHint": "按图中部门的成员数合计计算。同一账号可归属多个部门。",
     "scopeNote": "仅展示你有权访问的数据范围。",
     "recentAccounts": "最近新增账号",
     "viewAll": "查看全部账号",
@@ -206,7 +215,10 @@
     "function": "二级功能",
     "identityModule": "基础管理",
     "accessModule": "权限管理",
-    "notApplicable": "不适用"
+    "notApplicable": "不适用",
+    "permission": "权限",
+    "effect": "效果",
+    "grants": "权限授予"
   },
   "fields": {
     "username": "登录账号",
@@ -256,7 +268,7 @@
     "expired": "登录状态已失效，请重新登录。",
     "forbidden": "你没有此操作权限，或目标不在授权数据范围内。",
     "not_found": "记录不存在，或不在授权数据范围内。",
-    "conflict": "编码或账号可能已存在，记录正在被使用，或涉及受保护的管理员。",
+    "conflict": "数据已变化或与已有记录冲突，请刷新后重试。",
     "unavailable": "服务尚未就绪，请检查 API 和数据库连接。",
     "internal": "操作未能完成，请稍后重试。",
     "rate_limited": "登录尝试过于频繁，请稍后再试。"

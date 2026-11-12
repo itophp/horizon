@@ -11,3 +11,5 @@ coverage/
 .DS_Store
 .local/
 .workbuddy/
+/horizon-cli
+/horizon-cli.exe

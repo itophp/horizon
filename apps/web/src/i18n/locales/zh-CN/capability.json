@@ -114,6 +114,10 @@
     "forbidden": "禁止智能体执行"
   },
   "definitions": {
+    "settings_history_rollback": {
+      "title": "回滚系统设置",
+      "description": "从已发布的设置版本创建一个新修订。"
+    },
     "knowledge_search": {
       "title": "知识检索",
       "description": "在工作区知识库中检索制度、配置与已上传文档。"

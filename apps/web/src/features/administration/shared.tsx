@@ -14,7 +14,6 @@ import {
   AlertCircle,
   Check,
   X,
-  Trash2,
   MoreHorizontal,
 } from "lucide-react";
 import {
@@ -22,12 +21,6 @@ import {
   getIdentityMeQueryKey,
   useIdentitySnapshot,
 } from "@/api/generated/baseline";
-import {
-  identityDeleteAccount,
-  identityDeleteOrganization,
-  identityDeleteDepartment,
-  identityDeleteRole,
-} from "@/lib/capabilities";
 import type { AdminSnapshot } from "@/api/generated/models";
 import { ApiError } from "@/api/client/request";
 import { Button } from "@/components/ui/button";
@@ -53,7 +46,6 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-export type Resource = "accounts" | "organizations" | "departments" | "roles";
 const empty: AdminSnapshot = {
   accounts: [],
   organizations: [],
@@ -559,75 +551,5 @@ export function EditorDialog({
         {children}
       </DialogContent>
     </Dialog>
-  );
-}
-const deletions = {
-  accounts: identityDeleteAccount,
-  organizations: identityDeleteOrganization,
-  departments: identityDeleteDepartment,
-  roles: identityDeleteRole,
-};
-export function DeleteDialog({
-  target,
-  resource,
-  onClose,
-  onDeleted,
-}: {
-  target: { id: number; name: string } | null;
-  resource: Resource;
-  onClose: () => void;
-  onDeleted: () => void;
-}) {
-  const { t } = useTranslation();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const refresh = useRefreshAdmin();
-  async function remove() {
-    if (!target) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await deletions[resource](target.id);
-      await refresh();
-      onDeleted();
-      onClose();
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <EditorDialog
-      open={!!target}
-      onOpenChange={(open) => {
-        if (!open) {
-          setError(null);
-          onClose();
-        }
-      }}
-      title={t("admin:feedback.deleteTitle")}
-      description={t("admin:feedback.deleteDescription", {
-        name: target?.name ?? "",
-      })}
-    >
-      {!!error && <ErrorBanner error={error} />}
-      <div className="editor-footer">
-        <Button type="button" variant="outline" onClick={onClose}>
-          {t("admin:actions.cancel")}
-        </Button>
-        <Button
-          type="button"
-          className="destructive-button"
-          disabled={busy}
-          onClick={() => {
-            void remove();
-          }}
-        >
-          <Trash2 size={14} />
-          {busy ? t("admin:actions.saving") : t("admin:actions.delete")}
-        </Button>
-      </div>
-    </EditorDialog>
   );
 }

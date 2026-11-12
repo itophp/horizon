@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 -include .env
 export
-.PHONY: install tools dev dev-api db-up db-down migrate generate check-generated check-entities check-workflows generate-workflows test-orchestration-example format format-check lint typecheck test build test-integration test-e2e test-e2e-smoke test-e2e-changed test-e2e-parallel test-webmcp-e2e check-rules ci-fast test-security bootstrap ci
+.PHONY: horizon-cli install tools dev dev-api db-up db-down migrate generate check-generated check-entities check-workflows generate-workflows test-orchestration-example format format-check lint typecheck test build test-integration test-e2e test-e2e-smoke test-e2e-changed test-e2e-parallel test-webmcp-e2e check-rules ci-fast test-security bootstrap ci
 install:
 	pnpm install --frozen-lockfile
 
@@ -10,6 +10,9 @@ tools:
 
 bootstrap:
 	./scripts/go.sh run ./cmd/bootstrap
+
+horizon-cli:
+	./scripts/go.sh build -trimpath -o ../horizon-cli ./cmd/horizon-cli
 
 dev:
 	pnpm dev
@@ -28,8 +31,8 @@ migrate:
 
 generate:
 	$(MAKE) generate-workflows
-	./scripts/go.sh run goa.design/goa/v3/cmd/goa gen baseline/services/api/design
-	cd services && ../.tools/bin/sqlc generate
+	./scripts/go.sh run goa.design/goa/v3/cmd/goa gen horizon/foundation/design
+	cd foundation && ../.tools/bin/sqlc generate
 	pnpm --filter @baseline/web generate
 	./scripts/go.sh run ./cmd/runtimespec
 	./scripts/go.sh run ./cmd/capabilitysdk
@@ -64,19 +67,19 @@ format-check:
 
 lint:
 	pnpm lint
-	./scripts/go.sh vet ./...
+	./scripts/go.sh vet ./... ../applications/...
 
 typecheck:
 	pnpm typecheck
 
 test:
 	pnpm test
-	./scripts/go.sh test ./...
+	./scripts/go.sh test ./... ../applications/...
 	pnpm i18n:check
 
 build:
 	pnpm build
-	./scripts/go.sh build ./...
+	./scripts/go.sh build ./... ../applications/...
 
 test-integration:
 	./scripts/go.sh test -tags=integration -count=1 -v ./tests/...

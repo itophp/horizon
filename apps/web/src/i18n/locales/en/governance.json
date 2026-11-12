@@ -133,6 +133,7 @@
   "currentValue": "Current value",
   "draftValue": "Draft value",
   "key": "Setting",
+  "fieldOperation": "{{field}} · Operation",
   "operation": "Operation",
   "set": "Set value",
   "reset": "Restore default",
@@ -272,7 +273,10 @@
     "run": "Run workflow",
     "cancel": "Cancel workflow",
     "write": "Write articles",
-    "review": "Review articles"
+    "review": "Review articles",
+    "design": "Design",
+    "manage": "Manage",
+    "archive": "Archive"
   },
   "noLogo": "Default brand mark",
   "logoHint": "Upload a PNG/JPEG logo from Attachments, then select it here.",

@@ -4,8 +4,8 @@ import { spawnSync } from "node:child_process";
 const roots = [
   "docs/generated/workflows",
   "docs/generated/runtime",
-  "services/gen",
-  "services/internal/repository/dbgen",
+  "foundation/gen",
+  "internal/repository/dbgen",
   "apps/web/src/api/generated",
 ];
 async function snapshot() {

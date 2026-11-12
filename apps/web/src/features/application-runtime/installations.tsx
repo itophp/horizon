@@ -3,6 +3,7 @@ import { Settings2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ApiError } from "@/api/client/request";
 import { runtimeRead, runtimeExecute } from "@/lib/capabilities";
 import {
   runtimeInstallationCatalogSchema,
@@ -80,68 +81,79 @@ export function InstallationsPage() {
     {
       id: "actions",
       header: t("actions"),
-      cell: (row) => (
-        <RowActions
-          actions={
-            canManage
-              ? [
-                  ...(!row.installation ||
-                  row.installation.status === "uninstalled"
-                    ? ["install"]
-                    : row.installation.status === "enabled"
-                      ? ["disable", "check", "uninstall"]
-                      : ["enable", "check", "uninstall"]),
-                  ...(row.installation &&
-                  row.installation.version !== row.candidate.version
-                    ? ["upgrade"]
-                    : []),
-                  ...(row.installation?.previousVersion &&
-                  q.data?.candidates.some(
-                    (candidate) =>
-                      candidate.pluginId === row.candidate.pluginId &&
-                      candidate.version === row.installation?.previousVersion,
-                  )
-                    ? ["rollback"]
-                    : []),
-                ]
-                  .map((action) => ({
-                    label: t(`installationActions.${action}`),
-                    danger: action === "uninstall",
-                    icon: <Settings2 size={14} />,
-                    onClick: () => {
-                      setChoice({ ...row, action });
-                      setError(undefined);
-                      setIssues(undefined);
-                    },
-                  }))
-                  .concat(
-                    (q.data?.applications ?? [])
-                      .filter(
-                        (app) =>
-                          app.pluginId === row.candidate.pluginId &&
-                          row.installation?.status !== "uninstalled",
-                      )
-                      .map((app) => ({
-                        label: `${app.applicationId}: ${t(`installationActions.${app.enabled ? "disable" : "enable"}`)}`,
-                        danger: false,
-                        icon: <Settings2 size={14} />,
-                        onClick: () => {
-                          setChoice({
-                            ...row,
-                            applicationId: app.applicationId,
-                            action: app.enabled
-                              ? "application.disable"
-                              : "application.enable",
-                          });
-                          setError(undefined);
-                          setIssues(undefined);
-                        },
-                      })),
-                  )
-              : []
-          }
-        />
-      ),
+      cell: (row) => {
+        const currentAvailable = q.data?.candidates.some(
+          (candidate) =>
+            candidate.pluginId === row.candidate.pluginId &&
+            candidate.version === row.installation?.version,
+        );
+        return (
+          <RowActions
+            actions={
+              canManage
+                ? [
+                    ...(!row.installation ||
+                    row.installation.status === "uninstalled"
+                      ? ["install"]
+                      : !currentAvailable
+                        ? ["check"]
+                        : row.installation.status === "enabled"
+                          ? ["disable", "check", "uninstall"]
+                          : ["enable", "check", "uninstall"]),
+                    ...(row.installation &&
+                    row.installation.status !== "uninstalled" &&
+                    row.installation.version !== row.candidate.version
+                      ? ["upgrade"]
+                      : []),
+                    ...(row.installation?.previousVersion &&
+                    q.data?.candidates.some(
+                      (candidate) =>
+                        candidate.pluginId === row.candidate.pluginId &&
+                        candidate.version === row.installation?.previousVersion,
+                    )
+                      ? ["rollback"]
+                      : []),
+                  ]
+                    .map((action) => ({
+                      label: t(`installationActions.${action}`),
+                      danger: action === "uninstall",
+                      icon: <Settings2 size={14} />,
+                      onClick: () => {
+                        setChoice({ ...row, action });
+                        setError(undefined);
+                        setIssues(undefined);
+                      },
+                    }))
+                    .concat(
+                      (q.data?.applications ?? [])
+                        .filter(
+                          (app) =>
+                            app.pluginId === row.candidate.pluginId &&
+                            currentAvailable &&
+                            row.installation?.status !== "uninstalled",
+                        )
+                        .map((app) => ({
+                          label: `${app.applicationId}: ${t(`installationActions.${app.enabled ? "disable" : "enable"}`)}`,
+                          danger: false,
+                          icon: <Settings2 size={14} />,
+                          onClick: () => {
+                            setChoice({
+                              ...row,
+                              applicationId: app.applicationId,
+                              action: app.enabled
+                                ? "application.disable"
+                                : "application.enable",
+                            });
+                            setError(undefined);
+                            setIssues(undefined);
+                          },
+                        })),
+                    )
+                : []
+            }
+          />
+        );
+      },
     },
   ];
   return (
@@ -228,7 +240,10 @@ export function InstallationsPage() {
                       crypto.randomUUID(),
                     );
                     if (result.status !== "succeeded")
-                      throw new Error(result.errorCode || "unavailable");
+                      throw new ApiError(
+                        result.errorCode || "unavailable",
+                        400,
+                      );
                     await client.invalidateQueries({
                       predicate: (query) =>
                         typeof query.queryKey[0] === "string" &&

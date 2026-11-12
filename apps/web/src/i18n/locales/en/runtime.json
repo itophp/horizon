@@ -134,5 +134,15 @@
     "previewPage": "Preview page",
     "previewParameter": "Route parameter: {{name}}",
     "previewLoad": "Load authorized preview"
+  },
+  "refresh": "Refresh",
+  "protocol": {
+    "heading": "Runtime protocol preview",
+    "subtitle": "A Schema-driven page reading the authorized account directory.",
+    "nav": "Runtime protocol",
+    "empty": "No matching records.",
+    "componentMissing": "Component {{component}} is unavailable.",
+    "eventFailed": "The page action could not be completed.",
+    "eventFailedTitle": "Action failed"
   }
 }

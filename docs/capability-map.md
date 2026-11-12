@@ -426,7 +426,7 @@ xxh-baseline/
 
 | 文件 | 作用 |
 |---|---|
-| `mcp/hub.tsx` | `/mcp` 三个标签：MCP Server、WebMCP、WebSkills。 |
+| `foundation/runtime/app/platform_pages.go` | `/mcp` 的 V3 页面定义，包含 MCP Server、WebMCP、WebSkills 三个标签。 |
 | `mcp/remote.tsx` | 账号级令牌面板：创建（秘密只显示一次）、列表、撤销、轮换、审计。 |
 | `webmcp/provider.tsx` | `WebMcpProvider`：显式连接、页面工具注册/撤销、`usePageTools`。 |
 | `webmcp/settings.tsx` | 本机服务连接表单（端口/配对密钥，开发服务器自动预填）。 |

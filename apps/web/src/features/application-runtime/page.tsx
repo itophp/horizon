@@ -1,15 +1,17 @@
-import { Suspense } from "react";
-import { ContributionBoundary } from "./contributions";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/features/administration/auth";
 import { runtimeApplication } from "@/lib/capabilities";
 import { ErrorBanner, Loading } from "@/features/administration/shared";
-import { validateDefinition, LocalBoundary, Diagnostic } from "./v2-registry";
 import { ApiError } from "@/api/client/request";
-import { PageView } from "./page-view";
-export { EmbeddedPage } from "./page-view";
+import {
+  validateDefinition,
+  LocalBoundary,
+  Diagnostic,
+} from "./definition-validation";
+import { ProtocolPage } from "./protocol";
 import "./runtime.css";
+
 export function ApplicationPage({
   applicationId,
   pageId,
@@ -37,6 +39,7 @@ export function ApplicationPage({
     </LocalBoundary>
   );
 }
+
 function ApplicationLoader({
   applicationId,
   pageId,
@@ -60,7 +63,6 @@ function ApplicationLoader({
       <DefinitionView
         application={query.data}
         pageId={pageId}
-        identity={identity}
         readOnly={query.isError}
       />
     );
@@ -77,39 +79,37 @@ function ApplicationLoader({
     );
   return <Loading />;
 }
+
 function DefinitionView({
   application,
   pageId,
-  identity,
   readOnly,
 }: {
   application: import("@/api/generated/runtime").RuntimeApplicationV2;
   pageId: string;
-  identity: string;
   readOnly: boolean;
 }) {
   const { t } = useTranslation("runtime");
+  const protocol = application.protocol;
+  const protocolPage = protocol?.pages.find((page) => page.id === pageId);
+  if (!protocol || !protocolPage) return <div role="alert">{t("denied")}</div>;
   return (
-    <Suspense fallback={<Loading />}>
-      <ContributionBoundary application={application} enabled={!readOnly}>
-        {(effective, stale) => {
-          const page = effective.pages.find((page) => page.id === pageId);
-          if (!page) return <div role="alert">{t("denied")}</div>;
-          return (
-            <>
-              <div>
-                {readOnly && <p role="alert">{t("definitionExpired")}</p>}
-              </div>
-              <PageView
-                application={effective}
-                page={page}
-                identity={identity}
-                readOnly={readOnly || stale}
-              />
-            </>
-          );
+    <>
+      {readOnly && <p role="alert">{t("definitionExpired")}</p>}
+      <ProtocolPage
+        application={protocol}
+        page={protocolPage}
+        readOnly={readOnly}
+        invocation={{
+          applicationId: application.id,
+          applicationVersion: application.applicationVersion,
+          catalogRevision: application.catalogRevision,
+          definitionDigest: application.definitionDigest,
+          installationRevision: application.installationRevision ?? 1,
+          metadataVersion: application.metadataVersion,
+          pageId: protocolPage.id,
         }}
-      </ContributionBoundary>
-    </Suspense>
+      />
+    </>
   );
 }

@@ -61,5 +61,8 @@
   },
   "notFound": "页面不存在",
   "footer": "以明确契约与可重复验证为基础。",
-  "framework": "工程基础框架"
+  "framework": "工程基础框架",
+  "accessibility": {
+    "breadcrumb": "面包屑导航"
+  }
 }

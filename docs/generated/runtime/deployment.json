@@ -2,8 +2,8 @@
   {
     "dependencyVersions": [],
     "pluginId": "builtin:articles",
-    "version": "1.0.0",
-    "digest": "080c9b25411f40abcf8996c6f0670ccb643b0904ca53f20c9a180740c1cf01d9",
+    "version": "2.0.0",
+    "digest": "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
     "applications": [
       "articles"
     ],
@@ -11,9 +11,92 @@
   },
   {
     "dependencyVersions": [],
-    "pluginId": "com.horizon.projects",
+    "pluginId": "system.identity",
+    "version": "2.3.0",
+    "digest": "350d42d713fdff90a3f0735ca9b58f31e8a170e1a19629562c9439e6c4e948f9",
+    "applications": [
+      "permissions",
+      "organizations",
+      "accounts",
+      "runtime-protocol"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:capabilities",
+    "version": "1.0.1",
+    "digest": "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
+    "applications": [
+      "capabilities"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:analytics",
     "version": "1.0.0",
-    "digest": "c2c79ca9edbbb58194348881527d1bd54e18faf13662eae996d18f7d8f338c5b",
+    "digest": "e1bab3048f153d85e7e8131b3c6ad0391087d5c8ec4cc5fadd0b8b6a5757ce61",
+    "applications": [
+      "analytics"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:analytics",
+    "version": "1.0.1",
+    "digest": "718e020fd465cd652a8acbc6d6cf78b8e940b4c40499bcb324b2efd9fda53275",
+    "applications": [
+      "analytics"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:agent-collaboration",
+    "version": "1.0.0",
+    "digest": "26687aa606b98c903034ebd3284118cbb40629f6bed85cb73b9ffdc014fa5189",
+    "applications": [
+      "agent-collaboration"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:personal-preferences",
+    "version": "1.0.0",
+    "digest": "2a3963f06b330feca87779ec56ce0b589ff7475238c064579633e1accd8990e9",
+    "applications": [
+      "personal-preferences"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:personal-preferences",
+    "version": "1.0.1",
+    "digest": "6148a35590188950bac9206ba917a2493acb141a93dab8e7c4ce5e36c303c1f6",
+    "applications": [
+      "personal-preferences"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:system-settings",
+    "version": "1.0.0",
+    "digest": "7f1821650d96254ee52f856abff305dac37a32a7a45f1e0a1d314b7195487009",
+    "applications": [
+      "system-settings"
+    ],
+    "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "com.horizon.projects",
+    "version": "2.0.0",
+    "digest": "310af6a5671a3d73aa67877eca1eb3d3c401de1d019c2876003d98bad8f0734f",
     "applications": [
       "projects"
     ],

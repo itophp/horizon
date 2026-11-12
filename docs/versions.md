@@ -151,3 +151,7 @@ SDK 与 x/time 是应用直接依赖，其余由 SDK 引入；全部由 go.mod/g
 复用已在锁文件中的 github.com/google/jsonschema-go v0.4.3（MIT），仅提升为直接依赖，没有升级版本。已核对该版本本地 ForType/Resolve/Validate API、递归类型限制及许可证；工作流字段由实际 Go 类型反射，递归能力 Schema 使用本地 $defs，预算常量与运行时共享。遵循 [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12)，不扩展 contracts.Schema 未实现的输入关键字，也不把结构验证替代运行时授权。
 
 2026-11-04 插件清单：将已锁定的传递依赖 `gopkg.in/yaml.v3 v3.0.1` 提升为直接依赖，不升级版本；使用 `Decoder.KnownFields` 严格拒绝未知字段。已核对 [v3.0.1 API](https://pkg.go.dev/gopkg.in/yaml.v3@v3.0.1) 及 [MIT/Apache-2.0 许可](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE)。仅解析随二进制编译的可信内置清单。
+
+## 2026-11-06 页面模式前端评审
+
+通过锁定的 shadcn CLI 4.23.0、官方 base-nova Registry 新增 Accordion、Alert、Avatar、Breadcrumb、Popover、Progress、RadioGroup、Sheet、Slider、Switch 源码（MIT）。基于已有 @base-ui/react 1.9.0、React 19.3.1、Tailwind 4；没有新增 npm 依赖或改锁文件，已有 Button 保留不覆盖。新原语已在页面模式中消费，默认关闭/导航辅助名称接现有 i18next。来源：https://ui.shadcn.com/docs/components/base 与 https://ui.shadcn.com/r/styles/base-nova/accordion.json 。

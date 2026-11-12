@@ -73,7 +73,7 @@ export function resultLabel(t: TFunction, code: string) {
 }
 
 function Invocation({ item }: { item: CapabilityInvocation }) {
-  const { t } = useTranslation(["ai", "capability"]);
+  const { t, i18n } = useTranslation(["ai", "capability"]);
   const tone =
     item.status === "failed"
       ? "is-failed"
@@ -103,7 +103,7 @@ function Invocation({ item }: { item: CapabilityInvocation }) {
         </TraceIcon>
         <span className="ai-step-body">
           <TraceTitle className="whitespace-normal">
-            {capabilityLabel(t, item.capability)}
+            {capabilityLabel(i18n, item.capability)}
           </TraceTitle>
           <small>
             {t("trace.invocationMeta", {
@@ -187,7 +187,7 @@ export function ApprovalCard({
           <strong>{t("ai:approval.title")}</strong>
           <small>
             {t("ai:approval.meta", {
-              capability: capabilityLabel(t, approval.capability),
+              capability: capabilityLabel(i18n, approval.capability),
               time: t("ai:approval.expires", {
                 time: formatMoment(i18n.language, approval.expiresAt),
               }),

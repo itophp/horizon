@@ -5,7 +5,7 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 
 # 认证、授权与基础安全
 
-先读 [安全约定](../../../docs/security.md) 及 [后端实现规则](../../../services/AGENTS.md)。涉及 SQL 时还要使用 baseline-database-change。
+先读 [安全约定](../../../docs/security.md) 及 [底座实现规则](../../../foundation/AGENTS.md)。涉及 SQL 时还要使用 baseline-database-change。
 
 为变更说明：身份来源、resource/action、可信租户、适用 DataScope、输入边界、字段读写投影、日志信息及所有访问入口。未知权限与解析失败默认拒绝。
 
@@ -22,12 +22,12 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 
 ## 两级目录与临时授权
 
-变更申请/审批、有效期、范围提升或权限矩阵时，先读 [ADR 003](../../../docs/decisions/003-temporary-access.md)。服务端 identity/catalog.go 是 module/function/code/临时可申请性目录来源，经 Goa/SDK 传给页面；矩阵合并一级模块单元格，不另造权限代码。
+变更申请/审批、有效期、范围提升或权限矩阵时，先读 [ADR 003](../../../docs/decisions/003-temporary-access.md)。服务端 `foundation/system/identity/catalog.go` 是 module/function/code/临时可申请性目录来源，经 Goa/SDK 传给页面；矩阵合并一级模块单元格，不另造权限代码。
 
 - 申请不等于授权；普通账号仅操作本人申请。审批依赖独立正式 temporary:approve，禁止自批。最终操作/范围只能在审批人正式权限上限内，不能将临时获得的范围再次委托。
 - 原始请求与最终批准分别保存，批准时固定解析相对范围，防止账号调部门后变相扩权。到期以数据库时钟为准，每次认证排除过期/撤销记录；固定 deny 始终优先，不覆写正式角色/账号策略。
 - 权限配置、审批和角色策略写入不可临时授予；新增目录项明确 temporaryEligible 与 scopeConfigurable。保留原子状态转换和审批/撤销审计，跨租户及范围外 ID 默认拒绝。
-- 扩展 tests/temporary_access_test.go 的允许/拒绝、修订、正式上限、到期、撤销、固定范围、deny、自批、并发和跨租户用例；前端同时覆盖合并目录与真实申请/审批流程。
+- 扩展 `foundation/tests/temporary_access_test.go` 的允许/拒绝、修订、正式上限、到期、撤销、固定范围、deny、自批、并发和跨租户用例；前端同时覆盖合并目录与真实申请/审批流程。
 
 临时写权限不能被用来留下长期提权：账号的角色/覆盖、凭证/标识、状态、公司/部门归属，以及组织树/状态等敏感变更，仍校验正式写权限及正式数据范围。特别测试临时 accounts:update 配合既有 access:manage 的永久角色自授予，以及临时 departments:update 重挂部门扩大正式部门树范围的拒绝路径。
 

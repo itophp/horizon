@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,7 +7,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { changeLanguage } from "@/i18n";
 import type { PageTool } from "@/lib/webmcp/runtime";
 import { WebMcpProvider } from "@/features/webmcp/provider";
-import { McpHubPage } from "./hub";
+import { ProtocolPage } from "@/features/application-runtime/protocol";
+import { DynamicApplicationRoute } from "@/features/application-runtime/route";
+import type { RuntimeApplicationV2 } from "@/api/generated/runtime";
+
+const applications = JSON.parse(
+  readFileSync("../../docs/generated/runtime/applications.json", "utf8"),
+) as RuntimeApplicationV2[];
+const collaboration = applications.find(
+  (app) => app.id === "agent-collaboration",
+)!;
 
 const fixture = vi.hoisted(() => ({
   tools: new Map<string, PageTool>(),
@@ -20,7 +30,16 @@ vi.mock("@/features/mcp/remote", () => ({
   RemoteMcpSection: () => <p>Remote MCP panel</p>,
 }));
 vi.mock("@/features/administration/auth", () => ({
-  useSession: () => ({ permissions: [] }),
+  useSession: () => ({ tenantId: "test", account: { id: 1 }, permissions: [] }),
+}));
+vi.mock("@/lib/capabilities", async (original) => ({
+  ...(await original<typeof import("@/lib/capabilities")>()),
+  runtimeApplication: async () => collaboration,
+  runtimeRead: async (name: string) => {
+    if (name === "application.runtime.list") return { items: [collaboration] };
+    if (name === "mcp.token.list") return [];
+    throw new Error("Unexpected read: " + name);
+  },
 }));
 vi.mock("@/lib/webmcp/connection", async (original) => ({
   ...(await original<typeof import("@/lib/webmcp/connection")>()),
@@ -49,7 +68,7 @@ vi.mock("@opentiny/next-sdk/core", () => ({
     }
   },
 }));
-async function show(entry = "/mcp?tab=page") {
+async function show(entry = "/mcp?tab=page", preview = false) {
   await changeLanguage("en", false);
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -58,11 +77,20 @@ async function show(entry = "/mcp?tab=page") {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[entry]}>
         <WebMcpProvider>
-          <McpHubPage />
+          {preview ? (
+            <ProtocolPage
+              application={collaboration.protocol!}
+              page={collaboration.protocol!.pages[0]}
+              readOnly
+            />
+          ) : (
+            <DynamicApplicationRoute />
+          )}
         </WebMcpProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  await screen.findByRole("heading", { name: "Agent collaboration" });
 }
 beforeEach(() => {
   sessionStorage.clear();
@@ -102,6 +130,12 @@ it("validates pairing, installs from the connected page and revokes captured too
   );
   const context = await fixture.tools.get("baseline_page_context")!.execute({});
   expect(JSON.stringify(context)).not.toContain("/accounts");
+  expect(screen.getByRole("tab", { name: /WebMCP \(connected/ })).toBeVisible();
+  await user.click(screen.getByRole("tab", { name: "WebSkills" }));
+  await user.click(screen.getByRole("tab", { name: /WebMCP \(connected/ }));
+  expect(
+    screen.getByLabelText("Pairing key from the local terminal"),
+  ).toBeDisabled();
   await navigate.execute({ path: "/" });
   await waitFor(() =>
     expect(fixture.send).toHaveBeenCalledWith({
@@ -110,6 +144,8 @@ it("validates pairing, installs from the connected page and revokes captured too
     }),
   );
 
+  await navigate.execute({ path: "/mcp" });
+  await screen.findByRole("heading", { name: "Page connection" });
   await user.click(
     screen.getAllByRole("button", { name: "Set up MCP + Skills" })[0],
   );
@@ -190,7 +226,7 @@ it("switches between remote MCP, WebMCP and WebSkills tabs and follows the URL",
   const user = userEvent.setup();
   const tabs = screen.getByRole("tablist", { name: "MCP access modes" });
   expect(within(tabs).getAllByRole("tab")).toHaveLength(3);
-  expect(screen.getByText("Remote MCP panel")).toBeVisible();
+  expect(await screen.findByText("Remote MCP panel")).toBeVisible();
   expect(
     screen.getByRole("heading", { name: "Agent collaboration" }),
   ).toBeVisible();
@@ -221,5 +257,31 @@ it("opens the WebSkills tab directly from a deep link and ignores unknown tabs",
 
 it("falls back to the remote MCP tab for unknown tab values", async () => {
   await show("/mcp?tab=unknown");
-  expect(screen.getByText("Remote MCP panel")).toBeVisible();
+  expect(await screen.findByText("Remote MCP panel")).toBeVisible();
+});
+
+it("uses the remembered tab when no deep link is supplied", async () => {
+  sessionStorage.setItem("baseline.mcp.tab", "skills");
+  await show("/mcp");
+  expect(
+    await screen.findByRole("heading", { name: "Page skills" }),
+  ).toBeVisible();
+  expect(screen.queryByText("Remote MCP panel")).not.toBeInTheDocument();
+});
+
+it("does not start a local pairing request or show install controls in preview", async () => {
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  try {
+    await show("/mcp?tab=page", true);
+    expect(
+      screen.queryByRole("button", { name: "Connect page" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Set up MCP + Skills" }),
+    ).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

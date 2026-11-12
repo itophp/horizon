@@ -5,9 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
 import { changeLanguage, i18n } from "@/i18n";
 import type { CapabilityContract } from "@/api/generated/models";
-import { CapabilityPage } from "./page";
+import {
+  CapabilityRuntimeFixture,
+  capabilityDefinition,
+} from "./runtime-fixture.test-helper";
 
 const api = vi.hoisted(() => ({
+  application: vi.fn(),
   definitions: vi.fn(),
   invoke: vi.fn(),
   events: vi.fn(),
@@ -15,6 +19,11 @@ const api = vi.hoisted(() => ({
   approvals: vi.fn(),
   decide: vi.fn(),
   permissions: [] as string[],
+}));
+
+vi.mock("@/lib/capabilities", async (original) => ({
+  ...(await original<typeof import("@/lib/capabilities")>()),
+  runtimeApplication: api.application,
 }));
 
 vi.mock("@/api/generated/baseline", async (original) => ({
@@ -97,7 +106,7 @@ function show() {
   return render(
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={client}>
-        <CapabilityPage />
+        <CapabilityRuntimeFixture />
       </QueryClientProvider>
     </I18nextProvider>,
   );
@@ -106,6 +115,7 @@ function show() {
 beforeEach(async () => {
   await changeLanguage("en", false);
   api.permissions = ["example:read", "example:create", "example:archive"];
+  api.application.mockResolvedValue(capabilityDefinition);
   api.definitions.mockResolvedValue({ status: 200, data: contracts });
   api.events.mockResolvedValue({
     status: 200,
@@ -197,6 +207,41 @@ it("renders records, events with AI status and the catalog", async () => {
   expect(screen.queryByText("example_record")).toBeNull();
 });
 
+it("displays capability metadata when optional translations are absent", async () => {
+  await changeLanguage("zh-CN", false);
+  api.definitions.mockResolvedValue({
+    status: 200,
+    data: [
+      {
+        ...contracts[0],
+        name: "plugin.report.list",
+        description: "Read reports from the plugin.",
+      },
+      {
+        ...contracts[1],
+        name: "settings.history.rollback",
+        entity: "settings_version",
+        description: "Create a new revision from a published settings version.",
+      },
+    ],
+  });
+  const consoleError = vi.spyOn(console, "error");
+  try {
+    show();
+    expect(
+      await screen.findByText("Read reports from the plugin."),
+    ).toBeTruthy();
+    expect(screen.getByText("plugin.report.list")).toBeTruthy();
+    expect(screen.getByText("回滚系统设置")).toBeTruthy();
+    expect(screen.getByText("从已发布的设置版本创建一个新修订。")).toBeTruthy();
+    expect(consoleError).not.toHaveBeenCalledWith(
+      expect.stringContaining("Missing translation: capability:definitions."),
+    );
+  } finally {
+    consoleError.mockRestore();
+  }
+});
+
 it("creates a record through the capability gateway", async () => {
   show();
   const input = await screen.findByLabelText("Record title");
@@ -219,10 +264,13 @@ it("archives with a stable idempotency key", async () => {
   const buttons = await screen.findAllByRole("button", { name: /Archive/ });
   await userEvent.click(buttons[0]);
   await waitFor(() =>
-    expect(api.invoke).toHaveBeenCalledWith("example.record.archive", {
-      input: { id: 7 },
-      idempotencyKey: "archive:7",
-    }),
+    expect(api.invoke).toHaveBeenCalledWith(
+      "example.record.archive",
+      expect.objectContaining({
+        input: { id: 7 },
+        idempotencyKey: "archive:7",
+      }),
+    ),
   );
 });
 

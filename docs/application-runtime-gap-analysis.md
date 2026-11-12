@@ -20,26 +20,26 @@ Metadata Engine 当前是代码声明、迁移校验与能力目录派生的对�
 
 | 范围 | 源码证据 | 现状与复用方式 |
 |---|---|---|
-| Entity/Field/Relation | `services/kernel/capability/contracts/entity.go`、`services/applications/*/entity_*.go` | Entity 有 Name/Domain/Table/Key，Attribute 有 Kind/Type/Required/Nullable/Enum/Sensitive 等，Relation 有 Target/Kind/Via；保留原模型 |
-| Metadata Engine | `services/kernel/metadata/{schema,entity,validate,transitions}.go` | embed Goose 迁移解析物理结构；E1–E10 校验；`metadata.Build` 只从能力推导对象及能力/事件，不能单独当完整字段目录 |
-| 完整实体目录 | `services/kernel/capability/registry/registry.go`、`services/runtime/app/entities.go` | `RegisterEntities` 加入声明，`Registry.Entities()` 合并字段与派生能力/事件；`EntitiesWithPlugins` 汇总插件实体 |
-| Metadata 授权入口 | `services/kernel/capability/gateway/gateway.go` 的 `Entities` | 根据可发现能力过滤实体；这是 Go 内部接口，不等于已有完整公开 Entity HTTP DTO，也不代表字段和记录级授权 |
-| Capability | `services/kernel/capability/{contracts,registry,gateway}`、`services/runtime/app/capabilities.go` | 版本、Schema、风险、幂等、审批、Outbox、审计以及统一装配；Runtime 继续使用原入口 |
-| IAM/Policy | `services/system/identity`、`services/kernel/{policy,approval}` | Principal、权限和审批执行复用；不新建权限数据库或浏览器策略引擎 |
-| 事件 | `services/kernel/{outbox,eventhub}`、`services/ai/triggers` | 已有事件链；文章写能力使用 ExecuteTx；不新增第二条页面事件总线代替业务 Outbox |
-| 后端插件 | `services/kernel/plugin/plugin.go`、`services/runtime/app/plugins.go` | 已有 builtin Manifest、精确版本依赖校验、实体/能力/权限/事件注册、Start/Stop；内置 projects 接入，不是动态安装市场 |
+| Entity/Field/Relation | `foundation/kernel/capability/contracts/entity.go`、`applications/*/entity_*.go` | Entity 有 Name/Domain/Table/Key，Attribute 有 Kind/Type/Required/Nullable/Enum/Sensitive 等，Relation 有 Target/Kind/Via；保留原模型 |
+| Metadata Engine | `foundation/kernel/metadata/{schema,entity,validate,transitions}.go` | embed Goose 迁移解析物理结构；E1–E10 校验；`metadata.Build` 只从能力推导对象及能力/事件，不能单独当完整字段目录 |
+| 完整实体目录 | `foundation/kernel/capability/registry/registry.go`、`foundation/runtime/app/entities.go` | `RegisterEntities` 加入声明，`Registry.Entities()` 合并字段与派生能力/事件；`EntitiesWithPlugins` 汇总插件实体 |
+| Metadata 授权入口 | `foundation/kernel/capability/gateway/gateway.go` 的 `Entities` | 根据可发现能力过滤实体；这是 Go 内部接口，不等于已有完整公开 Entity HTTP DTO，也不代表字段和记录级授权 |
+| Capability | `foundation/kernel/capability/{contracts,registry,gateway}`、`foundation/runtime/app/capabilities.go` | 版本、Schema、风险、幂等、审批、Outbox、审计以及统一装配；Runtime 继续使用原入口 |
+| IAM/Policy | `foundation/system/identity`、`foundation/kernel/{policy,approval}` | Principal、权限和审批执行复用；不新建权限数据库或浏览器策略引擎 |
+| 事件 | `foundation/kernel/{outbox,eventhub}`、`foundation/ai/triggers` | 已有事件链；文章写能力使用 ExecuteTx；不新增第二条页面事件总线代替业务 Outbox |
+| 后端插件 | `foundation/kernel/plugin/plugin.go`、`foundation/runtime/app/plugins.go` | 已有 builtin Manifest、精确版本依赖校验、实体/能力/权限/事件注册、Start/Stop；内置 projects 接入，不是动态安装市场 |
 | 前端插件 | `apps/web/src/app/plugins/{registry.ts,builtins.tsx}` | routes/menus/translations/permission labels 注册、重复及双语检查；已有 projects 插件 |
-| AI/上下文 | `services/ai/{context,harness,tools,workflow,knowledge}` | Eino、页面 route/entity/entityId 与有预算的实体上下文已有；尚非规范中的完整 Page Semantic Context |
+| AI/上下文 | `foundation/ai/{context,harness,tools,workflow,knowledge}` | Eino、页面 route/entity/entityId 与有预算的实体上下文已有；尚非规范中的完整 Page Semantic Context |
 | Memory Center | README 明确标记规划 | knowledge 检索、调用记录和检查点不能冒充统一记忆中心；只预留 Adapter，不建立虚假服务依赖 |
 | 前端底座 | `apps/web/package.json`、`src/app/router/router.tsx` | React 19、TS、React Router、shadcn/Tailwind、TanStack Query/Table、RHF/Zod、i18next；全部复用锁定版本 |
-| SDK | `services/design/capability.go`、`services/runtime/transport/capability.go`、`apps/web/src/lib/capabilities.ts` | Goa/OpenAPI/Orval 生成传输层；业务 helper 和部分 DTO 仍手写，不能宣称已有完整能力类型生成 |
-| 数据与装配 | `services/db/{migrations,query}`、`internal/repository/dbgen`、`runtime/{app,transport,server,config}` | PostgreSQL/Goose/sqlc/pgx；显式装配、小接口、统一错误和请求上下文；不另起 Runtime 服务进程 |
+| SDK | `foundation/design/capability.go`、`foundation/runtime/transport/capability.go`、`apps/web/src/lib/capabilities.ts` | Goa/OpenAPI/Orval 生成传输层；业务 helper 和部分 DTO 仍手写，不能宣称已有完整能力类型生成 |
+| 数据与装配 | `foundation/db/{migrations,query}`、`internal/repository/dbgen`、`runtime/{app,transport,server,config}` | PostgreSQL/Goose/sqlc/pgx；显式装配、小接口、统一错误和请求上下文；不另起 Runtime 服务进程 |
 
 版本现状：Capability 有 Version，插件有 Manifest Version/APIVersion；Entity 本身无独立发布版本，Page Schema/Metadata 发布存储与升级机制未见现成实现。第一阶段采用随代码发布的只读定义，不新增元数据表与发布平台。
 
 ## 3. 文章真实闭环与缺口
 
-事实来源：`services/applications/articles/module.go`、`entity_article.go`、`services/db/query/articles.sql`、`apps/web/src/features/articles/page.tsx`、`apps/web/src/lib/capabilities.ts`。
+事实来源：`applications/articles/module.go`、`entity_article.go`、`foundation/db/query/articles.sql`、`apps/web/src/features/articles/page.tsx`、`apps/web/src/lib/capabilities.ts`。
 
 | 用例 | 已有能力 @1.0.0 | 约束/处理 |
 |---|---|---|
@@ -102,7 +102,7 @@ Adapter 内部读 `Registry.Entities()`，按当前 Principal 过滤输出；复
 
 ### 5.3 版本与契约来源
 
-建议在 `services/kernel/applicationruntime` 定义纯 Go 契约/Adapter/校验器；Go 数据源随代码版本发布，生成版本化 Page JSON Schema 供离线验证。公开 Application/Page/Runtime Entity View 在 `services/design` 声明 Goa 投影，OpenAPI → Orval 生成前端模型。Page Schema 校验与 Goa 投影之间须有生成映射或等价性测试，禁止两套人工模型静默漂移。
+建议在 `foundation/kernel/applicationruntime` 定义纯 Go 契约/Adapter/校验器；Go 数据源随代码版本发布，生成版本化 Page JSON Schema 供离线验证。公开 Application/Page/Runtime Entity View 在 `foundation/design` 声明 Goa 投影，OpenAPI → Orval 生成前端模型。Page Schema 校验与 Goa 投影之间须有生成映射或等价性测试，禁止两套人工模型静默漂移。
 
 新增 Runtime schemaVersion=`1.0`；Application version 独立于 Capability version。metadataVersion 用规范化实体/能力/页面定义的内容摘要，而非修改原 Entity 添加版本。启动验证依赖、字段、组件、能力版本引用，未知版本拒绝。对外错误不暴露原始元数据或 SQL。
 
@@ -137,11 +137,11 @@ Runtime Query key 至少包含 tenant/account/department/授权上下文版本�
 
 | 位置 | 职责 |
 |---|---|
-| `services/kernel/applicationruntime/`（新增） | 纯契约、版本/引用校验、Entity Adapter；依赖 contracts，不依赖 React/SQL |
-| `services/system/applicationruntime/`（新增） | application/page resolve 只读能力、授权投影；模块自己 Entries；不承载文章 CRUD |
-| `services/applications/articles/`（扩展） | 文章页面贡献与数据绑定、list 查询兼容扩展；领域规则仍在本模块 |
-| `services/runtime/app/`（扩展） | 共享目录与能力装配；运行时及离线校验共用 |
-| `services/design/`（扩展） | 公开 Runtime 读模型与稳定传输；生成代码不手改 |
+| `foundation/kernel/applicationruntime/`（新增） | 纯契约、版本/引用校验、Entity Adapter；依赖 contracts，不依赖 React/SQL |
+| `foundation/system/applicationruntime/`（新增） | application/page resolve 只读能力、授权投影；模块自己 Entries；不承载文章 CRUD |
+| `applications/articles/`（扩展） | 文章页面贡献与数据绑定、list 查询兼容扩展；领域规则仍在本模块 |
+| `foundation/runtime/app/`（扩展） | 共享目录与能力装配；运行时及离线校验共用 |
+| `foundation/design/`（扩展） | 公开 Runtime 读模型与稳定传输；生成代码不手改 |
 | `apps/web/src/features/application-runtime/`（新增） | Page/Layout/List/Detail/Form、组件注册、Context、data/action adapter、错误边界 |
 | `apps/web/src/features/articles/`（收敛） | 最小应用入口和必要 Hybrid 业务动作，不保留一份重复通用 Renderer |
 | `apps/web/src/app/plugins/`、router（扩展） | 复用前端贡献装配、导航和路径；旧 /articles 保留 |
@@ -187,7 +187,7 @@ Runtime Context → 已有 ai/context 与 WebMCP 生命周期 Adapter；Page Sem
 
 ## 9. 验证计划与本轮结果
 
-后续代码阶段：Adapter/Schema/Registry 单测；文章 PostgreSQL 允许/拒绝、范围、分页总数、稳定排序、CAS、幂等与 Outbox 集成；RTL 验证页面跳转、保存、错误及身份切换；公开投影与生成契约一致性检查。复用 `services/tests/articles_test.go`、`articles_mcp_test.go` 和模块现有测试，按缺口补用例。
+后续代码阶段：Adapter/Schema/Registry 单测；文章 PostgreSQL 允许/拒绝、范围、分页总数、稳定排序、CAS、幂等与 Outbox 集成；RTL 验证页面跳转、保存、错误及身份切换；公开投影与生成契约一致性检查。复用 `foundation/tests/articles_test.go`、`articles_mcp_test.go` 和模块现有测试，按缺口补用例。
 
 每阶段按实际变更集中执行 lint/typecheck/test/build；契约/SQL 源变更执行 `make generate` 与 `make check-generated`；阶段验收执行 `make ci-fast`，SQL/范围变化加 `make test-integration`，授权变化加安全专项。无表结构变更不造迁移；运行生成和浏览器验收必须串行。
 

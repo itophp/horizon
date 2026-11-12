@@ -1,3 +1,5 @@
+import enShowcase from "./locales/en/showcase.json";
+import zhShowcase from "./locales/zh-CN/showcase.json";
 import enRuntime from "./locales/en/runtime.json";
 import zhRuntime from "./locales/zh-CN/runtime.json";
 import enArticles from "./locales/en/articles.json";
@@ -45,6 +47,7 @@ const pluginResources = {
 };
 const coreResources = {
   en: {
+    showcase: enShowcase,
     runtime: enRuntime,
     articles: enArticles,
     drive: enDrive,
@@ -63,6 +66,7 @@ const coreResources = {
     validation: enValidation,
   },
   "zh-CN": {
+    showcase: zhShowcase,
     runtime: zhRuntime,
     articles: zhArticles,
     drive: zhDrive,

@@ -22,7 +22,6 @@ vi.mock("@/features/administration/auth", () => ({
 vi.mock("./design-activation", () => ({ DesignActivation: () => null }));
 vi.mock("./design-history", () => ({ DesignHistory: () => null }));
 vi.mock("./design-baseline", () => ({ DesignBaseline: () => null }));
-vi.mock("./page-view", () => ({ PageView: () => null }));
 vi.mock("@/features/governance/runtime", () => ({
   useConfiguration: () => ({
     value: (_key: string, fallback: unknown) => fallback,

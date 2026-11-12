@@ -134,5 +134,15 @@
     "previewPage": "预览页面",
     "previewParameter": "路由参数：{{name}}",
     "previewLoad": "加载授权预览"
+  },
+  "refresh": "刷新",
+  "protocol": {
+    "heading": "Runtime 协议预览",
+    "subtitle": "通过 Schema 驱动的页面，读取授权账号目录。",
+    "nav": "Runtime 协议",
+    "empty": "暂无匹配记录。",
+    "componentMissing": "组件 {{component}} 不可用。",
+    "eventFailed": "页面动作未能完成。",
+    "eventFailedTitle": "操作失败"
   }
 }

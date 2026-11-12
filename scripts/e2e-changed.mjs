@@ -21,57 +21,57 @@ const routes = [
   },
   { prefix: "apps/web/src/features/webmcp/", specs: ["webmcp"] },
   { prefix: "apps/web/src/features/mcp/", specs: ["mcp"] },
-  { prefix: "services/design/", specs: ["foundation"] },
-  { prefix: "services/runtime/server/", specs: ["foundation"] },
-  { prefix: "services/runtime/config/", specs: ["foundation"] },
-  { prefix: "services/runtime/app/", specs: ["foundation"] },
-  { prefix: "services/system/governance/", specs: ["governance"] },
+  { prefix: "foundation/design/", specs: ["foundation"] },
+  { prefix: "foundation/runtime/server/", specs: ["foundation"] },
+  { prefix: "foundation/runtime/config/", specs: ["foundation"] },
+  { prefix: "foundation/runtime/app/", specs: ["foundation"] },
+  { prefix: "foundation/system/governance/", specs: ["governance"] },
   {
-    prefix: "services/system/settings/",
+    prefix: "foundation/system/settings/",
     specs: ["governance", "settings-schedules"],
   },
   {
-    prefix: "services/system/dictionaries/",
+    prefix: "foundation/system/dictionaries/",
     specs: ["governance"],
   },
-  { prefix: "services/system/files/", specs: ["governance"] },
+  { prefix: "foundation/system/files/", specs: ["governance"] },
   {
-    prefix: "services/system/notifications/",
+    prefix: "foundation/system/notifications/",
     specs: ["notifications"],
   },
-  { prefix: "services/integrations/mcp/", specs: ["mcp"] },
-  { prefix: "services/system/orchestration/", specs: ["capabilities"] },
-  { prefix: "services/applications/example/", specs: ["capabilities"] },
-  { prefix: "services/kernel/workflow/", specs: ["ai"] },
+  { prefix: "foundation/integrations/mcp/", specs: ["mcp"] },
+  { prefix: "foundation/system/orchestration/", specs: ["capabilities"] },
+  { prefix: "applications/example/", specs: ["capabilities"] },
+  { prefix: "foundation/kernel/workflow/", specs: ["ai"] },
   {
-    prefix: "services/kernel/",
+    prefix: "foundation/kernel/",
     specs: ["capabilities"],
   },
-  { prefix: "services/ai/", specs: ["ai"] },
-  { prefix: "services/applications/", specs: ["capabilities"] },
-  { prefix: "services/db/query/capability.sql", specs: ["capabilities"] },
-  { prefix: "services/db/migrations/00015_", specs: ["capabilities"] },
+  { prefix: "foundation/ai/", specs: ["ai"] },
+  { prefix: "applications/", specs: ["capabilities"] },
+  { prefix: "foundation/db/query/capability.sql", specs: ["capabilities"] },
+  { prefix: "foundation/db/migrations/00015_", specs: ["capabilities"] },
   {
-    prefix: "services/system/identity/",
+    prefix: "foundation/system/identity/",
     specs: ["administration"],
   },
 
-  { prefix: "services/runtime/transport/", specs: ["administration"] },
-  { prefix: "services/db/query/mcp.sql", specs: ["mcp"] },
-  { prefix: "services/db/query/governance", specs: ["governance"] },
+  { prefix: "foundation/runtime/transport/", specs: ["administration"] },
+  { prefix: "foundation/db/query/mcp.sql", specs: ["mcp"] },
+  { prefix: "foundation/db/query/governance", specs: ["governance"] },
   {
-    prefix: "services/internal/repository/dbgen/mcp.sql.go",
+    prefix: "internal/repository/dbgen/mcp.sql.go",
     specs: ["mcp"],
   },
   {
-    prefix: "services/internal/repository/dbgen/governance",
+    prefix: "internal/repository/dbgen/governance",
     specs: ["governance"],
   },
   {
-    prefix: "services/internal/repository/dbgen/models.go",
+    prefix: "internal/repository/dbgen/models.go",
     specs: ["governance"],
   },
-  { prefix: "services/gen/", specs: ["foundation"] },
+  { prefix: "foundation/gen/", specs: ["foundation"] },
   { prefix: "webskills/", specs: ["mcp"] },
 ];
 
@@ -96,12 +96,12 @@ const inert = [
   /^apps\/web\/(package\.json|tsconfig\.json|vite\.config\.ts|orval\.config\.ts|eslint)/,
   /^apps\/web\/playwright[^/]*\.config\.ts$/,
   /^apps\/web\/lint-rules\.test\.mjs$/,
-  /^services\/go\.(mod|sum)$/,
-  /^services\/tests\//,
+  /^go\.(mod|sum)$/,
+  /^foundation\/tests\//,
 ];
 
 const mcpBackend =
-  /^services\/(gen\/.*mcp|internal\/repository\/dbgen\/mcp|db\/migrations\/\d+_mcp_|db\/query\/mcp)/;
+  /^(foundation\/(gen\/.*mcp|db\/migrations\/\d+_mcp_|db\/query\/mcp)|internal\/repository\/dbgen\/mcp)/;
 
 function under(file, prefix) {
   return file === prefix.replace(/\/$/, "") || file.startsWith(prefix);

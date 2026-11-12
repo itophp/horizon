@@ -1,10 +1,10 @@
 # Agent 任务与工具矩阵
 
-这是日常开发入口。目标是让 Agent 根据当前功能选正确层和检查，不要求每次加载全部 Skill，也不为每个 npm 包复制一份手册。长期约束在 AGENTS.md，步骤在项目 Skill，原理与决策在 docs，能机器验证的约束在 lint / tests / CI。
+这是日常开发入口。业务模块从 [应用规则](../applications/AGENTS.md) 进入，Go 底座实现从 [底座规则](../foundation/AGENTS.md) 进入，Web 变更读取 [前端规则](../apps/web/AGENTS.md)。目标是让 Agent 根据当前功能选正确层和检查，不要求每次加载全部 Skill，也不为每个 npm 包复制一份手册。长期约束在 AGENTS.md，步骤在项目 Skill，原理与决策在 docs，能机器验证的约束在 lint / tests / CI。
 
 完整功能开发先按 [Agent 开发工作流](agent-workflow.md) 发现现状、还原状态和角色、按条件集中提问，再记录能力/事务、Eino 选型、Schema 来源、工具暴露与验收。已有答案不重复询问；只有业务、安全或外部暴露含义不清时才问用户，不让用户替 Agent 选择技术实现。流程能力与运行时支持要从代码和测试确认，不能仅根据名称或元数据判断已接入。
 
-所有业务功能先执行 [能力发现与复用](agent-workflow.md#能力复用优先先发现再复用最后新增)，记录需求动作对应的现有能力，优先直接复用、组合或兼容扩展，再决定是否新增；能力存在不代表当前用户、Agent 或 MCP 客户端已获准执行。
+业务功能必须在 `applications/<module>/` 开发，已有业务在所属模块内扩展。先执行 [能力发现与复用](agent-workflow.md#能力复用优先先发现再复用最后新增)，记录需求动作对应的现有能力，优先直接复用、组合或兼容扩展，再决定是否新增；能力存在不代表当前用户、Agent 或 MCP 客户端已获准执行。
 
 业务界面按 [Runtime 开发规范](application-runtime-development.md) 选择配置、代码或混合路径，使用 baseline-application-runtime；它负责应用定义、组件和配置发布。
 
@@ -14,24 +14,25 @@ Memory 是独立基础服务。只有明确的采集、记忆检索、来源、�
 
 | 任务 | 重点框架/工具与职责 | 使用的 Skill | 读取的目录规则 | 必要验证 |
 |---|---|---|---|---|
+| 分析能力、流程、Graph、应用与页面 Schema，管理开发服务 | Horizon CLI 按类型读取 Schema 和共享注册，检测本地环境并直接管理 Go/Vite 开发进程 | baseline-capability-composition、baseline-quality-gates | [本地开发](local-development.md#horizon-cli)、foundation/AGENTS.md | 离线查询、启动/重启/停止、外部进程隔离 |
 | 功能对应 MCP 工具设计、开发及变更 | 功能用例映射工具契约、复用业务授权 | baseline-security、baseline-quality-gates；按层路由 | docs/mcp-service-plan.md、目标目录规则 | 分阶段协议/安全/客户端互通；规则批次 check-rules |
-| 业务能力、Gateway、审批与调用审计 | Capability Registry 出契约，Gateway 统一鉴权/Schema/幂等/审批/Outbox/审计，业务执行仍回领域服务 | baseline-feature-development + baseline-security；契约变更加 goa-service-designer | [ADR 015](decisions/015-capability-centric-platform.md)、目标目录规则 | 契约/策略单测、`tests/capability_modules_test.go` 与 `TestCapability*`（模块闭环、幂等并发、跨租户、审批恢复）、两个语言文案 |
+| 业务能力、Gateway、审批与调用审计 | Capability Registry 出契约，Gateway 统一鉴权/Schema/幂等/审批/Outbox/审计，业务执行仍回领域服务 | baseline-feature-development + baseline-security；仅改 Goa 传输契约时加 goa-service-designer | [ADR 015](decisions/015-capability-centric-platform.md)、目标目录规则 | 契约/策略单测、`foundation/tests/capability_modules_test.go` 与 `TestCapability*`（模块闭环、幂等并发、跨租户、审批恢复）、两个语言文案 |
 | 能力分层与互调：一个接口拆几个能力、能力调能力 | 数据能力持有业务规则与 SQL；入口能力只做协议投影；互调经 Gateway 并重受策略约束 | baseline-capability-composition | [能力拆分与组合](capability-composition.md)、[ADR 015](decisions/015-capability-centric-platform.md) | 负向用例（内层权限、跨租户、深度、幂等重放）、check-entities |
 | 柔性编排：流程编排、循环子图、Agent 自主决策、Schema | Workflow 是唯一主干（节点为能力，依赖由显式映射/DependsOn 确定，Reads/Writes 检查冲突），Graph 只做循环子图，ADK 只做决策；叶子统一经 Gateway | baseline-capability-composition | [柔性编排方案](orchestration-plan.md)、[ADR 016](decisions/016-capability-taxonomy-and-orchestration.md) | check-workflows、check-generated、test-orchestration-example；依赖冲突、审批恢复、循环上限、深度保护 |
-| 事件、Outbox、AI Trigger | 事务 Outbox → Relay → Event Hub → Trigger 去重/深度 → AI 任务 | baseline-feature-development + baseline-database-change + baseline-security | ADR 015、`db/AGENTS.md` | Relay/去重/深度集成测试、事件投影与租户隔离 |
+| 事件、Outbox、AI Trigger | 事务 Outbox → Relay → Event Hub → Trigger 去重/深度 → AI 任务 | baseline-feature-development + baseline-database-change + baseline-security | ADR 015、[SQL 规则](../foundation/db/AGENTS.md) | Relay/去重/深度集成测试、事件投影与租户隔离 |
 | 新建/修改完整功能 | 业务状态/角色→条件澄清→能力/事务/引擎决策→源契约→生成与实现→入口/页面→行为验证 | baseline-feature-development，再选以下相关项 | [开发步骤与问题矩阵](agent-workflow.md)、根到目标路径的 AGENTS | 对照架构决策检查实际入口；按批次累计待验项；阶段验收 ci-fast，按风险追加 SQL/安全；浏览器按现行规则 |
 | Runtime 页面选型、配置候选、贡献与生命周期 | 已有能力/组件 → 配置、代码或混合；已发布数据库版本与部署基线分离；候选/人工发布分别交付 | baseline-application-runtime；涉及代码再加载 web/security/i18n 等 | [Runtime 规范](application-runtime-development.md)、[实现边界](application-runtime-database.md)、目标目录规则 | 纯配置校验/差异/隔离预览/授权生效验证；引擎代码按阶段 fast 与相关专项 |
 | Memory 采集、来源、作用域、经验及 Agent 上下文 | 复用现有采集；区分事件、长期记忆、工程经验和业务事实；现有人工专用渠道保持约束 | baseline-memory-integration；按层加载 composition/security/database | [Memory 规范](memory-center-development.md)、[当前边界](memory-center-ai-handoff.md)、security | 接入代码验证最小投影、去重、来源授权、跨租户/撤权/纠正/过期；仅规范跑 rules |
 | 业务配置、字典选项、附件上传/读取/下载、消息通知 | 复用共享治理服务、注册表、生成 SDK 和受控存储 | baseline-shared-capabilities，再按层加载 web/security/database/Goa | docs/shared-capabilities.md、目标目录规则 | 消费者生效、来源越权、历史引用和文件授权；跨层 ci-fast 加相关集成/安全 |
 | 页面、路由、共享布局 | React + React Router；复用 shadcn + Tailwind tokens | baseline-web-development | apps/web | ESLint、TS、相关组件测试、build；跨层交互在授权范围内跑映射命中的单个 spec |
-| 表单、校验、提交 | React Hook Form + Zod；服务端 Goa 校验；TanStack Query mutation/失效 | baseline-web-development；有新文案加 internationalization | apps/web、涉及 API 时 services/design | 无效/有效输入、pending/error/success、相关 HTTP 测试 |
+| 表单、校验、提交 | React Hook Form + Zod；服务端 Goa 校验；TanStack Query mutation/失效 | baseline-web-development；有新文案加 internationalization | apps/web、涉及 API 时 foundation/design | 无效/有效输入、pending/error/success、相关 HTTP 测试 |
 | 列表、表格、筛选 | TanStack Table 9 管表格；Router 管可分享筛选；Query 管远程数据 | baseline-web-development | apps/web | 相关交互、排序/筛选/分页语义；服务端范围测试 |
-| 请求、缓存、API 消费 | Orval SDK + TanStack Query，统一 client；不裸 fetch，不重复 DTO | baseline-web-development；契约变更再用 Goa | apps/web、services/design | 两端类型/构建、HTTP、check-generated |
-| API 字段/参数/错误/安全声明 | Goa DSL 是源，生成 OpenAPI；Orval 消费 3.0 产物 | goa-service-designer | services/design | generate、HTTP、check-generated、两端编译/类型 |
-| 服务逻辑、传输与配置 | Go 小接口、context、httptest、结构化日志与统一错误 | baseline-feature-development；涉及边界用 security | services/internal | Go 单元/HTTP、vet、配置错误分支 |
-| 表结构、查询、事务 | Goose 管迁移；sqlc 管类型化查询；pgx 管连接/事务；PostgreSQL 执行约束 | baseline-database-change | services/db、internal、tests | generate、integration、迁移/约束/范围/事务；涉及契约再测 SDK |
-| 实体声明、字段分类、关系与状态流转 | 声明是描述、迁移是事实；`platform/metadata` 解析迁移并做 E1–E10 校验；`make check-entities` 进 ci-fast | baseline-entity-model；改表结构同时加载 database-change | [实体模型](entity-model.md)、services/internal、services/db | check-entities（含负例）、新实体 i18n label；跨实体能力核对 `Entities` |
-| 认证、操作授权、数据隔离 | Authenticator/Principal、Casbin、ScopeResolver、Repository/SQL 投影 | baseline-security；SQL 变更加 database-change | services/internal、db、tests | test-security，允许+拒绝、跨租户、范围外 ID、撤销 |
+| 请求、缓存、API 消费 | Orval SDK + TanStack Query，统一 client；不裸 fetch，不重复 DTO | baseline-web-development；契约变更再用 Goa | apps/web、foundation/design | 两端类型/构建、HTTP、check-generated |
+| API 字段/参数/错误/安全声明 | Goa DSL 是源，生成 OpenAPI；Orval 消费 3.0 产物 | goa-service-designer | foundation/design | generate、HTTP、check-generated、两端编译/类型 |
+| 服务逻辑、传输与配置 | Go 小接口、context、httptest、结构化日志与统一错误 | baseline-feature-development；涉及边界用 security | foundation/system | Go 单元/HTTP、vet、配置错误分支 |
+| 表结构、查询、事务 | Goose 管迁移；sqlc 管类型化查询；pgx 管连接/事务；PostgreSQL 执行约束 | baseline-database-change | foundation/db、internal/repository、foundation/tests | generate、integration、迁移/约束/范围/事务；涉及契约再测 SDK |
+| 实体声明、字段分类、关系与状态流转 | 声明是描述、迁移是事实；`foundation/kernel/metadata` 解析迁移并做 E1–E10 校验；`make check-entities` 进 ci-fast | baseline-entity-model；改表结构同时加载 database-change | [实体模型](entity-model.md)、applications、foundation/system、foundation/db | check-entities（含负例）、新实体 i18n label；跨实体能力核对 `Entities` |
+| 认证、操作授权、数据隔离 | Authenticator/Principal、Casbin、ScopeResolver、Repository/SQL 投影 | baseline-security；SQL 变更加 database-change | foundation/system、foundation/db、foundation/tests | test-security，允许+拒绝、跨租户、范围外 ID、撤销 |
 | 导出、批量、聚合、下载、后台任务 | 复用相同授权/数据范围；按流量/文件类型明确输入和响应边界 | baseline-security；必要时 Goa/database-change | 服务实现及 SQL 目录 | 新入口的越权/字段泄露测试，不能拿 list 已通过代替 |
 | 文案、辅助名称、语言、数值展示 | i18next/react-i18next 管消息；Intl 管日期/数值/货币 | baseline-internationalization | apps/web/src/i18n | i18n:check、lint、相关 locale 测试；存储/切换变更在授权范围内跑对应 spec |
 | 测试失败、交付、CI 变更 | Vitest/RTL、Go testing/httptest、隔离 PostgreSQL、Playwright | baseline-quality-gates | 测试目录或 scripts | 最小失败集→模块集→相应交付 profile |
@@ -78,7 +79,7 @@ OpenAI 官方说明：AGENTS 按根到当前目录组合；从根启动不等于
 
 ## 能力中心接入
 
-新增业务动作不要写成 Agent 专用 tool，也不要让页面直接调业务接口。步骤：在 `kernel/capability/registry` 的目录（`adapters` 或 `system/*、applications/* 与 integrations/*`）注册契约（名称、版本、输入/输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段）→ 实现 Executor（写能力用 `TxExecutor`，业务数据与 `cap_outbox` 同事务）→ 需要时用生成的 capability SDK 从页面调用。风险按 [ADR 015](decisions/015-capability-centric-platform.md)：人类点击可执行 high；Agent/Workflow/Event/API 的 high 必须确认；critical 对自动化关闭。事件必须带 correlation/causation/depth，Trigger 去重并限制 maxDepth。修改 Gateway、审批或审计范围时，同步 `services/AGENTS.md`、本文件与 `tests/ai_platform_test.go` 的允许/拒绝用例。
+新增业务动作不要写成 Agent 专用 tool，也不要让页面直接调业务接口。步骤：在 `kernel/capability/registry` 的目录（`adapters` 或 `system/*、applications/* 与 integrations/*`）注册契约（名称、版本、输入/输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段）→ 实现 Executor（写能力用 `TxExecutor`，业务数据与 `cap_outbox` 同事务）→ 需要时用生成的 capability SDK 从页面调用。风险按 [ADR 015](decisions/015-capability-centric-platform.md)：人类点击可执行 high；Agent/Workflow/Event/API 的 high 必须确认；critical 对自动化关闭。事件必须带 correlation/causation/depth，Trigger 去重并限制 maxDepth。修改 Gateway、审批或审计范围时，同步 `foundation/AGENTS.md`、本文件与 `tests/ai_platform_test.go` 的允许/拒绝用例。
 
 一个功能拆几个能力、能力之间能否互调，按 [能力拆分与组合](capability-composition.md)（Skill：baseline-capability-composition）：数据能力持业务规则与 SQL，入口能力只做协议投影，两者都注册为能力；互调必须走 `gateway.Invoke`（内层 `OriginCapability`、深度 +1、写能力确定性幂等键），`TxExecutor` 内禁止再调 Gateway。禁止 handler/service 直连 `dbgen`/`pool`，也禁止能力自己 `registry.Resolve` 调 handler。
 
@@ -96,7 +97,7 @@ OpenAI 官方说明：AGENTS 按根到当前目录组合；从根启动不等于
 
 流程规格与未来生成器的边界见 [Schema 路线](agent-generation-plan.md)；先使用 [完整生命周期示例](orchestration-example.md) 和生成的结构契约，不把自然语言规则或 Schema 校验当成业务安全证明。
 
-Application Runtime 页面先检查 `services/applications/articles/pages.go` 的贡献示例和 `kernel/applicationruntime` Adapter。公共 Go 契约经 `cmd/runtimespec` 生成 TypeScript/Zod；运行 `make generate`，禁止修改 `apps/web/src/api/generated/runtime.ts`。页面绑定现有能力，不新增通用 SQL CRUD。实现与边界见 [第一阶段说明](application-runtime-phase-1.md)。
+Application Runtime 页面先检查 `applications/articles/runtime_v3.go` 的贡献示例和 `kernel/applicationruntime` Adapter。公共 Go 契约经 `cmd/runtimespec` 生成 TypeScript/Zod；运行 `make generate`，禁止修改 `apps/web/src/api/generated/runtime.ts`。页面绑定现有能力，不新增通用 SQL CRUD。实现与边界见 [Runtime 开发规范](application-runtime-development.md)。
 
 Runtime v2 任务同时核对装配语义、Provider/创建编辑绑定、表达式类型和真实入口；生成示例与 TS/Zod 都通过 cmd/runtimespec 更新。新业务优先贡献定义，不在通用渲染器增加业务字段/权限常量。批量组合使用 Gateway 与独立子事务，验证逐项范围和幂等。参见 [M1/M2 实施说明](application-runtime-phase-2.md) 和 [ADR 018](decisions/018-runtime-v2-and-action-dispatch.md)。
 
@@ -105,3 +106,5 @@ Runtime 数据库版本与设计 Agent 改动同时核对 [数据库定义实施
 执行方案管理从 `system/executionplans` 与 `kernel/executionplan` 进入，遵循 feature-development、capability-composition、database-change、entity-model、security 与 quality-gates；管理动作仍注册在共享 CapabilityModules，不能另开业务 REST 或绕过 Gateway。当前支持 Direct、注册 Workflow 和只读 Graph 的持久化、发布及租户绑定，管理页从能力目录进入，采用 web-development、application-runtime 选型及 i18n Skill；预检只检查结构，在线 DSL 保存及灰度后续范围见 [实施记录](capability-flexible-orchestration-implementation.md)。
 
 从需求到 Capability Orchestration Center 的标准交付按 [能力与执行方案开发闭环](agent-workflow.md#能力与执行方案开发闭环)：feature-development 路由，capability-composition 决定能力边界及 Direct/Workflow/Graph 方案，quality-gates 核对解析、生效、版本固定与回滚；默认 Direct 不重复建方案，代码交付不自动切换运行环境 Binding。
+
+UI 设计与视觉评审使用 [baseline-ui-design](../.agents/skills/baseline-ui-design/SKILL.md)，执行 [生成标准](runtime-ui-generation.md)；与 Runtime 选型、前端实现和质量门禁分工。

@@ -27,6 +27,66 @@ make dev
 
 数据库并非运行公共 health/echo 的必要条件：不设置 DATABASE_URL 时 API 仍可启动；受保护的持久化接口不会假装成功。health 是进程存活检查，不表示数据库 readiness。
 
+## Horizon CLI
+
+从仓库根目录用 Go 构建本机可执行文件。
+
+```sh
+go build -trimpath -o horizon-cli ./foundation/cmd/horizon-cli
+```
+
+Windows PowerShell 使用 `go build -trimpath -o horizon-cli.exe ./foundation/cmd/horizon-cli`，执行命令时使用 `.\horizon-cli.exe`。目录查询可在前后端和 PostgreSQL 均停止时执行。二进制读取构建时注册的能力、流程、Graph 和 Runtime 页面。修改定义后重新构建，或用 `./scripts/go.sh run ./cmd/horizon-cli` 加命令参数直接读取当前工作树的定义。
+
+```sh
+./horizon-cli capability
+./horizon-cli workflow
+./horizon-cli graph
+./horizon-cli application
+./horizon-cli page
+./horizon-cli capability --full
+./horizon-cli search article
+./horizon-cli capability get article.get@1.0.0
+./horizon-cli workflow get article-publish
+./horizon-cli page get articles/article.detail
+./horizon-cli refs capability:orchestration.workflow.run@1.0.0
+./horizon-cli validate workflow docs/generated/workflows/article-publish.workflow.json
+```
+
+直接运行类型命令可列出该类型的所有注册条目。默认返回摘要，加 `--full` 可返回每个条目的完整定义。
+
+分析某类 Schema 时，从对应的命令开始。省略标识可读取类型说明、字段说明和结构 JSON Schema。传入标识可在同一次响应中取得完整注册定义及其声明的输入输出、流程节点或页面绑定。
+
+```sh
+./horizon-cli capability schema article.get@1.0.0
+./horizon-cli workflow schema article-publish
+./horizon-cli graph schema
+./horizon-cli application schema articles@2.0.0
+./horizon-cli page schema articles/article.detail@2.0.0
+```
+
+返回的 `schema` 描述类型结构，`entry.definition` 是指定对象的注册定义。Workflow 结构来自现有 Workflow 规格，其余类型从注册使用的 Go 类型推导。运行时会额外检查引用、权限和业务语义。业务字段的描述沿用源定义里的文案，源定义缺少说明时以所属模块源码为准。
+
+查询结果为 JSON。应用或页面存在多个版本时用 `id@version` 指定版本。目录描述代码中的配置，租户发布版本、执行方案绑定与账号权限以运行环境为准。
+
+Windows、macOS 和 Linux 上可用 CLI 在后台管理开发进程。省略目标时管理前后端，也可显式指定 `all`、`frontend` 或 `backend`。
+
+```sh
+./horizon-cli env check
+./horizon-cli env configure
+./horizon-cli start
+./horizon-cli status
+./horizon-cli restart backend
+./horizon-cli stop
+```
+
+CLI 直接启动 Go API 和本地 Vite。第一次启动前运行 `pnpm install --frozen-lockfile`，并准备已迁移的 PostgreSQL。Docker Compose 仅用于需要它来运行本地依赖的环境，例如 `docker compose up -d --wait postgres`。
+
+`env check` 检查 Go、Node.js、前端依赖、端口配置和数据库连通性，输出 JSON，可用 `env check backend` 或 `env check frontend` 只检查一端。启动后端发现 `DATABASE_URL` 缺失时，交互终端会提示输入，并将配置保存在根目录 `.env`。自动化调用可以通过进程环境或 `.env` 提供配置。进程环境优先，连接字符串输入时隐藏，检测结果只显示状态。
+
+`REDIS_URL` 可选。配置后，CLI 会检查 Redis 连通性，API 知识库向量检索会使用该地址。留空时 API 使用系统设置的 `knowledge.vector.url`，基础前后端可以启动。前端默认监听 `127.0.0.1:5173`，可通过 `WEB_PORT` 调整。代理默认使用 `API_ADDR`，也可显式配置 `API_PROXY_TARGET`。
+
+日志和进程记录位于 `.local/horizon-cli/`。服务命令只管理 CLI 启动的进程。停止 Windows 服务会终止整个服务进程树。
+
 ## 生成和验证
 
 测试按批次执行：普通连续开发累计待验项，单个功能完成或聊天结束不自动跑测试；高风险改动先定向验证，明确阶段验收/提交/PR 前统一跑快速门禁和相关专项，发布候选、明确全量验收或 CI 才跑完整回归。已通过且输入未变的检查复用。详见 [测试执行节奏](testing.md#测试执行节奏)。
@@ -53,7 +113,7 @@ make test-security     # 认证/授权/配置 + 真实数据库范围负向用�
 make ci                # 所有门禁，含 DB 和 E2E
 ```
 
-Go 命令可通过 `scripts/go.sh fmt ./...`、`scripts/go.sh vet ./...`、`scripts/go.sh test ./...` 执行；它们的工作目录为 services，工具链与缓存隔离在 .tools。使用系统 Go 时也可在 services 直接执行 gofmt / go vet / go test。
+Go 模块位于仓库根目录，平台代码在 `foundation/`，网盘、项目、文章和示例应用在 `applications/`。`scripts/go.sh` 从 `foundation/` 执行，工具链与缓存隔离在 `.tools/`。同时检查平台和应用可运行 `./scripts/go.sh test ./... ../applications/...`，或使用系统 Go 从仓库根目录运行 `go test ./foundation/... ./applications/...`。
 
 `.env` 由 Make 读取并导出；直接使用 pnpm 或脚本不会自动加载它。CI 为测试显式配置环境变量。`make db-down` 只停止容器；开发数据卷不会被删除。
 

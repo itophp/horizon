@@ -9,12 +9,9 @@ import type {
   ChangeRecord,
   DictionaryDetail,
   DictionaryOption,
-  DictionaryWorkspace,
   DeliveryRecord,
   ImportPreview,
   InboxMessage,
-  MCPAudit,
-  MCPToken,
   MCPTokenCreated,
   ManagedFile,
   NotificationAudience,
@@ -519,9 +516,6 @@ export const settingsReauthenticate = (value: unknown) =>
 
 type DictionaryQuery = Target;
 
-export const dictionariesList = (params?: DictionaryQuery) =>
-  invoke<DictionaryWorkspace>("dictionary.list.read", { ...params });
-
 export const dictionariesGet = (id: number, params?: DictionaryQuery) =>
   invoke<DictionaryDetail>("dictionary.detail.read", { id, ...params });
 
@@ -612,8 +606,6 @@ export const notificationsTest = (value: unknown) =>
 export const mcpManagementCreate = (value: unknown) =>
   invoke<MCPTokenCreated>("mcp.token.create", body(value));
 
-export const mcpManagementList = () => invoke<MCPToken[]>("mcp.token.list");
-
 export const mcpManagementRevoke = (id: number, value: unknown) =>
   invoke<{ id: number }>("mcp.token.revoke", { id, ...body(value) });
 
@@ -625,8 +617,6 @@ export const mcpManagementAdminRevoke = (id: number, value: unknown) =>
 
 export const mcpManagementCapabilities = (params?: { departmentId?: number }) =>
   invoke<string[]>("mcp.capability.list", { ...params });
-
-export const mcpManagementAudit = () => invoke<MCPAudit[]>("mcp.audit.list");
 
 // ---------------------------------------------------------------- identity
 

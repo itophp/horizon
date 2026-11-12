@@ -3,6 +3,7 @@
 适用 apps/web，继承根规则。编码前使用 baseline-web-development；新增文案使用 baseline-internationalization；有新 API 需求先回 Goa DSL。
 
 - app 管路由、Provider、布局；features/<feature> 管功能；components/shared 只放真实跨功能复用；components/ui 复用 shadcn 原语。API/SQL 生成目录边界不变。
+- 禁止显式 TypeScript `any`。用户可见文案和辅助名称遵循 [i18n 规则](src/i18n/AGENTS.md)。
 - React Router 管导航与 URL 状态；TanStack Query 管服务端数据/缓存和取消；Orval SDK 是请求/DTO 来源。页面不裸 fetch，不复制 API 类型或把 query 结果再存全局状态。
 - **关联对象选择**：凡选择账号、部门、组织、项目或其他可独立管理的业务对象，无论新增、编辑、筛选、批量还是弹窗，必须使用支持远程搜索的关联选择器，由授权范围内的服务端查询提供候选，显示可辨识名称/辅助信息，提交稳定 ID；禁止要求用户手填 ID、用本地静态列表冒充远程对象，或因候选少而省略远程搜索。单选、多选与树形关系按 [组件指南](../../docs/ui-component-guidelines.md#关联对象选择强制规则) 实现。固定枚举、布尔值和不引用业务对象的纯静态选项不属于关联对象。
 - **关联数据展示**：列表、详情、卡片、筛选、弹窗、审批和关联数组等所有用户可见位置，显示关联对象经授权的名称、标题及必要的可区分信息，禁止直接以内部 ID 作为显示内容或加载失败时的回退。人员等适合组合展示的对象使用头像 + 名称等语义组合；多值展示每项名称，数量较多时提供可访问的完整列表。无法读取、已删除、停用及加载失败分别使用本地化且不泄露信息的状态，不能把隐藏对象的 ID 或未经授权名称显示出来。按 [关联数据展示规则](../../docs/ui-component-guidelines.md#关联数据展示规则) 执行。

@@ -14,7 +14,7 @@ import { capabilityLabel } from "@/lib/capability";
 
 // Events belong to one assistant turn, including after a later turn starts.
 export function RunProgress({ events }: { events: AIStreamEvent[] }) {
-  const { t } = useTranslation("ai");
+  const { t, i18n } = useTranslation("ai");
   const visible = events.filter(
     (event) =>
       event.kind === "planning" ||
@@ -43,7 +43,7 @@ export function RunProgress({ events }: { events: AIStreamEvent[] }) {
                   <TraceTitle className="whitespace-normal">
                     {event.capability
                       ? t("workbench.flow", {
-                          capability: capabilityLabel(t, event.capability),
+                          capability: capabilityLabel(i18n, event.capability),
                           status: t(
                             event.status === "running"
                               ? "runStatus.running"

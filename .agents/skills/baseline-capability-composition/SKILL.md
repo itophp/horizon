@@ -5,7 +5,7 @@ description: "决定一个功能拆成哪些能力、能力如何互调及如何
 
 # 能力拆分与组合
 
-先读根 AGENTS.md、[ADR 015](../../../docs/decisions/015-capability-centric-platform.md) 和 [能力拆分与组合规范](../../../docs/capability-composition.md)。规范里的六条互调约束和运行时支撑是本节的操作依据，本文件只保留决策步骤。
+先读 [根规则](../../../AGENTS.md)、[底座规则](../../../foundation/AGENTS.md) 的能力与流程章节、[ADR 015](../../../docs/decisions/015-capability-centric-platform.md) 和 [能力拆分与组合规范](../../../docs/capability-composition.md)。规范里的六条互调约束和运行时支撑是本节的操作依据，本文件只保留决策步骤。
 
 ## 两条硬要求
 
@@ -15,6 +15,8 @@ description: "决定一个功能拆成哪些能力、能力如何互调及如何
 开发前按 [功能开发的能力与完整流程确认](../baseline-feature-development/SKILL.md#编码前的能力与完整流程确认) 分析能力契约、复用和完整流程；功能变更及 Bug 修复按该 Skill 的轻量流程聚焦受影响部分，必要时扩大分析。完成相应核对后再实现对应业务。
 
 ## 先发现已有能力
+
+分析能力和编排契约时，必须先用 Horizon CLI。发现条目可分别运行 `./horizon-cli capability`、`./horizon-cli workflow` 或 `./horizon-cli graph`。需要批量读取完整定义时加 `--full`，分析具体契约时用对应的 `schema <name@version>`。省略标识可读类型规范。二进制与工作树不一致时用 `go run ./foundation/cmd/horizon-cli` 执行相同参数，再用源定义与候选校验确认业务语义。
 
 先按 [能力复用优先](../../../docs/agent-workflow.md#能力复用优先先发现再复用最后新增) 搜索现有动作、对象、Definition/Schema 与测试，检查权限范围及事务/事件语义。已有完整动作直接复用；已有原子能力可满足时经 Gateway 组合；差异可兼容时在原模块扩展并维护消费者；存在独立语义缺口才新增。记录已有候选及不适用原因，不仅凭名称判断重复或可用。
 
@@ -64,7 +66,7 @@ description: "决定一个功能拆成哪些能力、能力如何互调及如何
 1. 列动作清单，按上表定层次与命名，写进 `Definition`（名称、版本、输入输出 Schema、权限、风险、审批、幂等、成功事件、可审计字段、`Entity`）。
 2. 数据能力先实现并单独验证：范围过滤、跨租户、拒绝路径。
 3. 入口能力只做编排，`Data` 二次投影；不声明内层事件。
-4. 两层权限都进 `system/identity/catalog.go`，en / zh-CN 文案同步。
+4. 两层权限都进 `foundation/system/identity/catalog.go`，en / zh-CN 文案同步。
 5. 补负向用例：内层权限不足、跨租户、深度超限、幂等重放。
 
 ## 先判定运行方式，再写编排代码
@@ -85,7 +87,7 @@ description: "决定一个功能拆成哪些能力、能力如何互调及如何
 - 原生或同步 Go 组合使用默认 Direct V1；`Layer` 是能力职责，不是 Plan 模式。新增能力只在所属模块 Entries 注册一次，由共享 `app.CapabilityModules` 装配；不另建 Registry、Gateway 或调度器。
 - 需替换原子动作的前后流程时，先核对 Workflow Plan 的同输入契约、Native 结果与当前模板限制。Native 通过完整 Gateway 执行原能力，不直接调 Handler，也不让 Active Plan 再次选中自身。普通业务流程与 Capability 替换方案分别判断；含 ADK、补偿或业务人工信号的流程不能因已有 Workflow 支持就宣称可作 Plan 模板。
 - 独立 Graph Plan 只用于输入输出契约完全一致的兼容只读能力；写动作通过 Workflow 的 Graph 节点分析，再由确定性能力执行，风险确认不由模型决定。固定工具、预算与摘要沿现有引擎校验。
-- Workflow/Graph 定义由部署 Go 源注册，共享 `app.WorkflowDefinitions()` / `app.GraphDefinitions()`；方案仅保存固定引用/摘要。管理入口复用 `system/executionplans.Entries()`，解析复用 `kernel/executionplan`。远程搜索、编译图和结构预检不代表业务执行通过，本地画布投影不能作为完整 DSL 上传。
+- Workflow/Graph 定义由部署 Go 源注册，共享 `app.WorkflowDefinitions()` / `app.GraphDefinitions()`；方案仅保存固定引用/摘要。管理入口复用 `foundation/system/executionplans` 的 `Entries()`，解析复用 `foundation/kernel/executionplan`。远程搜索、编译图和结构预检不代表业务执行通过，本地画布投影不能作为完整 DSL 上传。
 - 替代方案经 create → validate → publish，发布不切换 Binding；bind/rollback 使用读到的 expectedRevision，冲突不静默换修订。所有管理动作仍经 Gateway，人工专用及管理/目标/节点权限不因流程自动开放。运行环境切换须在任务授权范围内；隔离测试可验证完整生命周期。
 
 交付核对默认方案或替代方案的实际解析、同能力入口接入和回滚；进行中的调用、审批与运行继续固定原版本。行为与验证边界见 [实施记录](../../../docs/capability-flexible-orchestration-implementation.md) 和 [安全规范](../../../docs/security.md#capability-执行方案管理)。
@@ -100,10 +102,10 @@ Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapa
 
 ## 以真实契约生成流程
 
-先阅读 [完整示例](../../../docs/orchestration-example.md) 和 [Schema 路线](../../../docs/agent-generation-plan.md)。`docs/generated/workflows/workflow.schema.json`、`*.workflow.json` 从纯规格包 kernel/workflow/spec 的 Go Definition/Step 与共享常量生成，禁止手改导出文件。
+先阅读 [完整示例](../../../docs/orchestration-example.md) 和 [Schema 路线](../../../docs/agent-generation-plan.md)。`docs/generated/workflows/workflow.schema.json`、`*.workflow.json` 从纯规格包 `foundation/kernel/workflow/spec` 的 Go Definition/Step 与共享常量生成，禁止手改导出文件。
 
 1. 先选原子动作与权限边界；字段、版本、依赖使用当前能力目录，不猜能力名称。
-2. 候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件>` 校验（脚本工作目录 services）。它不执行也不注册定义；结构合法不代表授权、SQL 范围或业务顺序正确。
+2. 候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件>` 校验（脚本工作目录 foundation）。它不执行也不注册定义；结构合法不代表授权、SQL 范围或业务顺序正确。
 3. 流程运行源仍是 Go Definition；编辑源后 `make generate-workflows`。字段映射/DependsOn 决定顺序，Reads/Writes 检查冲突，不自动猜顺序。
 4. `make check-workflows` 校验结构/目录/依赖/预算，`make check-generated` 拦截漂移。阶段验收 ci-fast；完整参考的数据库验收用 `make test-orchestration-example`。
 5. 参数类型、Schema、目录、语义和 Gateway 各守一层；禁止生成第二份权限/审批策略或新的任意 JSON 执行入口。

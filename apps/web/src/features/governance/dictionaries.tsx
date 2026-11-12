@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,6 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { Plus, ArrowLeft, Download, Upload, Trash2 } from "lucide-react";
 import {
-  dictionariesList,
   dictionariesGet,
   dictionariesDraft,
   dictionariesExport,
@@ -29,8 +28,6 @@ import {
   EditorDialog,
   ErrorBanner,
   Loading,
-  DataTable,
-  type AdminColumn,
 } from "@/features/administration/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,65 +38,46 @@ import {
   useGovTask,
   downloadContent,
 } from "./shared";
-export function DictionarySection() {
-  const { t, i18n } = useTranslation("governance");
+export function DictionarySection({
+  renderTable,
+  onRefresh,
+}: {
+  renderTable: (
+    actions: (id: number, revision: number) => ReactNode,
+    open: (id: number) => void,
+  ) => ReactNode;
+  onRefresh: () => Promise<void>;
+}) {
+  const { t } = useTranslation("governance");
   const session = useSession();
   const target = { kind: "workspace" as const, id: 0 };
   const [selected, setSelected] = useState<number | null>(null);
   const [create, setCreate] = useState(false);
   const task = useGovTask();
-  const q = useQuery({
-    queryKey: useGovKey("dictionaries", target.kind, target.id),
-    queryFn: () =>
-      dictionariesList({ targetKind: target.kind, targetId: target.id }),
-    enabled: session.permissions.includes("dictionaries:read"),
-    retry: false,
-  });
-  const columns: AdminColumn<DictionaryDefinition>[] = [
-    {
-      id: "name",
-      header: t("dictionaries"),
-      cell: (r) => (
-        <button className="entity-link" onClick={() => setSelected(r.id)}>
-          <strong>
-            {i18n.resolvedLanguage === "zh-CN" && r.nameZh
-              ? r.nameZh
-              : r.nameEn}
-          </strong>
-          <small>{r.code}</small>
-        </button>
-      ),
-    },
-    { id: "category", header: t("category"), cell: (r) => r.category },
-    {
-      id: "kind",
-      header: t("kind"),
-      cell: (r) => <span className="scope-badge">{t(r.kind)}</span>,
-    },
-    { id: "status", header: t("status"), cell: (r) => t(r.status) },
-    { id: "revision", header: t("history"), cell: (r) => r.revision },
-    {
-      id: "actions",
-      header: t("select"),
-      cell: (r) => (
-        <div className="heading-actions">
-          <Button variant="outline" onClick={() => setSelected(r.id)}>
-            {t("edit")}
-          </Button>
-          {r.revision === 0 &&
-            session.permissions.includes("dictionaries:delete") && (
-              <Button
-                variant="ghost"
-                aria-label={t("remove")}
-                onClick={() => task.mutate(() => dictionariesRemove(r.id))}
-              >
-                <Trash2 size={15} />
-              </Button>
-            )}
-        </div>
-      ),
-    },
-  ];
+  function dictionaryActions(id: number, revision: number) {
+    return (
+      <div className="heading-actions">
+        <Button variant="outline" onClick={() => setSelected(id)}>
+          {t("edit")}
+        </Button>
+        {revision === 0 &&
+          session.permissions.includes("dictionaries:delete") && (
+            <Button
+              variant="ghost"
+              aria-label={t("remove")}
+              onClick={() =>
+                task.mutate(async () => {
+                  await dictionariesRemove(id);
+                  await onRefresh();
+                })
+              }
+            >
+              <Trash2 size={15} />
+            </Button>
+          )}
+      </div>
+    );
+  }
   if (!session.permissions.includes("dictionaries:read")) return <NoAccess />;
   return (
     <>
@@ -107,7 +85,13 @@ export function DictionarySection() {
         <p className="muted-text">{t("dictionariesHint")}</p>
         <div className="toolbar-right">
           {selected !== null ? (
-            <Button variant="outline" onClick={() => setSelected(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelected(null);
+                void onRefresh();
+              }}
+            >
               <ArrowLeft size={15} />
               {t("dictionaries")}
             </Button>
@@ -124,17 +108,8 @@ export function DictionarySection() {
       {task.error && <ErrorBanner error={task.error} />}{" "}
       {selected !== null ? (
         <DictionaryEditor id={selected} target={target} />
-      ) : q.isPending ? (
-        <Loading />
-      ) : q.error ? (
-        <ErrorBanner error={q.error} />
       ) : (
-        <section className="admin-panel entity-card">
-          <DataTable
-            rows={q.data?.status === 200 ? q.data.data.definitions : []}
-            columns={columns}
-          />
-        </section>
+        renderTable(dictionaryActions, setSelected)
       )}
       {create && (
         <EditorDialog
@@ -149,6 +124,7 @@ export function DictionarySection() {
             onSaved={(id) => {
               setCreate(false);
               setSelected(id);
+              void onRefresh();
             }}
           />
         </EditorDialog>

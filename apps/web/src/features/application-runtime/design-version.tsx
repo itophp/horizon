@@ -114,7 +114,7 @@ export function DesignVersion({
         description={t("design.previewHint")}
         wide
       >
-        {preview && <DesignPreview current={current} identity={identity} />}
+        {preview && <DesignPreview current={current} />}
       </EditorDialog>
       <details>
         <summary>{t("design.definition")}</summary>

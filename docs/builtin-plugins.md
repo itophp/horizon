@@ -1,11 +1,11 @@
 # 内置插件接入（Phase 1）
 
-Phase 1 仅装配可信、随主程序编译的 Go 插件。插件框架位于 `services/kernel/plugin`，不动态加载进程、WASM 或远程前端脚本；安装、在线停用及持久化管理属于后续阶段。原始设计见 [AI-Native 插件接入方案](ai-native-plugin-integration.md)。
+Phase 1 仅装配可信、随主程序编译的 Go 插件。插件框架位于 `foundation/kernel/plugin`，不动态加载进程、WASM 或远程前端脚本；安装、在线停用及持久化管理属于后续阶段。原始设计见 [AI-Native 插件接入方案](ai-native-plugin-integration.md)。
 
 ## 声明与装配
 
-1. 业务包保持 `Entries()` 为能力唯一来源、`Entities()` 为实体来源；新增 `Plugin` 实现 `Manifest`、`Register`、`Start`、`Stop`。参考 `services/applications/projects/plugin.go`。
-2. 提供并嵌入符合 `services/kernel/plugin/manifest.schema.json` 的 `plugin.yaml`。ID 唯一，版本采用 `major.minor.patch`；`apiVersion` 为 `1.0`，运行方式为 `builtin`。依赖填写插件 ID 和**精确版本**，不存在、版本不匹配或循环依赖均拒绝注册。
+1. 业务包保持 `Entries()` 为能力唯一来源、`Entities()` 为实体来源；新增 `Plugin` 实现 `Manifest`、`Register`、`Start`、`Stop`。参考 `applications/projects/plugin.go`。
+2. 提供并嵌入符合 `foundation/kernel/plugin/manifest.schema.json` 的 `plugin.yaml`。ID 唯一，版本采用 `major.minor.patch`；`apiVersion` 为 `1.0`，运行方式为 `builtin`。依赖填写插件 ID 和**精确版本**，不存在、版本不匹配或循环依赖均拒绝注册。
 3. 在 `Register` 中向 Registrar 提供能力、实体及能力所引用的权限和成功事件。权限须提供 module、function、action、范围与临时授权语义；身份服务启动前将声明校验并合并到实例目录，已有权限必须完全一致，冲突则启动失败。事件和权限引用必须与能力声明一致，注册不会增加授权或创建另一套事件处理逻辑。所有类型必须在 Manifest 的 `extensions` 中声明。
 4. 在 `runtime/app.BuiltinPlugins` 的内置插件列表提供插件实例及所需服务。它是运行时与离线检查共同的装配源；运行时将同一管理器的能力与实体加入既有目录。新插件必须补充 `plugintest.Contract` 测试，并验证真实 Gateway 调用与权限/租户边界。
 5. 前端在业务功能包提供静态插件声明，再加入 `app/plugins/builtins.tsx`；插件注册表同时提供双语资源及可选的权限功能/动作标签映射；标签键必须来自该插件的双语资源，冲突或缺少译文时注册失败。页面路由、菜单以及双语资源由应用构建时引用。菜单的 `permissions` 仅用于过滤界面，业务动作仍使用 `lib/capabilities.ts` 和服务端 Gateway。

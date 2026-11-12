@@ -2,17 +2,14 @@ import { ApplicationDesignPage } from "@/features/application-runtime/design-pag
 import { DynamicApplicationRoute } from "@/features/application-runtime/route";
 import { frontendExtensions } from "@/app/plugins/builtins";
 import { InstallationsPage } from "@/features/application-runtime/installations";
-import { ArticlesPage } from "@/features/articles/page";
 
 import { DrivePage } from "@/features/drive/page";
 import { DriveDetailPage } from "@/features/drive/detail";
 import { DriveMembersPage } from "@/features/drive/members";
 import { DriveTrashPage } from "@/features/drive/trash";
-import { McpHubPage } from "@/features/mcp/hub";
 import { AiPage } from "@/features/ai/page";
 import { KnowledgePage } from "@/features/knowledge/page";
-import { CapabilityPage } from "@/features/capabilities/page";
-import { SettingsPage } from "@/features/governance/settings";
+import "@/features/capabilities/capability.css";
 import { FilesPage, FileDownloadPage } from "@/features/governance/files";
 import {
   NotificationsPage,
@@ -27,12 +24,6 @@ import {
 } from "@/features/administration/layout";
 import { LoginPage } from "@/features/administration/login";
 import { useSession } from "@/features/administration/auth";
-import { DashboardPage } from "@/features/administration/dashboard";
-import {
-  AccountsPage,
-  OrganizationsPage,
-  PermissionsPage,
-} from "@/features/administration/pages";
 import { createBrowserRouter, Navigate } from "react-router";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
@@ -96,8 +87,8 @@ export const router = createBrowserRouter([
                 element: <ApplicationDesignPage />,
               },
               { path: "*", element: <DynamicApplicationRoute /> },
-              { path: "/analytics", element: <DashboardPage /> },
-              { path: "/capabilities", element: <CapabilityPage /> },
+              { path: "/analytics", element: <DynamicApplicationRoute /> },
+              { path: "/capabilities", element: <DynamicApplicationRoute /> },
               {
                 path: "/capabilities/:name",
                 element: (
@@ -115,16 +106,12 @@ export const router = createBrowserRouter([
                 ),
               },
               { path: "/ai", element: <AiPage /> },
-              { path: "/articles", element: <ArticlesPage /> },
-              { path: "/articles/:id", element: <ArticlesPage /> },
               ...frontendExtensions.routes,
               { path: "/drive", element: <DrivePage /> },
               { path: "/drive/:id", element: <DriveDetailPage /> },
               { path: "/drive/:id/members", element: <DriveMembersPage /> },
               { path: "/drive/:id/trash", element: <DriveTrashPage /> },
               { path: "/knowledge", element: <KnowledgePage /> },
-              { path: "/accounts", element: <AccountsPage /> },
-              { path: "/organizations", element: <OrganizationsPage /> },
               {
                 path: "/departments",
                 element: (
@@ -135,8 +122,8 @@ export const router = createBrowserRouter([
                 path: "/roles",
                 element: <Navigate to="/permissions?type=roles" replace />,
               },
-              { path: "/settings", element: <SettingsPage /> },
-              { path: "/mcp", element: <McpHubPage /> },
+              { path: "/settings", element: <DynamicApplicationRoute /> },
+              { path: "/mcp", element: <DynamicApplicationRoute /> },
               {
                 path: "/mcp-settings",
                 element: <Navigate to="/mcp?tab=remote" replace />,
@@ -145,7 +132,7 @@ export const router = createBrowserRouter([
                 path: "/webmcp",
                 element: <Navigate to="/mcp?tab=page" replace />,
               },
-              { path: "/preferences", element: <SettingsPage personal /> },
+              { path: "/preferences", element: <DynamicApplicationRoute /> },
               {
                 path: "/dictionaries",
                 element: <Navigate to="/settings?tab=fields" replace />,
@@ -161,7 +148,6 @@ export const router = createBrowserRouter([
                 path: "/notifications/:id",
                 element: <NotificationDetailPage />,
               },
-              { path: "/permissions", element: <PermissionsPage /> },
               { path: "/temporary-access", element: <TemporaryAccessPage /> },
             ],
           },

@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { runtimeProtocolRoutes } from "@/api/generated/runtime";
 import { router } from "@/app/router/router";
 import { findWebMcpRoute, webMcpRoutes } from "./routes";
 
@@ -10,9 +11,17 @@ it("inventories every declared route and identifies parameterized pages", () => 
     ]);
   }
   expect(webMcpRoutes.map((route) => route.path).sort()).toEqual(
-    [...new Set(paths(router.routes))].sort(),
+    [
+      ...new Set([
+        ...paths(router.routes),
+        ...runtimeProtocolRoutes.map((route) => route.route),
+      ]),
+    ].sort(),
   );
   expect(findWebMcpRoute("/files/123")?.path).toBe("/files/:id");
+  expect(findWebMcpRoute("/projects/7/tasks/9")?.path).toBe(
+    "/projects/:projectId/tasks/:id",
+  );
   expect(findWebMcpRoute("/login")?.connected).toBe(false);
   expect(findWebMcpRoute("/files/123/other")).toBeUndefined();
 });

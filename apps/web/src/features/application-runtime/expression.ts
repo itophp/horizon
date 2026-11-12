@@ -4,7 +4,7 @@ import type {
 } from "@/api/generated/runtime";
 export type Json =
   string | number | boolean | null | Json[] | { [key: string]: Json };
-export type Scope = Record<string, Json | undefined>;
+export type Scope = Record<string, unknown>;
 const unsafe = new Set(["__proto__", "prototype", "constructor"]);
 export function pathValue(value: unknown, path: string): unknown {
   if (!path) return value;
@@ -33,7 +33,11 @@ export function evaluate(
     case "literal":
       return JSON.parse(e.literal) as unknown;
     case "path":
-      if (!/^(record|form|route|query|selection|event|context)\./.test(e.path))
+      if (
+        !/^(record|form|route|query|selection|event|context|data)\./.test(
+          e.path,
+        )
+      )
         throw new Error("field_not_allowed");
       return pathValue(scope, e.path);
     case "object":
@@ -54,6 +58,45 @@ export function evaluate(
       return e.items.some((i) => Boolean(evaluate(i, scope, depth + 1)));
     case "not":
       return !child(0);
+    case "if":
+      return child(0) ? child(1) : child(2);
+    case "get":
+      return pathValue(child(0), String(child(1)));
+    case "encode":
+      return encodeURIComponent(String(child(0) ?? ""));
+    case "replace":
+      return String(child(0) ?? "").replaceAll(
+        String(child(1)),
+        String(child(2)),
+      );
+    case "coalesce":
+      for (const item of e.items ?? []) {
+        const value = evaluate(item, scope, depth + 1);
+        if (value !== null && value !== undefined) return value;
+      }
+      return undefined;
+    case "concat":
+      return (e.items ?? [])
+        .map((item) => evaluate(item, scope, depth + 1) ?? "")
+        .join("");
+    case "count": {
+      const value = child(0);
+      return Array.isArray(value) ? value.length : 0;
+    }
+    case "find":
+    case "filter": {
+      const value = child(0);
+      const rows: unknown[] = Array.isArray(value) ? value : [];
+      const matches = (record: unknown) =>
+        Boolean(
+          evaluate(
+            e.items[1],
+            { ...scope, event: scope.record, record },
+            depth + 1,
+          ),
+        );
+      return e.kind === "find" ? rows.find(matches) : rows.filter(matches);
+    }
     case "exists":
       return child(0) !== undefined && child(0) !== null;
     default:

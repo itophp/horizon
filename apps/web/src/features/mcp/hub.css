@@ -12,6 +12,6 @@
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.admin-page-tabs > button[aria-selected="true"] .mcp-hub-count {
+.protocol-layout-tabs button[aria-selected="true"] .mcp-hub-count {
   background: var(--app-panel);
 }

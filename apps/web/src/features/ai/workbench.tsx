@@ -134,7 +134,7 @@ export function Workbench(props: {
                 <li key={item.id} className="space-y-3 rounded-lg border p-3">
                   <div>
                     <p className="text-sm font-medium">
-                      {capabilityLabel(t, item.capability)}
+                      {capabilityLabel(i18n, item.capability)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {formatMoment(i18n.language, item.requestedAt)}

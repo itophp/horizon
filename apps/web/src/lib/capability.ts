@@ -1,4 +1,4 @@
-import type { TFunction } from "i18next";
+import type { i18n } from "i18next";
 
 // Capability names contain dots, which i18next would read as nesting. The label
 // helper flattens them so resources stay one level deep per capability.
@@ -6,21 +6,19 @@ export function capabilityKey(name: string) {
   return name.replace(/\./g, "_");
 }
 
-export function capabilityLabel(t: TFunction, name: string) {
+export function capabilityLabel(i18n: i18n, name: string, fallback = name) {
   if (!name) return "";
-  return t(`capability:definitions.${capabilityKey(name)}.title`, {
-    defaultValue: name,
-  });
+  const key = `capability:definitions.${capabilityKey(name)}.title`;
+  return i18n.exists(key) ? i18n.t(key) : fallback;
 }
 
 export function capabilityDescription(
-  t: TFunction,
+  i18n: i18n,
   name: string,
   fallback: string,
 ) {
-  return t(`capability:definitions.${capabilityKey(name)}.description`, {
-    defaultValue: fallback,
-  });
+  const key = `capability:definitions.${capabilityKey(name)}.description`;
+  return i18n.exists(key) ? i18n.t(key) : fallback;
 }
 
 export function formatMoment(language: string, value: string) {

@@ -61,5 +61,8 @@
   },
   "notFound": "Page not found",
   "footer": "Built for explicit contracts and repeatable verification.",
-  "framework": "Engineering foundation"
+  "framework": "Engineering foundation",
+  "accessibility": {
+    "breadcrumb": "Breadcrumb"
+  }
 }

@@ -7,7 +7,7 @@ description: "Declare or change the business entity model (fields, relations, st
 
 实体模型描述业务对象（有哪些字段、和谁关联、状态怎么变），由 `make check-entities` 对照迁移强制校验。它是能力目录的对象视图，不是第二套 schema，也不是第二个执行入口。
 
-先读 [实体模型](../../../docs/entity-model.md) 与 [服务实现规则](../../../services/AGENTS.md)。
+先读 [实体模型](../../../docs/entity-model.md) 与 [底座实现规则](../../../foundation/AGENTS.md)。
 
 ## 什么时候必须动它
 
@@ -25,12 +25,12 @@ description: "Declare or change the business entity model (fields, relations, st
 一实体一文件，聚合器只做汇总：
 
 ```text
-system/<module>/entity_<name>.go 或 applications/<module>/entity_<name>.go   # 一个 contracts.Entity 的完整声明
-system/<module>/entities.go 或 applications/<module>/entities.go        # func Entities() []contracts.Entity{...}
-runtime/app/entities.go             # 汇总所有模块，供 CLI 与 transport 共用
+foundation/system/<module>/entity_<name>.go 或 applications/<module>/entity_<name>.go   # 一个 contracts.Entity 的完整声明
+foundation/system/<module>/entities.go 或 applications/<module>/entities.go        # func Entities() []contracts.Entity{...}
+foundation/runtime/app/entities.go             # 汇总所有模块，供 CLI 与 transport 共用
 ```
 
-`kernel/metadata` 负责另一半：`schema.go` 从 embed 的 goose 迁移解析表/列/外键，`entity.go` 从能力目录派生 `Capabilities`/`Events`，`validate.go` 与 `transitions.go` 是 E1–E10。
+`foundation/kernel/metadata` 负责另一半：`schema.go` 从 embed 的 goose 迁移解析表/列/外键，`entity.go` 从能力目录派生 `Capabilities`/`Events`，`validate.go` 与 `transitions.go` 是 E1–E10。
 
 实体声明是纯数据，写包级函数（`func exampleRecordEntity() contracts.Entity`），不要挂在 `*Service` 上——检查链路不该构造服务实例。
 
@@ -68,5 +68,5 @@ FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 
 ## 不要做
 
 - 不要为没有消费方的字段写文案（例如 `attribute.title`）：没有表单读它，加了就是会过期的手抄表。
-- 不要手改生成代码或迁移去迁就声明；源是 `db/migrations` 和 `design/`。
+- 不要手改生成代码或迁移去迁就声明；物理结构以 `foundation/db/migrations/` 为准；传输契约改动回到 `foundation/design/`。
 - 不要把实体声明当成校验器：输入校验仍然是 `contracts.Schema`，实体只描述对象。

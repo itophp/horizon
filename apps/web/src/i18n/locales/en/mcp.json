@@ -24,6 +24,9 @@
   "confirmRotate": "Rotate now",
   "confirmRevoke": "Revoke now",
   "secretOnce": "Save this token now. It will only be shown once.",
+  "copyToken": "Copy token",
+  "tokenCopied": "Token copied.",
+  "copyTokenFailed": "Could not copy the token. Select and copy it manually.",
   "dismiss": "I have saved the token",
   "failed": "The operation failed.",
   "loading": "Loading tokens…",
@@ -39,6 +42,8 @@
   "workbuddyHelp": "Import the configuration and enter your token locally. Replace the placeholder before use; do not share your credential.",
   "audit": "Recent calls",
   "refresh": "Refresh",
+  "auditTool": "Tool",
+  "auditResult": "Result",
   "auditEntry": "{{tool}} · {{result}} · {{time}}",
   "password": "Current password",
   "validation": {

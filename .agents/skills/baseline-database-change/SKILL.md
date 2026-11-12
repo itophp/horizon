@@ -5,12 +5,12 @@ description: "Change PostgreSQL schema, Goose migrations, sqlc queries, pgx repo
 
 # 数据库变更
 
-先读 [数据库目录规则](../../../services/db/AGENTS.md) 和 [数据库约定](../../../docs/database-conventions.md)。
+先读 [数据库目录规则](../../../foundation/db/AGENTS.md) 和 [数据库约定](../../../docs/database-conventions.md)。
 
 修改前检查已有迁移与 query，明确数据生命周期、约束、租户归属、拥有者语义、查询范围和字段投影。新业务表由实际需求驱动，技术示例表不能直接冒充正式模型。
 
 - 已应用迁移只追加版本；评估锁表、默认值、回填、索引以及已有数据兼容性。Up/Down 不自动等于生产可安全回滚；不可逆操作要明确记录，不自动执行破坏性生产变更。
-- 表和约束在 migrations，参数化查询在 db/query。改 SQL 后 make generate，手写 Repository 只消费 dbgen。禁止直接修补 sqlc 输出。
+- 表和约束在 `foundation/db/migrations/`，参数化查询在 `foundation/db/query/`。改 SQL 后运行 `make generate`，手写 Repository 只消费根目录 `internal/repository/dbgen/`。禁止直接修补 sqlc 输出。
 - 所有租户数据的 list/get/update/delete/aggregate/export/batch/joins 都在 SQL 层实施可信 tenant + scope，写入优先带范围的原子查询；不先无约束查出再过滤。
 - 通过 pgx 事务将多步操作绑定同一 DBTX/Queries；明确提交、回滚、并发和幂等策略，禁止事务部分逻辑误用池连接。
 - CUSTOM/组织/部门集合来自后端解析，参数化传入；需要下级部门时明确集合来源。不把请求 tenant/owner 当授权依据。

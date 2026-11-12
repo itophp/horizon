@@ -52,6 +52,7 @@ export function RuntimeProvider({ children }: PropsWithChildren) {
       profile?.activeDepartmentId,
     ],
     queryFn: () => settingsEffective(),
+    meta: { refreshAfter: ["settings.preferences.update"] },
     enabled: !!profile,
     staleTime: 30000,
     refetchInterval: 30000,

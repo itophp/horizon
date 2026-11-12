@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { EditorDialog } from "@/features/administration/shared";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 export function RuntimeDialogHost(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -15,16 +15,17 @@ export function RuntimeDialogHost(props: {
   presentation?: string;
   children: ReactNode;
 }) {
-  if (props.presentation !== "drawer") return <EditorDialog {...props} wide />;
+  if (props.presentation !== "drawer" && props.presentation !== "sheet")
+    return <EditorDialog {...props} wide />;
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="runtime-drawer">
-        <DialogHeader>
-          <DialogTitle>{props.title}</DialogTitle>
-          <DialogDescription>{props.description}</DialogDescription>
-        </DialogHeader>
+    <Sheet open={props.open} onOpenChange={props.onOpenChange}>
+      <SheetContent className="runtime-sheet">
+        <SheetHeader>
+          <SheetTitle>{props.title}</SheetTitle>
+          <SheetDescription>{props.description}</SheetDescription>
+        </SheetHeader>
         {props.children}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

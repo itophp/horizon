@@ -4,63 +4,832 @@ export const runtimeDeploymentCandidates = [
   {
     dependencyVersions: [],
     pluginId: "builtin:articles",
-    version: "1.0.0",
-    digest: "080c9b25411f40abcf8996c6f0670ccb643b0904ca53f20c9a180740c1cf01d9",
+    version: "2.0.0",
+    digest: "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
     applications: ["articles"],
     dependencies: [],
   },
   {
     dependencyVersions: [],
-    pluginId: "com.horizon.projects",
+    pluginId: "system.identity",
+    version: "2.3.0",
+    digest: "350d42d713fdff90a3f0735ca9b58f31e8a170e1a19629562c9439e6c4e948f9",
+    applications: [
+      "permissions",
+      "organizations",
+      "accounts",
+      "runtime-protocol",
+    ],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:capabilities",
+    version: "1.0.1",
+    digest: "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
+    applications: ["capabilities"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:analytics",
     version: "1.0.0",
-    digest: "c2c79ca9edbbb58194348881527d1bd54e18faf13662eae996d18f7d8f338c5b",
+    digest: "e1bab3048f153d85e7e8131b3c6ad0391087d5c8ec4cc5fadd0b8b6a5757ce61",
+    applications: ["analytics"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:analytics",
+    version: "1.0.1",
+    digest: "718e020fd465cd652a8acbc6d6cf78b8e940b4c40499bcb324b2efd9fda53275",
+    applications: ["analytics"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:agent-collaboration",
+    version: "1.0.0",
+    digest: "26687aa606b98c903034ebd3284118cbb40629f6bed85cb73b9ffdc014fa5189",
+    applications: ["agent-collaboration"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:personal-preferences",
+    version: "1.0.0",
+    digest: "2a3963f06b330feca87779ec56ce0b589ff7475238c064579633e1accd8990e9",
+    applications: ["personal-preferences"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:personal-preferences",
+    version: "1.0.1",
+    digest: "6148a35590188950bac9206ba917a2493acb141a93dab8e7c4ce5e36c303c1f6",
+    applications: ["personal-preferences"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:system-settings",
+    version: "1.0.0",
+    digest: "7f1821650d96254ee52f856abff305dac37a32a7a45f1e0a1d314b7195487009",
+    applications: ["system-settings"],
+    dependencies: [],
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "com.horizon.projects",
+    version: "2.0.0",
+    digest: "310af6a5671a3d73aa67877eca1eb3d3c401de1d019c2876003d98bad8f0734f",
     applications: ["projects"],
     dependencies: [],
   },
 ] as const;
-export interface RuntimeField {
-  link: boolean;
-  valueLabelPrefix: string;
+export const runtimeUIContracts = [
+  {
+    name: "grid",
+    version: "1.0",
+    category: "layout",
+    description: "Trusted ApplicationRuntime protocol layout contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"align":{"enum":["start","center","end","stretch"],"type":"string"},"areas":{"type":"string"},"columns":{"type":"string"},"gap":{"type":"string"},"justify":{"enum":["start","center","end","stretch"],"type":"string"},"padding":{"type":"string"},"responsive":{"additionalProperties":false,"properties":{"lg":{"type":"object"},"md":{"type":"object"},"sm":{"type":"object"},"xl":{"type":"object"}},"type":"object"},"rows":{"type":"string"},"width":{"enum":["full","reading","form","auto"],"type":"string"}},"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"layout","id":"grid","layout":{"kind":"grid","version":"1.0"}}',
+  },
+  {
+    name: "stack",
+    version: "1.0",
+    category: "layout",
+    description: "Trusted ApplicationRuntime protocol layout contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"align":{"enum":["start","center","end","stretch"],"type":"string"},"areas":{"type":"string"},"columns":{"type":"string"},"gap":{"type":"string"},"justify":{"enum":["start","center","end","stretch"],"type":"string"},"padding":{"type":"string"},"responsive":{"additionalProperties":false,"properties":{"lg":{"type":"object"},"md":{"type":"object"},"sm":{"type":"object"},"xl":{"type":"object"}},"type":"object"},"rows":{"type":"string"},"width":{"enum":["full","reading","form","auto"],"type":"string"}},"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"layout","id":"stack","layout":{"kind":"stack","version":"1.0"}}',
+  },
+  {
+    name: "sidebar",
+    version: "1.0",
+    category: "layout",
+    description: "Trusted ApplicationRuntime protocol layout contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"align":{"enum":["start","center","end","stretch"],"type":"string"},"areas":{"type":"string"},"columns":{"type":"string"},"gap":{"type":"string"},"justify":{"enum":["start","center","end","stretch"],"type":"string"},"padding":{"type":"string"},"responsive":{"additionalProperties":false,"properties":{"lg":{"type":"object"},"md":{"type":"object"},"sm":{"type":"object"},"xl":{"type":"object"}},"type":"object"},"rows":{"type":"string"},"width":{"enum":["full","reading","form","auto"],"type":"string"}},"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"layout","id":"sidebar","layout":{"kind":"sidebar","version":"1.0"}}',
+  },
+  {
+    name: "tabs",
+    version: "1.0",
+    category: "layout",
+    description: "Trusted ApplicationRuntime protocol layout contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"align":{"enum":["start","center","end","stretch"],"type":"string"},"areas":{"type":"string"},"columns":{"type":"string"},"gap":{"type":"string"},"justify":{"enum":["start","center","end","stretch"],"type":"string"},"padding":{"type":"string"},"responsive":{"additionalProperties":false,"properties":{"lg":{"type":"object"},"md":{"type":"object"},"sm":{"type":"object"},"xl":{"type":"object"}},"type":"object"},"rows":{"type":"string"},"width":{"enum":["full","reading","form","auto"],"type":"string"}},"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"layout","id":"tabs","layout":{"kind":"tabs","version":"1.0"}}',
+  },
+  {
+    name: "split",
+    version: "1.0",
+    category: "layout",
+    description: "Trusted ApplicationRuntime protocol layout contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"align":{"enum":["start","center","end","stretch"],"type":"string"},"areas":{"type":"string"},"columns":{"type":"string"},"gap":{"type":"string"},"justify":{"enum":["start","center","end","stretch"],"type":"string"},"padding":{"type":"string"},"responsive":{"additionalProperties":false,"properties":{"lg":{"type":"object"},"md":{"type":"object"},"sm":{"type":"object"},"xl":{"type":"object"}},"type":"object"},"rows":{"type":"string"},"width":{"enum":["full","reading","form","auto"],"type":"string"}},"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"layout","id":"split","layout":{"kind":"split","version":"1.0"}}',
+  },
+  {
+    name: "page-heading",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"page-heading","element":{"kind":"page-heading","version":"1.0"}}',
+  },
+  {
+    name: "search",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["change"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"search","element":{"kind":"search","version":"1.0"}}',
+  },
+  {
+    name: "data-table",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"data-table","element":{"kind":"data-table","version":"1.0"}}',
+  },
+  {
+    name: "text",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"text","element":{"kind":"text","version":"1.0"}}',
+  },
+  {
+    name: "table-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"table-panel","element":{"kind":"table-panel","version":"1.0"}}',
+  },
+  {
+    name: "tree-table-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"tree-table-panel","element":{"kind":"tree-table-panel","version":"1.0"}}',
+  },
+  {
+    name: "card-grid-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"card-grid-panel","element":{"kind":"card-grid-panel","version":"1.0"}}',
+  },
+  {
+    name: "master-detail-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"master-detail-panel","element":{"kind":"master-detail-panel","version":"1.0"}}',
+  },
+  {
+    name: "page-tabs",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"page-tabs","element":{"kind":"page-tabs","version":"1.0"}}',
+  },
+  {
+    name: "button",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["click", "action"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"button","element":{"kind":"button","version":"1.0"}}',
+  },
+  {
+    name: "markdown",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"markdown","element":{"kind":"markdown","version":"1.0"}}',
+  },
+  {
+    name: "detail-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"detail-panel","element":{"kind":"detail-panel","version":"1.0"}}',
+  },
+  {
+    name: "record-form-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"record-form-panel","element":{"kind":"record-form-panel","version":"1.0"}}',
+  },
+  {
+    name: "search-picker-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"search-picker-panel","element":{"kind":"search-picker-panel","version":"1.0"}}',
+  },
+  {
+    name: "item-list",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["action"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"item-list","element":{"kind":"item-list","version":"1.0"}}',
+  },
+  {
+    name: "content-heading",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["action"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"content-heading","element":{"kind":"content-heading","version":"1.0"}}',
+  },
+  {
+    name: "content-fields",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"content-fields","element":{"kind":"content-fields","version":"1.0"}}',
+  },
+  {
+    name: "content-notice",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["dismiss"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"content-notice","element":{"kind":"content-notice","version":"1.0"}}',
+  },
+  {
+    name: "content-table",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["action"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"content-table","element":{"kind":"content-table","version":"1.0"}}',
+  },
+  {
+    name: "inline-input",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["submit"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"inline-input","element":{"kind":"inline-input","version":"1.0"}}',
+  },
+  {
+    name: "metric-value",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"metric-value","element":{"kind":"metric-value","version":"1.0"}}',
+  },
+  {
+    name: "time-series",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"time-series","element":{"kind":"time-series","version":"1.0"}}',
+  },
+  {
+    name: "horizontal-bars",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"horizontal-bars","element":{"kind":"horizontal-bars","version":"1.0"}}',
+  },
+  {
+    name: "distribution-pie",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"distribution-pie","element":{"kind":"distribution-pie","version":"1.0"}}',
+  },
+  {
+    name: "change-list-form",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"fields":{"items":{"additionalProperties":false,"properties":{"group":{"type":"string"},"key":{"type":"string"},"labelKey":{"type":"string"},"options":{"items":{"additionalProperties":false,"properties":{"labelKey":{"type":"string"},"value":{"type":"string"}},"required":["value","labelKey"],"type":"object"},"type":"array"},"type":{"enum":["text","integer","select"],"type":"string"}},"required":["key","group","labelKey","type"],"type":"object"},"type":"array"},"groups":{"items":{"additionalProperties":false,"properties":{"id":{"type":"string"},"labelKey":{"type":"string"}},"required":["id","labelKey"],"type":"object"},"type":"array"},"noChangesKey":{"type":"string"},"operationLabelKey":{"type":"string"},"resetLabelKey":{"type":"string"},"saveLabelKey":{"type":"string"},"setLabelKey":{"type":"string"},"successKey":{"type":"string"}},"required":["fields","operationLabelKey","resetLabelKey","setLabelKey","saveLabelKey","noChangesKey","successKey"],"type":"object"}',
+    slots: [],
+    events: ["submit"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"change-list-form","element":{"kind":"change-list-form","version":"1.0"}}',
+  },
+  {
+    name: "settings-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"personal":{"type":"boolean"}},"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"settings-panel","element":{"kind":"settings-panel","version":"1.0"}}',
+  },
+  {
+    name: "webmcp-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":false,"type":"object"}',
+    slots: [],
+    events: [],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"webmcp-panel","element":{"kind":"webmcp-panel","version":"1.0"}}',
+  },
+  {
+    name: "dictionary-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"table":{"additionalProperties":false,"properties":{"columns":{"items":{"additionalProperties":true,"type":"object"},"type":"array"}},"type":"object"}},"type":"object"}',
+    slots: [],
+    events: ["refresh"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"dictionary-panel","element":{"kind":"dictionary-panel","version":"1.0"}}',
+  },
+  {
+    name: "remote-mcp-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"table":{"additionalProperties":false,"properties":{"columns":{"items":{"additionalProperties":true,"type":"object"},"type":"array"}},"type":"object"}},"type":"object"}',
+    slots: [],
+    events: ["refresh"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"remote-mcp-panel","element":{"kind":"remote-mcp-panel","version":"1.0"}}',
+  },
+  {
+    name: "navigate",
+    version: "1.0",
+    category: "interaction",
+    description: "Trusted ApplicationRuntime protocol interaction contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["navigate"],
+    binding: "event",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"interaction","id":"navigate","interaction":{"kind":"navigate","version":"1.0"}}',
+  },
+  {
+    name: "invoke",
+    version: "1.0",
+    category: "interaction",
+    description: "Trusted ApplicationRuntime protocol interaction contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["invoke"],
+    binding: "event",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"interaction","id":"invoke","interaction":{"kind":"invoke","version":"1.0"}}',
+  },
+  {
+    name: "setData",
+    version: "1.0",
+    category: "interaction",
+    description: "Trusted ApplicationRuntime protocol interaction contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["setData"],
+    binding: "event",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"interaction","id":"setData","interaction":{"kind":"setData","version":"1.0"}}',
+  },
+  {
+    name: "refresh",
+    version: "1.0",
+    category: "interaction",
+    description: "Trusted ApplicationRuntime protocol interaction contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["refresh"],
+    binding: "event",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"interaction","id":"refresh","interaction":{"kind":"refresh","version":"1.0"}}',
+  },
+  {
+    name: "system",
+    version: "1.0",
+    category: "interaction",
+    description: "Trusted ApplicationRuntime protocol interaction contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: [],
+    events: ["system"],
+    binding: "event",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"interaction","id":"system","interaction":{"kind":"system","version":"1.0"}}',
+  },
+  {
+    name: "card",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"className":{"pattern":"^[A-Za-z0-9 _-]{0,160}$","type":"string"},"descriptionKey":{"type":"string"},"titleKey":{"type":"string"}},"type":"object"}',
+    slots: ["content"],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"card","element":{"kind":"card","version":"1.0"}}',
+  },
+  {
+    name: "dialog",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"descriptionKey":{"type":"string"},"open":{"type":"boolean"},"titleKey":{"type":"string"},"wide":{"type":"boolean"}},"required":["titleKey"],"type":"object"}',
+    slots: ["content"],
+    events: ["close"],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"dialog","element":{"kind":"dialog","version":"1.0"}}',
+  },
+  {
+    name: "layout-tabs",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: ["content"],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"layout-tabs","element":{"kind":"layout-tabs","version":"1.0"}}',
+  },
+  {
+    name: "layout-tab-panel",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema: '{"additionalProperties":true,"type":"object"}',
+    slots: ["content"],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"layout-tab-panel","element":{"kind":"layout-tab-panel","version":"1.0"}}',
+  },
+] as const;
+export const runtimeProtocolRoutes = [
+  {
+    applicationId: "accounts",
+    pageId: "accounts.console",
+    route: "/accounts",
+    permission: "accounts:read",
+  },
+  {
+    applicationId: "agent-collaboration",
+    pageId: "agent-collaboration.home",
+    route: "/mcp",
+    permission: "authenticated",
+  },
+  {
+    applicationId: "analytics",
+    pageId: "analytics.dashboard",
+    route: "/analytics",
+    permission: "authenticated",
+  },
+  {
+    applicationId: "articles",
+    pageId: "article.list",
+    route: "/articles",
+    permission: "articles:read",
+  },
+  {
+    applicationId: "articles",
+    pageId: "article.detail",
+    route: "/articles/:id",
+    permission: "articles:read",
+  },
+  {
+    applicationId: "articles",
+    pageId: "article.create-page",
+    route: "/articles/new",
+    permission: "articles:write",
+  },
+  {
+    applicationId: "articles",
+    pageId: "article.edit-page",
+    route: "/articles/:id/edit",
+    permission: "articles:write",
+  },
+  {
+    applicationId: "capabilities",
+    pageId: "capabilities.console",
+    route: "/capabilities",
+    permission: "authenticated",
+  },
+  {
+    applicationId: "organizations",
+    pageId: "organizations.console",
+    route: "/organizations",
+    permission: "organizations:read",
+  },
+  {
+    applicationId: "permissions",
+    pageId: "permissions.console",
+    route: "/permissions",
+    permission: "roles:read",
+  },
+  {
+    applicationId: "personal-preferences",
+    pageId: "personal-preferences.home",
+    route: "/preferences",
+    permission: "authenticated",
+  },
+  {
+    applicationId: "projects",
+    pageId: "project.list",
+    route: "/projects",
+    permission: "projects:read",
+  },
+  {
+    applicationId: "projects",
+    pageId: "project.detail",
+    route: "/projects/:id",
+    permission: "projects:read",
+  },
+  {
+    applicationId: "projects",
+    pageId: "project.tasks",
+    route: "/projects/:id/tasks",
+    permission: "projects:read",
+  },
+  {
+    applicationId: "projects",
+    pageId: "task.detail",
+    route: "/projects/:projectId/tasks/:id",
+    permission: "projects:read",
+  },
+  {
+    applicationId: "runtime-protocol",
+    pageId: "runtime-protocol.accounts",
+    route: "/runtime-protocol",
+    permission: "accounts:read",
+  },
+  {
+    applicationId: "system-settings",
+    pageId: "system-settings.home",
+    route: "/settings",
+    permission: "authenticated",
+  },
+] as const;
+export interface RuntimeUIContract {
   name: string;
-  labelKey: string;
-  component: string;
-  kind: string;
-  type: string;
-  required: boolean;
-  sensitive: boolean;
-  hidden: boolean;
-  readOnly: boolean;
-  maxLength: number;
-  enum: string[];
+  version: string;
+  category: string;
+  description: string;
+  propsSchema: string;
+  slots: string[];
+  events: string[];
+  binding: string;
+  readOnly: string;
+  example: string;
 }
 export interface RuntimeRelation {
   name: string;
   target: string;
   kind: string;
 }
-export interface RuntimePage {
-  editableStates: string[];
-  relations: RuntimeRelation[];
-  schemaVersion: string;
-  id: string;
-  type: string;
-  titleKey: string;
-  entityRef: string;
-  layout: string;
-  fields: RuntimeField[];
-  readCapability: string;
-  createCapability: string;
-  updateCapability: string;
-}
-export interface RuntimeApplication {
-  id: string;
-  version: string;
-  metadataVersion: string;
-  labelKey: string;
-  route: string;
-  pages: RuntimePage[];
+export interface RuntimeReferenceFilter {
+  optionField: string;
+  formField?: string;
+  value?: string;
 }
 export interface RuntimeApplicationV2 {
+  protocol?: RuntimeApplicationV3;
   catalogRevision?: number;
   previewVersion?: string;
   applicationVersion?: string;
@@ -89,6 +858,134 @@ export interface RuntimeApplicationV2 {
   providers: RuntimeProvider[];
   extensions: RuntimeExtensionV2[];
 }
+export interface RuntimeApplicationV3 {
+  schemaVersion: string;
+  id: string;
+  version: string;
+  source: string;
+  runtimeCompatibility: string;
+  labelKey: string;
+  permission: string;
+  route: string;
+  pages: RuntimePageV3[];
+  providers: RuntimeProvider[];
+  navigation?: RuntimeNavigation[];
+}
+export interface RuntimePageV3 {
+  schemaVersion: string;
+  id: string;
+  route: string;
+  titleKey: string;
+  subtitleKey?: string;
+  permission: string;
+  root: RuntimeNode;
+}
+export interface RuntimeNode {
+  type: string;
+  layout?: RuntimeLayoutSpec;
+  component?: RuntimeComponentSpec;
+}
+export interface RuntimeLayoutSpec {
+  visible?: RuntimeExpression;
+  id: string;
+  kind: string;
+  props: RuntimeLayoutProps;
+  data?: RuntimeDataSpec[];
+  children?: RuntimeNode[];
+}
+export interface RuntimeExpression {
+  kind: string;
+  path: string;
+  literal: string;
+  items: RuntimeExpression[];
+  fields: RuntimeMapping[];
+}
+export interface RuntimeMapping {
+  target: string;
+  value: RuntimeExpression;
+}
+export interface RuntimeLayoutProps {
+  columns?: string;
+  rows?: string;
+  gap?: string;
+  areas?: string;
+  justify?: string;
+  align?: string;
+  padding?: string;
+  width?: string;
+  className?: string;
+  responsive?: Record<string, RuntimeLayoutProps>;
+}
+export interface RuntimeDataSpec {
+  enabledWhen?: RuntimeExpression;
+  pollWhen?: RuntimeExpression;
+  nonBlocking?: boolean;
+  id: string;
+  provider?: string;
+  input?: RuntimeMapping[];
+  transform?: RuntimeExpression;
+  initial?: unknown;
+  pollMs?: number;
+  staleMs?: number;
+}
+export interface RuntimeComponentSpec {
+  bindings?: RuntimeMapping[];
+  visible?: RuntimeExpression;
+  content?: RuntimeLayoutSpec;
+  id: string;
+  kind: string;
+  version: string;
+  props: Record<string, unknown>;
+  data?: string;
+  events?: RuntimeEventBinding[];
+}
+export interface RuntimeEventBinding {
+  when?: RuntimeExpression;
+  idempotencyKey?: RuntimeExpression;
+  resultTarget?: string;
+  result?: RuntimeExpression;
+  event: string;
+  action: string;
+  target: string;
+  payload?: RuntimeExpression;
+  inputSchema?: string;
+}
+export interface RuntimeProvider {
+  filterTarget?: string;
+  timeoutMs?: number;
+  staleTimeMs?: number;
+  select?: string[];
+  queryBindings?: RuntimeQueryBinding[];
+  maxDepth?: number;
+  adapter: string;
+  outputSchema: string;
+  permission: string;
+  inputSchema: string;
+  id: string;
+  capability: RuntimeCapabilityRef;
+  input: RuntimeMapping[];
+  resultPath: string;
+  keyField: string;
+  labelField: string;
+  pagination: string;
+  pageSize: number;
+  pollInterval: number;
+  tags: string[];
+}
+export interface RuntimeQueryBinding {
+  field: string;
+  operator: string;
+  target: string;
+}
+export interface RuntimeCapabilityRef {
+  name: string;
+  version: string;
+}
+export interface RuntimeNavigation {
+  pageId: string;
+  labelKey: string;
+  icon: string;
+}
 export interface RuntimeLocaleMessage {
   key: string;
   en: string;
@@ -102,15 +999,6 @@ export interface RuntimePluginDependency {
   id: string;
   version: string;
 }
-export interface RuntimeCapabilityRef {
-  name: string;
-  version: string;
-}
-export interface RuntimeNavigation {
-  pageId: string;
-  labelKey: string;
-  icon: string;
-}
 export interface RuntimeComponentDefinition {
   name: string;
   version: string;
@@ -122,6 +1010,8 @@ export interface RuntimeComponentDefinition {
   semanticDescription: string;
 }
 export interface RuntimePageV2 {
+  composition?: RuntimeComposition;
+  sidebar?: RuntimeSidebar;
   relationBindings?: RuntimeRelatedBinding[];
   view: string;
   schemaVersion: string;
@@ -130,6 +1020,7 @@ export interface RuntimePageV2 {
   mode: string;
   route: string;
   titleKey: string;
+  subtitleKey?: string;
   permission: string;
   entityRef: string;
   provider: string;
@@ -139,6 +1030,38 @@ export interface RuntimePageV2 {
   forms: RuntimeFormV2[];
   actions: RuntimeAction[];
   relations: RuntimeRelation[];
+}
+export interface RuntimeComposition {
+  root: string;
+  nodes: RuntimeUINode[];
+}
+export interface RuntimeUINode {
+  id: string;
+  component: string;
+  version: string;
+  labelKey: string;
+  props: string;
+  binding: string;
+  slots: RuntimeUISlot[];
+  events: RuntimeUIEvent[];
+}
+export interface RuntimeUISlot {
+  name: string;
+  children: string[];
+}
+export interface RuntimeUIEvent {
+  event: string;
+  interaction: string;
+  target: string;
+  reset: string[];
+}
+export interface RuntimeSidebar {
+  provider: string;
+  titleKey: string;
+  allLabelKey: string;
+  parentField: string;
+  childField: string;
+  footnoteKey?: string;
 }
 export interface RuntimeRelatedBinding {
   entityRef: string;
@@ -192,18 +1115,8 @@ export interface RuntimeFieldV2 {
   reference: string;
   linkPage: string;
   width: number;
+  display?: string;
   fixed: boolean;
-}
-export interface RuntimeExpression {
-  kind: string;
-  path: string;
-  literal: string;
-  items: RuntimeExpression[];
-  fields: RuntimeMapping[];
-}
-export interface RuntimeMapping {
-  target: string;
-  value: RuntimeExpression;
 }
 export interface RuntimeTableV2 {
   rowPage?: string;
@@ -219,6 +1132,7 @@ export interface RuntimeFilter {
   type: string;
   enum: string[];
   valueLabelPrefix: string;
+  display?: string;
 }
 export interface RuntimeSort {
   value: string;
@@ -227,6 +1141,8 @@ export interface RuntimeSort {
 export interface RuntimeFormV2 {
   groups?: RuntimeFormGroup[];
   draft?: boolean;
+  referenceFilters?: Record<string, RuntimeReferenceFilter[]>;
+  referencePaths?: Record<string, string>;
   provider: string;
   id: string;
   labelKey: string;
@@ -265,34 +1181,9 @@ export interface RuntimeAction {
   successKey: string;
   tags: string[];
   target: string;
+  icon?: string;
+  danger?: boolean;
   mode: string;
-}
-export interface RuntimeProvider {
-  filterTarget?: string;
-  timeoutMs?: number;
-  staleTimeMs?: number;
-  select?: string[];
-  queryBindings?: RuntimeQueryBinding[];
-  maxDepth?: number;
-  adapter: string;
-  outputSchema: string;
-  permission: string;
-  inputSchema: string;
-  id: string;
-  capability: RuntimeCapabilityRef;
-  input: RuntimeMapping[];
-  resultPath: string;
-  keyField: string;
-  labelField: string;
-  pagination: string;
-  pageSize: number;
-  pollInterval: number;
-  tags: string[];
-}
-export interface RuntimeQueryBinding {
-  field: string;
-  operator: string;
-  target: string;
 }
 export interface RuntimeExtensionV2 {
   slot?: string;
@@ -437,54 +1328,33 @@ export interface RuntimeDefinitionValidation {
   valid: boolean;
   code: string;
 }
-export const runtimeFieldSchema: z.ZodType<RuntimeField> = z
+export const runtimeUIContractSchema: z.ZodType<RuntimeUIContract> = z
   .object({
-    link: z.boolean(),
-    valueLabelPrefix: z.string(),
     name: z.string(),
-    labelKey: z.string(),
-    component: z.string(),
-    kind: z.string(),
-    type: z.string(),
-    required: z.boolean(),
-    sensitive: z.boolean(),
-    hidden: z.boolean(),
-    readOnly: z.boolean(),
-    maxLength: z.number().int(),
-    enum: z.array(z.string()),
+    version: z.string(),
+    category: z.string(),
+    description: z.string(),
+    propsSchema: z.string(),
+    slots: z.array(z.string()),
+    events: z.array(z.string()),
+    binding: z.string(),
+    readOnly: z.string(),
+    example: z.string(),
   })
   .strict();
 export const runtimeRelationSchema: z.ZodType<RuntimeRelation> = z
   .object({ name: z.string(), target: z.string(), kind: z.string() })
   .strict();
-export const runtimePageSchema: z.ZodType<RuntimePage> = z
+export const runtimeReferenceFilterSchema: z.ZodType<RuntimeReferenceFilter> = z
   .object({
-    editableStates: z.array(z.string()),
-    relations: z.array(z.lazy(() => runtimeRelationSchema)),
-    schemaVersion: z.string(),
-    id: z.string(),
-    type: z.string(),
-    titleKey: z.string(),
-    entityRef: z.string(),
-    layout: z.string(),
-    fields: z.array(z.lazy(() => runtimeFieldSchema)),
-    readCapability: z.string(),
-    createCapability: z.string(),
-    updateCapability: z.string(),
-  })
-  .strict();
-export const runtimeApplicationSchema: z.ZodType<RuntimeApplication> = z
-  .object({
-    id: z.string(),
-    version: z.string(),
-    metadataVersion: z.string(),
-    labelKey: z.string(),
-    route: z.string(),
-    pages: z.array(z.lazy(() => runtimePageSchema)),
+    optionField: z.string(),
+    formField: z.string().optional(),
+    value: z.string().optional(),
   })
   .strict();
 export const runtimeApplicationV2Schema: z.ZodType<RuntimeApplicationV2> = z
   .object({
+    protocol: z.lazy(() => runtimeApplicationV3Schema).optional(),
     catalogRevision: z.number().int().optional(),
     previewVersion: z.string().optional(),
     applicationVersion: z.string().optional(),
@@ -518,6 +1388,153 @@ export const runtimeApplicationV2Schema: z.ZodType<RuntimeApplicationV2> = z
     extensions: z.array(z.lazy(() => runtimeExtensionV2Schema)),
   })
   .strict();
+export const runtimeApplicationV3Schema: z.ZodType<RuntimeApplicationV3> = z
+  .object({
+    schemaVersion: z.string(),
+    id: z.string(),
+    version: z.string(),
+    source: z.string(),
+    runtimeCompatibility: z.string(),
+    labelKey: z.string(),
+    permission: z.string(),
+    route: z.string(),
+    pages: z.array(z.lazy(() => runtimePageV3Schema)),
+    providers: z.array(z.lazy(() => runtimeProviderSchema)),
+    navigation: z.array(z.lazy(() => runtimeNavigationSchema)).optional(),
+  })
+  .strict();
+export const runtimePageV3Schema: z.ZodType<RuntimePageV3> = z
+  .object({
+    schemaVersion: z.string(),
+    id: z.string(),
+    route: z.string(),
+    titleKey: z.string(),
+    subtitleKey: z.string().optional(),
+    permission: z.string(),
+    root: z.lazy(() => runtimeNodeSchema),
+  })
+  .strict();
+export const runtimeNodeSchema: z.ZodType<RuntimeNode> = z
+  .object({
+    type: z.string(),
+    layout: z.lazy(() => runtimeLayoutSpecSchema).optional(),
+    component: z.lazy(() => runtimeComponentSpecSchema).optional(),
+  })
+  .strict();
+export const runtimeLayoutSpecSchema: z.ZodType<RuntimeLayoutSpec> = z
+  .object({
+    visible: z.lazy(() => runtimeExpressionSchema).optional(),
+    id: z.string(),
+    kind: z.string(),
+    props: z.lazy(() => runtimeLayoutPropsSchema),
+    data: z.array(z.lazy(() => runtimeDataSpecSchema)).optional(),
+    children: z.array(z.lazy(() => runtimeNodeSchema)).optional(),
+  })
+  .strict();
+export const runtimeExpressionSchema: z.ZodType<RuntimeExpression> = z
+  .object({
+    kind: z.string(),
+    path: z.string(),
+    literal: z.string(),
+    items: z.array(z.lazy(() => runtimeExpressionSchema)),
+    fields: z.array(z.lazy(() => runtimeMappingSchema)),
+  })
+  .strict();
+export const runtimeMappingSchema: z.ZodType<RuntimeMapping> = z
+  .object({ target: z.string(), value: z.lazy(() => runtimeExpressionSchema) })
+  .strict();
+export const runtimeLayoutPropsSchema: z.ZodType<RuntimeLayoutProps> = z
+  .object({
+    columns: z.string().optional(),
+    rows: z.string().optional(),
+    gap: z.string().optional(),
+    areas: z.string().optional(),
+    justify: z.string().optional(),
+    align: z.string().optional(),
+    padding: z.string().optional(),
+    width: z.string().optional(),
+    className: z.string().optional(),
+    responsive: z
+      .record(
+        z.string(),
+        z.lazy(() => runtimeLayoutPropsSchema),
+      )
+      .optional(),
+  })
+  .strict();
+export const runtimeDataSpecSchema: z.ZodType<RuntimeDataSpec> = z
+  .object({
+    enabledWhen: z.lazy(() => runtimeExpressionSchema).optional(),
+    pollWhen: z.lazy(() => runtimeExpressionSchema).optional(),
+    nonBlocking: z.boolean().optional(),
+    id: z.string(),
+    provider: z.string().optional(),
+    input: z.array(z.lazy(() => runtimeMappingSchema)).optional(),
+    transform: z.lazy(() => runtimeExpressionSchema).optional(),
+    initial: z.unknown().optional(),
+    pollMs: z.number().int().optional(),
+    staleMs: z.number().int().optional(),
+  })
+  .strict();
+export const runtimeComponentSpecSchema: z.ZodType<RuntimeComponentSpec> = z
+  .object({
+    bindings: z.array(z.lazy(() => runtimeMappingSchema)).optional(),
+    visible: z.lazy(() => runtimeExpressionSchema).optional(),
+    content: z.lazy(() => runtimeLayoutSpecSchema).optional(),
+    id: z.string(),
+    kind: z.string(),
+    version: z.string(),
+    props: z.record(z.string(), z.unknown()),
+    data: z.string().optional(),
+    events: z.array(z.lazy(() => runtimeEventBindingSchema)).optional(),
+  })
+  .strict();
+export const runtimeEventBindingSchema: z.ZodType<RuntimeEventBinding> = z
+  .object({
+    when: z.lazy(() => runtimeExpressionSchema).optional(),
+    idempotencyKey: z.lazy(() => runtimeExpressionSchema).optional(),
+    resultTarget: z.string().optional(),
+    result: z.lazy(() => runtimeExpressionSchema).optional(),
+    event: z.string(),
+    action: z.string(),
+    target: z.string(),
+    payload: z.lazy(() => runtimeExpressionSchema).optional(),
+    inputSchema: z.string().optional(),
+  })
+  .strict();
+export const runtimeProviderSchema: z.ZodType<RuntimeProvider> = z
+  .object({
+    filterTarget: z.string().optional(),
+    timeoutMs: z.number().int().optional(),
+    staleTimeMs: z.number().int().optional(),
+    select: z.array(z.string()).optional(),
+    queryBindings: z.array(z.lazy(() => runtimeQueryBindingSchema)).optional(),
+    maxDepth: z.number().int().optional(),
+    adapter: z.string(),
+    outputSchema: z.string(),
+    permission: z.string(),
+    inputSchema: z.string(),
+    id: z.string(),
+    capability: z.lazy(() => runtimeCapabilityRefSchema),
+    input: z.array(z.lazy(() => runtimeMappingSchema)),
+    resultPath: z.string(),
+    keyField: z.string(),
+    labelField: z.string(),
+    pagination: z.string(),
+    pageSize: z.number().int(),
+    pollInterval: z.number().int(),
+    tags: z.array(z.string()),
+  })
+  .strict();
+export const runtimeQueryBindingSchema: z.ZodType<RuntimeQueryBinding> = z
+  .object({ field: z.string(), operator: z.string(), target: z.string() })
+  .strict();
+export const runtimeCapabilityRefSchema: z.ZodType<RuntimeCapabilityRef> = z
+  .object({ name: z.string(), version: z.string() })
+  .strict();
+export const runtimeNavigationSchema: z.ZodType<RuntimeNavigation> = z
+  .object({ pageId: z.string(), labelKey: z.string(), icon: z.string() })
+  .strict();
 export const runtimeLocaleMessageSchema: z.ZodType<RuntimeLocaleMessage> = z
   .object({ key: z.string(), en: z.string(), zhCN: z.string() })
   .strict();
@@ -526,12 +1543,6 @@ export const runtimeThemeTokenSchema: z.ZodType<RuntimeThemeToken> = z
   .strict();
 export const runtimePluginDependencySchema: z.ZodType<RuntimePluginDependency> =
   z.object({ id: z.string(), version: z.string() }).strict();
-export const runtimeCapabilityRefSchema: z.ZodType<RuntimeCapabilityRef> = z
-  .object({ name: z.string(), version: z.string() })
-  .strict();
-export const runtimeNavigationSchema: z.ZodType<RuntimeNavigation> = z
-  .object({ pageId: z.string(), labelKey: z.string(), icon: z.string() })
-  .strict();
 export const runtimeComponentDefinitionSchema: z.ZodType<RuntimeComponentDefinition> =
   z
     .object({
@@ -547,6 +1558,8 @@ export const runtimeComponentDefinitionSchema: z.ZodType<RuntimeComponentDefinit
     .strict();
 export const runtimePageV2Schema: z.ZodType<RuntimePageV2> = z
   .object({
+    composition: z.lazy(() => runtimeCompositionSchema).optional(),
+    sidebar: z.lazy(() => runtimeSidebarSchema).optional(),
     relationBindings: z
       .array(z.lazy(() => runtimeRelatedBindingSchema))
       .optional(),
@@ -557,6 +1570,7 @@ export const runtimePageV2Schema: z.ZodType<RuntimePageV2> = z
     mode: z.string(),
     route: z.string(),
     titleKey: z.string(),
+    subtitleKey: z.string().optional(),
     permission: z.string(),
     entityRef: z.string(),
     provider: z.string(),
@@ -566,6 +1580,45 @@ export const runtimePageV2Schema: z.ZodType<RuntimePageV2> = z
     forms: z.array(z.lazy(() => runtimeFormV2Schema)),
     actions: z.array(z.lazy(() => runtimeActionSchema)),
     relations: z.array(z.lazy(() => runtimeRelationSchema)),
+  })
+  .strict();
+export const runtimeCompositionSchema: z.ZodType<RuntimeComposition> = z
+  .object({
+    root: z.string(),
+    nodes: z.array(z.lazy(() => runtimeUINodeSchema)),
+  })
+  .strict();
+export const runtimeUINodeSchema: z.ZodType<RuntimeUINode> = z
+  .object({
+    id: z.string(),
+    component: z.string(),
+    version: z.string(),
+    labelKey: z.string(),
+    props: z.string(),
+    binding: z.string(),
+    slots: z.array(z.lazy(() => runtimeUISlotSchema)),
+    events: z.array(z.lazy(() => runtimeUIEventSchema)),
+  })
+  .strict();
+export const runtimeUISlotSchema: z.ZodType<RuntimeUISlot> = z
+  .object({ name: z.string(), children: z.array(z.string()) })
+  .strict();
+export const runtimeUIEventSchema: z.ZodType<RuntimeUIEvent> = z
+  .object({
+    event: z.string(),
+    interaction: z.string(),
+    target: z.string(),
+    reset: z.array(z.string()),
+  })
+  .strict();
+export const runtimeSidebarSchema: z.ZodType<RuntimeSidebar> = z
+  .object({
+    provider: z.string(),
+    titleKey: z.string(),
+    allLabelKey: z.string(),
+    parentField: z.string(),
+    childField: z.string(),
+    footnoteKey: z.string().optional(),
   })
   .strict();
 export const runtimeRelatedBindingSchema: z.ZodType<RuntimeRelatedBinding> = z
@@ -627,20 +1680,9 @@ export const runtimeFieldV2Schema: z.ZodType<RuntimeFieldV2> = z
     reference: z.string(),
     linkPage: z.string(),
     width: z.number().int(),
+    display: z.string().optional(),
     fixed: z.boolean(),
   })
-  .strict();
-export const runtimeExpressionSchema: z.ZodType<RuntimeExpression> = z
-  .object({
-    kind: z.string(),
-    path: z.string(),
-    literal: z.string(),
-    items: z.array(z.lazy(() => runtimeExpressionSchema)),
-    fields: z.array(z.lazy(() => runtimeMappingSchema)),
-  })
-  .strict();
-export const runtimeMappingSchema: z.ZodType<RuntimeMapping> = z
-  .object({ target: z.string(), value: z.lazy(() => runtimeExpressionSchema) })
   .strict();
 export const runtimeTableV2Schema: z.ZodType<RuntimeTableV2> = z
   .object({
@@ -659,6 +1701,7 @@ export const runtimeFilterSchema: z.ZodType<RuntimeFilter> = z
     type: z.string(),
     enum: z.array(z.string()),
     valueLabelPrefix: z.string(),
+    display: z.string().optional(),
   })
   .strict();
 export const runtimeSortSchema: z.ZodType<RuntimeSort> = z
@@ -668,6 +1711,10 @@ export const runtimeFormV2Schema: z.ZodType<RuntimeFormV2> = z
   .object({
     groups: z.array(z.lazy(() => runtimeFormGroupSchema)).optional(),
     draft: z.boolean().optional(),
+    referenceFilters: z
+      .record(z.string(), z.array(z.lazy(() => runtimeReferenceFilterSchema)))
+      .optional(),
+    referencePaths: z.record(z.string(), z.string()).optional(),
     provider: z.string(),
     id: z.string(),
     labelKey: z.string(),
@@ -708,35 +1755,10 @@ export const runtimeActionSchema: z.ZodType<RuntimeAction> = z
     successKey: z.string(),
     tags: z.array(z.string()),
     target: z.string(),
+    icon: z.string().optional(),
+    danger: z.boolean().optional(),
     mode: z.string(),
   })
-  .strict();
-export const runtimeProviderSchema: z.ZodType<RuntimeProvider> = z
-  .object({
-    filterTarget: z.string().optional(),
-    timeoutMs: z.number().int().optional(),
-    staleTimeMs: z.number().int().optional(),
-    select: z.array(z.string()).optional(),
-    queryBindings: z.array(z.lazy(() => runtimeQueryBindingSchema)).optional(),
-    maxDepth: z.number().int().optional(),
-    adapter: z.string(),
-    outputSchema: z.string(),
-    permission: z.string(),
-    inputSchema: z.string(),
-    id: z.string(),
-    capability: z.lazy(() => runtimeCapabilityRefSchema),
-    input: z.array(z.lazy(() => runtimeMappingSchema)),
-    resultPath: z.string(),
-    keyField: z.string(),
-    labelField: z.string(),
-    pagination: z.string(),
-    pageSize: z.number().int(),
-    pollInterval: z.number().int(),
-    tags: z.array(z.string()),
-  })
-  .strict();
-export const runtimeQueryBindingSchema: z.ZodType<RuntimeQueryBinding> = z
-  .object({ field: z.string(), operator: z.string(), target: z.string() })
   .strict();
 export const runtimeExtensionV2Schema: z.ZodType<RuntimeExtensionV2> = z
   .object({

@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
@@ -8,10 +8,14 @@ import type {
   CapabilityContract,
   CapabilityResult,
 } from "@/api/generated/models";
-import { WorkflowExamplePanel } from "./workflow-example";
+import {
+  CapabilityRuntimeFixture,
+  capabilityDefinition,
+} from "./runtime-fixture.test-helper";
 
 const api = vi.hoisted(() => ({
   invoke: vi.fn(),
+  read: vi.fn(),
   approvals: vi.fn(),
   invocations: vi.fn(),
   decide: vi.fn(),
@@ -22,11 +26,20 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/capabilities", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/capabilities")>()),
-  invokeCapability: api.invoke,
+  runtimeApplication: async () => capabilityDefinition,
+  runtimeRead: api.read,
+  runtimeExecute: (
+    name: string,
+    _version: string,
+    input: unknown,
+    key: string,
+  ) => api.invoke(name, input, key),
 }));
 vi.mock("@/api/generated/baseline", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/api/generated/baseline")>()),
   aiStatus: api.model,
+  capabilityDefinitions: async () => ({ status: 200, data: contracts }),
+  capabilityEvents: async () => ({ status: 200, data: [] }),
   capabilityApprovals: api.approvals,
   capabilityInvocations: api.invocations,
   capabilityDecide: api.decide,
@@ -78,7 +91,7 @@ function show() {
   const view = () => (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={client}>
-        <WorkflowExamplePanel contracts={contracts} />
+        <CapabilityRuntimeFixture />
       </QueryClientProvider>
     </I18nextProvider>
   );
@@ -107,8 +120,13 @@ beforeEach(async () => {
       api.status = "cancelled";
       return envelope({ runId: 42 });
     }
-    return envelope({ runId: 42, status: api.status, errorCode: "" });
+    return envelope({});
   });
+  api.read.mockImplementation(async (name: string) =>
+    name === "orchestration.workflow.get"
+      ? { runId: 42, status: api.status, errorCode: "" }
+      : { records: [] },
+  );
   api.invocations.mockImplementation(async () => ({
     status: 200,
     data: [
@@ -154,8 +172,13 @@ beforeEach(async () => {
 it("starts the basic flow, waits for an explicit decision, then shows server completion", async () => {
   const user = userEvent.setup();
   show();
-  await user.click(screen.getByRole("button", { name: "Run basic test" }));
-  await screen.findByRole("button", { name: "Confirm and run" });
+  await user.click(
+    await screen.findByRole("button", { name: "Run basic test" }),
+  );
+  const panel = within(
+    (await screen.findByText("Workflow example test")).closest("section")!,
+  );
+  await panel.findByRole("button", { name: "Confirm and run" });
   expect(api.invoke).toHaveBeenCalledWith(
     "orchestration.workflow.run",
     {
@@ -167,10 +190,10 @@ it("starts the basic flow, waits for an explicit decision, then shows server com
   );
   expect(api.decide).not.toHaveBeenCalled();
   expect(
-    screen.getAllByRole("button", { name: "Confirm and run" }),
+    panel.getAllByRole("button", { name: "Confirm and run" }),
   ).toHaveLength(1);
   expect(screen.getByRole("button", { name: "Run basic test" })).toBeDisabled();
-  await user.click(screen.getByRole("button", { name: "Confirm and run" }));
+  await user.click(panel.getByRole("button", { name: "Confirm and run" }));
   expect(api.decide).toHaveBeenCalledWith(7, { approve: true });
   await screen.findByText(
     "Test completed: the reference record finished the workflow and was archived.",
@@ -184,7 +207,9 @@ it("keeps the basic flow available without a model, and enables the full flow on
   });
   const user = userEvent.setup();
   const { client } = show();
-  expect(screen.getByRole("button", { name: "Run basic test" })).toBeEnabled();
+  expect(
+    await screen.findByRole("button", { name: "Run basic test" }),
+  ).toBeEnabled();
   expect(
     screen.getByRole("button", { name: "Run full test (with agent)" }),
   ).toBeDisabled();
@@ -210,9 +235,10 @@ it("keeps the basic flow available without a model, and enables the full flow on
     ),
   );
 });
-it("does not offer execution without the required permissions", () => {
+it("does not offer execution without the required permissions", async () => {
   api.permissions = ["orchestration:read"];
   show();
+  await screen.findByText(/permissions are required/);
   expect(
     screen.queryByRole("button", { name: "Run basic test" }),
   ).not.toBeInTheDocument();
@@ -222,7 +248,9 @@ it("cancels only the selected run through the capability SDK", async () => {
   api.status = "running";
   const user = userEvent.setup();
   show();
-  await user.click(screen.getByRole("button", { name: "Run basic test" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Run basic test" }),
+  );
   await user.click(await screen.findByRole("button", { name: "Cancel run" }));
   await screen.findByText("Run cancelled. Already committed records remain.");
   expect(api.invoke).toHaveBeenCalledWith(
@@ -235,7 +263,9 @@ it("reuses the exact action payload and idempotency key on a start retry", async
   api.invoke.mockRejectedValueOnce(new Error("network error"));
   const user = userEvent.setup();
   show();
-  await user.click(screen.getByRole("button", { name: "Run basic test" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Run basic test" }),
+  );
   const retry = await screen.findByRole("button", { name: "Try again" });
   const first = api.invoke.mock.calls[0];
   await user.click(retry);
@@ -254,10 +284,14 @@ it("reuses the exact action payload and idempotency key on a start retry", async
 it("clears the selected run when the active department changes", async () => {
   const user = userEvent.setup();
   const view = show();
-  await user.click(screen.getByRole("button", { name: "Run basic test" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Run basic test" }),
+  );
   await screen.findByText("Run #42");
   api.department = 2;
   view.rerender(view.rerenderView());
   expect(screen.queryByText("Run #42")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Run basic test" })).toBeEnabled();
+  expect(
+    await screen.findByRole("button", { name: "Run basic test" }),
+  ).toBeEnabled();
 });

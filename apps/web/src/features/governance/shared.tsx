@@ -58,12 +58,14 @@ export function ChangeHistory({
   domain,
   revision,
   overrideRevision,
+  readOnly = false,
 }: {
   drafts: ChangeRecord[];
   history: ChangeRecord[];
   domain: "settings" | "dictionaries";
   revision: number;
   overrideRevision?: number;
+  readOnly?: boolean;
 }) {
   const { t } = useTranslation("governance");
   const session = useSession();
@@ -129,6 +131,7 @@ export function ChangeHistory({
       id: "cancel",
       header: t("cancelSchedule"),
       cell: (r) =>
+        !readOnly &&
         r.status === "pending" &&
         session.permissions.includes("settings:publish") ? (
           <Button
@@ -169,24 +172,26 @@ export function ChangeHistory({
                       </span>
                     </p>
                   </div>
-                  {session.permissions.includes(
-                    `${domain}:${group.publish ? "publish" : "rollback"}`,
-                  ) && (
-                    <Button
-                      variant="outline"
-                      disabled={
-                        domain === "settings" &&
-                        group.publish &&
-                        pending(record.id)
-                      }
-                      onClick={() =>
-                        setAction({ record, rollback: !group.publish })
-                      }
-                    >
-                      {group.publish ? t("publish") : t("rollback")}
-                    </Button>
-                  )}
-                  {domain === "settings" &&
+                  {!readOnly &&
+                    session.permissions.includes(
+                      `${domain}:${group.publish ? "publish" : "rollback"}`,
+                    ) && (
+                      <Button
+                        variant="outline"
+                        disabled={
+                          domain === "settings" &&
+                          group.publish &&
+                          pending(record.id)
+                        }
+                        onClick={() =>
+                          setAction({ record, rollback: !group.publish })
+                        }
+                      >
+                        {group.publish ? t("publish") : t("rollback")}
+                      </Button>
+                    )}
+                  {!readOnly &&
+                    domain === "settings" &&
                     group.publish &&
                     session.permissions.includes("settings:publish") && (
                       <Button
@@ -259,7 +264,7 @@ export function ChangeHistory({
           )}
         </section>
       )}
-      {action && (
+      {!readOnly && action && (
         <PublishDialog
           record={action.record}
           domain={domain}

@@ -480,7 +480,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 27px;
+  margin-bottom: 12px;
 }
 .admin-page-heading h1 {
   font-size: 25px;
@@ -1041,10 +1041,11 @@ body {
   cursor: pointer;
   white-space: nowrap;
 }
-.panel-tabs > button.active {
+.panel-tabs > button[aria-pressed="true"] {
   color: var(--app-ink);
+  font-weight: 600;
 }
-.panel-tabs > button.active:after {
+.panel-tabs > button[aria-pressed="true"]::after {
   content: "";
   height: 2px;
   position: absolute;
@@ -1052,6 +1053,7 @@ body {
   right: 0;
   bottom: -1px;
   background: var(--app-ink);
+  box-shadow: 0 2px 8px #0002;
 }
 .panel-tabs > button > span {
   font-size: 9px;
@@ -1445,12 +1447,14 @@ body {
   flex-shrink: 0;
   margin-top: 2px;
 }
-.department-name {
+.department-name,
+.tree-cell {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .department-name > button,
+.tree-cell > button,
 .tree-spacer {
   display: inline-flex;
   width: 14px;
@@ -1460,7 +1464,8 @@ body {
   color: var(--app-muted);
   flex-shrink: 0;
 }
-.department-name > button {
+.department-name > button,
+.tree-cell > button {
   cursor: pointer;
 }
 .role-card-grid {
@@ -1792,6 +1797,7 @@ body {
   color: var(--app-muted);
   margin-top: 5px;
 }
+.option-check-list,
 .role-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4062,5 +4068,68 @@ body {
 @media (max-width: 900px) {
   .notification-target-list {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Keep the published dashboard's presentation aligned with the admin shell. */
+[data-layout-id="analytics-root"] {
+  row-gap: 0 !important;
+}
+
+[data-layout-id="analytics-tab-content"],
+[data-layout-id="analytics-overview"],
+[data-layout-id="analytics-charts"],
+[data-layout-id="analytics-details"] {
+  gap: 18px !important;
+}
+
+[data-layout-id="analytics-charts"] > *,
+[data-layout-id="analytics-details"] > * {
+  align-self: stretch;
+}
+
+[data-layout-id="analytics-root"] .distribution-panel .subtle-link {
+  flex-shrink: 0;
+}
+
+[data-layout-id="analytics-root"] .distribution-panel .department-bars {
+  padding-top: 8px;
+}
+
+[data-layout-id="analytics-root"] .quick-actions .panel-text-link {
+  border-top: 0;
+  border-bottom: 1px solid var(--app-line);
+  color: var(--app-ink);
+  font-size: 11px;
+  font-weight: 500;
+  margin: 0 20px;
+  padding: 15px 0;
+}
+
+[data-layout-id="analytics-root"]
+  .quick-actions
+  li:last-child
+  .panel-text-link {
+  border-bottom: 0;
+}
+
+@media (min-width: 961px) and (max-width: 1200px) {
+  [data-layout-id="analytics-charts"],
+  [data-layout-id="analytics-details"] {
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr) !important;
+  }
+}
+
+@media (max-width: 960px) {
+  [data-layout-id="analytics-charts"],
+  [data-layout-id="analytics-details"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  [data-layout-id="analytics-metrics"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
   }
 }

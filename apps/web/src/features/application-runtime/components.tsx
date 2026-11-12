@@ -1,3 +1,4 @@
+import { MarkdownControl, MarkdownDisplay } from "./markdown";
 import { createElement, type ComponentType } from "react";
 import { z } from "zod";
 import {
@@ -218,6 +219,7 @@ export class ComponentRegistry {
 }
 export const componentRegistry = new ComponentRegistry();
 for (const [name, render] of Object.entries({
+  markdown: MarkdownControl,
   money: PreciseControl,
   time: PreciseControl,
   datetime: PreciseControl,
@@ -242,6 +244,7 @@ for (const [name, render] of Object.entries({
     source: "core",
     schema: runtimeFieldV2Schema,
     render,
+    ...(name === "markdown" ? { display: MarkdownDisplay } : {}),
   });
 export function RegisteredDisplay({
   definition,

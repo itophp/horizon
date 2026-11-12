@@ -73,6 +73,13 @@
     "shortcut": "K"
   },
   "overview": {
+    "noRecentActivity": "No recent activity.",
+    "activityKind": {
+      "account": "Account",
+      "organization": "Organization",
+      "department": "Department",
+      "role": "Role"
+    },
     "eyebrow": "OPERATIONS AT A GLANCE",
     "title": "Data statistics",
     "subtitle": "A clear view of your people, structure and access.",
@@ -91,6 +98,8 @@
     "chartSubtitle": "Cumulative accounts created in the last 7 days",
     "sevenDays": "Last 7 days",
     "distribution": "People by department",
+    "departmentShare": "Department membership share",
+    "departmentShareHint": "Share of memberships across the departments shown. An account can belong to several departments.",
     "scopeNote": "Only records within your authorized scope are shown.",
     "recentAccounts": "Recently added accounts",
     "viewAll": "View all accounts",
@@ -206,7 +215,10 @@
     "function": "Function",
     "identityModule": "Administration",
     "accessModule": "Access control",
-    "notApplicable": "Not available"
+    "notApplicable": "Not available",
+    "permission": "Permission",
+    "effect": "Effect",
+    "grants": "Permission grants"
   },
   "fields": {
     "username": "Account",
@@ -256,7 +268,7 @@
     "expired": "Your session has expired. Please sign in again.",
     "forbidden": "You do not have permission, or the target is outside your data scope.",
     "not_found": "The record is unavailable or outside your data scope.",
-    "conflict": "The code or account may already exist, the record is in use, or a protected account would be affected.",
+    "conflict": "The data changed or conflicts with an existing record. Refresh and try again.",
     "unavailable": "The service is not ready. Check the API and database connection.",
     "internal": "The operation could not be completed. Please try again.",
     "rate_limited": "Too many sign-in attempts. Please try again later."

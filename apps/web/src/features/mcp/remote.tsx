@@ -6,25 +6,23 @@ import {
   diagnoseRemote,
   type BusinessClient,
 } from "@/lib/mcp/connection";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Plus, ShieldAlert } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import {
   mcpManagementCreate,
   mcpManagementAdminRevoke,
   mcpManagementRotate,
-  mcpManagementAudit,
   mcpManagementRevoke,
-  mcpManagementList,
 } from "@/lib/capabilities";
 import { ApiError } from "@/api/client/request";
 import { useAuth } from "@/features/administration/auth";
-import { DataTable, EditorDialog } from "@/features/administration/shared";
+import { EditorDialog } from "@/features/administration/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -88,22 +86,21 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function RemoteMcpSection() {
-  const { t, i18n } = useTranslation("mcp");
+export function RemoteMcpSection({
+  tokenTable,
+  onRefresh,
+}: {
+  tokenTable: (
+    actions: (id: number, name: string, revoked: boolean) => ReactNode,
+  ) => ReactNode;
+  onRefresh: () => Promise<void>;
+}) {
+  const { t } = useTranslation("mcp");
   const auth = useAuth();
-  const tokenKey = ["mcp", "tokens"];
-  const query = useQuery({
-    queryKey: tokenKey,
-    queryFn: mcpManagementList,
-    retry: false,
-  });
-  const audit = useQuery({
-    queryKey: ["mcp", "audit"],
-    queryFn: mcpManagementAudit,
-    retry: false,
-  });
-  const client = useQueryClient();
   const [secret, setSecret] = useState("");
+  const [copyResult, setCopyResult] = useState<
+    "tokenCopied" | "copyTokenFailed" | null
+  >(null);
   // The token list is the primary content of this section: issuing, rotating and
   // revoking all happen inside a dialog opened from that list instead of from
   // forms that stay on the page.
@@ -124,16 +121,18 @@ export function RemoteMcpSection() {
       departmentId: auth.profile!.activeDepartmentId,
     },
   });
-  const refresh = () => client.invalidateQueries({ queryKey: tokenKey });
   const create = useMutation({
-    mutationFn: (value: z.infer<typeof schema>) => mcpManagementCreate(value),
-    onSuccess: async (result) => {
-      if (result.status === 200) {
-        setSecret(result.data.secret);
-        setCreating(false);
-      }
+    gcTime: 0,
+    mutationFn: async (value: z.infer<typeof schema>) => {
+      const result = await mcpManagementCreate(value);
+      if (result.status !== 200) return false;
+      setSecret(result.data.secret);
+      return true;
+    },
+    onSuccess: async (created) => {
+      if (created) setCreating(false);
       form.resetField("password");
-      await refresh();
+      await onRefresh();
     },
   });
   const confirmForm = useForm({
@@ -141,22 +140,25 @@ export function RemoteMcpSection() {
     defaultValues: { password: "" },
   });
   const rotate = useMutation({
-    mutationFn: ({ id, password }: { id: number; password: string }) =>
-      mcpManagementRotate(id, { password }),
-    onSuccess: async (result) => {
+    gcTime: 0,
+    mutationFn: async ({ id, password }: { id: number; password: string }) => {
+      const result = await mcpManagementRotate(id, { password });
       if (result.status === 200) setSecret(result.data.secret);
+    },
+    onSuccess: async () => {
       setConfirming(null);
       confirmForm.reset();
-      await refresh();
+      await onRefresh();
     },
   });
   const revoke = useMutation({
+    gcTime: 0,
     mutationFn: ({ id, password }: { id: number; password: string }) =>
       mcpManagementRevoke(id, { password }),
     onSuccess: async () => {
       setConfirming(null);
       confirmForm.reset();
-      await refresh();
+      await onRefresh();
     },
   });
   const adminForm = useForm({
@@ -164,12 +166,13 @@ export function RemoteMcpSection() {
     defaultValues: { id: 0, password: "" },
   });
   const adminRevoke = useMutation({
+    gcTime: 0,
     mutationFn: ({ id, password }: z.infer<typeof adminSchema>) =>
       mcpManagementAdminRevoke(id, { password }),
     onSuccess: async () => {
       setEmergencyOpen(false);
       adminForm.reset();
-      await refresh();
+      await onRefresh();
     },
   });
   const helperForm = useForm({ defaultValues: { key: "", token: "" } });
@@ -217,15 +220,48 @@ export function RemoteMcpSection() {
     try {
       await diagnoseRemote(helperForm.getValues("token"));
       setHelperStatus("connected");
-      void audit.refetch();
+      void onRefresh();
     } catch {
       setHelperStatus("failed");
     } finally {
       helperForm.resetField("token");
     }
   }
+  function tokenActions(id: number, name: string, revoked: boolean) {
+    return (
+      <div className="webmcp-actions">
+        <Button
+          disabled={!!secret || revoked || rotate.isPending}
+          onClick={() => {
+            rotate.reset();
+            confirmForm.reset();
+            setConfirming({
+              kind: "rotate",
+              id,
+              name,
+            });
+          }}
+        >
+          {t("rotate")}
+        </Button>
+        <Button
+          disabled={revoked || revoke.isPending}
+          onClick={() => {
+            revoke.reset();
+            confirmForm.reset();
+            setConfirming({
+              kind: "revoke",
+              id,
+              name,
+            });
+          }}
+        >
+          {revoked ? t("revoked") : t("revoke")}
+        </Button>
+      </div>
+    );
+  }
   const errors = form.formState.errors;
-  const tokens = query.data?.status === 200 ? query.data.data : [];
   return (
     <div className="webmcp-stack">
       <p className="muted-text">{t("description")}</p>
@@ -366,8 +402,23 @@ export function RemoteMcpSection() {
             <p>{t("secretOnce")}</p>
             <code>{secret}</code>
             <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(secret);
+                  setCopyResult("tokenCopied");
+                } catch {
+                  setCopyResult("copyTokenFailed");
+                }
+              }}
+            >
+              {t("copyToken")}
+            </Button>
+            {copyResult && <span>{t(copyResult)}</span>}
+            <Button
               onClick={() => {
                 setSecret("");
+                setCopyResult(null);
                 create.reset();
                 rotate.reset();
               }}
@@ -376,80 +427,7 @@ export function RemoteMcpSection() {
             </Button>
           </div>
         )}
-        {query.isError && (
-          <p role="alert" className="form-error">
-            {failureText(query.error, t)}
-          </p>
-        )}
-        {query.isPending && <p>{t("loading")}</p>}
-        <DataTable
-          rows={tokens}
-          columns={[
-            { id: "name", header: t("name"), cell: (token) => token.name },
-            {
-              id: "prefix",
-              header: t("prefix"),
-              cell: (token) => <code>{token.prefix}</code>,
-            },
-            {
-              id: "department",
-              header: t("department"),
-              cell: (token) => token.departmentId,
-            },
-            {
-              id: "expires",
-              header: t("expires"),
-              cell: (token) =>
-                new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-                  dateStyle: "medium",
-                }).format(new Date(token.expiresAt)),
-            },
-            {
-              id: "revokedBy",
-              header: t("revokedBy"),
-              cell: (token) =>
-                token.revokedAt
-                  ? token.revokedBy || t("systemActor")
-                  : t("notRevoked"),
-            },
-            {
-              id: "actions",
-              header: t("actions"),
-              cell: (token) => (
-                <div className="webmcp-actions">
-                  <Button
-                    disabled={!!secret || !!token.revokedAt || rotate.isPending}
-                    onClick={() => {
-                      rotate.reset();
-                      confirmForm.reset();
-                      setConfirming({
-                        kind: "rotate",
-                        id: token.id,
-                        name: token.name,
-                      });
-                    }}
-                  >
-                    {t("rotate")}
-                  </Button>
-                  <Button
-                    disabled={!!token.revokedAt || revoke.isPending}
-                    onClick={() => {
-                      revoke.reset();
-                      confirmForm.reset();
-                      setConfirming({
-                        kind: "revoke",
-                        id: token.id,
-                        name: token.name,
-                      });
-                    }}
-                  >
-                    {token.revokedAt ? t("revoked") : t("revoke")}
-                  </Button>
-                </div>
-              ),
-            },
-          ]}
-        />
+        {tokenTable(tokenActions)}
         <EditorDialog
           open={!!confirming}
           onOpenChange={(open) => {
@@ -695,22 +673,6 @@ export function RemoteMcpSection() {
           </div>
         </EditorDialog>
         <p role="status">{t(`helperStatus.${helperStatus}`)}</p>
-      </section>
-      <section className="admin-panel webmcp-section">
-        <h2>{t("audit")}</h2>
-        <Button onClick={() => void audit.refetch()}>{t("refresh")}</Button>
-        {(audit.data?.status === 200 ? audit.data.data : []).map((item) => (
-          <p key={item.id}>
-            {t("auditEntry", {
-              tool: item.tool,
-              result: item.resultCode,
-              time: new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-                dateStyle: "short",
-                timeStyle: "medium",
-              }).format(new Date(item.createdAt)),
-            })}
-          </p>
-        ))}
       </section>
     </div>
   );

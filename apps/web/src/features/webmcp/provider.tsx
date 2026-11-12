@@ -218,22 +218,9 @@ export function usePageTools(tools: PageTool[]) {
     return () => cleanup.forEach((remove) => remove());
   }, [connection, tools, session.permissions]);
 }
-const routes = {
-  "/": "",
-  "/analytics": "",
-  "/accounts": "accounts:read",
-  "/organizations": "organizations:read",
-  "/departments": "departments:read",
-  "/roles": "roles:read",
-  "/permissions": "access:manage",
-  "/settings": "settings:read",
-  "/preferences": "",
-  "/dictionaries": "dictionaries:read",
-  "/attachments": "files:read",
-  "/notifications": "",
-  "/temporary-access": "",
-  "/webmcp": "",
-} as const;
+const navigationRoutes = webMcpRoutes.filter(
+  (route) => route.connected && !route.path.includes(":"),
+);
 function WorkspaceTools() {
   const session = useSession();
   const location = useLocation();
@@ -247,31 +234,24 @@ function WorkspaceTools() {
       z.object({}).strict(),
       () => ({
         route: location.pathname,
-        routes: Object.entries(routes)
+        routes: navigationRoutes
           .filter(
-            ([, permission]) =>
-              !permission || session.permissions.includes(permission),
+            (route) =>
+              !route.permission ||
+              session.permissions.includes(route.permission),
           )
-          .map(([path]) => path),
+          .map((route) => route.path),
       }),
       { scope: "global" },
     ),
     pageTool(
       "baseline_navigate",
       "Navigate to a permitted workspace route. Use page-specific tools after navigation.",
-      z
-        .object({
-          path: z.enum(
-            Object.keys(routes) as [
-              keyof typeof routes,
-              ...(keyof typeof routes)[],
-            ],
-          ),
-        })
-        .strict(),
+      z.object({ path: z.string().min(1) }).strict(),
       ({ path }) => {
-        const permission = routes[path];
-        if (permission && !session.permissions.includes(permission))
+        const route = navigationRoutes.find((item) => item.path === path);
+        if (!route) throw new Error("not_found");
+        if (route.permission && !session.permissions.includes(route.permission))
           throw new Error("forbidden");
         void navigate(path);
         return { requestedRoute: path };

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,7 +7,15 @@ import { I18nextProvider } from "react-i18next";
 import { i18n, changeLanguage } from "@/i18n";
 import { ApiError } from "@/api/client/request";
 import type { MCPToken } from "@/api/types";
-import { RemoteMcpSection } from "./remote";
+import { MemoryRouter } from "react-router";
+import { DynamicApplicationRoute } from "@/features/application-runtime/route";
+import type { RuntimeApplicationV2 } from "@/api/generated/runtime";
+
+const collaboration = (
+  JSON.parse(
+    readFileSync("../../docs/generated/runtime/applications.json", "utf8"),
+  ) as RuntimeApplicationV2[]
+).find((app) => app.id === "agent-collaboration")!;
 
 const api = vi.hoisted(() => ({
   create: vi.fn(),
@@ -23,30 +32,34 @@ vi.mock("@/lib/capabilities", async (original) => ({
   mcpManagementRotate: api.rotate,
   mcpManagementRevoke: api.revoke,
   mcpManagementAdminRevoke: api.adminRevoke,
-  mcpManagementList: api.list,
-  mcpManagementAudit: async () => ({
-    status: 200,
-    data: [],
-    headers: new Headers(),
-  }),
+  runtimeApplication: async () => collaboration,
+  runtimeRead: async (name: string) => {
+    if (name === "application.runtime.list") return { items: [collaboration] };
+    if (name === "mcp.token.list") return api.list();
+    if (name === "mcp.audit.list") return [];
+    throw new Error("Unexpected read: " + name);
+  },
 }));
 
-vi.mock("@/features/administration/auth", () => ({
-  useAuth: () => ({
-    profile: {
-      tenantId: "t",
-      activeDepartmentId: 1,
-      csrfToken: "csrf",
-      permissions: api.permissions,
-      account: {
-        id: 1,
-        memberships: [
-          { departmentId: 1, departmentName: "Administration" },
-          { departmentId: 2, departmentName: "Engineering" },
-        ],
-      },
+vi.mock("@/features/administration/auth", () => {
+  const useSession = () => ({
+    tenantId: "t",
+    activeDepartmentId: 1,
+    csrfToken: "csrf",
+    permissions: api.permissions,
+    account: {
+      id: 1,
+      memberships: [
+        { departmentId: 1, departmentName: "Administration" },
+        { departmentId: 2, departmentName: "Engineering" },
+      ],
     },
-  }),
+  });
+  return { useSession, useAuth: () => ({ profile: useSession() }) };
+});
+
+vi.mock("@/features/webmcp/provider", () => ({
+  useWebMcp: () => ({ status: "disconnected", toolCount: 0 }),
 }));
 
 const token: MCPToken = {
@@ -70,14 +83,16 @@ function show() {
           new QueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
-        <RemoteMcpSection />
+        <MemoryRouter initialEntries={["/mcp?tab=remote"]}>
+          <DynamicApplicationRoute />
+        </MemoryRouter>
       </QueryClientProvider>
     </I18nextProvider>,
   );
 }
 
 async function openCreate(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Add token" }));
+  await user.click(await screen.findByRole("button", { name: "Add token" }));
   return screen.findByRole("button", { name: "Create token" });
 }
 
@@ -94,7 +109,7 @@ beforeEach(async () => {
   api.adminRevoke.mockReset();
   api.list.mockReset();
   api.permissions = [];
-  api.list.mockResolvedValue({ status: 200, data: [], headers: new Headers() });
+  api.list.mockResolvedValue([]);
 });
 
 it("associates every validation error with its own field", async () => {
@@ -151,6 +166,8 @@ it("shows the secret once, then clears the password before the next token", asyn
   await user.click(screen.getByRole("button", { name: "Create token" }));
 
   expect(await screen.findByText("bmcp_secret")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Copy token" }));
+  expect(await navigator.clipboard.readText()).toBe("bmcp_secret");
   expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
   await user.click(
     screen.getByRole("button", { name: "I have saved the token" }),
@@ -173,11 +190,7 @@ it("explains that credentials follow current permissions without selecting tools
 
 it("confirms rotating a listed token with the password inside a dialog", async () => {
   const user = userEvent.setup();
-  api.list.mockResolvedValue({
-    status: 200,
-    data: [token],
-    headers: new Headers(),
-  });
+  api.list.mockResolvedValue([token]);
   api.rotate.mockResolvedValue({
     status: 200,
     data: { secret: "bmcp_rotated", token: { id: 7 } },
@@ -193,10 +206,12 @@ it("confirms rotating a listed token with the password inside a dialog", async (
     expect(api.rotate).toHaveBeenCalledWith(7, { password: "correct-horse" }),
   );
   expect(await screen.findByText("bmcp_rotated")).toBeVisible();
+  await waitFor(() => expect(api.list).toHaveBeenCalledTimes(2));
 });
 
-it("requires the management permission before offering an emergency revoke", () => {
+it("requires the management permission before offering an emergency revoke", async () => {
   show();
+  await screen.findByRole("button", { name: "Add token" });
   expect(
     screen.queryByRole("button", { name: "Emergency revoke" }),
   ).not.toBeInTheDocument();
@@ -208,7 +223,9 @@ it("revokes a token by id from the emergency revoke dialog", async () => {
   api.adminRevoke.mockResolvedValue({ status: 204, data: undefined });
   show();
 
-  await user.click(screen.getByRole("button", { name: "Emergency revoke" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Emergency revoke" }),
+  );
   expect(screen.getByText("Emergency token revoke")).toBeVisible();
   await user.type(screen.getByLabelText("Token ID to revoke"), "7");
   await user.type(

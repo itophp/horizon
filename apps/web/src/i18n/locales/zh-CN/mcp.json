@@ -24,6 +24,9 @@
   "confirmRotate": "确认轮换",
   "confirmRevoke": "确认撤销",
   "secretOnce": "请立即保存 Token，完整值仅显示一次。",
+  "copyToken": "复制令牌",
+  "tokenCopied": "令牌已复制。",
+  "copyTokenFailed": "无法复制令牌，请选中令牌并手动复制。",
   "dismiss": "我已保存 Token",
   "failed": "操作失败。",
   "loading": "正在加载 Token…",
@@ -39,6 +42,8 @@
   "workbuddyHelp": "导入配置并在客户端本地输入 Token。使用前替换占位符，请勿分享凭证。",
   "audit": "最近调用",
   "refresh": "刷新",
+  "auditTool": "工具",
+  "auditResult": "结果",
   "auditEntry": "{{tool}} · {{result}} · {{time}}",
   "password": "当前密码",
   "validation": {

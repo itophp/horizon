@@ -329,7 +329,7 @@ FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 
 |---|---|
 | [.agents/skills/baseline-entity-model](../.agents/skills/baseline-entity-model/SKILL.md) | 触发条件、文件布局、判据、验证命令、常见错误 |
 | [AGENTS.md](../AGENTS.md) | 架构边界、目录树、任务路由、Code Review 重点 |
-| [services/AGENTS.md](../services/AGENTS.md) | 能力必须声明 `Entity`/`Entities`；一实体一文件；改状态必须绑 `Transition` |
-| [services/db/AGENTS.md](../services/db/AGENTS.md) | 迁移收尾加 `make check-entities`；加表/加列必须同步声明 |
+| [foundation/AGENTS.md](../foundation/AGENTS.md) | 能力必须声明 `Entity`/`Entities`；一实体一文件；改状态必须绑 `Transition` |
+| [foundation/db/AGENTS.md](../foundation/db/AGENTS.md) | 迁移收尾加 `make check-entities`；加表/加列必须同步声明 |
 
 `docs/agent-policy.json` 登记了门禁 `entities → check-entities` 与任务 `entity`，并给 `database`、`capability` 两个任务补上该门禁——这两类改动最容易漏声明。

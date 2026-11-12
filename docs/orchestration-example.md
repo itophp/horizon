@@ -20,11 +20,11 @@
 
 ## 2. 源与生成物
 
-- 运行源：`services/kernel/workflow/spec/examples.go` 的 LifecycleExample。
-- 原子能力：`services/applications/example/module.go`。新增 get 强制 tenant + created_by，不因为 Admin 而放宽详情归属；复用 example:read 权限。
+- 运行源：`foundation/kernel/workflow/spec/examples.go` 的 LifecycleExample。
+- 原子能力：`applications/example/module.go`。新增 get 强制 tenant + created_by，不因为 Admin 而放宽详情归属；复用 example:read 权限。
 - 标准规格：`docs/generated/workflows/workflow.schema.json`（JSON Schema Draft 2020-12）。
 - 可读导出：`docs/generated/workflows/example-lifecycle.workflow.json`。它来自 Go 定义，是生成产物，不能修改后期待服务器自动加载。
-- 检查命令：`make check-workflows`；候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件路径>` 检查。脚本的工作目录是 services，根目录文件需使用相应路径。
+- 检查命令：`make check-workflows`；候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件路径>` 检查。脚本的工作目录是 foundation，根目录文件需使用相应路径。
 
 新增业务流程可以先生成候选 JSON 做检查，再转换为同一个 Definition 的 Go 声明、加入 Builtins，执行 `make generate-workflows`。当前不提供从 HTTP/MCP 上传任意流程定义的入口，流程发布链尚未实现。
 

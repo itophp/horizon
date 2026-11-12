@@ -51,3 +51,5 @@ Memory Center 使用从模块 Definition 生成的 capability-memory 类型和�
 ## 远程 MCP 动态目录（现行）
 
 远程 MCP 与 AI 助手共享自动化能力目录；Token 绑定本人和部门，每次请求重建当前正式权限，不再使用历史固化工具集合。业务调用仍经 Gateway 并执行来源、数据范围、审批和幂等检查；人工及内部专用能力不向自动化暴露。变更时验证授权、越权直接调用、撤权及界面提示，详见 docs/security.md 和 docs/decisions/011-remote-mcp.md（从仓库根解析）。
+
+涉及页面生成、布局或视觉优化时，使用 [baseline-ui-design](../baseline-ui-design/SKILL.md) 完成设计说明与实景评审。工程 Skill 不代表在线设计模型已加载规则。

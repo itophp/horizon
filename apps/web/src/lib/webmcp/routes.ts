@@ -1,6 +1,32 @@
+import { runtimeProtocolRoutes } from "@/api/generated/runtime";
+
+const runtimeRoutePolicy: Record<
+  string,
+  { module: string; permission?: string }
+> = {
+  "/capabilities": { module: "capability", permission: "example:read" },
+  "/analytics": { module: "workspace" },
+  "/mcp": { module: "development" },
+  "/settings": { module: "governance", permission: "settings:read" },
+  "/preferences": { module: "governance" },
+};
+
+const runtimeRoutes = runtimeProtocolRoutes.map((route) => {
+  const policy = runtimeRoutePolicy[route.route];
+  return {
+    path: route.route,
+    module: policy?.module ?? route.applicationId,
+    permission:
+      policy?.permission ??
+      (route.permission === "authenticated" ? "" : route.permission),
+    connected: true,
+  };
+});
+
 // This inventory includes public routes even though the authenticated provider
 // deliberately disconnects before entering them.
 export const webMcpRoutes = [
+  ...runtimeRoutes,
   {
     path: "/applications/design",
     module: "runtime",
@@ -38,63 +64,18 @@ export const webMcpRoutes = [
     connected: false,
   },
   {
-    path: "/articles",
-    module: "articles",
-    permission: "articles:read",
-    connected: true,
-  },
-  {
-    path: "/articles/:id",
-    module: "articles",
-    permission: "articles:read",
-    connected: true,
-  },
-  // Project collaboration publishes no page-scoped tools yet: entering it
-  // disconnects the previous page's inventory instead of reusing it. The
-  // capabilities stay available to the agent and remote MCP through the
-  // gateway, which is a separate exposure decision.
-  {
-    path: "/projects",
-    module: "projects",
-    permission: "projects:read",
-    connected: true,
-  },
-  {
-    path: "/projects/:id",
-    module: "projects",
-    permission: "projects:read",
-    connected: true,
-  },
-  { path: "/mcp", module: "development", permission: "", connected: true },
-  // Legacy entry points redirect to the unified page; kept so older links and
-  // agent instructions still resolve.
-  {
     path: "/mcp-settings",
     module: "development",
     permission: "",
     connected: true,
   },
   { path: "/", module: "workspace", permission: "", connected: true },
-  // Statistics took over the former landing dashboard; "/" now redirects to the
-  // AI workbench, so the page keeps its own path.
-  { path: "/analytics", module: "workspace", permission: "", connected: true },
-  // The workbench is a first class console surface: its page tools are only
-  // published while the agent grant is held.
-  {
-    path: "/capabilities",
-    module: "capability",
-    permission: "example:read",
-    connected: true,
-  },
   {
     path: "/capabilities/:name",
     module: "capability",
     permission: "executionPlans:read",
     connected: false,
   },
-  // Orchestration is a read-only console surface: it publishes no page tools,
-  // so entering it disconnects page-scoped tools instead of silently reusing
-  // another module's inventory.
   {
     path: "/orchestration",
     module: "orchestration",
@@ -114,20 +95,6 @@ export const webMcpRoutes = [
     connected: true,
   },
   {
-    path: "/accounts",
-    module: "administration",
-    permission: "accounts:read",
-    connected: true,
-  },
-  {
-    path: "/organizations",
-    module: "administration",
-    permission: "organizations:read",
-    connected: true,
-  },
-  // Departments, roles and dictionaries are merged into their parent pages and
-  // only kept as redirects for older links and agent instructions.
-  {
     path: "/departments",
     module: "administration",
     permission: "departments:read",
@@ -140,26 +107,8 @@ export const webMcpRoutes = [
     connected: true,
   },
   {
-    path: "/permissions",
-    module: "administration",
-    permission: "access:manage",
-    connected: true,
-  },
-  {
     path: "/temporary-access",
     module: "administration",
-    permission: "",
-    connected: true,
-  },
-  {
-    path: "/settings",
-    module: "governance",
-    permission: "settings:read",
-    connected: true,
-  },
-  {
-    path: "/preferences",
-    module: "governance",
     permission: "",
     connected: true,
   },
@@ -211,13 +160,18 @@ export const webMcpRoutes = [
   { path: "*", module: "public", permission: "", connected: false },
 ] as const;
 
+function matchesRoute(routePath: string, path: string) {
+  const expression = routePath
+    .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/:[A-Za-z0-9_]+/g, "[^/]+");
+  return new RegExp(`^${expression}$`).test(path);
+}
+
 export function findWebMcpRoute(path: string) {
   return (
     webMcpRoutes.find((route) => route.path === path) ??
-    (/^\/files\/[^/]+$/.test(path)
-      ? webMcpRoutes.find((route) => route.path === "/files/:id")
-      : /^\/projects\/[^/]+$/.test(path)
-        ? webMcpRoutes.find((route) => route.path === "/projects/:id")
-        : undefined)
+    webMcpRoutes.find(
+      (route) => route.path.includes(":") && matchesRoute(route.path, path),
+    )
   );
 }
