@@ -2,6 +2,7 @@ package applicationruntime_test
 
 import (
 	"horizon/applications/articles"
+	"horizon/applications/projects"
 	ar "horizon/foundation/kernel/applicationruntime"
 	"horizon/foundation/kernel/capability/contracts"
 	"horizon/foundation/runtime/app"
@@ -16,7 +17,7 @@ func fixture() ([]ar.ApplicationV2, []contracts.Entity, []contracts.Definition) 
 	for _, entry := range entries {
 		defs = append(defs, entry.Definition)
 	}
-	return append([]ar.ApplicationV2{articles.RuntimeApplication()}, plugins.Catalog.Applications...), app.EntitiesWithPlugins(plugins), defs
+	return []ar.ApplicationV2{articles.RuntimeApplication(), projects.RuntimeApplication()}, app.EntitiesWithPlugins(plugins), defs
 }
 
 func TestAssembleUsesOnlyProtocolApplications(t *testing.T) {
@@ -83,7 +84,11 @@ func TestProtocolInvokeEventsCarryCapabilityInputSchemas(t *testing.T) {
 		if page.ID != "project.detail" {
 			continue
 		}
-		for _, event := range page.Root.Layout.Children[0].Layout.Children[0].Component.Events {
+		members, _ := ar.FindAIComponent(page.Root, "project-members")
+		if members == nil {
+			t.Fatal("project members component missing")
+		}
+		for _, event := range members.Events {
 			if event.Event == "addMember" {
 				binding = event
 			}

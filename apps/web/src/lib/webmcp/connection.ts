@@ -15,11 +15,14 @@ function isLocalConnection(value: unknown): value is LocalConnection {
 }
 // Development-only helper served by the Vite dev server; it returns nothing in
 // builds, so callers fall back to manual entry.
-export async function fetchLocalConnection(): Promise<LocalConnection | null> {
+export async function fetchLocalConnection(
+  signal?: AbortSignal,
+): Promise<LocalConnection | null> {
   try {
     const response = await fetch("/__webmcp/connection", {
       headers: { Accept: "application/json" },
       credentials: "omit",
+      signal,
     });
     if (!response.ok) return null;
     const body: unknown = await response.json();

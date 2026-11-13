@@ -142,6 +142,7 @@
   "fileLimit": "所选文件超过大小限制。",
   "fileReadFailed": "无法读取所选文件。",
   "groups": {
+    "knowledge": "知识检索",
     "memory": "记忆采集",
     "articles": "文章审核",
     "branding": "基础品牌",
@@ -156,6 +157,15 @@
     "assistant": "AI 助手"
   },
   "labels": {
+    "articles_blockedWords": "文章屏蔽词（每行一个或用逗号分隔）",
+    "agent_enabled": "启用工作空间 Agent",
+    "agent_baseUrl": "工作空间 Agent API 地址",
+    "knowledge_embedding_baseUrl": "向量化 API 地址",
+    "knowledge_embedding_model": "向量化模型",
+    "knowledge_embedding_dimensions": "向量维度",
+    "knowledge_embedding_token": "向量化 API 密钥",
+    "knowledge_vector_url": "向量存储地址",
+    "knowledge_vector_index": "向量索引名称",
     "memory_activitySamplePercent": "活动采样百分比",
     "branding_name": "产品名称",
     "branding_tagline": "产品副标题",

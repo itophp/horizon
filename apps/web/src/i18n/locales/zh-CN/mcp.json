@@ -74,6 +74,8 @@
   "diagnose": "测试远程连接",
   "installCodex": "设置 Codex",
   "installWorkbuddy": "设置 WorkBuddy",
+  "prepareInstall": "准备安装",
+  "installClient": "客户端",
   "confirmInstall": "确认安装",
   "installTarget": "在助手所在电脑为 {{url}} 安装 {{client}}，配置和凭证将保存在本机。",
   "cancel": "取消",

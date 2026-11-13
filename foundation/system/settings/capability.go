@@ -78,8 +78,14 @@ func (s *Service) workspaceDefinition() contracts.Definition {
 		Domain:      "settings", Entity: "settings", Permission: "settings:read",
 		Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true,
 		Executor: "go:settings.workspace", Tags: []string{"settings", "read", "agent"},
-		Input:  contracts.Object(scopeFields()),
-		Output: contracts.Object(map[string]*contracts.Schema{"revision": {Type: "integer"}}),
+		Input: contracts.Object(scopeFields()),
+		Output: contracts.Object(map[string]*contracts.Schema{
+			"target": contracts.FreeObject(), "revision": {Type: "integer"},
+			"definitions": {Type: "array", Items: contracts.FreeObject()},
+			"entries":     {Type: "array", Items: contracts.FreeObject()},
+			"drafts":      {Type: "array", Items: contracts.FreeObject()},
+			"history":     {Type: "array", Items: contracts.FreeObject()},
+		}, "target", "revision", "definitions", "entries", "drafts", "history"),
 	}
 }
 
@@ -189,7 +195,7 @@ func (s *Service) schedulesDefinition() contracts.Definition {
 		Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true,
 		Executor: "go:settings.schedules", Tags: []string{"settings", "read"},
 		Input:  contracts.Object(map[string]*contracts.Schema{}),
-		Output: contracts.Object(map[string]*contracts.Schema{"schedules": {Type: "array", Items: contracts.FreeObject()}}),
+		Output: &contracts.Schema{Type: "array", Items: contracts.FreeObject()},
 	}
 }
 
@@ -236,7 +242,7 @@ func (s *Service) exportDefinition() contracts.Definition {
 		Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true,
 		Executor: "go:settings.export", Tags: []string{"settings", "read"},
 		Input:  contracts.Object(scopeFields()),
-		Output: contracts.Object(map[string]*contracts.Schema{"entries": {Type: "array", Items: contracts.FreeObject()}}),
+		Output: &contracts.Schema{Type: "array", Items: changeSchema()},
 	}
 }
 
@@ -257,8 +263,8 @@ func (s *Service) verifyDefinition() contracts.Definition {
 		Name: "settings.password.verify", Version: version, Title: "Reauthenticate",
 		Description: "Verify the caller's password and issue a short lived proof for a sensitive publication.",
 		Domain:      "settings", Entity: "settings", Permission: "",
-		Risk: contracts.RiskMedium, Approval: contracts.ApprovalAuto, ReadOnly: true,
-		Executor: "go:settings.reauthenticate", Tags: []string{"settings", "auth"},
+		Risk: contracts.RiskMedium, Approval: contracts.ApprovalAuto, ReadOnly: true, TransientResult: true,
+		Executor: "go:settings.reauthenticate", Tags: []string{"settings", "auth", "manual-only"},
 		Input: contracts.Object(map[string]*contracts.Schema{
 			"password":   contracts.Str(1, 128),
 			"operation":  contracts.Enum("settings.publish", "settings.schedule", "settings.rollback", "dictionaries.rollback"),

@@ -30,6 +30,12 @@ V3 应用以 `ApplicationV2.protocol: ApplicationV3` 随部署定义发布，外
 
 `dialog@1.0` 使用 `content` 插槽编排弹窗正文。通过组件绑定将页面局部布尔值映射到 `open`，并用 `close` 事件将其设回 false。按需读取弹窗数据时，Provider 的 Data 声明应通过 `enabledWhen` 引用同一状态。只读预览不打开交互弹窗。
 
+调用声明了 `TransientResult` 的人工写入能力时，事件可用 `disclosure` 显示一个契约中声明的字符串字段。此字段只出现在首次成功响应的弹窗中，关闭后清除。瞬时结果禁止绑定到 `resultTarget`，也不进入页面表达式或缓存。
+
+`action-form@1.0` 按 Schema 渲染动作输入。一个表单只允许一个 `submit` 调用，提交值用于构造该次调用的输入。失败后的重试由表单发起，输入未改动时复用操作键，Runtime 的通用错误弹窗不保存提交值。成功或取消事件没有表单值，可用于关闭弹窗。
+
+展示绑定可读取当前会话的 `context.activeDepartmentId` 与 `context.departmentOptions`。选项仅包含本人归属的部门 ID 和名称。凭据表单可用它们声明部门选择与默认值，提交时仍由 Gateway 和业务服务校验部门归属。
+
 `change-list-form@1.0` 从 Schema 读取分组、字段和选项，从绑定数据读取键、JSON 值与覆盖状态。它只发出实际发生的 `set` 或 `reset`，由页面的 `submit` 事件将变更映射到目标能力。个人偏好在 `builtin:personal-preferences@1.0.1` 使用该组件，已有发布定义通过 Runtime 安装升级流程更新。
 
 `/capabilities` 由 `builtin:capabilities@1.0.1` 的 V3 定义提供。部署迁移 00031 为现有租户写入安装记录，并为新租户登记默认安装模板，服务启动时由 Runtime reconcile 初始化发布定义。00032 将安装模板和未初始化的安装推进到 1.0.1，已有发布或草稿通过 Runtime 安装升级流程处理。系统 Provider 只接受固定适配器，复用现有 SDK 和 Gateway 的授权投影。调用记录、审批和事件绑定只保留显示所需字段。部署内置页面可声明 `authenticated` 可见范围，页面内的 Provider 和动作继续各自鉴权。
@@ -68,3 +74,117 @@ Go Runtime 契约通过现有生成器输出 TS/Zod 和示例；修改手写源�
 ## UI 生成质量
 
 生成页面先执行 [UI 设计标准](runtime-ui-generation.md) 的设计说明，再选择已注册布局与组件。工程 Agent 使用 baseline-ui-design；在线 Agent 通过工作流指令获得精简约束，不假设能读取仓库 Skill。结构校验与视觉验收分别报告。
+
+## shadcn/ui 组件
+
+Runtime 支持[用户提供的 shadcn/ui 组件目录](https://www.shadcn-ui.cn/docs/components)中的 59 项。有 `applications:design` 权限的用户可在 `/applications/design` 查看组件契约。Runtime 设计 Agent 通过 `application.runtime.definition.contracts` 读取同一目录，先用 `kind: "element"` 分页查询，再用 `name: "<组件>@<版本>"` 查询属性、插槽和事件。页面声明使用 `kind` 和 `version` 固定版本。完整属性、内容插槽、数据绑定与事件见[生成的 UI 契约](generated/runtime/ui-contracts.json)。运行时组件复用仓库的 Base Nova 和主题 tokens。
+
+| 用途 | Runtime 组件 |
+| --- | --- |
+| 内容与状态 | `alert`、`avatar`、`badge`、`card`、`empty`、`item`、`kbd`、`label`、`progress`、`skeleton`、`spinner`、`typography` |
+| 内容布局 | `accordion`、`aspect-ratio`、`button-group`、`carousel`、`collapsible`、`resizable`、`scroll-area`、`separator`、`sidebar`、`tabs` |
+| 操作与导航 | `breadcrumb`、`button`、`command`、`context-menu`、`dropdown-menu`、`menubar`、`navigation-menu`、`pagination` |
+| 浮层与反馈 | `alert-dialog`、`dialog`、`drawer`、`hover-card`、`popover`、`sheet`、`sonner`、`toast`、`tooltip` |
+| 输入 | `calendar`、`checkbox`、`combobox`、`date-picker`、`field`、`input`、`input-group`、`input-otp`、`native-select`、`radio-group`、`select`、`slider`、`switch`、`textarea`、`toggle`、`toggle-group` |
+| 表单与数据 | Form 用 `action-form` 或 `record-form-panel`；表格与图表用 `table`、`data-table`、`chart` |
+
+`content` 是嵌套布局。Carousel 在其内容布局下为每张卡片声明一个包含 `carousel-slide` 的布局，Resizable 同样使用包含 `resizable-panel` 和 `resizable-handle` 的布局，并按面板、手柄、面板的顺序声明。两者的内容根及直接子布局只提供声明和作用域，尺寸由组件管理。Accordion 可设置 `group: true`，并在内容布局内声明多个 `accordion-item`。Tabs 的内容包含对应 `options[].value` 的 `layout-tab-panel`。
+
+`labelKey`、`titleKey`、`descriptionKey` 使用翻译键。固定枚举的 `options` 由 `{ value, labelKey }` 组成，业务对象选择使用带授权查询的 `search-picker-panel`。Calendar 和 Date Picker 支持单选、多选和范围选择，`change` 分别返回 `YYYY-MM-DD` 字符串、日期数组或含 `from` 和可选 `to` 的对象。常规输入控件的 `change` 返回标量值。Slider 的范围模式返回两个数字，Toggle Group 的多选模式返回选中值数组。绑定值更新后控件同步显示。固定枚举选项可用 `disabled` 禁用单项。分页链接保留现有查询参数，可在 Provider 映射中读取页面参数。设置 `numbered: true` 可直接跳到首页、末页或当前页附近的页面。Chart 使用 Provider 返回的行数据，支持柱状图、折线图、面积图和饼图。用 `series: [{ field, labelKey }]` 指定多系列，柱状图和面积图可用 `stacked: true` 堆叠。饼图读取第一组系列的正数数据。图表附可展开的数据表。Menubar 可用 `menus: [{ value, labelKey, options }]` 声明多组菜单，此时 `select` 返回 `{ menu, value }`。单组 `options` 仍返回字符串。Navigation Menu 可设置 `group: true`，通过子布局编排多个 `navigation-menu-item`。Drawer、Popover 和 Sheet 支持绑定 `open`、设置 `side`，并通过 `openChange` 返回打开状态。Toast 和 Sonner 提供由按钮触发的本地反馈。
+
+事件通过现有 Runtime Action 分发，业务写入使用 Gateway。Input OTP 的 `complete` 只允许绑定一次已声明的能力调用，并走临时参数路径。只读预览禁用编辑和业务事件，保留展开、查看内容等本地操作。
+
+菜单的 `options` 支持 `kind: "checkbox"`、`"radio"` 和 `"submenu"`。勾选事件返回 `{ value, checked }`，单选事件返回 `{ group, value }`，普通动作返回字符串。Menubar 分组时事件同时包含 `menu`。Combobox 多选用 `multiple: true` 和 `values`，显示选中项标签并返回选中值数组。
+
+Avatar 支持同源图片路径 `src`、尺寸及缩写回退，多个头像可放在 `avatar-group` 的内容布局。Sidebar 设置 `sections: true` 后使用 `sidebar-header`、`sidebar-content` 和 `sidebar-footer` 组织内容，`sidebar-group` 提供带标题的分组。Resizable Panel 的 `defaultSize`、`minSize`、`maxSize` 以百分比声明。
+
+Badge 支持六种样式，Skeleton 支持线条、圆形及块状占位，Progress 支持自定义量程和数值或百分比。Toast 和 Sonner 设置 `mode: "action"` 后通过 `click` 绑定 Runtime Action，用 `successKey` 和 `errorKey` 配置结果反馈。等待审批时不显示成功提示。
+
+Command 支持内嵌和弹窗模式。使用 `mode: "dialog"`、`open` 和 `openChange` 绑定弹窗状态，选项使用 `groupKey` 分组，`shortcutKey` 显示快捷键提示。Carousel 使用零起点的 `startIndex` 和 `change`，`autoplayMs` 配置轮播间隔。自动轮播可暂停，并在鼠标悬停、键盘焦点进入或启用减少动态效果时停止。
+
+Input 和 Input Group 支持输入类型，Textarea 支持行数。三者可声明必填、长度限制和错误状态，并通过 `describedBy` 关联 Field 的描述及错误。用同一 Runtime 数据绑定控件和 Field 的 `invalid` 状态，业务提交验证继续由现有表单和能力契约执行。Typography 支持一到六级标题、引用、行内代码和有序或无序列表。Tooltip 和 Hover Card 可设置方位与开关延迟，Collapsible 支持绑定展开状态并发出 `openChange`。
+
+## 内嵌 AI 组件
+
+项目应用部署基线 `com.horizon.projects@2.0.1` 提供 AI 风险列、详情分析面板和任务表单助手。现有安装通过应用安装升级流程选择 2.0.1，租户定制需要按现有流程审核合并。组件共用 AI 结果视图，结果只保留在当前页面，重新加载页面时清空。
+
+| 配置位置 | Schema 结构 |
+| --- | --- |
+| `table-panel.props.columns[]` | `{ name, labelKey, display: "ai", analysis: AIAnalysisSpec }` |
+| `ai-analysis-panel@1.0` | `data` 绑定主记录，`props.scenarios` 为 1–3 个 `{ id, labelKey, analysis: AIAnalysisSpec }` |
+| `ai-result@1.0` | `data` 绑定 `AIResult`，`props.variant` 为 `compact` 或 `detail` |
+| Runtime 表单 | `aiAssistant: { labelKey, action, inputFields, targetFields, prompt, createScope?, editScope? }` |
+
+`AIAnalysisSpec` 包含 `action`、`prompt` 和 `input: [{ source, fields }]`。表格列使用一个单记录 Provider，详情场景使用主记录和可选的关联分页 Provider。数据引用从组件所在布局作用域解析。每个 Provider 通过 `route.id` 映射当前记录 ID。关联来源返回 `items` 和 `total`，固定读取首页最多 20 条。表单用对应模式的 scope Provider 校验记录权限。纯按需绑定可配置 `enabledWhen: { kind: literal, literal: "false" }`。
+
+```yaml
+# 项目列表的列
+name: aiRisk
+labelKey: projects:ai.risk
+display: ai
+analysis:
+  action: analyze-risk-column
+  input:
+    - source: $_aiProject
+      fields: [status, dueDate, taskOverdueCount]
+  prompt: 根据项目状态、截止日期和逾期任务数判断风险，返回风险标签和一句话依据。
+```
+
+```yaml
+id: project-ai-analysis
+kind: ai-analysis-panel
+version: "1.0"
+data: $project
+props:
+  scenarios:
+    - id: schedule-risk
+      labelKey: projects:ai.scheduleRisk
+      analysis:
+        action: analyze-schedule
+        input:
+          - source: $project
+            fields: [status, dueDate, taskOverdueCount]
+        prompt: 说明项目是否存在延期风险并列出依据。
+    - id: task-blockers
+      labelKey: projects:ai.taskBlockers
+      analysis:
+        action: analyze-blockers
+        input:
+          - source: $project
+            fields: [status]
+          - source: $_tasks
+            fields: [title, status, dueDate]
+        prompt: 找出最多三项可能阻塞项目的任务并说明理由。
+events:
+  - { event: analyze-schedule, action: invoke, target: application.runtime.ai.analyze@1.0.0 }
+  - { event: analyze-blockers, action: invoke, target: application.runtime.ai.analyze@1.0.0 }
+```
+
+```yaml
+# 独立结果视图的配置。项目列表和详情已内嵌同一视图。
+id: project-ai-result
+kind: ai-result
+version: "1.0"
+data: $analysisResult
+props:
+  variant: detail
+```
+
+```yaml
+aiAssistant:
+  labelKey: projects:ai.draftTaskDescription
+  action: suggest-task-description
+  createScope: $_aiProject
+  editScope: $_aiTask
+  inputFields: [title, priority, dueDate]
+  targetFields: [description]
+  prompt: 根据任务标题、优先级和截止日期起草简短的描述。信息不足时返回空建议。
+```
+
+列和表单所在组件分别声明 `analyze-risk-column → application.runtime.ai.analyze@1.0.0` 和 `suggest-task-description → application.runtime.ai.suggest@1.0.0` 的 `invoke` 事件。AI 事件使用组件提供的调用载荷。分析返回 `{ status, summary, label?, evidence?, coverage? }`，列标签为 `high | medium | low | insufficient`。表单返回 `{ suggestions: [{ field, value }] }`，建议值可逐项采纳到表单草稿。
+
+两个能力沿用 `assistant:use`、Runtime 发布版本校验及原 Provider/表单权限。服务端按 Schema 裁剪数据并执行一次无工具 Eino 模型调用。提示词、草稿和结果内容不写入能力审计。状态及记录标识可用于定位调用。模型生成不可用或结果校验失败时，原业务表单和页面数据仍可使用。
+
+Button 和 Data Table 的契约描述了渲染器支持的属性。Button 的 `click` 可携带 `payload`，也可使用已有的 `action` 描述。Data Table 可从 `data` 或 `items` 读取行，通过 `columns` 配置字段和显示格式。声明 `rowEvent: "rowClick"` 并绑定同名事件即可接收行数据。设为 `serverPage: true` 时由外部 Provider 和分页控件驱动翻页。
+
+Card 的内容可组合 `card-footer`。Alert、Empty、Item 可用 `sections: true` 组合 `alert-action`、`empty-media`、`item-media`、`item-actions` 和 `item-footer` 等区域。Tabs 可设置方向、自动或手动键盘激活和线条样式。Scroll Area 可配置滚动轴和保留滚动条。Alert Dialog 支持外部 `open` 绑定和 `confirm`、`cancel`、`openChange`，Dialog 关闭时仍发出 `close`，也可绑定 `openChange`。Chart 另支持环形图、雷达图和径向条形图。

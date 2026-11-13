@@ -78,10 +78,10 @@ func (s *Service) createTokenDefinition() contracts.Definition {
 		Name: "mcp.token.create", Version: version, Title: "Create an MCP token",
 		Description: "Mint a personal MCP credential bound to a department and current permissions. The secret is returned once.",
 		Domain:      "mcp", Entity: "mcp_token", Permission: "",
-		Risk: contracts.RiskHigh, Approval: contracts.ApprovalConfirm,
+		Risk: contracts.RiskHigh, Approval: contracts.ApprovalConfirm, TransientResult: true,
 		Idempotency:   contracts.Idempotency{Required: true, Scope: "tenant+operation+key"},
 		SuccessEvents: []string{TokenCreatedEvent}, Executor: "go:mcp.token.create",
-		Tags: []string{"mcp", "write", "agent"},
+		Tags: []string{"mcp", "write", "manual-only", contracts.AuthenticatedActionTag},
 		Input: contracts.Object(map[string]*contracts.Schema{
 			"password":     passwordSchema(),
 			"name":         contracts.Str(1, 100),
@@ -90,9 +90,8 @@ func (s *Service) createTokenDefinition() contracts.Definition {
 			"tools":        stringListSchema(),
 		}, "password", "name", "days"),
 		Output: contracts.Object(map[string]*contracts.Schema{
-			"id": {Type: "integer"}, "name": {Type: "string"}, "prefix": {Type: "string"},
-			"secret": {Type: "string"}, "expiresAt": {Type: "string"},
-		}, "id", "name", "prefix", "secret"),
+			"token": tokenSchema(), "secret": {Type: "string"},
+		}, "token", "secret"),
 		// The password is deliberately absent: it must never be projected.
 		Loggable: []string{"name", "departmentId", "days"},
 	}
@@ -133,18 +132,17 @@ func (s *Service) rotateTokenDefinition() contracts.Definition {
 		Name: "mcp.token.rotate", Version: version, Title: "Rotate an MCP token",
 		Description: "Replace a credential with a new secret, carrying over its department and expiry.",
 		Domain:      "mcp", Entity: "mcp_token", Permission: "mcp:revoke",
-		Risk: contracts.RiskHigh, Approval: contracts.ApprovalConfirm,
+		Risk: contracts.RiskHigh, Approval: contracts.ApprovalConfirm, TransientResult: true,
 		Idempotency:   contracts.Idempotency{Required: true, Scope: "tenant+operation+key"},
 		SuccessEvents: []string{TokenRotatedEvent}, Executor: "go:mcp.token.rotate",
-		Tags: []string{"mcp", "write"},
+		Tags: []string{"mcp", "write", "manual-only"},
 		Input: contracts.Object(map[string]*contracts.Schema{
 			"id":       idSchema(),
 			"password": passwordSchema(),
 		}, "id", "password"),
 		Output: contracts.Object(map[string]*contracts.Schema{
-			"id": {Type: "integer"}, "name": {Type: "string"}, "prefix": {Type: "string"},
-			"secret": {Type: "string"}, "expiresAt": {Type: "string"},
-		}, "id", "name", "prefix", "secret"),
+			"token": tokenSchema(), "secret": {Type: "string"},
+		}, "token", "secret"),
 		Loggable: []string{"id"},
 	}
 }

@@ -137,7 +137,7 @@ func (g *Gateway) invoke(ctx context.Context, request Request, selection *contra
 	if !ok {
 		return nil, contracts.Problem("not_found")
 	}
-	if entry.Definition.TransientResult {
+	if entry.Definition.TransientResult && entry.Definition.ReadOnly {
 		request.IdempotencyKey = ""
 	}
 	definition := entry.Definition
@@ -194,6 +194,9 @@ func (g *Gateway) invoke(ctx context.Context, request Request, selection *contra
 	if !decision.Allowed {
 		g.observeDenied(p, request, definition.Name, "policy")
 		return nil, contracts.Problem(decision.Code)
+	}
+	if definition.TransientResult && !definition.ReadOnly && decision.Approval != contracts.ApprovalAuto {
+		return nil, contracts.Problem("forbidden")
 	}
 	if decision.Approval != contracts.ApprovalAuto {
 		// Reuse the open card for the same reviewed payload instead of booking a
@@ -285,10 +288,11 @@ func (g *Gateway) replay(ctx context.Context, p *identity.Principal, definition 
 		if len(row.Result) > 0 {
 			_ = json.Unmarshal(row.Result, &stored)
 		}
-		var err error
-		result.Data, err = projectOutput(p, definition, stored.Data)
-		if err != nil {
-			return nil, false, err
+		if !definition.TransientResult {
+			result.Data, err = projectOutput(p, definition, stored.Data)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 		result.EventIDs = stored.EventIDs
 	case contracts.StatusFailed:
@@ -446,6 +450,11 @@ func (g *Gateway) Decide(ctx context.Context, id int64, approve bool, note strin
 	if !ok {
 		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "unavailable")
 		return nil, contracts.Problem("unavailable")
+	}
+	if entry.Definition.TransientResult && !entry.Definition.ReadOnly {
+		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "forbidden", 0)
+		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "forbidden")
+		return nil, contracts.Problem("forbidden")
 	}
 	input := contracts.Input{}
 	if err = json.Unmarshal(card.Arguments, &input); err != nil || entry.Definition.Input.Validate(input) != nil {

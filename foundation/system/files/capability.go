@@ -41,12 +41,12 @@ func (s *Service) listDefinition() contracts.Definition {
 		Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: true,
 		Executor: "go:file.list", Tags: []string{"files", "read", "agent"},
 		Input: contracts.Object(map[string]*contracts.Schema{}),
-		Output: contracts.Object(map[string]*contracts.Schema{
-			"files": {Type: "array", Items: contracts.Object(map[string]*contracts.Schema{
-				"id": {Type: "integer"}, "name": {Type: "string"}, "mime": {Type: "string"},
-				"size": {Type: "integer"}, "purpose": {Type: "string"}, "createdAt": {Type: "string"},
-			}, "id", "name", "mime", "size", "purpose", "createdAt")},
-		}),
+		Output: &contracts.Schema{Type: "array", Items: contracts.Object(map[string]*contracts.Schema{
+			"id": {Type: "integer"}, "name": {Type: "string"}, "mime": {Type: "string"},
+			"size": {Type: "integer"}, "purpose": {Type: "string"}, "createdAt": {Type: "string"},
+			"ownerId": {Type: "integer"}, "departmentId": {Type: "integer"},
+			"storageVersion": {Type: "integer"}, "link": {Type: "string"},
+		}, "id", "name", "mime", "size", "purpose", "createdAt")},
 	}
 }
 

@@ -336,6 +336,7 @@ const tableOptions = tableFeatures({});
 export type AdminColumn<T> = {
   id: string;
   header: string;
+  renderHeader?: (visible: T[]) => ReactNode;
   cell: (row: T) => ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -344,18 +345,24 @@ export function DataTable<T extends { id: number }>({
   rows,
   columns,
   selectable = false,
+  selection,
+  onSelectionChange,
   serverPage = false,
   onRowClick,
 }: {
   rows: T[];
   columns: AdminColumn<T>[];
   selectable?: boolean;
+  selection?: ReadonlySet<number>;
+  onSelectionChange?: (selected: Set<number>) => void;
   serverPage?: boolean;
   onRowClick?: (row: T) => void;
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [localSelected, setLocalSelected] = useState<Set<number>>(new Set());
+  const selected = selection ?? localSelected;
+  const setSelected = onSelectionChange ?? setLocalSelected;
   const config = useConfiguration();
   const pageSize = serverPage
     ? Math.max(1, rows.length)
@@ -380,13 +387,12 @@ export function DataTable<T extends { id: number }>({
     columns: defs,
     getRowId: (row) => String(row.id),
   });
-  const toggle = (id: number) =>
-    setSelected((old) => {
-      const next = new Set(old);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const toggle = (id: number) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected(next);
+  };
   return (
     <>
       <div className="admin-table-scroll">
@@ -425,7 +431,11 @@ export function DataTable<T extends { id: number }>({
                         ?.className
                     }
                   >
-                    <table.FlexRender header={header} />
+                    {columns
+                      .find((column) => column.id === header.column.id)
+                      ?.renderHeader?.(visible) ?? (
+                      <table.FlexRender header={header} />
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -507,7 +517,10 @@ export function DataTable<T extends { id: number }>({
               size="icon-sm"
               disabled={current === 1}
               aria-label={t("admin:actions.previous")}
-              onClick={() => setPage(current - 1)}
+              onClick={() => {
+                onSelectionChange?.(new Set());
+                setPage(current - 1);
+              }}
             >
               <ChevronLeft size={14} />
             </Button>
@@ -516,7 +529,10 @@ export function DataTable<T extends { id: number }>({
               size="icon-sm"
               disabled={current === pages}
               aria-label={t("admin:actions.next")}
-              onClick={() => setPage(current + 1)}
+              onClick={() => {
+                onSelectionChange?.(new Set());
+                setPage(current + 1);
+              }}
             >
               <ChevronRight size={14} />
             </Button>

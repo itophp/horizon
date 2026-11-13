@@ -43,6 +43,14 @@ func platformColumn(name, label, display string) viewProps {
 }
 
 func agentCollaborationApplication() ar.ApplicationV2 {
+	return agentCollaborationVersion("1.0.2")
+}
+
+func legacyAgentCollaborationApplication() ar.ApplicationV2 {
+	return agentCollaborationVersion("1.0.0")
+}
+
+func agentCollaborationVersion(version string) ar.ApplicationV2 {
 	const canAudit = "mcp:revoke"
 	const tokens = "tokens"
 	const audits = "_audits"
@@ -70,6 +78,13 @@ func agentCollaborationApplication() ar.ApplicationV2 {
 	auditPanel := panel("mcp-audit", "admin-panel webmcp-section", auditHeading, auditTable)
 	auditPanel.Layout.Visible = &auditAllowed
 	auditPanel.Layout.Data = []ar.DataSpec{{ID: audits, Provider: "audits", EnabledWhen: &auditActive, NonBlocking: true}}
+	remoteContent := []ar.Node{tokensPanel, auditPanel}
+	pageContent := []ar.Node{componentNode("webmcp", "webmcp-panel", "", nil)}
+	if version != "1.0.0" {
+		remoteContent = append([]ar.Node{mcpCredentialPanelVersion(tokens, &remoteActive, version == "1.0.1")}, remoteMcpClientContent()...)
+		remoteContent = append(remoteContent, auditPanel)
+		pageContent = webMcpContent(version == "1.0.1")
+	}
 	tabs := platformTabs("agent-collaboration-tabs", viewProps{
 		"param": "tab", "sessionKey": "baseline.mcp.tab", "labelKey": "mcp:hub.tabsLabel",
 		"tabs": []viewProps{
@@ -77,10 +92,10 @@ func agentCollaborationApplication() ar.ApplicationV2 {
 			{"id": "page", "labelKey": "mcp:hub.tabs.page", "icon": "plug", "webMcpCount": true},
 			{"id": "skills", "labelKey": "mcp:hub.tabs.skills", "icon": "sparkles"},
 		},
-	}, platformTab("remote", tokensPanel, auditPanel),
-		platformTab("page", componentNode("webmcp", "webmcp-panel", "", nil)),
+	}, platformTab("remote", remoteContent...),
+		platformTab("page", pageContent...),
 		platformTab("skills", webSkillsContent()...))
-	return platformPage("agent-collaboration", "/mcp", "mcp:hub.title", "mcp:hub.subtitle", []ar.Provider{
+	return platformPageVersion("agent-collaboration", "/mcp", "mcp:hub.title", "mcp:hub.subtitle", version, []ar.Provider{
 		{ID: tokens, Capability: ar.Ref("mcp.token.list"), KeyField: "id", Pagination: "none"},
 		{ID: "audits", Capability: ar.Ref("mcp.audit.list"), KeyField: "id", Pagination: "none"},
 	}, tabs)
@@ -122,7 +137,7 @@ func legacyPersonalPreferencesApplication() ar.ApplicationV2 {
 		componentNode("preferences-editor", "settings-panel", "", viewProps{"personal": true}))
 }
 
-func systemSettingsApplication() ar.ApplicationV2 {
+func legacySystemSettingsApplication() ar.ApplicationV2 {
 	const dictionaries = "_dictionaries"
 	configPermission := permits("settings:read")
 	fieldsPermission := permits("dictionaries:read")
@@ -154,4 +169,18 @@ func systemSettingsApplication() ar.ApplicationV2 {
 			ResultPath: "definitions",
 			Input:      []ar.Mapping{mapping("targetKind", constant("workspace")), mapping("targetId", constant(0))},
 		}}, tabs)
+}
+
+func systemSettingsApplication() ar.ApplicationV2 {
+	configPermission := permits("settings:read")
+	fieldsPermission := permits("dictionaries:read")
+	fieldsSelected := same("query.tab", "fields")
+	configActive := operation("and", configPermission, operation("or", operation("not", fieldsPermission), operation("not", fieldsSelected)))
+	fieldsActive := operation("and", fieldsPermission, operation("or", fieldsSelected, operation("not", configPermission)))
+	tabs := platformTabs("settings-tabs", viewProps{"param": "tab", "hideSingleTab": true, "tabs": []viewProps{
+		{"id": "config", "labelKey": "governance:generalTab", "icon": "sliders", "permission": "settings:read"},
+		{"id": "fields", "labelKey": "governance:fieldsTab", "icon": "tree", "permission": "dictionaries:read"},
+	}}, platformTab("config", workspaceSettingsContent(configActive)), platformTab("fields", workspaceDictionaryContent(fieldsActive)))
+	return platformPageVersion("system-settings", "/settings", "governance:settings", "governance:settingsHint", "1.0.1",
+		append(workspaceSettingsProviders(), workspaceDictionaryProviders()...), tabs)
 }

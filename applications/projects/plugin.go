@@ -26,7 +26,7 @@ func (p Plugin) Register(_ context.Context, r *plugin.Registrar) error {
 	entries := p.Module.Entries()
 	r.Capabilities(entries)
 	r.Entities(Entities())
-	r.Applications(RuntimeApplication())
+	r.Applications(runtimeApplication("2.0.0"), runtimeApplication("2.0.1"), RuntimeApplication())
 	permissions, events := map[string]bool{}, map[string]bool{}
 	for _, entry := range entries {
 		permissions[entry.Definition.Permission] = true

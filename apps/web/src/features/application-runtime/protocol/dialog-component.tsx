@@ -15,13 +15,23 @@ export function DialogComponent({
   return (
     <EditorDialog
       open
-      title={t(props.titleKey)}
+      title={t(props.titleKey, {
+        replace: props.titleArgs as Record<string, unknown> | undefined,
+      })}
       description={
-        typeof props.descriptionKey === "string" ? t(props.descriptionKey) : ""
+        typeof props.descriptionKey === "string"
+          ? t(props.descriptionKey, {
+              replace: props.descriptionArgs as
+                Record<string, unknown> | undefined,
+            })
+          : ""
       }
       wide={props.wide === true}
       onOpenChange={(open) => {
-        if (!open) void emit("close");
+        if (!open) {
+          void emit("close");
+          void emit("openChange", false);
+        }
       }}
     >
       {children}

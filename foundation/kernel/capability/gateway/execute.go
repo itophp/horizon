@@ -29,6 +29,9 @@ type storedResult struct {
 // run books, executes and closes one invocation. The approval resumption path
 // reuses the already booked row instead of creating a second one.
 func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry.Entry, request Request, invocationID, traceID, digest string, redacted json.RawMessage, resumed bool) (*contracts.Result, error) {
+	if entry.Definition.TransientResult && !resumed && request.executionBinding.Plan.Mode != "direct" {
+		return nil, contracts.Problem("unavailable")
+	}
 	started := g.now()
 	q := dbgen.New(g.pool)
 	if resumed {
@@ -39,6 +42,9 @@ func (g *Gateway) run(ctx context.Context, p *identity.Principal, entry registry
 		request.executionBinding, err = executionplan.Decode(raw, entry.Definition)
 		if err != nil {
 			return nil, err
+		}
+		if entry.Definition.TransientResult && request.executionBinding.Plan.Mode != "direct" {
+			return nil, contracts.Problem("unavailable")
 		}
 
 		if request.executionBinding.Plan.Mode != "workflow" && request.executionBinding.Plan.Mode != "graph" {
@@ -120,7 +126,7 @@ func (g *Gateway) execute(ctx context.Context, p *identity.Principal, entry regi
 	if binding.Plan.Mode != "direct" || binding.Plan.ImplementationRef != entry.Definition.Key() {
 		return contracts.Output{}, nil, contracts.Problem("unavailable")
 	}
-	ctx = withInvocation(ctx, InvocationContext{ExecutionBinding: binding, CausationID: request.CausationID, Capability: entry.Definition.Name, Version: entry.Definition.Version, InvocationID: invocationID, CorrelationID: traceID, Depth: request.TriggerDepth, IdempotencyKey: request.IdempotencyKey, Origin: request.Origin, InTransaction: entry.Handler.ExecuteTx != nil})
+	ctx = withInvocation(ctx, InvocationContext{ExecutionBinding: binding, Runtime: request.Runtime, CausationID: request.CausationID, Capability: entry.Definition.Name, Version: entry.Definition.Version, InvocationID: invocationID, CorrelationID: traceID, Depth: request.TriggerDepth, IdempotencyKey: request.IdempotencyKey, Origin: request.Origin, InTransaction: entry.Handler.ExecuteTx != nil})
 	meta := outbox.Meta{
 		InvocationID: invocationID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID,
 		CorrelationID: traceID, CausationID: request.CausationID, Depth: request.TriggerDepth,

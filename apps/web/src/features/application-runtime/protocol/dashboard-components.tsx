@@ -235,16 +235,17 @@ export function DistributionPie({ props, data }: ComponentRendererProps) {
   );
   const total = rows.reduce((sum, row) => sum + row.value, 0);
   let offset = 0;
-  const segments = rows.map((row, index) => {
+  const segments = [];
+  for (const [index, row] of rows.entries()) {
     const start = offset;
     offset += row.value;
-    return {
+    segments.push({
       ...row,
       color: `var(--pie-category-${(index % 5) + 1})`,
       start: total ? start / total : 0,
       end: total ? offset / total : 0,
-    };
-  });
+    });
+  }
   const stops = segments
     .filter(({ value }) => value > 0)
     .map(({ color, start, end }) => `${color} ${start * 100}% ${end * 100}%`)
@@ -274,7 +275,7 @@ export function DistributionPie({ props, data }: ComponentRendererProps) {
                 />
                 <span>{label}</span>
                 <span>
-                  {number.format(value)} · {percentage.format(value / total)}
+                  {`${number.format(value)} · ${percentage.format(value / total)}`}
                 </span>
               </li>
             ))}

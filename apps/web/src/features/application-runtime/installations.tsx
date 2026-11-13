@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { Settings2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/api/client/request";
@@ -44,7 +44,8 @@ export function InstallationsPage() {
     retry: false,
   });
   const [choice, setChoice] = useState<{
-    candidate: RuntimeCandidate;
+    pluginId: string;
+    version?: string;
     installation?: RuntimeInstallation;
     action: string;
     applicationId?: string;
@@ -52,25 +53,40 @@ export function InstallationsPage() {
   const [error, setError] = useState<unknown>();
   const [pending, setPending] = useState(false);
   const [issues, setIssues] = useState<string[]>();
-  const rows = (q.data?.candidates ?? []).map((candidate, index) => ({
-    id: index,
-    candidate,
-    installation: q.data?.items.find(
-      (item) => item.pluginId === candidate.pluginId,
-    ),
-  }));
+  const rows = useMemo(() => {
+    const candidatesByPlugin = new Map<string, RuntimeCandidate[]>();
+    for (const candidate of q.data?.candidates ?? []) {
+      const candidates = candidatesByPlugin.get(candidate.pluginId) ?? [];
+      candidates.push(candidate);
+      candidatesByPlugin.set(candidate.pluginId, candidates);
+    }
+    return Array.from(candidatesByPlugin, ([pluginId, candidates], index) => ({
+      id: index,
+      pluginId,
+      candidates,
+      installation: q.data?.items.find((item) => item.pluginId === pluginId),
+    }));
+  }, [q.data]);
   type Row = (typeof rows)[number];
   const columns: AdminColumn<Row>[] = [
     {
       id: "plugin",
       header: t("plugin"),
-      cell: (row) => row.candidate.pluginId,
+      cell: (row) => row.pluginId,
     },
     {
       id: "version",
       header: t("version"),
       cell: (row) =>
-        `${row.installation?.version ?? "—"} → ${row.candidate.version}`,
+        t("installationVersions", {
+          current:
+            row.installation?.status === "uninstalled"
+              ? "—"
+              : (row.installation?.version ?? "—"),
+          available: row.candidates
+            .map((candidate) => candidate.version)
+            .join(", "),
+        }),
     },
     {
       id: "status",
@@ -82,77 +98,72 @@ export function InstallationsPage() {
       id: "actions",
       header: t("actions"),
       cell: (row) => {
-        const currentAvailable = q.data?.candidates.some(
-          (candidate) =>
-            candidate.pluginId === row.candidate.pluginId &&
-            candidate.version === row.installation?.version,
+        if (!canManage) return null;
+        const { pluginId, candidates, installation } = row;
+        const installed = installation && installation.status !== "uninstalled";
+        const currentAvailable = candidates.some(
+          (candidate) => candidate.version === installation?.version,
         );
-        return (
-          <RowActions
-            actions={
-              canManage
-                ? [
-                    ...(!row.installation ||
-                    row.installation.status === "uninstalled"
-                      ? ["install"]
-                      : !currentAvailable
-                        ? ["check"]
-                        : row.installation.status === "enabled"
-                          ? ["disable", "check", "uninstall"]
-                          : ["enable", "check", "uninstall"]),
-                    ...(row.installation &&
-                    row.installation.status !== "uninstalled" &&
-                    row.installation.version !== row.candidate.version
-                      ? ["upgrade"]
-                      : []),
-                    ...(row.installation?.previousVersion &&
-                    q.data?.candidates.some(
-                      (candidate) =>
-                        candidate.pluginId === row.candidate.pluginId &&
-                        candidate.version === row.installation?.previousVersion,
-                    )
-                      ? ["rollback"]
-                      : []),
-                  ]
-                    .map((action) => ({
-                      label: t(`installationActions.${action}`),
-                      danger: action === "uninstall",
-                      icon: <Settings2 size={14} />,
-                      onClick: () => {
-                        setChoice({ ...row, action });
-                        setError(undefined);
-                        setIssues(undefined);
-                      },
-                    }))
-                    .concat(
-                      (q.data?.applications ?? [])
-                        .filter(
-                          (app) =>
-                            app.pluginId === row.candidate.pluginId &&
-                            currentAvailable &&
-                            row.installation?.status !== "uninstalled",
-                        )
-                        .map((app) => ({
-                          label: `${app.applicationId}: ${t(`installationActions.${app.enabled ? "disable" : "enable"}`)}`,
-                          danger: false,
-                          icon: <Settings2 size={14} />,
-                          onClick: () => {
-                            setChoice({
-                              ...row,
-                              applicationId: app.applicationId,
-                              action: app.enabled
-                                ? "application.disable"
-                                : "application.enable",
-                            });
-                            setError(undefined);
-                            setIssues(undefined);
-                          },
-                        })),
-                    )
-                : []
+        const command = (
+          action: string,
+          version?: string,
+          applicationId?: string,
+        ) => {
+          const name = t(
+            `installationActions.${action.replace("application.", "")}`,
+          );
+          return {
+            label: applicationId
+              ? `${applicationId}: ${name}`
+              : version
+                ? t("installationVersionAction", { action: name, version })
+                : name,
+            danger: action === "uninstall",
+            icon: <Settings2 size={14} />,
+            onClick: () => {
+              setChoice({
+                pluginId,
+                installation,
+                action,
+                version,
+                applicationId,
+              });
+              setError(undefined);
+              setIssues(undefined);
+            },
+          };
+        };
+        const actions = candidates.flatMap(({ version }) =>
+          installed
+            ? [
+                command("check", version),
+                ...(version !== installation.version
+                  ? [command("upgrade", version)]
+                  : []),
+                ...(version === installation.previousVersion
+                  ? [command("rollback", version)]
+                  : []),
+              ]
+            : [command("install", version)],
+        );
+        if (installed && currentAvailable) {
+          actions.unshift(
+            command(installation.status === "enabled" ? "disable" : "enable"),
+            command("uninstall"),
+          );
+          for (const app of q.data?.applications ?? []) {
+            if (app.pluginId === pluginId) {
+              actions.push(
+                command(
+                  app.enabled ? "application.disable" : "application.enable",
+                  undefined,
+                  app.applicationId,
+                ),
+              );
             }
-          />
-        );
+          }
+        }
+        return <RowActions actions={actions} />;
       },
     },
   ];
@@ -185,7 +196,12 @@ export function InstallationsPage() {
       >
         {choice && (
           <>
-            <p>{choice.candidate.pluginId}</p>
+            <p>{choice.pluginId}</p>
+            {choice.version && (
+              <p>
+                {t("installationTargetVersion", { version: choice.version })}
+              </p>
+            )}
             {error !== undefined && <ErrorBanner error={error} />}
             {issues && (
               <ul>
@@ -201,20 +217,12 @@ export function InstallationsPage() {
                 setPending(true);
                 setError(undefined);
                 try {
-                  const version =
-                    choice.action === "rollback"
-                      ? choice.installation?.previousVersion
-                      : choice.candidate.version;
                   const input = {
-                    pluginId: choice.candidate.pluginId,
+                    pluginId: choice.pluginId,
                     ...(choice.applicationId
                       ? { applicationId: choice.applicationId }
                       : {}),
-                    ...(["install", "upgrade", "rollback", "check"].includes(
-                      choice.action,
-                    )
-                      ? { version }
-                      : {}),
+                    ...(choice.version ? { version: choice.version } : {}),
                     ...(choice.installation && choice.action !== "check"
                       ? { revision: choice.installation.revision }
                       : {}),

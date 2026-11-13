@@ -13,14 +13,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ErrorBanner, Loading } from "@/features/administration/shared";
 import { capabilityDecide } from "@/api/generated/baseline";
-import { evaluate, validateInput } from "../expression";
+import { evaluate, pathValue, validateInput } from "../expression";
 import { ApiError } from "@/api/client/request";
 import { useConfiguration } from "@/features/governance/runtime";
+import { downloadContent } from "@/features/governance/shared";
 import { useSession } from "@/features/administration/auth";
 import type { RuntimeInvocationReference } from "@/api/generated/models";
 import { runtimeExecute } from "@/lib/capabilities";
 import {
   ComponentRegistry,
+  PresentationContext,
   PresentationPermissions,
 } from "./component-registry";
 import {
@@ -36,6 +38,11 @@ import {
 } from "./layout-renderer";
 import { createAdminRegistry } from "./admin-components";
 import { coerceProviderInput } from "./data-resolver";
+import {
+  ResultDisclosureDialog,
+  type ResultDisclosure,
+} from "./result-disclosure";
+import { BrowserFormContext, BrowserRuntimeContext } from "./browser-runtime";
 import { ProtocolErrorDialog } from "./error-dialog";
 import type { ApplicationV3, EventBinding, PageV3 } from "./types";
 import "./protocol.css";
@@ -107,6 +114,30 @@ export function ProtocolPage({
 }) {
   const { t, i18n } = useTranslation("runtime");
   const session = useSession();
+  const browserRuntime = useContext(BrowserRuntimeContext);
+  const browser =
+    application.id === "agent-collaboration" &&
+    application.source === "builtin:agent-collaboration" &&
+    page.route === "/mcp"
+      ? browserRuntime
+      : null;
+  const presentationContext = useMemo(
+    () => ({
+      activeDepartmentId: session.activeDepartmentId,
+      browser: browser?.presentation,
+      departmentOptions: (session.account.memberships ?? []).map(
+        (membership) => ({
+          value: membership.departmentId,
+          label: membership.departmentName || String(membership.departmentId),
+        }),
+      ),
+    }),
+    [
+      session.activeDepartmentId,
+      session.account.memberships,
+      browser?.presentation,
+    ],
+  );
   const timeZone = useConfiguration().value(
     "display.timezone",
     "Asia/Shanghai",
@@ -221,12 +252,30 @@ export function ProtocolPage({
     return result;
   }, [data.values, localData, occurrences]);
 
+  const [disclosure, setDisclosure] = useState<ResultDisclosure | null>(null);
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
+  const disclosureScope = JSON.stringify([
+    identity,
+    application.id,
+    page.id,
+    invocation?.definitionDigest,
+  ]);
+
   const handleEvent = useCallback<ProtocolEventHandler>(
-    async (events: EventBinding[], event: string, payload?: unknown) => {
+    async (events: EventBinding[], event: string, payload, options) => {
       const bindings = events.filter((binding) => binding.event === event);
       if (bindings.length === 0 || readOnly) return;
+      if (
+        options?.ephemeral &&
+        (bindings.length !== 1 ||
+          !["invoke", "browser"].includes(bindings[0].action))
+      )
+        return false;
       setEventError(null);
       setFailedEvent(null);
+      setAwaitingApproval(false);
+      let executed = false;
+      let awaitingConfirmation = false;
       try {
         for (const binding of bindings) {
           const eventScope = {
@@ -239,8 +288,10 @@ export function ProtocolPage({
             },
             event: payload,
           };
-          if (binding.when?.kind && !evaluate(binding.when, eventScope))
+          if (binding.when?.kind && !evaluate(binding.when, eventScope)) {
+            if (options?.ephemeral) return false;
             continue;
+          }
           const eventPayload =
             binding.payload?.kind && binding.payload.kind !== ""
               ? binding.payload
@@ -266,6 +317,12 @@ export function ProtocolPage({
               ...current,
               [target]: evaluated,
             }));
+          } else if (binding.action === "browser") {
+            if (!browser) return false;
+            const schema = binding.inputSchema ?? "";
+            const input = coerceProviderInput(payloadObject(evaluated), schema);
+            validateInput(input, schema);
+            if (!(await browser.execute(binding.target, input))) return false;
           } else if (binding.action === "refresh") {
             await data.refetch();
           } else if (
@@ -280,10 +337,61 @@ export function ProtocolPage({
             const key = binding.idempotencyKey?.kind
               ? evaluate(binding.idempotencyKey, eventScope)
               : undefined;
-            if (inFlightActions.current.has(binding.target)) return false;
-            inFlightActions.current.add(binding.target);
+            const aiAction =
+              target.name === "application.runtime.ai.analyze" ||
+              target.name === "application.runtime.ai.suggest";
+            if (aiAction && (!options?.onAIResult || !invocation)) return false;
+            if (aiAction) {
+              input.locale = i18n.language === "zh-CN" ? "zh-CN" : "en";
+              validateInput(input, binding.inputSchema ?? "");
+            }
+            const flightKey = aiAction
+              ? JSON.stringify([
+                  identity,
+                  target.name,
+                  input.componentId,
+                  input.sceneId,
+                  input.recordId,
+                  input.mode,
+                ])
+              : binding.target;
+            if (inFlightActions.current.has(flightKey)) return false;
+            inFlightActions.current.add(flightKey);
             const execute = async () => {
               try {
+                if (binding.reauthenticate) {
+                  const auth = binding.reauthenticate;
+                  input.proof = "";
+                  if (!auth.when?.kind || evaluate(auth.when, eventScope)) {
+                    const password = pathValue(payload, "values.password");
+                    if (typeof password !== "string" || !password)
+                      throw new ApiError("invalid", 400);
+                    const proofResult = await runtimeExecute(
+                      auth.capability.name,
+                      auth.capability.version,
+                      {
+                        password,
+                        operation: auth.operation,
+                        resourceId: input.id,
+                        revision: input.baseRevision,
+                      },
+                      crypto.randomUUID(),
+                      correlationId,
+                      invocation,
+                    );
+                    if (proofResult.status !== "succeeded")
+                      throw new ApiError(
+                        proofResult.errorCode || "internal",
+                        400,
+                      );
+                    const proof = payloadObject(proofResult.data).proof;
+                    if (typeof proof !== "string" || !proof)
+                      throw new ApiError("invalid", 400);
+                    input.proof = proof;
+                  }
+                }
+                if (binding.reauthenticate && binding.inputSchema)
+                  validateInput(input, binding.inputSchema);
                 return binding.action === "system"
                   ? await executeSystemAction(binding, input)
                   : await runtimeExecute(
@@ -301,16 +409,70 @@ export function ProtocolPage({
                       invocation,
                     );
               } finally {
-                inFlightActions.current.delete(binding.target);
+                inFlightActions.current.delete(flightKey);
               }
             };
             const result = await execute();
+            executed ||= result.status === "succeeded";
+            awaitingConfirmation ||=
+              result.status === "awaiting_approval" ||
+              result.status === "cancelled";
             if (
               result.status !== "succeeded" &&
               result.status !== "awaiting_approval" &&
               !(binding.action === "system" && result.status === "cancelled")
             )
               throw new ApiError(result.errorCode || "internal", 400);
+            if (result.status === "awaiting_approval" && options?.ephemeral) {
+              setAwaitingApproval(true);
+              return false;
+            }
+            if (aiAction && result.status === "succeeded") {
+              options?.onAIResult?.(result.data);
+              continue;
+            }
+            if (
+              binding.download &&
+              result.status === "succeeded" &&
+              result.data !== undefined
+            ) {
+              const download = binding.download;
+              const content = download.contentField
+                ? payloadObject(result.data)[download.contentField]
+                : JSON.stringify(result.data, null, 2);
+              const name = download.filenameField
+                ? payloadObject(result.data)[download.filenameField]
+                : undefined;
+              const csv = download.filename.endsWith(".csv");
+              const filename =
+                typeof name === "string" &&
+                /^[a-zA-Z0-9_.-]{1,100}\.(json|csv)$/.test(name) &&
+                name.endsWith(csv ? ".csv" : ".json")
+                  ? name
+                  : download.filename;
+              if (typeof content !== "string")
+                throw new ApiError("invalid", 400);
+              downloadContent(
+                filename,
+                content,
+                csv ? "text/csv;charset=utf-8" : "application/json",
+              );
+            }
+            if (
+              binding.disclosure &&
+              result.status === "succeeded" &&
+              !result.replayed
+            ) {
+              const value = payloadObject(result.data)[
+                binding.disclosure.field
+              ];
+              if (typeof value === "string" && value)
+                setDisclosure({
+                  scope: disclosureScope,
+                  labels: binding.disclosure,
+                  value,
+                });
+            }
             if (binding.resultTarget && binding.result?.kind) {
               const occurrence = occurrences.find(
                 ({ spec }) =>
@@ -335,13 +497,21 @@ export function ProtocolPage({
             });
           }
         }
+        if (executed && !awaitingConfirmation)
+          options?.onOutcome?.("succeeded");
         return true;
       } catch (cause) {
-        setEventError(cause);
+        options?.onOutcome?.("failed");
+        if (options?.onError)
+          options.onError(cause instanceof ApiError ? cause.code : "unknown");
+        else setEventError(cause);
         if (
           bindings.length === 1 &&
           bindings[0].action === "invoke" &&
-          bindings[0].idempotencyKey?.kind
+          bindings[0].idempotencyKey?.kind &&
+          !bindings[0].disclosure &&
+          !bindings[0].reauthenticate &&
+          !options?.ephemeral
         )
           setFailedEvent({ events, event, payload });
         return false;
@@ -349,11 +519,14 @@ export function ProtocolPage({
     },
     [
       application.pages,
+      browser,
       correlationId,
       data,
+      disclosureScope,
       dataScope,
       dataIndex,
       identity,
+      i18n.language,
       invocation,
       navigate,
       occurrences,
@@ -370,6 +543,13 @@ export function ProtocolPage({
 
   return (
     <div className="protocol-page">
+      {awaitingApproval && <p role="status">{t("approvalPrefix")}</p>}
+      {!readOnly && disclosure?.scope === disclosureScope && (
+        <ResultDisclosureDialog
+          disclosure={disclosure}
+          onClose={() => setDisclosure(null)}
+        />
+      )}
       {eventError !== null && (
         <ProtocolErrorDialog
           error={eventError}
@@ -397,18 +577,25 @@ export function ProtocolPage({
           invocation,
         }}
       >
-        <PresentationPermissions.Provider value={session.permissions}>
-          <BindingIndex.Provider value={data.bindings}>
-            <ProtocolRenderer
-              node={page.root}
-              dataMap={{}}
-              dataIndex={dataIndex}
-              registry={activeRegistry}
-              onEvent={handleEvent}
-              readOnly={readOnly}
-            />
-          </BindingIndex.Provider>
-        </PresentationPermissions.Provider>
+        <BrowserFormContext.Provider
+          value={readOnly ? null : (browser?.formDefaults ?? null)}
+        >
+          <PresentationContext.Provider value={presentationContext}>
+            <PresentationPermissions.Provider value={session.permissions}>
+              <BindingIndex.Provider value={data.bindings}>
+                <ProtocolRenderer
+                  key={disclosureScope}
+                  node={page.root}
+                  dataMap={{}}
+                  dataIndex={dataIndex}
+                  registry={activeRegistry}
+                  onEvent={handleEvent}
+                  readOnly={readOnly}
+                />
+              </BindingIndex.Provider>
+            </PresentationPermissions.Provider>
+          </PresentationContext.Provider>
+        </BrowserFormContext.Provider>
       </ProtocolRuntimeContext.Provider>
     </div>
   );

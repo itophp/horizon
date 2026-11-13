@@ -28,6 +28,7 @@ export interface DataOccurrence {
 
 export type BindingState = {
   pending: boolean;
+  placeholder?: boolean;
   error: unknown;
   refetch: () => void;
 };
@@ -277,10 +278,14 @@ export function useProtocolData(options: {
   const values: Record<string, unknown> = {};
   queryOccurrences.forEach((occurrence, index) => {
     const query = queries[index];
-    if (queryOptions[index]?.enabled && occurrence.spec.nonBlocking) {
+    if (
+      queryOptions[index]?.enabled &&
+      (occurrence.spec.nonBlocking || query.isPlaceholderData)
+    ) {
       bindings[occurrence.key] = {
-        pending: query.isPending,
-        error: query.error,
+        pending: occurrence.spec.nonBlocking === true && query.isPending,
+        placeholder: query.isPlaceholderData,
+        error: occurrence.spec.nonBlocking ? query.error : null,
         refetch: () => {
           void query.refetch();
         },

@@ -10,8 +10,10 @@ import {
 import { evaluate, mapInput } from "../expression";
 import { useTranslation } from "react-i18next";
 import {
+  PresentationContext,
   PresentationPermissions,
   type ComponentRegistry,
+  type ProtocolEventOptions,
 } from "./component-registry";
 import { ErrorBanner, Loading } from "@/features/administration/shared";
 import { resolveRef, type BindingState, type DataMap } from "./data-resolver";
@@ -30,6 +32,7 @@ export type ProtocolEventHandler = (
   events: EventBinding[],
   event: string,
   payload?: unknown,
+  options?: ProtocolEventOptions,
 ) => void | Promise<boolean | void>;
 
 export function ProtocolRenderer({
@@ -86,6 +89,8 @@ function LayoutNode({
   onEvent,
   readOnly,
   layoutPath,
+  directChildren = false,
+  unwrap = false,
 }: {
   spec: LayoutSpec;
   dataMap: DataMap;
@@ -94,6 +99,8 @@ function LayoutNode({
   onEvent: ProtocolEventHandler;
   readOnly: boolean;
   layoutPath: string;
+  directChildren?: boolean;
+  unwrap?: boolean;
 }) {
   const childDataMap = { ...dataMap };
   const bindings = useContext(BindingIndex);
@@ -107,11 +114,49 @@ function LayoutNode({
 
   const style = useLayoutStyle(spec.props);
   const permissions = useContext(PresentationPermissions);
+  const context = useContext(PresentationContext);
   if (
     spec.visible?.kind &&
-    !evaluate(spec.visible, { data: childDataMap, context: { permissions } })
+    !evaluate(spec.visible, {
+      data: childDataMap,
+      context: { ...context, permissions },
+    })
   )
     return null;
+  const content = (
+    <BindingScope.Provider value={states}>
+      {spec.children?.map((child, index) => {
+        if (child.type !== "layout" || !child.layout)
+          return (
+            <ProtocolRenderer
+              key={child.component?.id ?? index}
+              node={child}
+              dataMap={childDataMap}
+              dataIndex={dataIndex}
+              registry={registry}
+              onEvent={onEvent}
+              readOnly={readOnly}
+              layoutPath={layoutPath}
+            />
+          );
+        const childPath = `${layoutPath}/${index}:${child.layout.id}`;
+        return (
+          <LayoutNode
+            key={`${childPath}:${child.layout.id}`}
+            spec={child.layout}
+            unwrap={directChildren}
+            dataMap={childDataMap}
+            dataIndex={dataIndex}
+            registry={registry}
+            onEvent={onEvent}
+            readOnly={readOnly}
+            layoutPath={childPath}
+          />
+        );
+      })}
+    </BindingScope.Provider>
+  );
+  if (unwrap || directChildren) return content;
   return (
     <div
       data-layout-id={spec.id}
@@ -119,36 +164,7 @@ function LayoutNode({
       className={buildClassName(spec)}
       style={style}
     >
-      <BindingScope.Provider value={states}>
-        {spec.children?.map((child, index) => {
-          if (child.type !== "layout" || !child.layout)
-            return (
-              <ProtocolRenderer
-                key={child.component?.id ?? index}
-                node={child}
-                dataMap={childDataMap}
-                dataIndex={dataIndex}
-                registry={registry}
-                onEvent={onEvent}
-                readOnly={readOnly}
-                layoutPath={layoutPath}
-              />
-            );
-          const childPath = `${layoutPath}/${index}:${child.layout.id}`;
-          return (
-            <ProtocolRenderer
-              key={`${childPath}:${child.layout.id}`}
-              node={child}
-              dataMap={childDataMap}
-              dataIndex={dataIndex}
-              registry={registry}
-              onEvent={onEvent}
-              readOnly={readOnly}
-              layoutPath={childPath}
-            />
-          );
-        })}
-      </BindingScope.Provider>
+      {content}
     </div>
   );
 }
@@ -173,7 +189,12 @@ function ComponentNode({
   const data = resolveRef(spec.data, dataMap);
   const state = useContext(BindingScope)[spec.data?.slice(1) ?? ""];
   const permissions = useContext(PresentationPermissions);
-  const scope = { data: dataMap, record: data, context: { permissions } };
+  const context = useContext(PresentationContext);
+  const scope = {
+    data: dataMap,
+    record: data,
+    context: { ...context, permissions },
+  };
   if (spec.visible?.kind && !evaluate(spec.visible, scope)) return null;
   const props = { ...spec.props, ...mapInput(spec.bindings ?? [], scope) };
   const renderer = registry.resolve(spec.kind, spec.version);
@@ -182,13 +203,26 @@ function ComponentNode({
   if (state?.pending) return <Loading />;
   const content = createElement(renderer, {
     props,
+    componentId: spec.id,
+    dataRefreshing: state?.placeholder,
+    events: spec.events?.map((event) => event.event),
     data,
     dataMap,
     readOnly,
-    emit: (event, payload) => onEvent(spec.events ?? [], event, payload),
+    emit: (event, payload, options) =>
+      onEvent(spec.events ?? [], event, payload, options),
     children: spec.content && (
       <LayoutNode
         spec={spec.content}
+        directChildren={
+          spec.kind === "carousel" ||
+          spec.kind === "resizable" ||
+          spec.kind === "avatar-group" ||
+          (["alert", "empty", "item"].includes(spec.kind) &&
+            props.sections === true) ||
+          (spec.kind === "sidebar" && props.sections === true) ||
+          (spec.kind === "navigation-menu" && props.group === true)
+        }
         dataMap={dataMap}
         dataIndex={dataIndex}
         registry={registry}

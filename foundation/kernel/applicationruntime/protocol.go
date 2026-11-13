@@ -105,15 +105,42 @@ type ComponentSpec struct {
 
 // EventBinding connects a component event to an action.
 type EventBinding struct {
-	When           *Expression `json:"when,omitempty"`
-	IdempotencyKey *Expression `json:"idempotencyKey,omitempty"`
-	ResultTarget   string      `json:"resultTarget,omitempty"`
-	Result         *Expression `json:"result,omitempty"`
-	Event          string      `json:"event"`             // "click" | "change" | "submit"
-	Action         string      `json:"action"`            // "navigate" | "invoke" | "setData" | "refresh"
-	Target         string      `json:"target"`            // Page ID | Capability name | Data ID
-	Payload        Expression  `json:"payload,omitempty"` // Event payload expression
-	InputSchema    string      `json:"inputSchema,omitempty"`
+	When           *Expression       `json:"when,omitempty"`
+	IdempotencyKey *Expression       `json:"idempotencyKey,omitempty"`
+	ResultTarget   string            `json:"resultTarget,omitempty"`
+	Result         *Expression       `json:"result,omitempty"`
+	Disclosure     *Disclosure       `json:"disclosure,omitempty"`
+	Reauthenticate *Reauthentication `json:"reauthenticate,omitempty"`
+	Download       *DownloadResult   `json:"download,omitempty"`
+	Event          string            `json:"event"`             // "click" | "change" | "submit"
+	Action         string            `json:"action"`            // "navigate" | "invoke" | "setData" | "refresh"
+	Target         string            `json:"target"`            // Page ID | Capability name | Data ID
+	Payload        Expression        `json:"payload,omitempty"` // Event payload expression
+	InputSchema    string            `json:"inputSchema,omitempty"`
+}
+
+// DownloadResult sends an approved read result to a local file.
+type DownloadResult struct {
+	Filename      string `json:"filename"`
+	ContentField  string `json:"contentField,omitempty"`
+	FilenameField string `json:"filenameField,omitempty"`
+}
+
+// Reauthentication passes a transient Gateway proof directly to its consuming action.
+type Reauthentication struct {
+	Capability CapabilityRef `json:"capability"`
+	When       *Expression   `json:"when,omitempty"`
+	Operation  string        `json:"operation"`
+}
+
+// Disclosure presents one transient string result without binding it to page data.
+type Disclosure struct {
+	Field          string `json:"field"`
+	TitleKey       string `json:"titleKey"`
+	CopyLabelKey   string `json:"copyLabelKey"`
+	DismissKey     string `json:"dismissKey"`
+	CopySuccessKey string `json:"copySuccessKey"`
+	CopyErrorKey   string `json:"copyErrorKey"`
 }
 
 // ============================================================================
@@ -399,7 +426,7 @@ var (
 		"grid": true, "stack": true, "sidebar": true, "tabs": true, "split": true,
 	}
 	validEventActions = map[string]bool{
-		"navigate": true, "invoke": true, "setData": true, "refresh": true, "system": true,
+		"navigate": true, "invoke": true, "setData": true, "refresh": true, "system": true, "browser": true,
 	}
 )
 
@@ -550,7 +577,11 @@ func assembleProtocol(wrapper *ApplicationV2, definitions map[string]contracts.D
 		if err := bindProtocolForms(page.Root.Layout, providers, definitions); err != nil {
 			return fmt.Errorf("page %s: %w", page.ID, err)
 		}
-		if err := validateProtocolLayout(page.Root, providers, definitions, pageIDs, nil, 0); err != nil {
+		allowBrowser := app.ID == "agent-collaboration" && app.Source == "builtin:agent-collaboration" && page.Route == "/mcp"
+		if err := validateProtocolLayout(page.Root, providers, definitions, pageIDs, nil, 0, allowBrowser); err != nil {
+			return fmt.Errorf("page %s: %w", page.ID, err)
+		}
+		if err := validateAIPage(page.Root, providers, definitions); err != nil {
 			return fmt.Errorf("page %s: %w", page.ID, err)
 		}
 	}
@@ -569,6 +600,7 @@ func validateProtocolLayout(
 	pageIDs map[string]bool,
 	dataScope map[string]bool,
 	depth int,
+	allowBrowser bool,
 ) error {
 	if depth > 10 || node.Type != "layout" || node.Layout == nil {
 		return fmt.Errorf("layout")
@@ -609,7 +641,7 @@ func validateProtocolLayout(
 	componentCount := 0
 	for _, child := range layout.Children {
 		if child.Type == "layout" {
-			if err := validateProtocolLayout(child, providers, definitions, pageIDs, scope, depth+1); err != nil {
+			if err := validateProtocolLayout(child, providers, definitions, pageIDs, scope, depth+1, allowBrowser); err != nil {
 				return err
 			}
 			continue
@@ -626,8 +658,16 @@ func validateProtocolLayout(
 			return fmt.Errorf("component %s kind", component.ID)
 		}
 		if component.Content != nil {
-			if err := validateProtocolLayout(Node{Type: "layout", Layout: component.Content}, providers, definitions, pageIDs, scope, depth+1); err != nil {
+			if err := validateProtocolLayout(Node{Type: "layout", Layout: component.Content}, providers, definitions, pageIDs, scope, depth+1, allowBrowser); err != nil {
 				return err
+			}
+		}
+		if defaults, exists := component.Props["browserDefaults"]; exists {
+			if !allowBrowser || component.Kind != "action-form" || defaults != "webmcp-pairing" ||
+				!slices.ContainsFunc(component.Events, func(event EventBinding) bool {
+					return event.Event == "submit" && event.Action == "browser" && event.Target == "webmcp.connect"
+				}) {
+				return fmt.Errorf("component %s has invalid browser defaults", component.ID)
 			}
 		}
 		for eventIndex := range component.Events {
@@ -643,6 +683,9 @@ func validateProtocolLayout(
 			if event.ResultTarget != "" && (!strings.HasPrefix(event.ResultTarget, "_") || !scope[event.ResultTarget] || event.Result == nil || event.Result.Kind == "") {
 				return fmt.Errorf("component %s result target", component.ID)
 			}
+			if (event.Disclosure != nil || event.Reauthenticate != nil || event.Download != nil) && event.Action != "invoke" {
+				return fmt.Errorf("component %s disclosure requires an invocation", component.ID)
+			}
 			switch event.Action {
 			case "navigate":
 				if !pageIDs[event.Target] {
@@ -651,6 +694,10 @@ func validateProtocolLayout(
 			case "setData", "refresh":
 				if !scope[event.Target] {
 					return fmt.Errorf("component %s data target", component.ID)
+				}
+			case "browser":
+				if err := validateBrowserAction(component, event, allowBrowser); err != nil {
+					return fmt.Errorf("component %s: %w", component.ID, err)
 				}
 			case "system":
 				if event.Target != "capability.approval.decide" {
@@ -665,9 +712,40 @@ func validateProtocolLayout(
 				if !found || !definitionFound {
 					return fmt.Errorf("component %s invoke target", component.ID)
 				}
+				if err := validateInvocationResult(*event, definition); err != nil {
+					return fmt.Errorf("component %s: %w", component.ID, err)
+				}
+				if err := validateInvocationReauthentication(component, event, definitions); err != nil {
+					return fmt.Errorf("component %s: %w", component.ID, err)
+				}
 				event.InputSchema = JSONSchema(definition.Input)
 			}
 		}
+	}
+	return nil
+}
+
+func validateInvocationResult(event EventBinding, definition contracts.Definition) error {
+	if definition.TransientResult && (event.ResultTarget != "" || event.Result != nil) {
+		return fmt.Errorf("transient invocation results cannot bind to page data")
+	}
+	if event.Download != nil && (!definition.ReadOnly || definition.TransientResult ||
+		event.Result != nil || event.ResultTarget != "" || !validDownload(*event.Download, definition.Output)) {
+		return fmt.Errorf("download requires a read-only, non-transient invocation and a JSON filename")
+	}
+	d := event.Disclosure
+	if d == nil {
+		return nil
+	}
+	if !definition.TransientResult || definition.ReadOnly || definition.Output == nil {
+		return fmt.Errorf("disclosure requires a transient write result")
+	}
+	field := definition.Output.Properties[d.Field]
+	if field == nil || field.Type != "string" {
+		return fmt.Errorf("disclosure requires a declared string result field")
+	}
+	if d.TitleKey == "" || d.CopyLabelKey == "" || d.DismissKey == "" || d.CopySuccessKey == "" || d.CopyErrorKey == "" {
+		return fmt.Errorf("disclosure requires localized controls and feedback")
 	}
 	return nil
 }
@@ -781,6 +859,24 @@ func validateComponent(comp *ComponentSpec, dataScope map[string]bool) error {
 	}
 	if _, ok := comp.Props["style"]; ok {
 		return fmt.Errorf("schema_invalid: component style")
+	}
+	if err := validateShadcnComponent(comp); err != nil {
+		return err
+	}
+	if comp.Kind == "action-form" {
+		submits := 0
+		for _, event := range comp.Events {
+			if event.Event != "submit" {
+				continue
+			}
+			submits++
+			if event.Action != "invoke" && event.Action != "browser" {
+				return fmt.Errorf("schema_invalid: action form submit must invoke a declared operation")
+			}
+		}
+		if submits > 1 {
+			return fmt.Errorf("schema_invalid: action form must have at most one submit binding")
+		}
 	}
 	// Validate data reference
 	if comp.Data != "" {

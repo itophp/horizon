@@ -94,6 +94,7 @@ type Command struct {
 	When        Expression    `json:"when"`
 }
 type FormV2 struct {
+	AIAssistant      *AIFormAssistant             `json:"aiAssistant,omitempty"`
 	Groups           []FormGroup                  `json:"groups,omitempty"`
 	Draft            bool                         `json:"draft,omitempty"`
 	ReferenceFilters map[string][]ReferenceFilter `json:"referenceFilters,omitempty"`

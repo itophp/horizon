@@ -1,5 +1,21 @@
 # 版本及官方依据
 
+## Application Runtime shadcn/ui 组件（2026-11-13）
+
+从 [shadcn 官方 Base Nova Registry](https://ui.shadcn.com/r/styles/base-nova/alert-dialog.json) 引入组件源码，沿用 Base UI、Lucide、cn 和仓库主题。直接依赖固定版本，以下官方 npm 元数据标注 MIT。声明 React peer 的组件支持 React 19，Recharts 的 react-is 与 React 版本对齐。Sonner 沿用仓库的 CSS 主题变量。
+
+| 依赖 | 版本及官方元数据 |
+| --- | --- |
+| react-day-picker | [10.0.2](https://registry.npmjs.org/react-day-picker/10.0.2) |
+| date-fns | [4.4.0](https://registry.npmjs.org/date-fns/4.4.0) |
+| embla-carousel-react | [8.6.0](https://registry.npmjs.org/embla-carousel-react/8.6.0) |
+| recharts | [3.8.0](https://registry.npmjs.org/recharts/3.8.0) |
+| react-is | [19.3.1](https://registry.npmjs.org/react-is/19.3.1) |
+| cmdk | [1.1.1](https://registry.npmjs.org/cmdk/1.1.1) |
+| input-otp | [1.5.0](https://registry.npmjs.org/input-otp/1.5.0) |
+| react-resizable-panels | [4.21.0](https://registry.npmjs.org/react-resizable-panels/4.21.0) |
+| sonner | [2.0.8](https://registry.npmjs.org/sonner/2.0.8) |
+
 ## AI 工作台组件（2026-11-04）
 
 新增固定依赖 `@shadcn/react` 0.3.1（MIT），仅使用官方 Message Scroller；[固定版本 npm 元数据](https://registry.npmjs.org/@shadcn/react/0.3.1) 声明 React/@types/react >=19，与本项目 19.3.1/19.3.0 匹配，无新增运行时传递依赖。package.json 与 pnpm-lock.yaml 同步。shadcn 仍使用锁定 CLI 4.23.0，从官方 base-nova Registry 引入 Message、Bubble、Message Scroller、Trace、Collapsible、Input Group、Textarea、Empty、Skeleton 源码，复用既有 cn、Base UI 和 lucide；保留已有 Button/Input 不覆盖。源码采用官方 MIT 许可，默认可见辅助文案接入 i18next。

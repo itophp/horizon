@@ -72,5 +72,6 @@ func Decode(raw []byte, d contracts.Definition) (contracts.ExecutionBinding, err
 }
 
 func Executable(p dbgen.CapExecutionPlan, d contracts.Definition) bool {
-	return p.Mode == "direct" && p.ImplementationRef == d.Key() || (p.Mode == "workflow" || p.Mode == "graph") && p.WorkflowHash != ""
+	return p.Mode == "direct" && p.ImplementationRef == d.Key() ||
+		!d.TransientResult && (p.Mode == "workflow" || p.Mode == "graph") && p.WorkflowHash != ""
 }

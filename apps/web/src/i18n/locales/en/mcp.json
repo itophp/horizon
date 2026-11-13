@@ -74,6 +74,8 @@
   "diagnose": "Test remote connection",
   "installCodex": "Set up Codex",
   "installWorkbuddy": "Set up WorkBuddy",
+  "prepareInstall": "Prepare installation",
+  "installClient": "Client",
   "confirmInstall": "Confirm installation",
   "installTarget": "Install {{client}} for {{url}} on the helper computer. Configuration and credentials will be saved locally.",
   "cancel": "Cancel",

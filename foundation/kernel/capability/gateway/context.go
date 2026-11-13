@@ -10,6 +10,7 @@ type invocationKey struct{}
 // InvocationContext is injected by Gateway, never decoded from business input.
 type InvocationContext struct {
 	ExecutionBinding contracts.ExecutionBinding
+	Runtime          *contracts.RuntimeReference
 	CausationID      string
 	Capability       string
 	Version          string

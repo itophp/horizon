@@ -100,9 +100,12 @@ func (s *Service) detailDefinition() contracts.Definition {
 			"targetId":   contracts.Int(0, 0),
 		}, "id"),
 		Output: contracts.Object(map[string]*contracts.Schema{
-			"document": contracts.FreeObject(),
-			"revision": {Type: "integer"},
-		}),
+			"document":   contracts.FreeObject(),
+			"drafts":     {Type: "array", Items: contracts.FreeObject()},
+			"history":    {Type: "array", Items: contracts.FreeObject()},
+			"overrides":  {Type: "array", Items: contracts.FreeObject()},
+			"references": {Type: "integer"}, "overrideRevision": {Type: "integer"},
+		}, "document", "drafts", "history", "references", "overrideRevision"),
 		Loggable: []string{"id", "targetKind", "targetId"},
 	}
 }
@@ -120,9 +123,7 @@ func (s *Service) optionsDefinition() contracts.Definition {
 			"ids":      contracts.Array(contracts.Int(1, 1<<40), 0, 200),
 			"search":   contracts.Str(0, 100),
 		}, "code"),
-		Output: contracts.Object(map[string]*contracts.Schema{
-			"options": {Type: "array", Items: contracts.FreeObject()},
-		}),
+		Output:   &contracts.Schema{Type: "array", Items: contracts.FreeObject()},
 		Loggable: []string{"code", "language", "search"},
 	}
 }
@@ -244,7 +245,7 @@ func (s *Service) importPreviewDefinition() contracts.Definition {
 		}, "id", "format", "content"),
 		Output: contracts.Object(map[string]*contracts.Schema{
 			"errors": {Type: "array", Items: &contracts.Schema{Type: "string"}},
-			"added":  {Type: "integer"}, "updated": {Type: "integer"},
+			"added":  {Type: "integer"}, "updated": {Type: "integer"}, "document": contracts.FreeObject(),
 		}),
 		Loggable: []string{"id", "format"},
 	}

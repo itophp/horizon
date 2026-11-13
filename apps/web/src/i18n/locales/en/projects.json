@@ -1,4 +1,15 @@
 {
+  "detail": {
+    "info": "Project information",
+    "taskTotal": "Total tasks",
+    "taskDone": "Completed tasks"
+  },
+  "ai": {
+    "risk": "AI risk",
+    "scheduleRisk": "Schedule risk",
+    "taskBlockers": "Task blockers",
+    "draftTaskDescription": "Draft task description"
+  },
   "heading": "Projects",
   "description": "Create projects, break them into plans and tasks. Membership is decided by the server.",
   "policy": "Only project members can see a project, its plans and its tasks — admins are not exempt. Assigning a task triggers one AI brief: it is advice and never changes a business field. Archived projects are read-only.",

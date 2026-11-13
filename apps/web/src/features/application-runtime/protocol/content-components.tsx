@@ -54,8 +54,9 @@ type FieldArgument =
       argument?: string;
       skipEmpty?: boolean;
     };
-type Field = {
+export type ContentField = {
   when?: Expression;
+  itemFields?: ContentField[];
   path?: string;
   value?: Expression;
   labelKey?: string;
@@ -64,12 +65,20 @@ type Field = {
   fallbackValue?: Expression;
   args?: Record<string, FieldArgument>;
   fallbackKey?: string;
-  format?: "shortDate" | "dateTime" | "code" | "list" | "strong" | "small";
+  format?:
+    | "shortDate"
+    | "dateTime"
+    | "code"
+    | "list"
+    | "strong"
+    | "small"
+    | "details"
+    | "issue";
   className?: string;
   classPrefix?: string;
   append?: string;
 };
-type Action = {
+export type ContentAction = {
   id: string;
   labelKey: string;
   pendingKey?: string;
@@ -80,12 +89,13 @@ type Action = {
   linkArrow?: boolean;
   permission?: string;
   visible?: Expression;
+  disabled?: Expression;
   href?: Expression;
 };
 type Column = {
   labelKey: string;
-  fields?: Field[];
-  actions?: Action[];
+  fields?: ContentField[];
+  actions?: ContentAction[];
   className?: string;
 };
 
@@ -100,13 +110,41 @@ export function useContentFields(data: Record<string, unknown> | undefined) {
   const check = (condition: Expression | undefined, record: unknown) =>
     !condition?.kind || Boolean(evaluate(condition, scope(record)));
 
-  function field(field: Field, record: unknown): ReactNode {
+  function renderField(field: ContentField, record: unknown): ReactNode {
     if (!check(field.when, record)) return null;
     const value = field.value?.kind
       ? evaluate(field.value, scope(record))
       : field.path
         ? pathValue(record, field.path)
         : undefined;
+    if (field.format === "issue") {
+      const [row, key, reason] = String(value ?? record ?? "").split(":");
+      return t(String(field.labelKey ?? ""), {
+        row,
+        field: key,
+        reason: t(String(field.labelPrefix ?? "") + reason, {
+          defaultValue: t(String(field.fallbackKey ?? "")),
+        }),
+      });
+    }
+    if (field.format === "details") {
+      const rows = Array.isArray(value) ? value : [];
+      if (!rows.length) return null;
+      return (
+        <details>
+          <summary>{t(String(field.labelKey ?? ""))}</summary>
+          <div className="gov-change-values">
+            {rows.map((row, index) => (
+              <p key={index}>
+                {field.itemFields?.map((config, position) => (
+                  <Fragment key={position}>{renderField(config, row)}</Fragment>
+                ))}
+              </p>
+            ))}
+          </div>
+        </details>
+      );
+    }
     const raw = value == null ? "" : String(value);
     const args = Object.fromEntries(
       Object.entries(field.args ?? {}).map(([key, config]) => {
@@ -165,7 +203,7 @@ export function useContentFields(data: Record<string, unknown> | undefined) {
     return content ? <span className={className}>{content}</span> : null;
   }
 
-  return { t, permissions, scope, field, check };
+  return { t, permissions, scope, field: renderField, check };
 }
 
 export function isInternalHref(value: unknown): value is string {
@@ -183,7 +221,7 @@ export function ActionControl({
   readOnly,
   emit,
 }: {
-  action: Action;
+  action: ContentAction;
   record?: unknown;
   dataMap?: Record<string, unknown>;
   readOnly: boolean;
@@ -217,7 +255,11 @@ export function ActionControl({
     <button
       type="button"
       className={action.className}
-      disabled={readOnly || busy}
+      disabled={
+        readOnly ||
+        busy ||
+        Boolean(action.disabled?.kind && check(action.disabled, record))
+      }
       onClick={async () => {
         setBusy(true);
         try {
@@ -252,7 +294,7 @@ export function ContentHeading({
   readOnly,
 }: ComponentRendererProps) {
   const { t } = useContentFields(dataMap);
-  const action = props.action as Action | undefined;
+  const action = props.action as ContentAction | undefined;
   const Title = props.level === 2 ? "h2" : props.level === 3 ? "h3" : "strong";
   const EyebrowIcon = contentIcons[props.icon as keyof typeof contentIcons];
   const Description = props.level === 2 || props.level === 3 ? "p" : "small";
@@ -300,7 +342,7 @@ export function ContentFields({
         typeof props.className === "string" ? props.className : undefined
       }
     >
-      {((props.fields ?? []) as Field[]).map((config, index) => (
+      {((props.fields ?? []) as ContentField[]).map((config, index) => (
         <Fragment key={index}>{field(config, data)}</Fragment>
       ))}
     </div>
@@ -345,17 +387,21 @@ export function ContentTable({
     labelKey: string;
   }[];
   const columns = (props.columns ?? []) as Column[];
-  const rows = Array.isArray(data)
-    ? data.filter(
-        (row: unknown) =>
-          (!filter || pathValue(row, filterField) === filter) &&
-          (!search.trim() ||
-            searchFields.some((path) =>
-              String(pathValue(row, path) ?? "")
-                .toLowerCase()
-                .includes(search.trim().toLowerCase()),
-            )),
-      )
+  const source =
+    typeof props.rowsPath === "string" ? pathValue(data, props.rowsPath) : data;
+  const rows = Array.isArray(source)
+    ? source
+        .filter(
+          (row: unknown) =>
+            (!filter || pathValue(row, filterField) === filter) &&
+            (!search.trim() ||
+              searchFields.some((path) =>
+                String(pathValue(row, path) ?? "")
+                  .toLowerCase()
+                  .includes(search.trim().toLowerCase()),
+              )),
+        )
+        .slice(0, typeof props.limit === "number" ? props.limit : undefined)
     : [];
   const searchKey = typeof props.searchKey === "string" ? props.searchKey : "";
   return (

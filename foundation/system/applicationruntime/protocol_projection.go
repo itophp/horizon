@@ -124,7 +124,7 @@ func projectProtocolNode(
 				if name, version, ok := strings.Cut(event.Target, "@"); ok && events[name+"@"+version] {
 					bindings = append(bindings, event)
 				}
-			case "setData", "refresh", "system":
+			case "setData", "refresh", "system", "browser":
 				bindings = append(bindings, event)
 			}
 		}

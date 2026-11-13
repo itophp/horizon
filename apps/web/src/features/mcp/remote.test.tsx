@@ -15,7 +15,7 @@ const collaboration = (
   JSON.parse(
     readFileSync("../../docs/generated/runtime/applications.json", "utf8"),
   ) as RuntimeApplicationV2[]
-).find((app) => app.id === "agent-collaboration")!;
+).find((app) => app.id === "agent-collaboration" && app.version === "1.0.2")!;
 
 const api = vi.hoisted(() => ({
   create: vi.fn(),
@@ -28,10 +28,25 @@ const api = vi.hoisted(() => ({
 
 vi.mock("@/lib/capabilities", async (original) => ({
   ...(await original<typeof import("@/lib/capabilities")>()),
-  mcpManagementCreate: api.create,
-  mcpManagementRotate: api.rotate,
-  mcpManagementRevoke: api.revoke,
-  mcpManagementAdminRevoke: api.adminRevoke,
+  runtimeExecute: async (
+    name: string,
+    _version: string,
+    input: Record<string, unknown>,
+  ) => {
+    const { id, ...values } = input;
+    const response =
+      name === "mcp.token.create"
+        ? await api.create(values)
+        : name === "mcp.token.rotate"
+          ? await api.rotate(id, values)
+          : name === "mcp.token.revoke"
+            ? await api.revoke(id, values)
+            : name === "mcp.token.admin_revoke"
+              ? await api.adminRevoke(id, values)
+              : null;
+    if (!response) throw new Error("Unexpected action: " + name);
+    return { status: "succeeded", data: response.data };
+  },
   runtimeApplication: async () => collaboration,
   runtimeRead: async (name: string) => {
     if (name === "application.runtime.list") return { items: [collaboration] };
@@ -190,6 +205,7 @@ it("explains that credentials follow current permissions without selecting tools
 
 it("confirms rotating a listed token with the password inside a dialog", async () => {
   const user = userEvent.setup();
+  api.permissions = ["mcp:revoke"];
   api.list.mockResolvedValue([token]);
   api.rotate.mockResolvedValue({
     status: 200,

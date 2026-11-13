@@ -1,18 +1,29 @@
 import { createContext, type ReactNode } from "react";
 
 export const PresentationPermissions = createContext<readonly string[]>([]);
+export const PresentationContext = createContext<Record<string, unknown>>({});
 
 export type ProtocolEventPayload = unknown;
+export type ProtocolEventOptions = {
+  ephemeral?: boolean;
+  onAIResult?: (data: unknown) => void;
+  onOutcome?: (status: "succeeded" | "failed") => void;
+  onError?: (code: string) => void;
+};
 
 export interface ComponentRendererProps {
   props: Record<string, unknown>;
   data?: unknown;
+  dataRefreshing?: boolean;
   children?: ReactNode;
   dataMap?: Record<string, unknown>;
   readOnly: boolean;
+  componentId?: string;
+  events?: readonly string[];
   emit: (
     event: string,
     payload?: ProtocolEventPayload,
+    options?: ProtocolEventOptions,
   ) => void | Promise<boolean | void>;
 }
 

@@ -26,10 +26,11 @@ import {
 } from "@/lib/webmcp/connection";
 import { ApiError } from "@/api/client/request";
 import { findWebMcpRoute, webMcpRoutes } from "@/lib/webmcp/routes";
+import { WebMcpRuntimeBindings } from "./runtime-bindings";
 
 export type ConnectionStatus =
   "disconnected" | "connecting" | "connected" | "failed";
-class WebMcpConnection {
+export class WebMcpConnection {
   readonly registry = new PageToolRegistry();
   private client?: { close: () => Promise<void> };
   private generation = 0;
@@ -193,7 +194,7 @@ export function WebMcpProvider({ children }: PropsWithChildren) {
   return (
     <Context.Provider value={connection}>
       <WorkspaceTools />
-      {children}
+      <RuntimeBindings>{children}</RuntimeBindings>
     </Context.Provider>
   );
 }
@@ -207,6 +208,13 @@ export function useWebMcp() {
   );
   return { connection: value, status, toolCount };
 }
+function RuntimeBindings({ children }: PropsWithChildren) {
+  const connection = useWebMcp();
+  return (
+    <WebMcpRuntimeBindings {...connection}>{children}</WebMcpRuntimeBindings>
+  );
+}
+
 export function usePageTools(tools: PageTool[]) {
   const connection = useContext(Context);
   const session = useSession();

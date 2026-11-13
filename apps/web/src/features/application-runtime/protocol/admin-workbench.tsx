@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,7 @@ import {
   Trash2,
   Users,
   XCircle,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,20 @@ import { pathValue } from "../expression";
 import { useProtocolRuntime } from "./protocol-page";
 import { coerceProviderInput } from "./data-resolver";
 import { ProtocolErrorDialog } from "./error-dialog";
+import {
+  ActionControl,
+  useContentFields,
+  type ContentField,
+  type ContentAction,
+} from "./content-components";
+import {
+  AIFormAssistant,
+  AIResult,
+  aiSnapshot,
+  requestAI,
+  useAIAnalysis,
+} from "./ai-components";
+import { runtimeAIAnalysisSpecSchema } from "@/api/generated/runtime";
 import type { ComponentRendererProps } from "./component-registry";
 import type { ProtocolRecord } from "./types";
 
@@ -148,6 +163,7 @@ function RuntimeFormDialog({
   descriptionKey,
   wide,
   onClose,
+  aiContext,
 }: {
   definition: RuntimeFormV2;
   mode: string;
@@ -157,6 +173,7 @@ function RuntimeFormDialog({
   descriptionKey: string;
   wide?: boolean;
   onClose: () => void;
+  aiContext?: FormAIContext;
 }) {
   const t = useProtocolTranslation();
   return (
@@ -170,6 +187,8 @@ function RuntimeFormDialog({
       wide={wide}
     >
       <ProtocolRecordForm
+        key={JSON.stringify([definition.id, mode, record?.id])}
+        aiContext={aiContext}
         definition={definition}
         mode={mode}
         record={record}
@@ -186,6 +205,9 @@ export function TablePanelComponent({
   dataMap,
   readOnly,
   emit,
+  componentId,
+  events,
+  dataRefreshing,
   renderRowActions,
   onOpenRow,
 }: ComponentRendererProps & {
@@ -193,6 +215,9 @@ export function TablePanelComponent({
   onOpenRow?: (row: ProtocolRecord) => void;
 }) {
   const t = useProtocolTranslation();
+  const { i18n } = useTranslation();
+  const { field } = useContentFields(dataMap);
+  const eventActions = (props.eventActions ?? []) as ContentAction[];
   const session = useSession();
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
@@ -204,6 +229,12 @@ export function TablePanelComponent({
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState<unknown>(null);
+  const analysis = useAIAnalysis(emit, componentId);
+  const [selection, setSelection] = useState<{
+    scope: string;
+    ids: Set<number>;
+  }>();
+  const [batchRunning, setBatchRunning] = useState(false);
   const rows = dataset(data, text(props.rowsPath));
   const references = useMemo(() => {
     const result: Record<string, ProtocolRecord[]> = {};
@@ -336,7 +367,52 @@ export function TablePanelComponent({
     const value = Number(row[keyField] ?? row.id ?? index);
     return { ...row, id: Number.isFinite(value) ? value : index };
   });
-  const columns = (props.columns as WorkbenchColumn[]) ?? [];
+  const columns = ((props.columns as WorkbenchColumn[]) ?? []).filter(
+    (column) =>
+      column.display !== "ai" ||
+      readOnly ||
+      Boolean(events?.includes(column.analysis?.action ?? "")),
+  );
+  const hasAIColumns = columns.some((column) => column.display === "ai");
+  const selectionScope = JSON.stringify([
+    page,
+    pageSize,
+    search,
+    tabValue,
+    selectValue,
+    params.get("sort"),
+  ]);
+  if (selection && selection.scope !== selectionScope) setSelection(undefined);
+  const selectedIds =
+    selection?.scope === selectionScope ? selection.ids : new Set<number>();
+  async function analyzeRows(
+    column: WorkbenchColumn,
+    candidates: ProtocolRecord[],
+  ) {
+    const parsed = runtimeAIAnalysisSpecSchema.safeParse(column.analysis);
+    if (!parsed.success || batchRunning) return;
+    const spec = parsed.data;
+    setBatchRunning(true);
+    try {
+      // Process chunks so independent rows can finish even if one fails.
+      for (let index = 0; index < candidates.length; index += 3) {
+        await Promise.all(
+          candidates
+            .slice(index, index + 3)
+            .map((row) =>
+              analysis.run(
+                column.name,
+                spec,
+                Number(row.id),
+                aiSnapshot(row, spec),
+              ),
+            ),
+        );
+      }
+    } finally {
+      setBatchRunning(false);
+    }
+  }
   function toggleCollapse(id: number) {
     setCollapsed((old) => {
       const next = new Set(old);
@@ -345,97 +421,174 @@ export function TablePanelComponent({
       return next;
     });
   }
+  const openEvent = text(props.openEvent);
   const tableColumns: AdminColumn<ProtocolRecord>[] = columns.map((column) => ({
     id: column.name,
     header: column.labelKey ? t(column.labelKey) : column.name,
+    renderHeader:
+      column.display === "ai"
+        ? (visible) => {
+            const selectedRows = visible.filter((row) =>
+              selectedIds.has(Number(row.id)),
+            );
+            const label = selectedRows.length
+              ? t("runtime:ai.analyzeSelected", { count: selectedRows.length })
+              : t("runtime:ai.analyzePage");
+            return (
+              <span className="inline-flex items-center gap-1">
+                {column.labelKey ? t(column.labelKey) : column.name}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={
+                    readOnly ||
+                    dataRefreshing ||
+                    batchRunning ||
+                    !visible.length
+                  }
+                  aria-label={label}
+                  title={label}
+                  onClick={() =>
+                    void analyzeRows(
+                      column,
+                      selectedRows.length ? selectedRows : visible,
+                    )
+                  }
+                >
+                  <Sparkles aria-hidden="true" size={14} />
+                </Button>
+              </span>
+            );
+          }
+        : undefined,
     className: column.className,
     style: column.width ? { width: column.width } : undefined,
     cell:
-      onOpenRow && column.display === "entity-link"
-        ? (row) => (
-            <button
-              type="button"
-              className="entity-link"
-              onClick={() => onOpenRow(row)}
-            >
-              <strong>{text(row[column.name])}</strong>
-              {column.subtitleField && (
-                <small>{text(row[column.subtitleField])}</small>
-              )}
-            </button>
-          )
-        : column.display === "account"
-          ? (row) => {
-              const subtitleField =
-                column.subtitleField ?? column.fallbackField ?? "";
-              const name = text(row[column.titleField ?? "name"]);
-              return (
+      column.display === "ai"
+        ? (row) => {
+            const spec = column.analysis;
+            if (!spec) return <AIResult compact />;
+            const snapshot = aiSnapshot(row, spec);
+            return (
+              <AIResult
+                compact
+                value={analysis.value(column.name, Number(row.id), snapshot)}
+                retry={
+                  readOnly || dataRefreshing || batchRunning
+                    ? undefined
+                    : () =>
+                        void analysis.run(
+                          column.name,
+                          spec,
+                          Number(row.id),
+                          snapshot,
+                        )
+                }
+              />
+            );
+          }
+        : column.fields
+          ? (row) =>
+              column.fields?.map((config, index) => (
+                <Fragment key={index}>{field(config, row)}</Fragment>
+              ))
+          : (onOpenRow || openEvent) && column.display === "entity-link"
+            ? (row) => (
                 <button
                   type="button"
-                  className="account-cell"
+                  className="entity-link"
+                  disabled={readOnly}
                   onClick={() =>
-                    setParams((old) => {
-                      const next = new URLSearchParams(old);
-                      next.set("dialog", "view");
-                      next.set("id", String(row[keyField]));
-                      return next;
-                    })
+                    onOpenRow ? onOpenRow(row) : void emit(openEvent, row)
                   }
                 >
-                  <EntityAvatar name={name} seed={Number(row.id ?? 0)} />
-                  <span>
-                    <strong>
-                      {name}
-                      {column.flagField && row[column.flagField] === true ? (
-                        <ShieldCheck size={13} />
-                      ) : null}
-                    </strong>
-                    <small>{text(row[subtitleField])}</small>
-                  </span>
-                </button>
-              );
-            }
-          : column.display === "tree"
-            ? (row) => {
-                const hasChildren = rows.some(
-                  (item) => String(item[parentField]) === String(row.id),
-                );
-                return (
-                  <div
-                    className="department-name"
-                    style={{ paddingLeft: Number(row.depth ?? 0) * 19 }}
-                  >
-                    {hasChildren ? (
-                      <button
-                        aria-label={
-                          collapsed.has(Number(row.id))
-                            ? t("admin:actions.expand")
-                            : t("admin:actions.collapseDepartment")
-                        }
-                        onClick={() => toggleCollapse(Number(row.id))}
-                      >
-                        {collapsed.has(Number(row.id)) ? (
-                          <ChevronRight size={13} />
-                        ) : (
-                          <ChevronDown size={13} />
-                        )}
-                      </button>
-                    ) : (
-                      <span className="tree-spacer" />
+                  <strong>
+                    {text(
+                      row[
+                        column.languageFields?.[i18n.resolvedLanguage ?? ""] ??
+                          column.name
+                      ] || row[column.name],
                     )}
-                    <span className="entity-symbol">
-                      <Icon name={column.icon || "network"} size={15} />
-                    </span>
-                    <span>
-                      <strong>{text(row[column.name])}</strong>
-                      {column.subtitleField ? (
-                        <small>{text(row[column.subtitleField])}</small>
-                      ) : null}
-                    </span>
-                  </div>
-                );
-              }
-            : (row) => renderWorkbenchCell(column, row, references, t),
+                  </strong>
+                  {column.subtitleField && (
+                    <small>{text(row[column.subtitleField])}</small>
+                  )}
+                </button>
+              )
+            : column.display === "account"
+              ? (row) => {
+                  const subtitleField =
+                    column.subtitleField ?? column.fallbackField ?? "";
+                  const name = text(row[column.titleField ?? "name"]);
+                  return (
+                    <button
+                      type="button"
+                      className="account-cell"
+                      onClick={() =>
+                        setParams((old) => {
+                          const next = new URLSearchParams(old);
+                          next.set("dialog", "view");
+                          next.set("id", String(row[keyField]));
+                          return next;
+                        })
+                      }
+                    >
+                      <EntityAvatar name={name} seed={Number(row.id ?? 0)} />
+                      <span>
+                        <strong>
+                          {name}
+                          {column.flagField &&
+                          row[column.flagField] === true ? (
+                            <ShieldCheck size={13} />
+                          ) : null}
+                        </strong>
+                        <small>{text(row[subtitleField])}</small>
+                      </span>
+                    </button>
+                  );
+                }
+              : column.display === "tree"
+                ? (row) => {
+                    const hasChildren = rows.some(
+                      (item) => String(item[parentField]) === String(row.id),
+                    );
+                    return (
+                      <div
+                        className="department-name"
+                        style={{ paddingLeft: Number(row.depth ?? 0) * 19 }}
+                      >
+                        {hasChildren ? (
+                          <button
+                            aria-label={
+                              collapsed.has(Number(row.id))
+                                ? t("admin:actions.expand")
+                                : t("admin:actions.collapseDepartment")
+                            }
+                            onClick={() => toggleCollapse(Number(row.id))}
+                          >
+                            {collapsed.has(Number(row.id)) ? (
+                              <ChevronRight size={13} />
+                            ) : (
+                              <ChevronDown size={13} />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="tree-spacer" />
+                        )}
+                        <span className="entity-symbol">
+                          <Icon name={column.icon || "network"} size={15} />
+                        </span>
+                        <span>
+                          <strong>{text(row[column.name])}</strong>
+                          {column.subtitleField ? (
+                            <small>{text(row[column.subtitleField])}</small>
+                          ) : null}
+                        </span>
+                      </div>
+                    );
+                  }
+                : (row) => renderWorkbenchCell(column, row, references, t),
   }));
   const actionConfig = (props.rowActions as WorkbenchAction[]) ?? [];
   const optionsData = useMemo(
@@ -588,8 +741,34 @@ export function TablePanelComponent({
       </div>
       <DataTable
         rows={tableRows}
+        selectable={props.selectable === true || (hasAIColumns && !readOnly)}
+        selection={hasAIColumns ? selectedIds : undefined}
+        onSelectionChange={
+          hasAIColumns
+            ? (ids) => setSelection({ scope: selectionScope, ids })
+            : undefined
+        }
         columns={[
           ...tableColumns,
+          ...(!readOnly && eventActions.length
+            ? [
+                {
+                  id: "event-actions",
+                  header: t("admin:fields.actions"),
+                  cell: (row: ProtocolRecord) =>
+                    eventActions.map((action) => (
+                      <ActionControl
+                        key={action.id}
+                        action={action}
+                        record={row}
+                        dataMap={dataMap}
+                        readOnly={readOnly}
+                        emit={emit}
+                      />
+                    )),
+                },
+              ]
+            : []),
           ...(renderRowActions && !readOnly
             ? [
                 {
@@ -599,7 +778,7 @@ export function TablePanelComponent({
                 },
               ]
             : []),
-          ...(actionConfig.length
+          ...(actionConfig.length && (!readOnly || !props.openEvent)
             ? [
                 {
                   id: "actions",
@@ -679,7 +858,6 @@ export function TablePanelComponent({
               ]
             : []),
         ]}
-        selectable={props.selectable === true}
         serverPage={serverPage}
       />
       {serverPage && (
@@ -723,6 +901,7 @@ export function TablePanelComponent({
       )}
       {dialogMode && activeDefinition && formMeta[dialogMode] && (
         <RuntimeFormDialog
+          aiContext={{ componentId, events, emit }}
           definition={
             dialogMode === "access" && forms.access
               ? forms.access
@@ -1041,6 +1220,8 @@ export function DetailPanelComponent({
   data,
   dataMap,
   readOnly,
+  componentId,
+  events,
   emit,
 }: ComponentRendererProps) {
   const t = useProtocolTranslation();
@@ -1198,6 +1379,7 @@ export function DetailPanelComponent({
       )}
       {dialogMode && activeForm && formMeta[dialogMode] && (
         <RuntimeFormDialog
+          aiContext={{ componentId, events, emit }}
           definition={activeForm}
           mode={dialogMode}
           record={record}
@@ -1223,6 +1405,9 @@ export function RecordFormPanelComponent({
   data,
   dataMap,
   readOnly,
+  componentId,
+  events,
+  emit,
 }: ComponentRendererProps) {
   const t = useProtocolTranslation();
   const navigate = useNavigate();
@@ -1260,6 +1445,7 @@ export function RecordFormPanelComponent({
         </div>
       </div>
       <ProtocolRecordForm
+        aiContext={{ componentId, events, emit }}
         definition={form}
         mode={text(props.mode) || "create"}
         record={record}
@@ -1311,6 +1497,9 @@ function workbenchActionVisible(
 
 type WorkbenchColumn = {
   name: string;
+  analysis?: import("@/api/generated/runtime").RuntimeAIAnalysisSpec;
+  languageFields?: Record<string, string>;
+  fields?: ContentField[];
   labelKey?: string;
   display?: string;
   className?: string;
@@ -2214,6 +2403,11 @@ export function MasterDetailPanelComponent({
   );
 }
 
+type FormAIContext = Pick<
+  ComponentRendererProps,
+  "componentId" | "events" | "emit"
+>;
+
 function ProtocolRecordForm({
   definition,
   mode,
@@ -2223,6 +2417,7 @@ function ProtocolRecordForm({
   onCancel,
   readOnly = false,
   onSaved,
+  aiContext,
 }: {
   definition: RuntimeFormV2;
   mode: string;
@@ -2232,6 +2427,7 @@ function ProtocolRecordForm({
   onCancel?: () => void;
   readOnly?: boolean;
   onSaved?: () => void;
+  aiContext?: FormAIContext;
 }) {
   const { t } = useTranslation(["runtime", "admin"]);
   const runtime = useProtocolRuntime();
@@ -2258,6 +2454,9 @@ function ProtocolRecordForm({
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [appliedRevisions, setAppliedRevisions] = useState<
+    Record<string, number>
+  >({});
   const defaults = useMemo(() => {
     const values: Record<string, unknown> = {};
     for (const field of command.fields) {
@@ -2345,6 +2544,23 @@ function ProtocolRecordForm({
           }),
         )
       : false);
+  const assistant = definition.aiAssistant;
+  const scopeRecordId = Number(
+    mode === "create" ? (route.projectId ?? route.id) : record?.id,
+  );
+  const aiField = (name: string) =>
+    visibleFields.find((field) => field.name === name);
+  const showAssistant =
+    assistant &&
+    aiContext?.componentId &&
+    aiContext.events?.includes(assistant.action) &&
+    (mode === "create" || mode === "edit") &&
+    !readOnly &&
+    !runtime.readOnly &&
+    Number.isSafeInteger(scopeRecordId) &&
+    scopeRecordId > 0 &&
+    assistant.inputFields.every((name) => aiField(name)) &&
+    assistant.targetFields.every((name) => aiField(name));
   const referenceOptions = (
     field: RuntimeFieldV2,
   ): { value: Json; label: string }[] => {
@@ -2445,6 +2661,53 @@ function ProtocolRecordForm({
         <ProtocolErrorDialog error={error} onClose={() => setError(null)} />
       )}
       {notice && <div role="status">{notice}</div>}
+      {showAssistant && aiContext && (
+        <AIFormAssistant
+          spec={assistant}
+          disabled={
+            busy ||
+            assistant.targetFields.every((name) => {
+              const field = aiField(name);
+              return !field || isFieldDisabled(field);
+            })
+          }
+          request={() =>
+            requestAI(aiContext.emit, assistant.action, {
+              componentId: aiContext.componentId,
+              sceneId: definition.id,
+              recordId: scopeRecordId,
+              mode,
+              draft: Object.fromEntries(
+                assistant.inputFields.map((name) => [
+                  name,
+                  form.getValues(name),
+                ]),
+              ),
+            })
+          }
+          current={(name) => watched[name]}
+          label={(name) => t(aiField(name)?.labelKey ?? name)}
+          canApply={({ field, value }) => {
+            const config = aiField(field);
+            return Boolean(
+              config &&
+              !isFieldDisabled(config) &&
+              formSchema([config], {}).safeParse({ [field]: value }).success,
+            );
+          }}
+          apply={({ field, value }) => {
+            form.setValue(field, value, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+            if (aiField(field)?.component === "markdown")
+              setAppliedRevisions((current) => ({
+                ...current,
+                [field]: (current[field] ?? 0) + 1,
+              }));
+          }}
+        />
+      )}
       {tabGroups.length > 0 && (
         <div className="editor-tabs">
           {tabGroups.map((group) => (
@@ -2526,6 +2789,7 @@ function ProtocolRecordForm({
                     }
                   >
                     <RegisteredControl
+                      key={appliedRevisions[field.name] ?? 0}
                       definition={field}
                       id={`${definition.id}-${field.name}`}
                       name={field.name}

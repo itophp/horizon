@@ -142,6 +142,7 @@
   "fileLimit": "The selected file exceeds the size limit.",
   "fileReadFailed": "Unable to read the selected file.",
   "groups": {
+    "knowledge": "Knowledge retrieval",
     "memory": "Memory collection",
     "articles": "Article moderation",
     "branding": "Branding",
@@ -156,6 +157,15 @@
     "assistant": "AI assistant"
   },
   "labels": {
+    "articles_blockedWords": "Blocked words (one per line or comma separated)",
+    "agent_enabled": "Enable the workspace agent",
+    "agent_baseUrl": "Workspace agent API URL",
+    "knowledge_embedding_baseUrl": "Embedding API URL",
+    "knowledge_embedding_model": "Embedding model",
+    "knowledge_embedding_dimensions": "Embedding dimensions",
+    "knowledge_embedding_token": "Embedding API token",
+    "knowledge_vector_url": "Vector store URL",
+    "knowledge_vector_index": "Vector index name",
     "memory_activitySamplePercent": "Activity sampling percentage",
     "branding_name": "Product name",
     "branding_tagline": "Product tagline",

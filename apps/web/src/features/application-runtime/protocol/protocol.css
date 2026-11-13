@@ -49,6 +49,22 @@
   gap: 20px;
 }
 
+.protocol-page :is(.detail-panel, .ai-analysis-panel).admin-panel {
+  padding: 24px;
+}
+
+.ai-analysis-panel {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.ai-analysis-panel > h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
 .detail-heading {
   display: flex;
   align-items: flex-start;
@@ -60,6 +76,7 @@
   margin: 0;
   font-size: 1.375rem;
   font-weight: 650;
+  overflow-wrap: anywhere;
 }
 
 .detail-heading p {
@@ -88,14 +105,13 @@
 .detail-sections {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
 }
 
 .detail-sections section {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
-  background: var(--muted);
+  min-width: 0;
 }
 
 .detail-sections dl {
@@ -127,6 +143,10 @@
 }
 
 @media (max-width: 767px) {
+  .protocol-page :is(.detail-panel, .ai-analysis-panel).admin-panel {
+    padding: 16px;
+  }
+
   .protocol-sidebar,
   .protocol-split,
   .detail-sections {

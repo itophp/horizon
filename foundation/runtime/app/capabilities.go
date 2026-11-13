@@ -100,6 +100,10 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	entries = append(entries, m.Memory.Entries()...)
 	entries = append(entries, m.Documents.Entries()...)
 	entries = append(entries, m.Knowledge.Entries()...)
+	if m.Runtime == nil {
+		m.Runtime = &armodule.Module{}
+	}
+	entries = append(entries, m.Runtime.AIEntries()...)
 	definitions := []contracts.Definition{}
 	for _, entry := range entries {
 		definitions = append(definitions, entry.Definition)
@@ -118,9 +122,6 @@ func (m CapabilityModules) Entries() []registry.Entry {
 			entries[i].Definition.Installation = "com.horizon.projects"
 			entries[i].Definition.Application = "projects"
 		}
-	}
-	if m.Runtime == nil {
-		m.Runtime = &armodule.Module{}
 	}
 	m.Runtime.Entities = EntitiesWithPlugins(m.Plugins)
 	m.Runtime.Applications = applications
@@ -144,6 +145,6 @@ func RuntimeContributions(plugins *plugin.Manager) []ar.ApplicationV2 {
 		articles.RuntimeApplication(), identity.PermissionsRuntimeApplication(),
 		identity.OrganizationsRuntimeApplication(), identity.AccountsRuntimeApplication(),
 		identity.RuntimeProtocolApplication(), CapabilityRuntimeApplication(), analyticsRuntimeApplication("1.0.0"), AnalyticsRuntimeApplication(),
-		agentCollaborationApplication(), legacyPersonalPreferencesApplication(), personalPreferencesApplication(), systemSettingsApplication(),
+		legacyAgentCollaborationApplication(), agentCollaborationVersion("1.0.1"), agentCollaborationApplication(), legacyPersonalPreferencesApplication(), personalPreferencesApplication(), legacySystemSettingsApplication(), systemSettingsApplication(),
 	}, plugins.Catalog.Applications...)
 }

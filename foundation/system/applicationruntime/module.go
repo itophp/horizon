@@ -19,6 +19,7 @@ type Module struct {
 	Pool         *pgxpool.Pool
 	Invoke       func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)
 	Definitions  map[string]contracts.Definition
+	GenerateAI   func(context.Context, string, string) (string, error)
 }
 
 func (m *Module) Entries() []registry.Entry {

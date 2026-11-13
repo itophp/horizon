@@ -1,4 +1,15 @@
 {
+  "detail": {
+    "info": "项目信息",
+    "taskTotal": "任务总数",
+    "taskDone": "已完成任务"
+  },
+  "ai": {
+    "risk": "AI 风险",
+    "scheduleRisk": "进度风险",
+    "taskBlockers": "任务阻塞",
+    "draftTaskDescription": "起草任务描述"
+  },
   "heading": "项目协作",
   "description": "创建项目、拆解计划、分配任务。成员边界由服务端判定。",
   "policy": "只有项目成员能看到项目、计划和任务，管理员也不绕过。任务指派会触发一次 AI 简报：简报是建议，不改变任何业务字段。归档后的项目只读。",

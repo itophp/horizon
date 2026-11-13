@@ -104,6 +104,12 @@ func protocolMergePanel(metadata, panel map[string]any) map[string]any {
 }
 
 func RuntimeApplication() ar.ApplicationV2 {
+	return runtimeApplication("2.0.2")
+}
+
+func runtimeApplication(version string) ar.ApplicationV2 {
+	ai := version != "2.0.0"
+	updatedDetail := version == "2.0.2"
 	projectList := ar.Provider{
 		ID: "projects", Capability: ar.Ref("project.list"), KeyField: "id",
 		Pagination: "server", PageSize: 20, Tags: []string{"projects"},
@@ -134,6 +140,17 @@ func RuntimeApplication() ar.ApplicationV2 {
 	projectForm := projectRuntimeForm()
 	planForm := planRuntimeForm(members.ID)
 	taskForm, assignForm := taskRuntimeForms(plans.ID, members.ID)
+	aiEvent := func(event, capability string) ar.EventBinding {
+		return ar.EventBinding{Event: event, Action: "invoke", Target: capability + "@1.0.0"}
+	}
+	if ai {
+		taskForm.AIAssistant = &ar.AIFormAssistant{
+			LabelKey: "projects:ai.draftTaskDescription", Action: "suggest-task-description",
+			InputFields: []string{"title", "priority", "dueDate"}, TargetFields: []string{"description"},
+			Prompt:      "根据任务标题、优先级和截止日期起草简短的任务描述。仅使用已提供的信息，信息不足时返回空建议。",
+			CreateScope: "$_aiProject", EditScope: "$_aiTask",
+		}
+	}
 
 	page := func(id, route, titleKey, subtitleKey, permission string, data []ar.DataSpec, children []ar.Node) ar.PageV3 {
 		return ar.PageV3{SchemaVersion: "3.0", ID: id, Route: route, TitleKey: titleKey, SubtitleKey: subtitleKey, Permission: ReadPermission, Root: ar.Node{Type: "layout", Layout: &ar.LayoutSpec{ID: id + "-root", Kind: "stack", Props: ar.LayoutProps{Gap: "20px", Width: "full"}, Data: data, Children: children}}}
@@ -160,6 +177,19 @@ func RuntimeApplication() ar.ApplicationV2 {
 		{"name": "priority", "labelKey": "projects:priority", "display": "enumBadge", "valueLabelPrefix": "projects:priorities."},
 		{"name": "ownerName", "labelKey": "projects:owner"},
 		{"name": "taskCount", "labelKey": "projects:progress", "display": "progress", "field": "taskCount", "templateKey": "projects:ratio"},
+	}
+	listEvents := []ar.EventBinding{{Event: "open", Action: "navigate", Target: "project.detail", Payload: ar.Expression{Kind: "object", Fields: []ar.Mapping{ar.Bind("id", "event.id")}}}}
+	listData := []ar.DataSpec{{ID: "projects", Provider: projectList.ID}}
+	if ai {
+		projectColumns = append(projectColumns, map[string]any{
+			"name": "aiRisk", "labelKey": "projects:ai.risk", "display": "ai",
+			"analysis": ar.AIAnalysisSpec{Action: "analyze-risk-column",
+				Input:  []ar.AIDataInput{{Source: "$_aiProject", Fields: []string{"status", "dueDate", "taskOverdueCount"}}},
+				Prompt: "根据项目状态、截止日期和逾期任务数判断风险。label 必须是 high、medium、low 或 insufficient。用一句话说明主要依据，信息不足时说明缺少哪些数据。",
+			},
+		})
+		listEvents = append(listEvents, aiEvent("analyze-risk-column", ar.AnalyzeCapability))
+		listData = append(listData, ar.DataSpec{ID: "_aiProject", Provider: project.ID, EnabledWhen: aiDisabledBinding()})
 	}
 	projectListPanel := map[string]any{
 		"rowsPath": "items", "keyField": "id", "totalPath": "total", "serverPage": true,
@@ -254,6 +284,9 @@ func RuntimeApplication() ar.ApplicationV2 {
 		}
 	}
 	taskEvents := []ar.EventBinding{openTaskEvent, taskStatusEvent("todo", "todo"), taskStatusEvent("in_progress", "in_progress"), taskStatusEvent("done", "done"), taskStatusEvent("cancelled", "cancelled")}
+	if ai {
+		taskEvents = append(taskEvents, aiEvent("suggest-task-description", ar.SuggestCapability))
+	}
 	taskDetailPanel := map[string]any{
 		"titleField": "title", "subtitleField": "planTitle", "statusField": "status",
 		"statusValuePrefix": "projects:tasks.states.",
@@ -368,36 +401,142 @@ func RuntimeApplication() ar.ApplicationV2 {
 		ID: "task-detail", Kind: "detail-panel", Version: "1.0", Data: "$task", Props: taskDetailPanel, Events: taskEvents,
 	})
 
+	detailData := []ar.DataSpec{{ID: "project", Provider: project.ID}, {ID: "_tasks", Provider: tasks.ID}, {ID: "_members", Provider: members.ID}, {ID: "_plans", Provider: plans.ID}}
+	taskListData := []ar.DataSpec{{ID: "project", Provider: project.ID}, {ID: "tasks", Provider: tasks.ID}, {ID: "_members", Provider: members.ID}, {ID: "_plans", Provider: plans.ID}}
+	taskDetailData := []ar.DataSpec{
+		{ID: "task", Provider: task.ID},
+		{ID: "_members", Provider: members.ID, Input: []ar.Mapping{ar.Bind("projectId", "route.projectId")}},
+		{ID: "_plans", Provider: plans.ID, Input: []ar.Mapping{ar.Bind("projectId", "route.projectId")}},
+	}
+	detailNodes := []ar.Node{detailComponent, panel("project-tasks", "$_tasks", taskPanelSpec("projects:tabs.tasks"), taskEvents)}
+	if ai {
+		aiScope := []ar.DataSpec{{ID: "_aiProject", Provider: project.ID, EnabledWhen: aiDisabledBinding()}, {ID: "_aiTask", Provider: task.ID, EnabledWhen: aiDisabledBinding()}}
+		detailData = append(detailData, aiScope...)
+		taskListData = append(taskListData, aiScope...)
+		taskDetailData = append(taskDetailData, aiScope...)
+		detailNodes = append(detailNodes, componentLayout("project-ai-analysis", &ar.ComponentSpec{
+			ID: "project-ai-analysis", Kind: "ai-analysis-panel", Version: "1.0", Data: "$project",
+			Props: map[string]any{"scenarios": []ar.AIScenario{
+				{ID: "schedule-risk", LabelKey: "projects:ai.scheduleRisk", Analysis: ar.AIAnalysisSpec{
+					Action: "analyze-schedule", Input: []ar.AIDataInput{{Source: "$project", Fields: []string{"status", "dueDate", "taskOverdueCount"}}},
+					Prompt: "说明项目是否存在延期风险，列出支持结论的字段。信息不足时指出缺少哪些数据。",
+				}},
+				{ID: "task-blockers", LabelKey: "projects:ai.taskBlockers", Analysis: ar.AIAnalysisSpec{
+					Action: "analyze-blockers", Input: []ar.AIDataInput{{Source: "$project", Fields: []string{"status"}}, {Source: "$_tasks", Fields: []string{"title", "status", "dueDate"}}},
+					Prompt: "从提供的任务中找出最多三项可能阻塞项目推进的任务，引用任务标题和状态说明理由。",
+				}},
+			}},
+			Events: []ar.EventBinding{aiEvent("analyze-schedule", ar.AnalyzeCapability), aiEvent("analyze-blockers", ar.AnalyzeCapability)},
+		}))
+	}
+	if updatedDetail {
+		legacyEvents := detailComponent.Layout.Children[0].Component.Events
+		overviewProps := protocolMergePanel(nil, projectDetailPanel)
+		overviewProps["sections"] = []map[string]any{
+			{"titleKey": "projects:detail.info", "fields": []map[string]any{
+				{"name": "ownerName", "labelKey": "projects:owner"},
+				{"name": "priority", "labelKey": "projects:priority", "display": "enumBadge", "valueLabelPrefix": "projects:priorities."},
+				{"name": "dueDate", "labelKey": "projects:dueDate", "display": "date", "emptyKey": "projects:dash"},
+			}},
+			{"titleKey": "projects:progress", "fields": []map[string]any{
+				{"name": "taskCount", "labelKey": "projects:detail.taskTotal"},
+				{"name": "taskDoneCount", "labelKey": "projects:detail.taskDone"},
+				{"name": "taskOverdueCount", "labelKey": "projects:overdue"},
+			}},
+		}
+		overview := componentLayout("project-overview", &ar.ComponentSpec{
+			ID: "project-overview", Kind: "detail-panel", Version: "1.0", Data: "$project",
+			Props: overviewProps, Events: projectDetailEvents(legacyEvents, "active", "paused", "completed", "archived"),
+		})
+		overviewNodes := append([]ar.Node{overview}, detailNodes[2:]...)
+		planProps := protocolMergePanel(nil, planPanel)
+		delete(planProps, "rowsPath") // The plans Provider already selects items.
+		plansPanel := panel("project-plans", "$_plans", planProps, projectDetailEvents(legacyEvents, "planInProgress", "planDone", "planCancelled"))
+		tasksPanel := panel("project-tasks", "$_tasks", taskPanelSpec("projects:tabs.tasks"), taskEvents)
+		membersPanel := componentLayout("project-members", &ar.ComponentSpec{
+			ID: "project-members", Kind: "search-picker-panel", Version: "1.0",
+			Props: memberPanel, Events: projectDetailEvents(legacyEvents, "addMember", "removeMember", "transferOwner"),
+		})
+		detailNodes = []ar.Node{projectDetailTabs(overviewNodes, plansPanel, tasksPanel, membersPanel)}
+
+		tab := func(id string) ar.Expression {
+			return ar.Condition("eq", ar.Path("query.tab"), ar.Literal(`"`+id+`"`))
+		}
+		taskTab := tab("tasks")
+		plansNeeded := ar.Condition("or", tab("plans"), taskTab)
+		membersNeeded := ar.Condition("or", tab("members"), plansNeeded)
+		for index := range detailData {
+			switch detailData[index].ID {
+			case "_tasks":
+				detailData[index].EnabledWhen = &taskTab
+			case "_plans":
+				detailData[index].EnabledWhen = &plansNeeded
+			case "_members":
+				detailData[index].EnabledWhen = &membersNeeded
+			}
+		}
+	}
 	protocol := &ar.ApplicationV3{
-		SchemaVersion: "3.0", ID: "projects", Version: "2.0.0", Source: "com.horizon.projects",
+		SchemaVersion: "3.0", ID: "projects", Version: version, Source: "com.horizon.projects",
 		RuntimeCompatibility: "3.0", LabelKey: "projects:heading", Permission: ReadPermission, Route: "/projects",
 		Pages: []ar.PageV3{
-			page("project.list", "/projects", "projects:heading", "projects:description", ReadPermission, []ar.DataSpec{{ID: "projects", Provider: projectList.ID}}, []ar.Node{
+			page("project.list", "/projects", "projects:heading", "projects:description", ReadPermission, listData, []ar.Node{
 				heading("project-list", "projects:heading", "projects:description", []map[string]any{{"labelKey": "projects:create", "icon": "plus", "permission": WritePermission, "dialog": "create"}}),
-				panel("project-list", "$projects", projectListPanel, []ar.EventBinding{{Event: "open", Action: "navigate", Target: "project.detail", Payload: ar.Expression{Kind: "object", Fields: []ar.Mapping{ar.Bind("id", "event.id")}}}}),
+				panel("project-list", "$projects", projectListPanel, listEvents),
 			}),
-			page("project.detail", "/projects/:id", "projects:title", "projects:description", ReadPermission, []ar.DataSpec{{ID: "project", Provider: project.ID}, {ID: "_tasks", Provider: tasks.ID}, {ID: "_members", Provider: members.ID}, {ID: "_plans", Provider: plans.ID}}, []ar.Node{
-				detailComponent,
-				panel("project-tasks", "$_tasks", taskPanelSpec("projects:tabs.tasks"), taskEvents),
-			}),
-			page("project.tasks", "/projects/:id/tasks", "projects:tasks.heading", "projects:tasks.description", ReadPermission, []ar.DataSpec{{ID: "project", Provider: project.ID}, {ID: "tasks", Provider: tasks.ID}, {ID: "_members", Provider: members.ID}, {ID: "_plans", Provider: plans.ID}}, []ar.Node{
+			page("project.detail", "/projects/:id", "projects:title", "projects:description", ReadPermission, detailData, detailNodes),
+			page("project.tasks", "/projects/:id/tasks", "projects:tasks.heading", "projects:tasks.description", ReadPermission, taskListData, []ar.Node{
 				heading("project-tasks", "projects:tasks.heading", "projects:tasks.description", nil),
 				panel("project-task-list", "$tasks", taskPanelSpec("projects:tabs.tasks"), taskEvents),
 			}),
-			page("task.detail", "/projects/:projectId/tasks/:id", "projects:tasks.detail", "projects:dialog.taskDetailHint", ReadPermission, []ar.DataSpec{
-				{ID: "task", Provider: task.ID},
-				{ID: "_members", Provider: members.ID, Input: []ar.Mapping{ar.Bind("projectId", "route.projectId")}},
-				{ID: "_plans", Provider: plans.ID, Input: []ar.Mapping{ar.Bind("projectId", "route.projectId")}},
-			}, []ar.Node{
-				taskDetailComponent,
-			}),
+			page("task.detail", "/projects/:projectId/tasks/:id", "projects:tasks.detail", "projects:dialog.taskDetailHint", ReadPermission, taskDetailData, []ar.Node{taskDetailComponent}),
 		},
 		Providers:  []ar.Provider{projectList, project, tasks, task, members, memberSearch, plans},
 		Navigation: []ar.Navigation{{PageID: "project.list", LabelKey: "projects:heading", Icon: "grid"}},
 	}
 	return ar.ApplicationV2{
 		Protocol: protocol, SchemaVersion: "3.0", ID: protocol.ID, Version: protocol.Version,
-		PluginVersion: "2.0.0", MetadataVersion: "1", Source: protocol.Source,
+		PluginVersion: version, MetadataVersion: "1", Source: protocol.Source,
 		RuntimeCompatibility: "3.0", LabelKey: protocol.LabelKey, Permission: protocol.Permission, Route: protocol.Route,
 	}
+}
+
+func aiDisabledBinding() *ar.Expression {
+	value := ar.Literal("false")
+	return &value
+}
+
+func projectDetailEvents(events []ar.EventBinding, names ...string) []ar.EventBinding {
+	var selected []ar.EventBinding
+	for _, event := range events {
+		for _, name := range names {
+			if event.Event == name {
+				selected = append(selected, event)
+				break
+			}
+		}
+	}
+	return selected
+}
+
+func projectDetailTabs(overview []ar.Node, plans, tasks, members ar.Node) ar.Node {
+	tabPanel := func(id string, content ...ar.Node) ar.Node {
+		return componentLayout("project-"+id+"-tab", &ar.ComponentSpec{
+			ID: "project-" + id + "-tab", Kind: "layout-tab-panel", Version: "1.0",
+			Props: map[string]any{"tab": id},
+			Content: &ar.LayoutSpec{ID: "project-" + id + "-content", Kind: "stack",
+				Props: ar.LayoutProps{Gap: "16px"}, Children: content},
+		})
+	}
+	return componentLayout("project-detail-tabs", &ar.ComponentSpec{
+		ID: "project-detail", Kind: "layout-tabs", Version: "1.0",
+		Props: map[string]any{"param": "tab", "labelKey": "projects:heading", "tabs": []map[string]any{
+			{"id": "overview", "labelKey": "projects:tabs.overview"},
+			{"id": "plans", "labelKey": "projects:tabs.plans"},
+			{"id": "tasks", "labelKey": "projects:tabs.tasks"},
+			{"id": "members", "labelKey": "projects:tabs.members"},
+		}},
+		Content: &ar.LayoutSpec{ID: "project-detail-content", Kind: "stack", Props: ar.LayoutProps{Gap: "16px"},
+			Children: []ar.Node{tabPanel("overview", overview...), tabPanel("plans", plans), tabPanel("tasks", tasks), tabPanel("members", members)}},
+	})
 }

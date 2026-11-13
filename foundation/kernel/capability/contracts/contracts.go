@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"slices"
 	"sort"
 	"strings"
 
@@ -111,7 +112,8 @@ type Definition struct {
 	Tags          []string
 	Executor      string
 	ReadOnly      bool
-	// TransientResult prevents sensitive read results from being persisted or replayed.
+	// TransientResult omits result data from persistence and replay. Writes
+	// still use idempotency keys to prevent duplicate side effects.
 	TransientResult bool
 	// Loggable lists input fields allowed into the audit projection. Everything
 	// else is replaced by the payload digest.
@@ -272,8 +274,8 @@ func (d Definition) Validate() error {
 func (d Definition) Problems() []string {
 	var out []string
 	out = append(out, d.taxonomyProblems()...)
-	if d.TransientResult && !d.ReadOnly {
-		out = append(out, "transient results are read-only")
+	if d.TransientResult && !d.ReadOnly && (d.Layer != LayerAtomic || !slices.Contains(d.Tags, "manual-only")) {
+		out = append(out, "transient writes must be atomic and manual-only")
 	}
 	if d.Name == "" || d.Version == "" {
 		out = append(out, "name and version are required")

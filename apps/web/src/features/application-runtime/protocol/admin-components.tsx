@@ -1,4 +1,8 @@
-import type { ReactNode } from "react";
+import { contentRenderers } from "./shadcn-content";
+import { fieldRenderers } from "./shadcn-fields";
+import { overlayRenderers } from "./shadcn-overlays";
+import { compositeRenderers } from "./shadcn-composites";
+import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,8 +33,11 @@ import {
   SettingsPanel,
   WebMcpPanel,
 } from "./platform-panels";
+import { AIAnalysisPanel, AIResultComponent } from "./ai-components";
 import { ItemListComponent } from "./item-list";
 import { ChangeListForm } from "./change-list-form";
+import { ActionForm } from "./action-form";
+import { FileReviewForm } from "./file-review-form";
 import { DialogComponent } from "./dialog-component";
 import {
   ComponentRegistry,
@@ -284,7 +291,14 @@ function TextComponent({ props }: { props: Record<string, unknown> }) {
   const { t } = useTranslation("runtime");
   if (!props.textKey) return null;
   return (
-    <span className={text(props.className)}>
+    <span
+      className={text(props.className)}
+      role={
+        props.role === "status" || props.role === "alert"
+          ? props.role
+          : undefined
+      }
+    >
       {t(text(props.textKey), props.values as Record<string, unknown>)}
     </span>
   );
@@ -302,11 +316,15 @@ function MarkdownComponent({
   return (
     <MarkdownDisplay
       value={
-        props.textKey
-          ? t(text(props.textKey))
-          : path
-            ? pathValue(data, path)
-            : data
+        typeof props.value === "string"
+          ? props.value
+          : props.textKey
+            ? props.code === true
+              ? "```\n" + t(text(props.textKey)) + "\n```"
+              : t(text(props.textKey))
+            : path
+              ? pathValue(data, path)
+              : data
       }
     />
   );
@@ -336,15 +354,24 @@ function ButtonComponent({
         emit={emit}
       />
     );
+  if (readOnly && props.hideInPreview === true) return null;
   return (
     <Button
       type="button"
-      variant={text(props.variant) as "default" | "outline" | "ghost"}
-      size={text(props.size) as "default" | "sm" | "lg"}
+      variant={
+        (text(props.variant) || "default") as ComponentProps<
+          typeof Button
+        >["variant"]
+      }
+      size={
+        (text(props.size) || "default") as ComponentProps<typeof Button>["size"]
+      }
       disabled={readOnly || props.disabled === true}
       onClick={() => emit("click", props.payload)}
     >
-      {t(text(props.labelKey))}
+      {t(text(props.labelKey), {
+        replace: props.labelArgs as Record<string, unknown> | undefined,
+      })}
     </Button>
   );
 }
@@ -355,6 +382,8 @@ export function createAdminRegistry(): ComponentRegistry {
   registry.register("search", "1.0", SearchComponent);
   registry.register("data-table", "1.0", DataTableComponent);
   registry.register("text", "1.0", TextComponent);
+  registry.register("ai-analysis-panel", "1.0", AIAnalysisPanel);
+  registry.register("ai-result", "1.0", AIResultComponent);
   registry.register("table-panel", "1.0", TablePanelComponent);
   registry.register("tree-table-panel", "1.0", TreeTablePanelComponent);
   registry.register("card-grid-panel", "1.0", CardGridPanelComponent);
@@ -368,6 +397,8 @@ export function createAdminRegistry(): ComponentRegistry {
   registry.register("item-list", "1.0", ItemListComponent);
   registry.register("card", "1.0", CardComponent);
   registry.register("dialog", "1.0", DialogComponent);
+  registry.register("action-form", "1.0", ActionForm);
+  registry.register("file-review-form", "1.0", FileReviewForm);
   registry.register("change-list-form", "1.0", ChangeListForm);
   registry.register("metric-value", "1.0", MetricValue);
   registry.register("time-series", "1.0", TimeSeries);
@@ -384,5 +415,13 @@ export function createAdminRegistry(): ComponentRegistry {
   registry.register("content-notice", "1.0", ContentNotice);
   registry.register("content-table", "1.0", ContentTable);
   registry.register("inline-input", "1.0", InlineInput);
+  for (const [name, renderer] of Object.entries({
+    ...contentRenderers,
+    ...fieldRenderers,
+    ...overlayRenderers,
+    ...compositeRenderers,
+  })) {
+    registry.register(name, "1.0", renderer);
+  }
   return registry;
 }

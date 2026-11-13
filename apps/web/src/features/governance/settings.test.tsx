@@ -17,7 +17,9 @@ const applications = (
     readFileSync("../../docs/generated/runtime/applications.json", "utf8"),
   ) as RuntimeApplicationV2[]
 ).filter(
-  (app) => app.id === "system-settings" || app.id === "personal-preferences",
+  (app) =>
+    app.version === "1.0.1" &&
+    (app.id === "system-settings" || app.id === "personal-preferences"),
 );
 
 const priority = {
@@ -31,14 +33,41 @@ const priority = {
   revision: 1,
   target: { kind: "workspace", id: 0 },
 };
+const target = { kind: "workspace", id: 0 };
+const detail = {
+  document: { definition: priority, items: [] },
+  drafts: [],
+  history: [],
+  references: 0,
+  overrideRevision: 0,
+  overrides: [],
+};
+const workspace = {
+  target,
+  revision: 0,
+  definitions: [],
+  entries: [
+    {
+      key: "branding.name",
+      value: '"Horizon"',
+      source: "default",
+      overridden: false,
+      configured: true,
+    },
+  ],
+  drafts: [],
+  history: [],
+};
 const mocks = vi.hoisted(() => ({
   permissions: ["settings:read", "settings:update"],
   read: vi.fn(),
   savedTheme: "light",
   execute: vi.fn(),
   importPreview: vi.fn(),
-  importDraft: vi.fn(async () => ({ status: 200 })),
-  draft: vi.fn(async () => ({ status: 200, data: { id: 1 } })),
+  importDraft: vi.fn<
+    (id: number, values: unknown) => Promise<{ status: number }>
+  >(async () => ({ status: 200 })),
+  workspace: vi.fn(),
 }));
 const effective = () => ({
   revision: mocks.savedTheme,
@@ -78,70 +107,8 @@ vi.mock("@/lib/capabilities", async (original) => {
     runtimeApplication: async (id: string) =>
       applications.find((app) => app.id === id),
     runtimeRead: mocks.read,
-    dictionariesGet: async () => ({
-      status: 200,
-      data: {
-        document: { definition: priority, items: [] },
-        drafts: [],
-        history: [],
-        references: 0,
-        overrideRevision: 0,
-      },
-    }),
-    dictionariesOptions: async () => ({ status: 200, data: [] }),
-    dictionariesImport: mocks.importPreview,
-    dictionariesImportDraft: mocks.importDraft,
-    settingsDraft: mocks.draft,
     runtimeExecute: mocks.execute,
     settingsEffective: async () => ({ status: 200, data: effective() }),
-    settingsSchedules: vi.fn(async () => ({ status: 200, data: [] })),
-    settingsWorkspace: vi.fn(async () => ({
-      status: 200,
-      data: {
-        target: { kind: "workspace", id: 0 },
-        revision: 0,
-        definitions: [
-          {
-            key: "branding.name",
-            group: "branding",
-            kind: "string",
-            choices: [],
-            defaultValue: '"Horizon"',
-            secret: false,
-            sensitive: false,
-            scopes: ["workspace"],
-          },
-          {
-            key: "display.pageSize",
-            group: "display",
-            kind: "integer",
-            choices: [],
-            defaultValue: "8",
-            secret: false,
-            sensitive: false,
-            scopes: ["workspace"],
-          },
-        ],
-        entries: [
-          {
-            key: "branding.name",
-            value: '"Horizon"',
-            source: "default",
-            overridden: false,
-            configured: true,
-          },
-          {
-            key: "display.pageSize",
-            value: "8",
-            source: "default",
-            overridden: false,
-            configured: true,
-          },
-        ],
-        drafts: [],
-        history: [],
-      },
-    })),
   };
 });
 beforeEach(async () => {
@@ -149,14 +116,33 @@ beforeEach(async () => {
   vi.clearAllMocks();
   mocks.permissions = ["settings:read", "settings:update"];
   mocks.savedTheme = "light";
-  mocks.execute.mockImplementation(async (_name, _version, input) => {
-    mocks.savedTheme = input.changes[0]?.operation === "set" ? "dark" : "light";
+  mocks.workspace.mockResolvedValue(workspace);
+  mocks.execute.mockImplementation(async (name, _version, input) => {
+    if (name === "settings.preferences.update")
+      mocks.savedTheme =
+        input.changes[0]?.operation === "set" ? "dark" : "light";
+    if (name === "dictionary.import.preview") {
+      const result = await mocks.importPreview(input.id, {
+        format: input.format,
+        content: input.content,
+      });
+      return { status: "succeeded", data: result.data };
+    }
+    if (name === "dictionary.import.draft") {
+      const { id, ...values } = input;
+      await mocks.importDraft(id, values);
+    }
+    if (name === "settings.password.verify")
+      return { status: "succeeded", data: { proof: "private-proof" } };
     return { status: "succeeded" };
   });
   localStorage.clear();
   mocks.read.mockImplementation(async (name: string) => {
     if (name === "application.runtime.list") return { items: applications };
     if (name === "settings.effective.read") return effective();
+    if (name === "settings.workspace.read") return mocks.workspace();
+    if (name === "settings.schedule.list") return [];
+    if (name === "dictionary.detail.read") return detail;
     if (name === "dictionary.list.read")
       return {
         target: { kind: "workspace", id: 0 },
@@ -210,6 +196,7 @@ it("submits a settings draft from the Runtime route", async () => {
     screen.queryByRole("combobox", { name: "Configuration scope" }),
   ).not.toBeInTheDocument();
   const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Branding" }));
   await user.selectOptions(
     await screen.findByRole("combobox", { name: "Product name · Operation" }),
     "set",
@@ -225,14 +212,18 @@ it("submits a settings draft from the Runtime route", async () => {
   );
   await user.click(screen.getByRole("button", { name: "Save draft" }));
   await waitFor(() =>
-    expect(mocks.draft).toHaveBeenCalledWith({
-      target: { kind: "workspace", id: 0 },
-      baseRevision: 0,
-      reason: "Update organization branding",
-      changes: [
-        { key: "branding.name", operation: "set", value: '"Updated brand"' },
-      ],
-    }),
+    expect(mocks.execute.mock.calls[0]?.slice(0, 3)).toEqual([
+      "settings.draft.create",
+      "1.0.0",
+      {
+        target: { kind: "workspace", id: 0 },
+        baseRevision: 0,
+        reason: "Update organization branding",
+        changes: [
+          { key: "branding.name", operation: "set", value: '"Updated brand"' },
+        ],
+      },
+    ]),
   );
   expect(screen.getByRole("status")).toHaveTextContent("Changes saved");
 });
@@ -267,6 +258,9 @@ it("shows an access denial when neither settings tab is authorized", async () =>
 it("renders workspace settings in preview with write controls disabled", async () => {
   mocks.permissions.push("settings:publish", "settings:export");
   show("/settings", true);
+  await userEvent
+    .setup()
+    .click(await screen.findByRole("button", { name: "Branding" }));
   expect(
     await screen.findByRole("combobox", { name: "Product name · Operation" }),
   ).toBeDisabled();
@@ -276,7 +270,7 @@ it("renders workspace settings in preview with write controls disabled", async (
   expect(
     screen.queryByRole("button", { name: "Export" }),
   ).not.toBeInTheDocument();
-  expect(mocks.draft).not.toHaveBeenCalled();
+  expect(mocks.execute).not.toHaveBeenCalled();
 });
 
 it("saves personal preferences and reapplies the theme without management permissions", async () => {
@@ -369,4 +363,50 @@ it("previews a dictionary import and submits a draft from the Runtime table", as
       baseRevision: 1,
     }),
   );
+});
+
+it("submits a sensitive release with a proof that stays inside the current action", async () => {
+  mocks.permissions.push("settings:publish");
+  mocks.workspace.mockResolvedValue({
+    ...workspace,
+    drafts: [
+      {
+        id: 27,
+        reason: "Change password policy",
+        baseRevision: 0,
+        sensitive: true,
+        createdAt: "2026-10-29T00:00:00Z",
+        changes: [],
+      },
+    ],
+  });
+  show();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Publish" }));
+  const dialog = within(await screen.findByRole("dialog", { name: "Publish" }));
+  await user.type(dialog.getByLabelText("Current password"), "correct-horse");
+  await user.click(dialog.getByRole("button", { name: "Publish" }));
+  await waitFor(() =>
+    expect(mocks.execute.mock.calls.map((call) => call.slice(0, 3))).toEqual([
+      [
+        "settings.password.verify",
+        "1.0.0",
+        {
+          password: "correct-horse",
+          operation: "settings.publish",
+          resourceId: 27,
+          revision: 0,
+        },
+      ],
+      [
+        "settings.draft.publish",
+        "1.0.0",
+        { id: 27, baseRevision: 0, proof: "private-proof" },
+      ],
+    ]),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  expect(screen.queryByText("private-proof")).not.toBeInTheDocument();
 });

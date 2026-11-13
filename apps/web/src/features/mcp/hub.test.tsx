@@ -15,7 +15,7 @@ const applications = JSON.parse(
   readFileSync("../../docs/generated/runtime/applications.json", "utf8"),
 ) as RuntimeApplicationV2[];
 const collaboration = applications.find(
-  (app) => app.id === "agent-collaboration",
+  (app) => app.id === "agent-collaboration" && app.version === "1.0.2",
 )!;
 
 const fixture = vi.hoisted(() => ({
@@ -25,9 +25,6 @@ const fixture = vi.hoisted(() => ({
   bind: vi.fn(async () => {}),
   install: vi.fn(async () => {}),
   failed: false,
-}));
-vi.mock("@/features/mcp/remote", () => ({
-  RemoteMcpSection: () => <p>Remote MCP panel</p>,
 }));
 vi.mock("@/features/administration/auth", () => ({
   useSession: () => ({ tenantId: "test", account: { id: 1 }, permissions: [] }),
@@ -226,7 +223,9 @@ it("switches between remote MCP, WebMCP and WebSkills tabs and follows the URL",
   const user = userEvent.setup();
   const tabs = screen.getByRole("tablist", { name: "MCP access modes" });
   expect(within(tabs).getAllByRole("tab")).toHaveLength(3);
-  expect(await screen.findByText("Remote MCP panel")).toBeVisible();
+  expect(
+    await screen.findByRole("button", { name: "Add token" }),
+  ).toBeVisible();
   expect(
     screen.getByRole("heading", { name: "Agent collaboration" }),
   ).toBeVisible();
@@ -245,7 +244,9 @@ it("switches between remote MCP, WebMCP and WebSkills tabs and follows the URL",
     await screen.findByRole("heading", { name: "Page skills" }),
   ).toBeVisible();
   expect(screen.getByText("webskills/baseline-web-navigate")).toBeVisible();
-  expect(screen.queryByText("Remote MCP panel")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Add token" }),
+  ).not.toBeInTheDocument();
 });
 
 it("opens the WebSkills tab directly from a deep link and ignores unknown tabs", async () => {
@@ -257,7 +258,9 @@ it("opens the WebSkills tab directly from a deep link and ignores unknown tabs",
 
 it("falls back to the remote MCP tab for unknown tab values", async () => {
   await show("/mcp?tab=unknown");
-  expect(await screen.findByText("Remote MCP panel")).toBeVisible();
+  expect(
+    await screen.findByRole("button", { name: "Add token" }),
+  ).toBeVisible();
 });
 
 it("uses the remembered tab when no deep link is supplied", async () => {
@@ -266,7 +269,9 @@ it("uses the remembered tab when no deep link is supplied", async () => {
   expect(
     await screen.findByRole("heading", { name: "Page skills" }),
   ).toBeVisible();
-  expect(screen.queryByText("Remote MCP panel")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Add token" }),
+  ).not.toBeInTheDocument();
 });
 
 it("does not start a local pairing request or show install controls in preview", async () => {

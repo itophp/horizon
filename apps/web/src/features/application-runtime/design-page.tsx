@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { TaskPanel } from "./task-panel";
 import { DesignVersion } from "./design-version";
+import { DesignContracts } from "./design-contracts";
 const schema = z.object({ request: z.string().min(1).max(4000) });
 export function ApplicationDesignPage() {
   const { t, i18n } = useTranslation("runtime");
@@ -130,6 +131,9 @@ export function ApplicationDesignPage() {
             />
           )}
         </>
+      )}
+      {session.permissions.includes("applications:design") && (
+        <DesignContracts identity={identity} />
       )}
       {runId && <TaskPanel key={runId} runId={runId} />}
     </>
