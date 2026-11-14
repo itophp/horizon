@@ -154,5 +154,11 @@
   "permission": {
     "write": "Edit projects",
     "admin": "Manage projects"
+  },
+  "import": {
+    "atomic": "If any project fails to import, the entire batch is rolled back.",
+    "conflict": "The batch could not be imported. Check for project codes that already exist.",
+    "title": "Batch import projects",
+    "description": "Import an Excel workbook, review the draft and create all projects in one batch."
   }
 }

@@ -48,6 +48,7 @@ func (m *Module) publishedCatalogWith(ctx context.Context, q *dbgen.Queries, ten
 		if app.Protocol == nil {
 			continue
 		}
+		m.supplyPublishedImportTemplates(&app)
 		app.ApplicationVersion = row.Version
 		app.DefinitionDigest = row.Digest
 		app.DefinitionRevision = row.Revision
@@ -56,6 +57,57 @@ func (m *Module) publishedCatalogWith(ctx context.Context, q *dbgen.Queries, ten
 	}
 	return apps, nil
 }
+
+// Published snapshots can predate the templatePath requirement. Use the
+// matching deployment's template for the same component without rewriting the snapshot.
+func (m *Module) supplyPublishedImportTemplates(app *ar.ApplicationV2) {
+	if app.Protocol == nil {
+		return
+	}
+	for _, source := range m.contributions() {
+		if source.Protocol == nil || source.ID != app.ID || source.Source != app.Source ||
+			source.PluginVersion != app.PluginVersion || source.Version != app.Version {
+			continue
+		}
+		for _, page := range app.Protocol.Pages {
+			for _, baseline := range source.Protocol.Pages {
+				if baseline.ID == page.ID {
+					supplyImportTemplates(page.Root.Layout, baseline.Root)
+					break
+				}
+			}
+		}
+		return
+	}
+}
+
+func supplyImportTemplates(layout *ar.LayoutSpec, baseline ar.Node) {
+	if layout == nil {
+		return
+	}
+	for _, child := range layout.Children {
+		supplyImportTemplates(child.Layout, baseline)
+		component := child.Component
+		if component == nil {
+			continue
+		}
+		supplyImportTemplates(component.Content, baseline)
+		if component.Kind != "batch-import" || component.Props["templatePath"] != nil {
+			continue
+		}
+		configured, _ := ar.FindAIComponent(baseline, component.ID)
+		if configured == nil || configured.Kind != component.Kind || configured.Version != component.Version {
+			continue
+		}
+		if templatePath, ok := configured.Props["templatePath"].(string); ok && templatePath != "" {
+			if component.Props == nil {
+				component.Props = map[string]any{}
+			}
+			component.Props["templatePath"] = templatePath
+		}
+	}
+}
+
 func (m *Module) reconcileEntry() registry.Entry {
 	d := contracts.Definition{Name: "application.runtime.catalog.reconcile", Version: "1.0.0", Title: "Reconcile runtime deployment", Description: "Register trusted compiled definitions without overwriting published tenant customizations.", Domain: "runtime", Entity: "runtime_application_head", Entities: []string{"runtime_application_head", "runtime_application_version", "runtime_deployment_snapshot", "runtime_application_change"}, Layer: contracts.LayerAtomic, Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, Input: contracts.Object(nil), Output: contracts.Object(map[string]*contracts.Schema{"initialized": contracts.Int(0, 1<<31)}, "initialized"), Tags: []string{"system-only"}, Idempotency: contracts.Idempotency{Required: true, Scope: "tenant+operation+key"}, SuccessEvents: []string{"application.runtime.catalog.reconciled"}, Executor: "go:application.runtime.catalog.reconcile", AllowedOrigins: []contracts.Origin{contracts.OriginEvent}}
 	return registry.Entry{Definition: d, Handler: contracts.Handler{ExecuteTx: func(ctx context.Context, tx pgx.Tx, in contracts.Input) (contracts.Output, error) {
@@ -117,6 +169,7 @@ func (m *Module) reconcileEntry() registry.Entry {
 					if e != nil {
 						return contracts.Output{}, e
 					}
+					m.supplyPublishedImportTemplates(&current)
 					compatibility := "compatible"
 					candidates := []ar.ApplicationV2{current}
 					for _, other := range m.Applications {
@@ -176,7 +229,7 @@ func (m *Module) Reconcile(ctx context.Context, g *gateway.Gateway) error {
 	}
 	// reconcileBehaviorVersion busts the idempotency key only when reconciler
 	// behavior changes; catalog/contract content changes already rotate it.
-	const reconcileBehaviorVersion = "4-protocol-v3"
+	const reconcileBehaviorVersion = "5-import-template-compatibility"
 	deployment := contracts.Digest(contracts.Input{"catalog": m.contributions(), "contracts": m.Definitions, "reconciler": reconcileBehaviorVersion})
 	for _, tenant := range tenants {
 		// A migration can add installation rows after this deployment was

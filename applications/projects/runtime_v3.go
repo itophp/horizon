@@ -2,9 +2,9 @@ package projects
 
 import ar "horizon/foundation/kernel/applicationruntime"
 
-func projectRuntimeForm() ar.FormV2 {
+func projectRuntimeForm(codeLimit int) ar.FormV2 {
 	createFields := []ar.FieldV2{
-		{Name: "code", LabelKey: "projects:code", Type: "string", Component: "string", ComponentVersion: "2.0", Required: true, MinLength: 1, MaxLength: 40},
+		{Name: "code", LabelKey: "projects:code", Type: "string", Component: "string", ComponentVersion: "2.0", Required: true, MinLength: 1, MaxLength: codeLimit},
 		{Name: "name", LabelKey: "projects:name", Type: "string", Component: "string", ComponentVersion: "2.0", Required: true, MinLength: 1, MaxLength: 120},
 		{Name: "priority", LabelKey: "projects:priority", Type: "enum", Component: "enum", ComponentVersion: "2.0", Required: true, Enum: priorities, ValueLabelPrefix: "projects:priorities.", Default: ar.Literal(`"normal"`)},
 		{Name: "dueDate", LabelKey: "projects:dueDate", Type: "date", Component: "date", ComponentVersion: "2.0", Default: ar.Literal(`""`)},
@@ -104,12 +104,13 @@ func protocolMergePanel(metadata, panel map[string]any) map[string]any {
 }
 
 func RuntimeApplication() ar.ApplicationV2 {
-	return runtimeApplication("2.0.2")
+	return runtimeApplication("2.0.3")
 }
 
 func runtimeApplication(version string) ar.ApplicationV2 {
 	ai := version != "2.0.0"
-	updatedDetail := version == "2.0.2"
+	withImport := version == "2.0.3"
+	updatedDetail := version == "2.0.2" || withImport
 	projectList := ar.Provider{
 		ID: "projects", Capability: ar.Ref("project.list"), KeyField: "id",
 		Pagination: "server", PageSize: 20, Tags: []string{"projects"},
@@ -137,7 +138,11 @@ func runtimeApplication(version string) ar.ApplicationV2 {
 		Input: []ar.Mapping{ar.Bind("projectId", "route.id"), ar.Bind("keyword", "event.keyword")},
 	}
 	plans := ar.Provider{ID: "plans", Capability: ar.Ref("project.plan.list"), KeyField: "id", LabelField: "title", ResultPath: "items", Tags: []string{"plans", "projects"}, Input: []ar.Mapping{ar.Bind("projectId", "route.id")}}
-	projectForm := projectRuntimeForm()
+	codeLimit := 40
+	if withImport {
+		codeLimit = *createDefinition().Input.Properties["code"].MaxLength
+	}
+	projectForm := projectRuntimeForm(codeLimit)
 	planForm := planRuntimeForm(members.ID)
 	taskForm, assignForm := taskRuntimeForms(plans.ID, members.ID)
 	aiEvent := func(event, capability string) ar.EventBinding {
@@ -476,12 +481,16 @@ func runtimeApplication(version string) ar.ApplicationV2 {
 			}
 		}
 	}
+	listActions := []map[string]any{{"labelKey": "projects:create", "icon": "plus", "permission": WritePermission, "dialog": "create"}}
+	if withImport {
+		listActions = append(listActions, map[string]any{"labelKey": "projects:import.title", "permission": AdminPermission, "href": "/projects/import"})
+	}
 	protocol := &ar.ApplicationV3{
 		SchemaVersion: "3.0", ID: "projects", Version: version, Source: "com.horizon.projects",
 		RuntimeCompatibility: "3.0", LabelKey: "projects:heading", Permission: ReadPermission, Route: "/projects",
 		Pages: []ar.PageV3{
 			page("project.list", "/projects", "projects:heading", "projects:description", ReadPermission, listData, []ar.Node{
-				heading("project-list", "projects:heading", "projects:description", []map[string]any{{"labelKey": "projects:create", "icon": "plus", "permission": WritePermission, "dialog": "create"}}),
+				heading("project-list", "projects:heading", "projects:description", listActions),
 				panel("project-list", "$projects", projectListPanel, listEvents),
 			}),
 			page("project.detail", "/projects/:id", "projects:title", "projects:description", ReadPermission, detailData, detailNodes),
@@ -493,6 +502,14 @@ func runtimeApplication(version string) ar.ApplicationV2 {
 		},
 		Providers:  []ar.Provider{projectList, project, tasks, task, members, memberSearch, plans},
 		Navigation: []ar.Navigation{{PageID: "project.list", LabelKey: "projects:heading", Icon: "grid"}},
+	}
+	if withImport {
+		importPage := page("project.import", "/projects/import", "projects:import.title", "projects:import.description", AdminPermission, nil, []ar.Node{
+			heading("project-import", "projects:import.title", "projects:import.description", nil),
+			projectImportNode(projectForm.Create.Fields),
+		})
+		importPage.Permission = AdminPermission
+		protocol.Pages = append(protocol.Pages, importPage)
 	}
 	return ar.ApplicationV2{
 		Protocol: protocol, SchemaVersion: "3.0", ID: protocol.ID, Version: protocol.Version,

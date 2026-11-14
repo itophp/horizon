@@ -139,6 +139,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	agentService := harness.New(core, catalog, dispatcher, runs, auditStore, documents)
 	agentService.Profile = runtimeModule.AgentProfile
 	runtimeModule.GenerateAI = agentService.GenerateRuntimeAI
+	plugins.AttachModel(agentService.GenerateRuntimeAI)
 	orchestrator.AgentModel = agentService.WorkflowModel
 	engine := triggers.NewEngine(triggers.NewStore(core.Pool), hub, agentService, core.Identity)
 	relay := outbox.NewRelay(core.Pool, hub)

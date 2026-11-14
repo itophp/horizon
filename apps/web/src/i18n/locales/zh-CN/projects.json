@@ -154,5 +154,11 @@
   "permission": {
     "write": "编辑项目",
     "admin": "管理项目"
+  },
+  "import": {
+    "atomic": "任一项目创建失败时，整批回滚。",
+    "conflict": "整批导入失败。请检查项目编号是否已存在。",
+    "title": "批量导入项目",
+    "description": "解析 Excel 工作簿并校对草稿，确认后一次创建整批项目。"
   }
 }

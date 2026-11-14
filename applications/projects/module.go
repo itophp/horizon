@@ -48,8 +48,9 @@ const (
 
 // Module is the project collaboration module.
 type Module struct {
-	Pool   *pgxpool.Pool
-	Invoke func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)
+	Pool       *pgxpool.Pool
+	GenerateAI func(context.Context, string, string) (string, error)
+	Invoke     func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)
 }
 
 // New builds the module.
@@ -57,7 +58,7 @@ func New(pool *pgxpool.Pool) *Module { return &Module{Pool: pool} }
 
 // Entries is the capability catalog contributed by the module.
 func (m *Module) Entries() []registry.Entry {
-	entries := []registry.Entry{m.batchEntry()}
+	entries := append([]registry.Entry{m.batchEntry()}, m.importEntries()...)
 	for _, definition := range definitions() {
 		name := definition.Name
 		d := definition

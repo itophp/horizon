@@ -427,6 +427,14 @@ export function ProtocolPage({
               setAwaitingApproval(true);
               return false;
             }
+            if (
+              options?.ephemeral &&
+              options.onResult &&
+              result.status === "succeeded"
+            ) {
+              options.onResult(result.data);
+              continue;
+            }
             if (aiAction && result.status === "succeeded") {
               options?.onAIResult?.(result.data);
               continue;

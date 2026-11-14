@@ -6,6 +6,7 @@ export const PresentationContext = createContext<Record<string, unknown>>({});
 export type ProtocolEventPayload = unknown;
 export type ProtocolEventOptions = {
   ephemeral?: boolean;
+  onResult?: (data: unknown) => void;
   onAIResult?: (data: unknown) => void;
   onOutcome?: (status: "succeeded" | "failed") => void;
   onError?: (code: string) => void;

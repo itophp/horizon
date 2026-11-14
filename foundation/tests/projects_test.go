@@ -4,8 +4,13 @@ package tests
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +24,7 @@ import (
 	"horizon/foundation/kernel/capability/registry"
 	"horizon/foundation/kernel/eventhub"
 	"horizon/foundation/runtime/app"
+	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -475,5 +481,177 @@ func TestProjectAssignmentIsTriggerable(t *testing.T) {
 	}
 	if policyEvent != eventType || agent != "task_briefer" || mode != "async" || maxDepth < 1 {
 		t.Fatalf("policy does not match the fact: %s %s %s %d", policyEvent, agent, mode, maxDepth)
+	}
+}
+
+func TestProjectImportIsAtomicAndIdempotent(t *testing.T) {
+	h := newProjectHarness(t)
+	admin := h.account(t, "import-admin", projects.ReadPermission, projects.AdminPermission)
+	member := h.account(t, "import-member", projects.ReadPermission, projects.WritePermission)
+	h.ok(t, admin, "project.create", map[string]any{"code": "TAKEN", "name": "Existing"})
+	batch := func(second string) map[string]any {
+		return map[string]any{"rows": []any{
+			map[string]any{"rowId": 1, "values": map[string]any{"code": "NEW-1", "name": "First"}},
+			map[string]any{"rowId": 2, "values": map[string]any{"code": second, "name": "Second"}},
+		}}
+	}
+	count := func(query string, want int) {
+		t.Helper()
+		var got int
+		if err := h.pool.QueryRow(admin.ctx, query).Scan(&got); err != nil || got != want {
+			t.Fatalf("%s: got %d, want %d, err=%v", query, got, want, err)
+		}
+	}
+	if _, err := h.call(t, member, "project.import.commit", batch("NEW-2")); contracts.Code(err) != "forbidden" {
+		t.Fatalf("non-admin commit: %v", err)
+	}
+	if _, err := h.callWith(t, admin, "project.import.commit", batch("NEW-2"), "agent-import", contracts.OriginAgent); contracts.Code(err) != "forbidden" {
+		t.Fatalf("Agent commit: %v", err)
+	}
+	if _, err := h.call(t, admin, "project.import.commit", batch("TAKEN")); contracts.Code(err) != "conflict" {
+		t.Fatalf("existing code: %v", err)
+	}
+	projectsQuery := "SELECT count(*) FROM projects WHERE tenant_id='tenant-a' AND code LIKE 'NEW-%'"
+	eventsQuery := "SELECT count(*) FROM cap_outbox WHERE tenant_id='tenant-a' AND event_type='project.created'"
+	count(projectsQuery, 0)
+	count(eventsQuery, 1)
+
+	input := batch("NEW-2")
+	var wg sync.WaitGroup
+	results := make([]*contracts.Result, 2)
+	errs := make([]error, len(results))
+	for i := range results {
+		wg.Go(func() {
+			results[i], errs[i] = h.callWith(t, admin, "project.import.commit", input, "same-import", contracts.OriginHumanUI)
+		})
+	}
+	wg.Wait()
+	for i := range results {
+		succeeded(t, results[i], errs[i])
+		if results[i].InvocationID != results[0].InvocationID || len(results[i].EventIDs) != 2 {
+			t.Fatalf("unexpected replay: %+v", results[i])
+		}
+	}
+	replay, err := h.callWith(t, admin, "project.import.commit", input, "same-import", contracts.OriginHumanUI)
+	succeeded(t, replay, err)
+	if !replay.Replayed {
+		t.Fatal("completed import did not replay")
+	}
+	count(projectsQuery, 2)
+	count(eventsQuery, 3)
+	count("SELECT count(*) FROM project_members m JOIN projects p ON p.id=m.project_id AND p.tenant_id=m.tenant_id WHERE p.tenant_id='tenant-a' AND p.code LIKE 'NEW-%' AND m.account_id=p.owner_id", 2)
+}
+
+func TestProjectImportRuntimeParsesSelectedWorkbookAndCommitsDraft(t *testing.T) {
+	handler, pool, _ := iamFixture(t)
+	client := loginIAM(t, handler, "root-admin")
+	const plugin = "com.horizon.projects"
+	invoke := func(name string, input map[string]any) map[string]any {
+		t.Helper()
+		result := invokeCapability(t, client, name, map[string]any{
+			"input": input, "idempotencyKey": name + "-import-runtime",
+		})
+		if result.Status != "succeeded" {
+			t.Fatal(result)
+		}
+		return result.Data.(map[string]any)
+	}
+	current := invoke("application.runtime.installation.get", map[string]any{"pluginId": plugin})["installation"].(map[string]any)
+	if current["version"] != "2.0.3" {
+		invoke("application.runtime.installation.upgrade", map[string]any{
+			"pluginId": plugin, "version": "2.0.3", "revision": current["revision"],
+		})
+	}
+	resolved := invoke("application.runtime.resolve", map[string]any{"applicationId": "projects"})
+	ref := map[string]any{
+		"applicationId": "projects", "pageId": "project.import",
+		"applicationVersion": resolved["applicationVersion"], "definitionDigest": resolved["definitionDigest"],
+		"metadataVersion": resolved["metadataVersion"], "catalogRevision": resolved["catalogRevision"],
+		"installationRevision": resolved["installationRevision"],
+	}
+	protocol := resolved["protocol"].(map[string]any)
+	raw, err := json.Marshal(protocol)
+	if err != nil || !strings.Contains(string(raw), "document.excel.parse@1.0.0") || !strings.Contains(string(raw), "project.import.commit@1.0.0") {
+		t.Fatalf("import actions missing from projected application: %v", err)
+	}
+	content, err := os.ReadFile("../../apps/web/public/templates/projects-import.xlsx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed := invokeCapability(t, client, "document.excel.parse", map[string]any{
+		"input": map[string]any{"content": base64.StdEncoding.EncodeToString(content), "sheet": "Projects"}, "runtime": ref,
+	})
+	if parsed.Status != "succeeded" || len(parsed.Data.(map[string]any)["rows"].([]any)) != 4 {
+		t.Fatal(parsed)
+	}
+	var storedInput, storedResult string
+	if err := pool.QueryRow(context.Background(), "SELECT input::text, result::text FROM cap_invocations WHERE invocation_id=$1", parsed.InvocationID).Scan(&storedInput, &storedResult); err != nil {
+		t.Fatal(err)
+	}
+	if storedInput != "{}" || strings.Contains(storedResult, "000101") {
+		t.Fatal("workbook content persisted in the invocation")
+	}
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		var input struct {
+			Messages []struct {
+				Content string `json:"content"`
+			} `json:"messages"`
+		}
+		if err := json.NewDecoder(request.Body).Decode(&input); err != nil || len(input.Messages) != 2 ||
+			!strings.Contains(input.Messages[1].Content, "WEEK-201") || strings.Contains(input.Messages[1].Content, "000101") {
+			t.Error("model did not receive the expected selected worksheet text")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		draft := `{"rows":[{"sourceRow":2,"values":{"code":"WEEK-201","name":"备件货位优化","priority":"high","dueDate":"2027-03-05"}},{"sourceRow":3,"values":{"code":"WEEK-202","name":"工装借用流程梳理","priority":"normal"}},{"sourceRow":4,"values":{"code":"WEEK-203","name":"来料检验记录归档","priority":"urgent","dueDate":"2027-04-12"}}]}`
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"id":"test","model":"test","choices":[{"index":0,"message":{"role":"assistant","content":%q},"finish_reason":"stop"}]}`, draft)
+	}))
+	defer upstream.Close()
+	core := governance.New(pool, nil, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
+	secret, err := core.Seal("tenant-a", "workspace:0", "assistant.token", `"test-only-token"`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, "INSERT INTO gov_scopes(tenant_id,scope_key,kind,entity_id) VALUES('tenant-a','workspace:0','workspace',0) ON CONFLICT DO NOTHING"); err != nil {
+		t.Fatal(err)
+	}
+	for key, value := range map[string]any{"assistant.enabled": true, "agent.enabled": true, "agent.baseUrl": upstream.URL + "/v1", "assistant.model": "test", "assistant.token": secret} {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := pool.Exec(ctx, "INSERT INTO gov_values(tenant_id,scope_key,config_key,value_json) VALUES('tenant-a','workspace:0',$1,$2) ON CONFLICT(tenant_id,scope_key,config_key) DO UPDATE SET value_json=EXCLUDED.value_json", key, string(encoded)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	aiFile, err := os.ReadFile("../ai/workbook/testdata/projects-ai-import.xlsx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	extracted := invokeCapability(t, client, "project.import.extract", map[string]any{
+		"input": map[string]any{"content": base64.StdEncoding.EncodeToString(aiFile), "sheet": "项目周报"}, "runtime": ref,
+	})
+	if extracted.Status != "succeeded" || len(extracted.Data.(map[string]any)["rows"].([]any)) != 3 {
+		t.Fatal(extracted)
+	}
+	if err := pool.QueryRow(ctx, "SELECT input::text, result::text FROM cap_invocations WHERE invocation_id=$1", extracted.InvocationID).Scan(&storedInput, &storedResult); err != nil {
+		t.Fatal(err)
+	}
+	if storedInput != "{}" || strings.Contains(storedResult, "WEEK-201") {
+		t.Fatal("extracted values persisted in the invocation")
+	}
+	result := invokeCapability(t, client, "project.import.commit", map[string]any{
+		"input": map[string]any{"rows": []any{
+			map[string]any{"rowId": 1, "values": map[string]any{"code": "000101", "name": "Reviewed project", "priority": "high", "dueDate": "2027-01-15"}},
+		}}, "runtime": ref, "idempotencyKey": "reviewed-project-draft",
+	})
+	if result.Status != "succeeded" || len(result.EventIds) != 1 {
+		t.Fatal(result)
+	}
+	var saved string
+	if err := pool.QueryRow(context.Background(), "SELECT name FROM projects WHERE tenant_id='tenant-a' AND code='000101'").Scan(&saved); err != nil || saved != "Reviewed project" {
+		t.Fatalf("reviewed value: %q, %v", saved, err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"horizon/applications/drive"
 	"horizon/applications/example"
 	"horizon/applications/projects"
+	"horizon/foundation/ai/harness"
 	"horizon/foundation/ai/knowledge"
 	"horizon/foundation/integrations/mcp"
 	ar "horizon/foundation/kernel/applicationruntime"
@@ -104,6 +105,7 @@ func (m CapabilityModules) Entries() []registry.Entry {
 		m.Runtime = &armodule.Module{}
 	}
 	entries = append(entries, m.Runtime.AIEntries()...)
+	entries = append(entries, harness.ExcelParseEntry())
 	definitions := []contracts.Definition{}
 	for _, entry := range entries {
 		definitions = append(definitions, entry.Definition)

@@ -334,6 +334,17 @@ func (m *Manager) AttachCapabilities(invoke func(context.Context, string, string
 	}
 }
 
+// AttachModel supplies the tool-free model interface to plugins that extract structured data.
+func (m *Manager) AttachModel(generate func(context.Context, string, string) (string, error)) {
+	for _, p := range m.plugins {
+		if consumer, ok := p.(interface {
+			AttachModel(func(context.Context, string, string) (string, error))
+		}); ok {
+			consumer.AttachModel(generate)
+		}
+	}
+}
+
 func (r *Registrar) Applications(apps ...ar.ApplicationV2) {
 	for _, app := range apps {
 		if app.PluginVersion == "" {

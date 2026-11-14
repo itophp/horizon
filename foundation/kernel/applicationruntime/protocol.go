@@ -461,6 +461,8 @@ func ValidateProtocol(app ApplicationV3) error {
 	return nil
 }
 
+var batchImportTemplatePath = regexp.MustCompile(batchImportTemplatePathPattern)
+
 var layoutClassPattern = regexp.MustCompile(`^[A-Za-z0-9 _-]{0,160}$`)
 
 func validateStyleString(name, value string) error {
@@ -839,6 +841,17 @@ func validateComponent(comp *ComponentSpec, dataScope map[string]bool) error {
 	contract, registered := trustedUIContracts[comp.Kind+"@"+comp.Version]
 	if !registered {
 		return fmt.Errorf("component_not_registered: %s@%s", comp.Kind, comp.Version)
+	}
+	if comp.Kind == "batch-import" {
+		templatePath, _ := comp.Props["templatePath"].(string)
+		if !batchImportTemplatePath.MatchString(templatePath) {
+			return fmt.Errorf("schema_invalid: component %s requires a valid templatePath", comp.ID)
+		}
+		for _, binding := range comp.Bindings {
+			if binding.Target == "templatePath" {
+				return fmt.Errorf("schema_invalid: component %s templatePath must be static", comp.ID)
+			}
+		}
 	}
 	if class, ok := comp.Props["className"].(string); ok &&
 		(!layoutClassPattern.MatchString(class) || len(class) > 160) {

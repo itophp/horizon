@@ -292,7 +292,7 @@ it("adds a project member through the generic schema-declared search picker", as
   const user = userEvent.setup();
   mount("/projects/3");
   expect(await screen.findByText("Operations")).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: /Members/i }));
+  await user.click(screen.getByRole("tab", { name: /Members/i }));
   expect(await screen.findByText("Alice Chen")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: /^Add/i }));
   expect(await screen.findByRole("dialog")).toBeInTheDocument();

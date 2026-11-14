@@ -46,6 +46,7 @@ func projectEntity() contracts.Entity {
 		},
 		Transitions: []contracts.Transition{
 			{To: "active", Capability: "project.create"},
+			{To: "active", Capability: "project.import.commit"},
 			{From: []string{"active"}, To: "paused", Capability: "project.status.change"},
 			{From: []string{"paused"}, To: "active", Capability: "project.status.change"},
 			{From: []string{"active"}, To: "completed", Capability: "project.status.change"},

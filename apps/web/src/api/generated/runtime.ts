@@ -126,6 +126,14 @@ export const runtimeDeploymentCandidates = [
     applications: ["projects"],
     dependencies: [],
   },
+  {
+    dependencyVersions: [],
+    pluginId: "com.horizon.projects",
+    version: "2.0.3",
+    digest: "8c826fb84e1ac54edb1f24a7f2fd6483e33402d3582ffffdc518891568e4da1e",
+    applications: ["projects"],
+    dependencies: [],
+  },
 ] as const;
 export const runtimeUIContracts = [
   {
@@ -556,6 +564,22 @@ export const runtimeUIContracts = [
       "Preserve presentation; Gateway rechecks every provider and action.",
     example:
       '{"type":"component","component":{"id":"refresh","kind":"button","version":"1.0","props":{"labelKey":"runtime:refresh","variant":"outline"}}}',
+  },
+  {
+    name: "batch-import",
+    version: "1.0",
+    category: "element",
+    description:
+      "Download an Excel template and review and submit workbook drafts. The application supplies field definitions, optional header-to-field mappings and capability event bindings.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"commitHintKey":{"type":"string"},"conflictKey":{"type":"string"},"fields":{"items":{"additionalProperties":true,"type":"object"},"type":"array"},"headers":{"additionalProperties":{"type":"string"},"type":"object"},"maxFileBytes":{"minimum":1,"type":"integer"},"maxRows":{"minimum":1,"type":"integer"},"templatePath":{"pattern":"^/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+[.]xlsx$","type":"string"},"uniqueField":{"type":"string"}},"required":["fields","templatePath"],"type":"object"}',
+    slots: [],
+    events: ["parse", "extract", "submit", "cancel", "success"],
+    binding: "",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"component","component":{"id":"import","kind":"batch-import","version":"1.0","props":{"fields":[],"templatePath":"/templates/import.xlsx"}}}',
   },
   {
     name: "data-table",
@@ -1918,6 +1942,12 @@ export const runtimeProtocolRoutes = [
     pageId: "task.detail",
     route: "/projects/:projectId/tasks/:id",
     permission: "projects:read",
+  },
+  {
+    applicationId: "projects",
+    pageId: "project.import",
+    route: "/projects/import",
+    permission: "projects:admin",
   },
   {
     applicationId: "runtime-protocol",

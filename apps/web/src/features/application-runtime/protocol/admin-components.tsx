@@ -6,7 +6,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { EntityAvatar } from "@/components/shared/controls";
 import { useSession } from "@/features/administration/auth";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/features/administration/shared";
 import {
   ActionControl,
+  isInternalHref,
   CardComponent,
   useContentFields,
   ContentFields,
@@ -37,6 +38,7 @@ import { AIAnalysisPanel, AIResultComponent } from "./ai-components";
 import { ItemListComponent } from "./item-list";
 import { ChangeListForm } from "./change-list-form";
 import { ActionForm } from "./action-form";
+import { BatchImport } from "./batch-import";
 import { FileReviewForm } from "./file-review-form";
 import { DialogComponent } from "./dialog-component";
 import {
@@ -96,6 +98,7 @@ function PageHeadingComponent({
       icon?: string;
       permission?: string;
       dialog?: string;
+      href?: string;
     }[]) ?? [];
   return (
     <PageHeading
@@ -133,22 +136,32 @@ function PageHeadingComponent({
             !action.permission ||
             session.permissions.includes(action.permission),
         )
-        .map((action) => (
-          <Button
-            key={action.labelKey}
-            type="button"
-            onClick={() =>
-              setParams((old) => {
-                const next = new URLSearchParams(old);
-                if (action.dialog) next.set("dialog", action.dialog);
-                return next;
-              })
-            }
-          >
-            <HeadingIcon name={action.icon} size={15} />
-            {t(text(action.labelKey))}
-          </Button>
-        ))}
+        .map((action) =>
+          action.href && isInternalHref(action.href) ? (
+            <Button
+              key={action.labelKey}
+              variant="outline"
+              render={<Link to={action.href} />}
+            >
+              {t(text(action.labelKey))}
+            </Button>
+          ) : (
+            <Button
+              key={action.labelKey}
+              type="button"
+              onClick={() =>
+                setParams((old) => {
+                  const next = new URLSearchParams(old);
+                  if (action.dialog) next.set("dialog", action.dialog);
+                  return next;
+                })
+              }
+            >
+              <HeadingIcon name={action.icon} size={15} />
+              {t(text(action.labelKey))}
+            </Button>
+          ),
+        )}
     </PageHeading>
   );
 }
@@ -398,6 +411,7 @@ export function createAdminRegistry(): ComponentRegistry {
   registry.register("card", "1.0", CardComponent);
   registry.register("dialog", "1.0", DialogComponent);
   registry.register("action-form", "1.0", ActionForm);
+  registry.register("batch-import", "1.0", BatchImport);
   registry.register("file-review-form", "1.0", FileReviewForm);
   registry.register("change-list-form", "1.0", ChangeListForm);
   registry.register("metric-value", "1.0", MetricValue);

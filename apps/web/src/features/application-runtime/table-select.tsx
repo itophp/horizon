@@ -12,15 +12,18 @@ export function RuntimeSelect({
   value,
   options,
   onChange,
+  disabled,
 }: {
   label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <Select
       value={value}
+      disabled={disabled}
       onValueChange={(next) => {
         if (next !== null) onChange(String(next));
       }}

@@ -322,3 +322,41 @@
 .runtime-sheet [data-slot="sheet-header"] {
   padding: 0;
 }
+
+.runtime-import {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.runtime-import-toolbar,
+.runtime-import-filter,
+.runtime-import-search {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.runtime-import-table {
+  min-width: 0;
+}
+
+.runtime-import-cell {
+  min-width: 8rem;
+}
+
+.runtime-import-cell > button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: start;
+}
+
+.runtime-import-cell[data-invalid] {
+  color: var(--destructive);
+}
+
+.runtime-import-cell .field-error {
+  display: block;
+  margin-inline: 0.5rem;
+}

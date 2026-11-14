@@ -339,7 +339,7 @@ func (m *Module) validateCandidate(ctx context.Context, q *dbgen.Queries, p *ide
 		authenticatedProvider := trustedAudience && d.ReadOnly && d.Permission == "" &&
 			slices.Contains(d.Tags, contracts.AuthenticatedProviderTag)
 		authenticatedAction := trustedAudience && isAuthenticatedAction(d)
-		if !ok || (!authenticatedProvider && !authenticatedAction && !p.CanPermanent(d.Permission)) || slices.Contains(d.Tags, "internal-only") || slices.Contains(d.Tags, "system-only") {
+		if !ok || (!authenticatedProvider && !authenticatedAction && !isUploadParser(d) && !p.CanPermanent(d.Permission)) || slices.Contains(d.Tags, "internal-only") || slices.Contains(d.Tags, "system-only") {
 			return app, contracts.Problem("forbidden")
 		}
 	}

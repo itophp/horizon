@@ -23,6 +23,7 @@ export type ControlProps = {
   name: string;
   id: string;
   disabled: boolean;
+  autoFocus?: boolean;
   options?: { value: Json; label: string }[];
 };
 export type RuntimeComponent = {
@@ -42,6 +43,7 @@ function TextControl(p: ControlProps) {
   return (
     <Input
       id={p.id}
+      autoFocus={p.autoFocus}
       name={p.name}
       disabled={p.disabled}
       value={String(p.value ?? "")}
@@ -55,6 +57,7 @@ function NumberControl(p: ControlProps) {
   return (
     <Input
       id={p.id}
+      autoFocus={p.autoFocus}
       name={p.name}
       type="number"
       disabled={p.disabled}
@@ -70,6 +73,7 @@ function DateControl(p: ControlProps) {
   return (
     <Input
       id={p.id}
+      autoFocus={p.autoFocus}
       name={p.name}
       type="date"
       disabled={p.disabled}
@@ -83,6 +87,7 @@ function BooleanControl(p: ControlProps) {
   return (
     <input
       id={p.id}
+      autoFocus={p.autoFocus}
       name={p.name}
       type="checkbox"
       disabled={p.disabled}
@@ -96,6 +101,7 @@ function TextareaControl(p: ControlProps) {
   return (
     <textarea
       id={p.id}
+      autoFocus={p.autoFocus}
       name={p.name}
       className="editor-textarea"
       disabled={p.disabled}
@@ -111,6 +117,7 @@ function SelectControl(p: ControlProps) {
   return (
     <select
       id={p.id}
+      autoFocus={p.autoFocus}
       name={p.name}
       disabled={p.disabled}
       value={String(p.value ?? "")}

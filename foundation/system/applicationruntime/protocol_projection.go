@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"horizon/foundation/ai/workbook"
 	ar "horizon/foundation/kernel/applicationruntime"
 	"horizon/foundation/kernel/capability/contracts"
 	"horizon/foundation/system/identity"
@@ -63,9 +64,16 @@ func (m *Module) allowedEventTargets(principal *identity.Principal, source ar.Ap
 	})
 	allowed := map[string]bool{}
 	for key, definition := range m.Definitions {
-		allowed[key] = principal.Can(definition.Permission) || (authenticated && isAuthenticatedAction(definition))
+		allowed[key] = principal.Can(definition.Permission) || (principal.Account.ID > 0 && isUploadParser(definition)) ||
+			(authenticated && isAuthenticatedAction(definition))
 	}
 	return allowed
+}
+
+// The Excel parser accepts only bytes supplied by the caller and reads no stored data.
+func isUploadParser(definition contracts.Definition) bool {
+	return definition.Name == workbook.ParseCapability && definition.Permission == "" &&
+		definition.ReadOnly && definition.TransientResult
 }
 
 func isAuthenticatedAction(definition contracts.Definition) bool {

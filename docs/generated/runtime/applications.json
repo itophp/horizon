@@ -30357,7 +30357,7 @@
     "protocol": {
       "schemaVersion": "3.0",
       "id": "projects",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "source": "com.horizon.projects",
       "runtimeCompatibility": "3.0",
       "labelKey": "projects:heading",
@@ -30434,6 +30434,11 @@
                                 "icon": "plus",
                                 "labelKey": "projects:create",
                                 "permission": "projects:write"
+                              },
+                              {
+                                "href": "/projects/import",
+                                "labelKey": "projects:import.title",
+                                "permission": "projects:admin"
                               }
                             ],
                             "subtitleKey": "projects:description",
@@ -30569,7 +30574,7 @@
                                       "hidden": false,
                                       "labelKey": "projects:code",
                                       "linkPage": "",
-                                      "maxLength": 40,
+                                      "maxLength": 32,
                                       "minLength": 1,
                                       "name": "code",
                                       "readOnly": false,
@@ -31043,7 +31048,7 @@
                                       "hidden": false,
                                       "labelKey": "projects:code",
                                       "linkPage": "",
-                                      "maxLength": 40,
+                                      "maxLength": 32,
                                       "minLength": 1,
                                       "name": "code",
                                       "readOnly": false,
@@ -31517,7 +31522,7 @@
                                       "hidden": false,
                                       "labelKey": "projects:code",
                                       "linkPage": "",
-                                      "maxLength": 40,
+                                      "maxLength": 32,
                                       "minLength": 1,
                                       "name": "code",
                                       "readOnly": false,
@@ -32584,7 +32589,7 @@
                                                                   "hidden": false,
                                                                   "labelKey": "projects:code",
                                                                   "linkPage": "",
-                                                                  "maxLength": 40,
+                                                                  "maxLength": 32,
                                                                   "minLength": 1,
                                                                   "name": "code",
                                                                   "readOnly": false,
@@ -43971,6 +43976,391 @@
               ]
             }
           }
+        },
+        {
+          "schemaVersion": "3.0",
+          "id": "project.import",
+          "route": "/projects/import",
+          "titleKey": "projects:import.title",
+          "subtitleKey": "projects:import.description",
+          "permission": "projects:admin",
+          "root": {
+            "type": "layout",
+            "layout": {
+              "id": "project.import-root",
+              "kind": "stack",
+              "props": {
+                "gap": "20px",
+                "width": "full"
+              },
+              "children": [
+                {
+                  "type": "layout",
+                  "layout": {
+                    "id": "project-import-heading",
+                    "kind": "grid",
+                    "props": {
+                      "columns": "minmax(0, 1fr)"
+                    },
+                    "children": [
+                      {
+                        "type": "component",
+                        "component": {
+                          "id": "project-import-heading",
+                          "kind": "page-heading",
+                          "version": "1.0",
+                          "props": {
+                            "subtitleKey": "projects:import.description",
+                            "titleKey": "projects:import.title"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "component",
+                  "component": {
+                    "id": "project-batch-import",
+                    "kind": "batch-import",
+                    "version": "1.0",
+                    "props": {
+                      "commitHintKey": "projects:import.atomic",
+                      "conflictKey": "projects:import.conflict",
+                      "fields": [
+                        {
+                          "component": "string",
+                          "componentVersion": "2.0",
+                          "compute": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "default": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "derived": false,
+                          "disabledWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "enum": [],
+                          "fixed": false,
+                          "hidden": false,
+                          "labelKey": "projects:code",
+                          "linkPage": "",
+                          "maxLength": 32,
+                          "minLength": 1,
+                          "name": "code",
+                          "readOnly": false,
+                          "reference": "",
+                          "required": true,
+                          "sensitive": false,
+                          "type": "string",
+                          "valueLabelPrefix": "",
+                          "visibleWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "width": 0
+                        },
+                        {
+                          "component": "string",
+                          "componentVersion": "2.0",
+                          "compute": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "default": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "derived": false,
+                          "disabledWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "enum": [],
+                          "fixed": false,
+                          "hidden": false,
+                          "labelKey": "projects:name",
+                          "linkPage": "",
+                          "maxLength": 120,
+                          "minLength": 1,
+                          "name": "name",
+                          "readOnly": false,
+                          "reference": "",
+                          "required": true,
+                          "sensitive": false,
+                          "type": "string",
+                          "valueLabelPrefix": "",
+                          "visibleWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "width": 0
+                        },
+                        {
+                          "component": "enum",
+                          "componentVersion": "2.0",
+                          "compute": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "default": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "literal",
+                            "literal": "\"normal\"",
+                            "path": ""
+                          },
+                          "derived": false,
+                          "disabledWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "enum": [
+                            "low",
+                            "normal",
+                            "high",
+                            "urgent"
+                          ],
+                          "fixed": false,
+                          "hidden": false,
+                          "labelKey": "projects:priority",
+                          "linkPage": "",
+                          "maxLength": 0,
+                          "minLength": 0,
+                          "name": "priority",
+                          "readOnly": false,
+                          "reference": "",
+                          "required": true,
+                          "sensitive": false,
+                          "type": "enum",
+                          "valueLabelPrefix": "projects:priorities.",
+                          "visibleWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "width": 0
+                        },
+                        {
+                          "component": "date",
+                          "componentVersion": "2.0",
+                          "compute": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "default": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "literal",
+                            "literal": "\"\"",
+                            "path": ""
+                          },
+                          "derived": false,
+                          "disabledWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "enum": [],
+                          "fixed": false,
+                          "hidden": false,
+                          "labelKey": "projects:dueDate",
+                          "linkPage": "",
+                          "maxLength": 0,
+                          "minLength": 0,
+                          "name": "dueDate",
+                          "readOnly": false,
+                          "reference": "",
+                          "required": false,
+                          "sensitive": false,
+                          "type": "date",
+                          "valueLabelPrefix": "",
+                          "visibleWhen": {
+                            "fields": [],
+                            "items": [],
+                            "kind": "",
+                            "literal": "",
+                            "path": ""
+                          },
+                          "width": 0
+                        }
+                      ],
+                      "maxFileBytes": 2097152,
+                      "maxRows": 100,
+                      "templatePath": "/templates/projects-import.xlsx",
+                      "uniqueField": "code"
+                    },
+                    "events": [
+                      {
+                        "event": "parse",
+                        "action": "invoke",
+                        "target": "document.excel.parse@1.0.0",
+                        "payload": {
+                          "kind": "object",
+                          "path": "",
+                          "literal": "",
+                          "items": [],
+                          "fields": [
+                            {
+                              "target": "content",
+                              "value": {
+                                "kind": "path",
+                                "path": "event.content",
+                                "literal": "",
+                                "items": [],
+                                "fields": []
+                              }
+                            },
+                            {
+                              "target": "sheet",
+                              "value": {
+                                "kind": "path",
+                                "path": "event.sheet",
+                                "literal": "",
+                                "items": [],
+                                "fields": []
+                              }
+                            }
+                          ]
+                        },
+                        "inputSchema": "{\"type\":\"object\",\"properties\":{\"content\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":2796204,\"additionalProperties\":false},\"sheet\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":31,\"additionalProperties\":false}},\"required\":[\"content\"],\"additionalProperties\":false}"
+                      },
+                      {
+                        "event": "extract",
+                        "action": "invoke",
+                        "target": "project.import.extract@1.0.0",
+                        "payload": {
+                          "kind": "object",
+                          "path": "",
+                          "literal": "",
+                          "items": [],
+                          "fields": [
+                            {
+                              "target": "content",
+                              "value": {
+                                "kind": "path",
+                                "path": "event.content",
+                                "literal": "",
+                                "items": [],
+                                "fields": []
+                              }
+                            },
+                            {
+                              "target": "sheet",
+                              "value": {
+                                "kind": "path",
+                                "path": "event.sheet",
+                                "literal": "",
+                                "items": [],
+                                "fields": []
+                              }
+                            }
+                          ]
+                        },
+                        "inputSchema": "{\"type\":\"object\",\"properties\":{\"content\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":2796204,\"additionalProperties\":false},\"sheet\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":31,\"additionalProperties\":false}},\"required\":[\"content\",\"sheet\"],\"additionalProperties\":false}"
+                      },
+                      {
+                        "idempotencyKey": {
+                          "kind": "path",
+                          "path": "event.operationKey",
+                          "literal": "",
+                          "items": [],
+                          "fields": []
+                        },
+                        "event": "submit",
+                        "action": "invoke",
+                        "target": "project.import.commit@1.0.0",
+                        "payload": {
+                          "kind": "object",
+                          "path": "",
+                          "literal": "",
+                          "items": [],
+                          "fields": [
+                            {
+                              "target": "rows",
+                              "value": {
+                                "kind": "path",
+                                "path": "event.rows",
+                                "literal": "",
+                                "items": [],
+                                "fields": []
+                              }
+                            }
+                          ]
+                        },
+                        "inputSchema": "{\"type\":\"object\",\"properties\":{\"rows\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"rowId\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":2147483647,\"additionalProperties\":false},\"values\":{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":32,\"additionalProperties\":false},\"dueDate\":{\"type\":\"string\",\"minLength\":0,\"maxLength\":10,\"additionalProperties\":false},\"name\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":120,\"additionalProperties\":false},\"priority\":{\"type\":\"string\",\"enum\":[\"low\",\"normal\",\"high\",\"urgent\"],\"additionalProperties\":false}},\"required\":[\"code\",\"name\"],\"additionalProperties\":false}},\"required\":[\"rowId\",\"values\"],\"additionalProperties\":false},\"minItems\":1,\"maxItems\":100,\"additionalProperties\":false}},\"required\":[\"rows\"],\"additionalProperties\":false}"
+                      },
+                      {
+                        "event": "success",
+                        "action": "navigate",
+                        "target": "project.list",
+                        "payload": {
+                          "kind": "",
+                          "path": "",
+                          "literal": "",
+                          "items": [],
+                          "fields": []
+                        }
+                      },
+                      {
+                        "event": "cancel",
+                        "action": "navigate",
+                        "target": "project.list",
+                        "payload": {
+                          "kind": "",
+                          "path": "",
+                          "literal": "",
+                          "items": [],
+                          "fields": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
         }
       ],
       "providers": [
@@ -44322,7 +44712,7 @@
         }
       ]
     },
-    "pluginVersion": "2.0.2",
+    "pluginVersion": "2.0.3",
     "navigation": [
       {
         "pageId": "project.list",
@@ -44332,8 +44722,8 @@
     ],
     "schemaVersion": "3.0",
     "id": "projects",
-    "version": "2.0.2",
-    "metadataVersion": "c5b261b5ec0512322783259b68d1e08e8cb45800861cad90878d9da82b9adb00",
+    "version": "2.0.3",
+    "metadataVersion": "aa5d2f39356ddcac2ceaadf63eae094e3f587254de4d0c67df4ba3944d2118cc",
     "source": "com.horizon.projects",
     "runtimeCompatibility": "3.0",
     "labelKey": "projects:heading",

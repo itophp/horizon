@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"horizon/applications/projects"
+	"horizon/foundation/ai/harness"
 	gen "horizon/foundation/gen/identity"
 	ar "horizon/foundation/kernel/applicationruntime"
 	"horizon/foundation/kernel/capability/contracts"
@@ -17,6 +18,7 @@ func aiFixture(t *testing.T) (*Module, ar.ApplicationV2) {
 	t.Helper()
 	m := &Module{Definitions: map[string]contracts.Definition{}}
 	entries := append(projects.New(nil).Entries(), m.AIEntries()...)
+	entries = append(entries, harness.ExcelParseEntry())
 	var definitions []contracts.Definition
 	for _, entry := range entries {
 		m.Definitions[entry.Definition.Key()] = entry.Definition

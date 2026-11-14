@@ -151,5 +151,15 @@
       "projects"
     ],
     "dependencies": []
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "com.horizon.projects",
+    "version": "2.0.3",
+    "digest": "8c826fb84e1ac54edb1f24a7f2fd6483e33402d3582ffffdc518891568e4da1e",
+    "applications": [
+      "projects"
+    ],
+    "dependencies": []
   }
 ]

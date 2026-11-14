@@ -18,6 +18,8 @@ type UIContract struct {
 	Example     string   `json:"example"`
 }
 
+const batchImportTemplatePathPattern = `^/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+[.]xlsx$`
+
 func UIContracts() []UIContract {
 	layoutProps := map[string]any{
 		"type": "object",
@@ -108,6 +110,16 @@ func UIContracts() []UIContract {
 		"name": stringProp, "labelKey": stringProp, "display": enum("text", "entity", "mono", "status", "date", "badges"),
 		"width": map[string]any{"type": "number"}, "className": stringProp,
 	}, "name")
+	add("batch-import", "element", "", []string{"parse", "extract", "submit", "cancel", "success"}, marshal(object(map[string]any{
+		"fields": list(objectProps), "uniqueField": stringProp,
+		"templatePath":  map[string]any{"type": "string", "pattern": batchImportTemplatePathPattern},
+		"headers":       map[string]any{"type": "object", "additionalProperties": stringProp},
+		"maxRows":       map[string]any{"type": "integer", "minimum": 1},
+		"maxFileBytes":  map[string]any{"type": "integer", "minimum": 1},
+		"commitHintKey": stringProp, "conflictKey": stringProp,
+	}, "fields", "templatePath")))
+	result[len(result)-1].Description = "Download an Excel template and review and submit workbook drafts. The application supplies field definitions, optional header-to-field mappings and capability event bindings."
+	result[len(result)-1].Example = `{"type":"component","component":{"id":"import","kind":"batch-import","version":"1.0","props":{"fields":[],"templatePath":"/templates/import.xlsx"}}}`
 	add("data-table", "element", "data", []string{"rowClick"}, marshal(object(map[string]any{
 		"items": list(objectProps), "columns": list(column), "keyField": stringProp, "selectable": booleanProp,
 		"serverPage": booleanProp, "rowEvent": stringProp,

@@ -187,4 +187,6 @@ aiAssistant:
 
 Button 和 Data Table 的契约描述了渲染器支持的属性。Button 的 `click` 可携带 `payload`，也可使用已有的 `action` 描述。Data Table 可从 `data` 或 `items` 读取行，通过 `columns` 配置字段和显示格式。声明 `rowEvent: "rowClick"` 并绑定同名事件即可接收行数据。设为 `serverPage: true` 时由外部 Provider 和分页控件驱动翻页。
 
+`batch-import` 用于 Excel 批量录入。必须通过 `templatePath` 配置同站点可下载的静态 `.xlsx` 路径。模板表头须与导入字段或表头映射一致。页面通过 `fields` 声明可导入的字段，可用 `headers` 将工作表表头映射到字段名，也可配置 `uniqueField`、`maxRows` 和 `maxFileBytes`。绑定 `parse` 读取工作簿，绑定可选的 `extract` 提供 AI 草稿。组件通过 `submit` 发送校对后的 `rows` 和 `operationKey`，由应用绑定的能力负责权限、业务校验及事务。应用可用 `commitHintKey` 和 `conflictKey` 说明提交行为和冲突原因。
+
 Card 的内容可组合 `card-footer`。Alert、Empty、Item 可用 `sections: true` 组合 `alert-action`、`empty-media`、`item-media`、`item-actions` 和 `item-footer` 等区域。Tabs 可设置方向、自动或手动键盘激活和线条样式。Scroll Area 可配置滚动轴和保留滚动条。Alert Dialog 支持外部 `open` 绑定和 `confirm`、`cancel`、`openChange`，Dialog 关闭时仍发出 `close`，也可绑定 `openChange`。Chart 另支持环形图、雷达图和径向条形图。

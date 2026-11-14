@@ -26,7 +26,7 @@ func (p Plugin) Register(_ context.Context, r *plugin.Registrar) error {
 	entries := p.Module.Entries()
 	r.Capabilities(entries)
 	r.Entities(Entities())
-	r.Applications(runtimeApplication("2.0.0"), runtimeApplication("2.0.1"), RuntimeApplication())
+	r.Applications(runtimeApplication("2.0.0"), runtimeApplication("2.0.1"), runtimeApplication("2.0.2"), RuntimeApplication())
 	permissions, events := map[string]bool{}, map[string]bool{}
 	for _, entry := range entries {
 		permissions[entry.Definition.Permission] = true
@@ -53,5 +53,9 @@ func (p Plugin) Register(_ context.Context, r *plugin.Registrar) error {
 	r.Events(eventNames...)
 	return nil
 }
+func (p Plugin) AttachModel(generate func(context.Context, string, string) (string, error)) {
+	p.Module.GenerateAI = generate
+}
+
 func (p Plugin) Start(context.Context) error { return nil }
 func (p Plugin) Stop(context.Context) error  { return nil }

@@ -14,6 +14,7 @@ export function formSchema(fields: RuntimeFieldV2[], scope: Scope) {
       const value = values[f.name];
       if (
         !f.required &&
+        !f.multiple &&
         (f.type === "integer" ||
           f.type === "number" ||
           f.type === "reference") &&
@@ -22,7 +23,10 @@ export function formSchema(fields: RuntimeFieldV2[], scope: Scope) {
         continue;
       let invalid =
         f.required && (value === undefined || value === null || value === "");
-      if (f.type === "integer" || f.type === "number" || f.type === "reference")
+      if (
+        !f.multiple &&
+        (f.type === "integer" || f.type === "number" || f.type === "reference")
+      )
         invalid ||=
           typeof value !== "number" ||
           !Number.isFinite(value) ||
@@ -30,12 +34,22 @@ export function formSchema(fields: RuntimeFieldV2[], scope: Scope) {
           (f.type === "reference" && f.required && value <= 0) ||
           (f.minimum !== undefined && Number(value) < f.minimum) ||
           (f.maximum !== undefined && Number(value) > f.maximum);
-      else if (f.type === "boolean") invalid ||= typeof value !== "boolean";
+      else if (!f.multiple && f.type === "boolean")
+        invalid ||= typeof value !== "boolean";
       else if (f.type === "array" || f.multiple) {
         invalid ||=
           !Array.isArray(value) ||
           value.length > (f.maxItems || 100) ||
-          value.length < (f.minItems || 0);
+          value.length < (f.minItems || 0) ||
+          (f.multiple === true && f.required && value.length === 0);
+        if (Array.isArray(value) && f.multiple) {
+          if (f.enum.length)
+            invalid ||= value.some((item) => !f.enum.includes(item));
+          if (f.type === "reference")
+            invalid ||= value.some(
+              (item) => !Number.isSafeInteger(item) || item <= 0,
+            );
+        }
         if (Array.isArray(value) && f.children?.length) {
           for (const row of value)
             if (!formSchema(f.children, scope).safeParse(row).success)

@@ -47,3 +47,32 @@ func TestProtocolLocalMessagesRequireCompleteResources(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestBatchImportRequiresStaticTemplatePath(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		path     any
+		bindings []Mapping
+		valid    bool
+	}{
+		{name: "missing"},
+		{name: "empty", path: ""},
+		{name: "external", path: "//example.test/template.xlsx"},
+		{name: "non-workbook", path: "/templates/import.csv"},
+		{name: "dynamic override", path: "/templates/import.xlsx", bindings: []Mapping{Bind("templatePath", "data.source.path")}},
+		{name: "static workbook", path: "/templates/import.xlsx", valid: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			component := &ComponentSpec{
+				ID: "import", Kind: "batch-import", Version: "1.0",
+				Props: map[string]any{}, Bindings: tc.bindings,
+			}
+			if tc.path != nil {
+				component.Props["templatePath"] = tc.path
+			}
+			if err := validateComponent(component, nil); (err == nil) != tc.valid {
+				t.Fatalf("valid = %t, got %v", tc.valid, err)
+			}
+		})
+	}
+}
