@@ -31,19 +31,15 @@ func (m *Module) lifecycleDefinitions(ctx context.Context, q *dbgen.Queries, p *
 			if source.ID == "" {
 				return contracts.Problem("unavailable")
 			}
-			raw, e := json.Marshal(source)
+			source, digest, e := m.registerDeploymentSnapshot(ctx, q, source)
 			if e != nil {
-				return e
-			}
-			digest := contracts.Digest(contracts.Input{"definition": source})
-			if _, e = q.RuntimeRegisterSnapshot(ctx, dbgen.RuntimeRegisterSnapshotParams{Digest: digest, PluginID: source.Source, PluginVersion: source.PluginVersion, ApplicationID: id, BaseVersion: source.Version, Definition: raw, ContractsDigest: contracts.Digest(contracts.Input{"definitions": m.Definitions})}); e != nil {
 				return e
 			}
 			if _, e = q.RuntimeInitializeHead(ctx, dbgen.RuntimeInitializeHeadParams{TenantID: p.TenantID, ApplicationID: id, PluginID: source.Source, BaseDigest: digest, RouteRoot: source.Route}); e != nil {
 				return e
 			}
 			source.ApplicationVersion = source.Version + ".0"
-			raw, e = json.Marshal(source)
+			raw, e := json.Marshal(source)
 			if e != nil {
 				return e
 			}
@@ -121,12 +117,8 @@ func (m *Module) lifecycleDefinitions(ctx context.Context, q *dbgen.Queries, p *
 					if version == current.Version {
 						return contracts.Problem("conflict")
 					}
-					raw, e := json.Marshal(source)
+					source, baseDigest, e := m.registerDeploymentSnapshot(ctx, q, source)
 					if e != nil {
-						return e
-					}
-					baseDigest := contracts.Digest(contracts.Input{"definition": source})
-					if _, e = q.RuntimeRegisterSnapshot(ctx, dbgen.RuntimeRegisterSnapshotParams{Digest: baseDigest, PluginID: source.Source, PluginVersion: source.PluginVersion, ApplicationID: id, BaseVersion: source.Version, Definition: raw, ContractsDigest: contracts.Digest(contracts.Input{"definitions": m.Definitions})}); e != nil {
 						return e
 					}
 					source.ApplicationVersion = version
@@ -134,7 +126,7 @@ func (m *Module) lifecycleDefinitions(ctx context.Context, q *dbgen.Queries, p *
 					if e != nil {
 						return e
 					}
-					raw, e = json.Marshal(source)
+					raw, e := json.Marshal(source)
 					if e != nil {
 						return e
 					}

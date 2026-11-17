@@ -2,6 +2,8 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { runHorizon } from "./horizon-cli.mjs";
+
 const defaultRoot = fileURLToPath(new URL("../", import.meta.url));
 const ignored = new Set([
   ".git",
@@ -182,12 +184,13 @@ export async function checkPolicy(root = defaultRoot, suppliedPolicy) {
       `Repository instruction chain exceeds 32 KiB: ${name}`,
     );
   }
-  const makefile = await fileText(root, "Makefile");
-  const targets = new Set(
-    [...makefile.matchAll(/^([a-z][a-z0-9-]*):(?:\s|$)/gm)].map(
-      (match) => match[1],
-    ),
+  const commands = runHorizon(
+    root,
+    ["commands", "--json"],
+    ["ignore", "pipe", "inherit"],
   );
+  requireValue(commands.status === 0, "Cannot list Horizon CLI commands");
+  const targets = new Set(JSON.parse(commands.stdout));
   requireValue(
     policy.gates &&
       typeof policy.gates === "object" &&
@@ -197,7 +200,7 @@ export async function checkPolicy(root = defaultRoot, suppliedPolicy) {
   for (const [gate, target] of Object.entries(policy.gates))
     requireValue(
       targets.has(target),
-      `Gate ${gate} references missing make target: ${target}`,
+      `Gate ${gate} references missing Horizon CLI command: ${target}`,
     );
   requireValue(
     Array.isArray(policy.tasks) && policy.tasks.length > 0,

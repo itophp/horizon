@@ -5,7 +5,7 @@
 
 ## 服务与账号
 
-部署现有 Go 服务并执行新增迁移，前端代理精确 `/mcp` 至 Go。生产使用 HTTPS、COOKIE_SECURE=true 和 HTTPS PUBLIC_APP_URL，代理保留原 Host 与 Authorization；不要记录请求正文/Authorization。开发使用 `make migrate` 与既有启动命令；测试使用隔离 schema，不迁移开发库代替验收。
+部署现有 Go 服务并执行新增迁移，前端代理精确 `/mcp` 至 Go。生产使用 HTTPS、COOKIE_SECURE=true 和 HTTPS PUBLIC_APP_URL，代理保留原 Host 与 Authorization；不要记录请求正文/Authorization。开发使用 `./horizon-cli migrate` 与既有启动命令；测试使用隔离 schema，不迁移开发库代替验收。
 
 进入“远程 MCP”，选择名称、部门、天数和工具，输入当前密码创建。默认 30 天，最大 90 天，最多 20 个有效 Token。完整值仅显示一次，立即保存到客户端的凭证存储；关闭提示后无法再次查询。轮换会立即撤销旧值并显示新值，到期时间和工具集合保持不变；撤销也需要当前密码。
 

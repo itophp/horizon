@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
+import { MemoryRouter } from "react-router";
 import { changeLanguage, i18n } from "@/i18n";
 import { InstallationsPage } from "./installations";
 
@@ -11,11 +12,12 @@ vi.mock("@/lib/capabilities", () => ({
   runtimeRead: api.read,
   runtimeExecute: api.execute,
 }));
+const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
 vi.mock("@/features/administration/auth", () => ({
   useSession: () => ({
     tenantId: "tenant",
     account: { id: 1 },
-    permissions: ["applications:read", "applications:manage"],
+    permissions: auth.permissions,
   }),
 }));
 vi.mock("@/features/governance/runtime", () => ({
@@ -40,11 +42,91 @@ const candidates = ["2.0.0", "2.0.1", "2.0.2"].map((version) => ({
   applications: ["projects"],
   dependencies: [],
   dependencyVersions: [],
+  base: false,
+  labelKeys: { projects: "projects:heading" },
 }));
 
 beforeEach(async () => {
   vi.resetAllMocks();
+  auth.permissions = [
+    "applications:read",
+    "applications:manage",
+    "applications:design",
+  ];
   await changeLanguage("en", false);
+});
+
+it("hides platform core applications from application management", async () => {
+  api.read.mockResolvedValue({
+    candidates: [
+      {
+        pluginId: "builtin:system-settings",
+        version: "1.0.3",
+        digest: "settings",
+        applications: ["system-settings"],
+        dependencies: [],
+        dependencyVersions: [],
+        base: true,
+        labelKeys: { "system-settings": "governance:settings" },
+      },
+    ],
+    items: [
+      {
+        pluginId: "builtin:system-settings",
+        version: "1.0.3",
+        status: "enabled",
+        revision: 2,
+        digest: "settings",
+        previousVersion: "",
+      },
+    ],
+    applications: [
+      {
+        applicationId: "system-settings",
+        pluginId: "builtin:system-settings",
+        enabled: true,
+        revision: 2,
+      },
+    ],
+  });
+  render(
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <InstallationsPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </I18nextProvider>,
+  );
+  expect(
+    await screen.findByRole("heading", { name: "Business applications" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Core applications" }),
+  ).toBeNull();
+  expect(screen.queryByRole("cell", { name: "System settings" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Actions" })).toBeNull();
+  expect(screen.getByRole("button", { name: "New application" })).toBeVisible();
+});
+
+it("shows the design action to accounts without lifecycle management", async () => {
+  auth.permissions = ["applications:read", "applications:design"];
+  api.read.mockResolvedValue({
+    candidates,
+    items: [],
+    applications: [],
+  });
+  render(
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter>
+          <InstallationsPage />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </I18nextProvider>,
+  );
+  expect(await screen.findByRole("link", { name: "Design" })).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Actions" })).toBeNull();
 });
 
 it.each([
@@ -84,26 +166,30 @@ it.each([
     render(
       <I18nextProvider i18n={i18n}>
         <QueryClientProvider client={new QueryClient()}>
-          <InstallationsPage />
+          <MemoryRouter>
+            <InstallationsPage />
+          </MemoryRouter>
         </QueryClientProvider>
       </I18nextProvider>,
     );
 
-    const cells = await screen.findAllByRole("cell", { name: pluginId });
+    const cells = await screen.findAllByRole("cell", { name: "Projects" });
     expect(cells).toHaveLength(1);
+    expect(screen.getByText("Business applications")).toBeVisible();
     expect(
       screen.getByText(
         `Installed: ${installed ? "2.0.1" : "—"} · Available: 2.0.0, 2.0.1, 2.0.2`,
       ),
     ).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Actions" }));
+    expect(screen.getByRole("link", { name: "Design" })).toBeVisible();
     const menu = await screen.findByRole("menu");
     if (installed) {
       expect(
         within(menu).getAllByRole("menuitem", { name: "Disable" }),
       ).toHaveLength(1);
       expect(
-        within(menu).getAllByRole("menuitem", { name: "projects: Disable" }),
+        within(menu).getAllByRole("menuitem", { name: "Projects: Disable" }),
       ).toHaveLength(1);
       expect(
         within(menu).queryByRole("menuitem", { name: "Upgrade (2.0.1)" }),

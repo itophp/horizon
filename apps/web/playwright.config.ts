@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 // 默认 1 个 worker：所有用例共用同一套 Go 服务与隔离 schema，并行只对互不写
-// 全局设置的文件安全。要提速优先用 make test-e2e-parallel（两套独立栈）。
+// 全局设置的文件安全。要提速优先用 ./horizon-cli test-e2e-parallel（两套独立栈）。
 const requestedWorkers = Number(process.env.E2E_WORKERS ?? "1");
 const workers =
   Number.isInteger(requestedWorkers) && requestedWorkers > 0
@@ -43,7 +43,7 @@ export default defineConfig({
     },
     {
       command:
-        "env -u DATABASE_URL -u DEMO_AUTH_TOKEN API_ADDR=127.0.0.1:8099 ../../scripts/go.sh run ./cmd/e2e",
+        "env -u DATABASE_URL -u DEMO_AUTH_TOKEN API_ADDR=127.0.0.1:8099 ../../scripts/go.sh run ../cmd/e2e",
       url: "http://127.0.0.1:8099/api/health",
       reuseExistingServer: false,
       gracefulShutdown: { signal: "SIGTERM", timeout: 10000 },

@@ -17,13 +17,22 @@ import (
 	"time"
 )
 
+func definitionChangeInput() *contracts.Schema {
+	return contracts.Object(map[string]*contracts.Schema{
+		"section":   contracts.Enum("pages", "providers", "navigation", "messages", "theme"),
+		"id":        contracts.Str(1, 200),
+		"operation": contracts.Enum("upsert", "remove", "order"),
+		"value":     contracts.Str(0, 1048576),
+	}, "section", "id", "operation")
+}
+
 func (m *Module) definitionEntries() []registry.Entry {
 	entries := []registry.Entry{}
 	for _, operation := range []string{"list", "get", "history", "validate", "diff", "preview", "inspect", "contracts", "baselines", "rebase.check", "propose", "publish", "discard", "rollback", "rebase"} {
 		op := operation
 		read := slices.Contains([]string{"list", "get", "history", "validate", "diff", "preview", "inspect", "contracts", "baselines", "rebase.check"}, op)
 		manual := op == "publish" || op == "rollback"
-		props := map[string]*contracts.Schema{"applicationId": contracts.Str(1, 100), "version": contracts.Str(1, 50), "baseVersion": contracts.Str(1, 50), "revision": contracts.Int(1, 1<<53), "digest": contracts.Str(1, 100), "targetDigest": contracts.Str(1, 100), "reason": contracts.Str(0, 1000), "changes": {Type: "array", Items: ar.Schema(ar.DefinitionChange{})}}
+		props := map[string]*contracts.Schema{"applicationId": contracts.Str(1, 100), "version": contracts.Str(1, 50), "baseVersion": contracts.Str(1, 50), "revision": contracts.Int(1, 1<<53), "digest": contracts.Str(1, 100), "targetDigest": contracts.Str(1, 100), "reason": contracts.Str(0, 1000), "changes": {Type: "array", Items: definitionChangeInput()}}
 		if op == "inspect" {
 			props["section"] = &contracts.Schema{Type: "string", Enum: []string{"summary", "page", "provider"}}
 			props["itemId"] = contracts.Str(1, 100)
@@ -131,7 +140,10 @@ func (m *Module) definitionRead(ctx context.Context, op string, in contracts.Inp
 		}
 		items := []map[string]any{}
 		for _, app := range apps {
-			if p.Can(app.Permission) {
+			if m.isBasePlugin(app.Source) {
+				continue
+			}
+			if p.Can(app.Permission) || m.canManageSettingsDefinition(p, app, "applications:read") {
 				labelEn, labelZhCN := "", ""
 				for _, message := range app.Messages {
 					if message.Key == app.LabelKey {
@@ -163,7 +175,11 @@ func (m *Module) definitionRead(ctx context.Context, op string, in contracts.Inp
 	if err != nil {
 		return contracts.Output{}, err
 	}
-	if !p.Can(app.Permission) {
+	readPermission := "applications:design"
+	if op == "get" || op == "history" {
+		readPermission = "applications:read"
+	}
+	if !p.Can(app.Permission) && !m.canManageSettingsDefinition(p, app, readPermission) {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}
 	if version != head.PublishedVersion && !p.CanPermanent("applications:design") && !p.CanPermanent("applications:manage") {
@@ -221,13 +237,7 @@ func (m *Module) definitionRead(ctx context.Context, op string, in contracts.Inp
 		if target.ApplicationID != id || target.PluginID != head.PluginID {
 			return contracts.Output{}, contracts.Problem("invalid")
 		}
-		trusted := false
-		for _, source := range m.contributions() {
-			if contracts.Digest(contracts.Input{"definition": source}) == target.Digest {
-				trusted = true
-			}
-		}
-		if !trusted {
+		if !m.trustsDeploymentSnapshot(target.Digest) {
 			return contracts.Output{}, contracts.Problem("unavailable")
 		}
 		original, e := q.RuntimeDefinitionSnapshot(ctx, row.BaseDigest)
@@ -255,8 +265,7 @@ func (m *Module) definitionRead(ctx context.Context, op string, in contracts.Inp
 		items := []map[string]any{}
 		for _, source := range m.contributions() {
 			if source.ID == id && source.Source == head.PluginID {
-				digest := contracts.Digest(contracts.Input{"definition": source})
-				snapshot, e := q.RuntimeDefinitionSnapshot(ctx, digest)
+				snapshot, e := lookupDeploymentSnapshot(ctx, q, deploymentDigest(source))
 				if e != nil {
 					return contracts.Output{}, e
 				}
@@ -300,7 +309,20 @@ func (m *Module) definitionRead(ctx context.Context, op string, in contracts.Inp
 	}
 	return contracts.Output{Data: map[string]any{"enabled": state.Enabled, "application": app, "version": version, "digest": row.Digest, "revision": head.Revision, "publishedVersion": head.PublishedVersion, "proposalVersion": head.ProposalVersion, "readOnly": op == "preview"}}, nil
 }
+
+// System Settings declares a signed-in audience so dictionary readers can
+// open its fields tab. Definition access still requires both permanent grants.
+func (m *Module) canManageSettingsDefinition(p *identity.Principal, app ar.ApplicationV2, permission string) bool {
+	return app.ID == "system-settings" && app.Source == "builtin:system-settings" &&
+		app.Permission == ar.AuthenticatedPermission &&
+		p.CanPermanent(permission) && p.CanPermanent("settings:read") &&
+		slices.ContainsFunc(m.contributions(), func(source ar.ApplicationV2) bool {
+			return source.ID == app.ID && source.Source == app.Source && source.Permission == app.Permission
+		})
+}
+
 func (m *Module) validateCandidate(ctx context.Context, q *dbgen.Queries, p *identity.Principal, app ar.ApplicationV2) (ar.ApplicationV2, error) {
+	m.supplyPublishedImportTemplates(&app)
 	if app.Protocol == nil {
 		return app, contracts.Problem("schema_version_unsupported")
 	}
@@ -394,6 +416,11 @@ func (m *Module) definitionWrite(ctx context.Context, q *dbgen.Queries, op strin
 	if err != nil {
 		return contracts.Output{}, err
 	}
+	if m.isBasePlugin(head.PluginID) {
+		// Platform-managed applications always follow the deployment baseline and
+		// are upgraded by Runtime reconciliation, never by tenant revisions.
+		return contracts.Output{}, contracts.Problem("forbidden")
+	}
 	if head.Revision != inputInt(in["revision"]) {
 		return contracts.Output{}, contracts.Problem("conflict")
 	}
@@ -415,7 +442,7 @@ func (m *Module) definitionWrite(ctx context.Context, q *dbgen.Queries, op strin
 	if err != nil {
 		return contracts.Output{}, err
 	}
-	if !p.CanPermanent(app.Permission) {
+	if !p.CanPermanent(app.Permission) && !m.canManageSettingsDefinition(p, app, permission) {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}
 	if op == "publish" || op == "rollback" {
@@ -450,13 +477,7 @@ func (m *Module) definitionWrite(ctx context.Context, q *dbgen.Queries, op strin
 			if target.ApplicationID != id || target.PluginID != head.PluginID {
 				return contracts.Output{}, contracts.Problem("invalid")
 			}
-			trusted := false
-			for _, source := range m.contributions() {
-				if contracts.Digest(contracts.Input{"definition": source}) == target.Digest {
-					trusted = true
-				}
-			}
-			if !trusted {
+			if !m.trustsDeploymentSnapshot(target.Digest) {
 				return contracts.Output{}, contracts.Problem("unavailable")
 			}
 			original, e := q.RuntimeDefinitionSnapshot(ctx, row.BaseDigest)

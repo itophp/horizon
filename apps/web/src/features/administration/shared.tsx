@@ -84,7 +84,26 @@ export function useRefreshAdmin() {
 }
 export function errorText(error: unknown, t: TFunction) {
   const code = error instanceof ApiError ? error.code : "internal";
+  const modelIssue =
+    /^(ai_model_incomplete|ai_model_type_unsupported)\.(deepseek|glm|custom)\.(default|workspace|assistant|knowledge|workflow|runtimeDesign|projectImport|eventTrigger|automation)$/.exec(
+      code,
+    );
+  if (modelIssue) {
+    const [, kind, profile, use] = modelIssue;
+    return t(`governance:aiSettings.errors.${kind}`, {
+      model: t(`governance:choices.${profile}`),
+      scene: t(
+        use === "default"
+          ? "governance:labels.aiModels_default"
+          : `governance:labels.aiModels_route_${use}`,
+      ),
+    });
+  }
   const messages: Record<string, string> = {
+    ai_model_image_unsupported: t(
+      "governance:aiSettings.errors.ai_model_image_unsupported",
+    ),
+    ai_model_type_unsupported: t("governance:aiSettings.errors.wrongType"),
     invalid: t("admin:errors.invalid"),
     unauthenticated: t("admin:errors.unauthenticated"),
     forbidden: t("admin:errors.forbidden"),

@@ -1,17 +1,16 @@
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowUp, Square } from "lucide-react";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-  InputGroupText,
-} from "@/components/ui/input-group";
+  AIComposer,
+  invalidAIAttachment,
+} from "@/components/shared/ai-composer";
+import { InputGroupButton } from "@/components/ui/input-group";
 
 export function PromptInput({
   draft,
   onChange,
+  file,
+  onFileChange,
   busy,
   blocked,
   onSend,
@@ -19,51 +18,42 @@ export function PromptInput({
 }: {
   draft: string;
   onChange: (value: string) => void;
+  file?: File;
+  onFileChange: (file: File | undefined) => void;
   busy: boolean;
   blocked: boolean;
   onSend: (value: string) => void;
   onStop: () => void;
 }) {
   const { t } = useTranslation("ai");
-  const id = useId();
+  const submitDisabled =
+    busy || blocked || (!draft.trim() && !file) || invalidAIAttachment(file);
+  const submit = () => {
+    if (!submitDisabled) onSend(draft);
+  };
   return (
     <form
-      className="border-t p-4"
+      className="ai-session-composer shrink-0 border-t p-3"
       onSubmit={(event) => {
         event.preventDefault();
-        onSend(draft);
+        submit();
       }}
     >
-      <label htmlFor={id} className="sr-only">
-        {t("workbench.ask")}
-      </label>
-      <InputGroup className="rounded-xl">
-        <InputGroupTextarea
-          id={id}
-          value={draft}
-          onChange={(event) => onChange(event.target.value)}
-          rows={2}
-          maxLength={2000}
-          placeholder={t("workbench.placeholder")}
-          disabled={blocked}
-          aria-describedby={`${id}-hint`}
-          onKeyDown={(event) => {
-            if (
-              event.key === "Enter" &&
-              !event.shiftKey &&
-              !event.nativeEvent.isComposing &&
-              event.keyCode !== 229
-            ) {
-              event.preventDefault();
-              if (!busy) onSend(draft);
-            }
-          }}
-        />
-        <InputGroupAddon align="block-end" className="justify-between">
-          <InputGroupText id={`${id}-hint`} className="text-xs">
-            {t("workbench.inputHint")}
-          </InputGroupText>
-          {busy ? (
+      <AIComposer
+        value={draft}
+        onChange={onChange}
+        label={t("workbench.ask")}
+        placeholder={t("workbench.placeholder")}
+        maxLength={2000}
+        file={file}
+        onFileChange={onFileChange}
+        disabled={blocked}
+        busy={busy}
+        hint={t("workbench.inputHint")}
+        onSubmit={submit}
+        submitDisabled={submitDisabled}
+        action={
+          busy ? (
             <InputGroupButton
               size="icon-sm"
               variant="outline"
@@ -77,14 +67,14 @@ export function PromptInput({
               type="submit"
               size="icon-sm"
               variant="default"
-              disabled={blocked || !draft.trim()}
+              disabled={submitDisabled}
               aria-label={t("workbench.send")}
             >
               <ArrowUp />
             </InputGroupButton>
-          )}
-        </InputGroupAddon>
-      </InputGroup>
+          )
+        }
+      />
     </form>
   );
 }

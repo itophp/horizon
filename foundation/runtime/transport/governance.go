@@ -2,10 +2,6 @@ package transport
 
 import (
 	"context"
-	"horizon/applications/articles"
-	"horizon/applications/drive"
-	"horizon/applications/example"
-	"horizon/applications/projects"
 	assistantservice "horizon/foundation/ai/assistant"
 	"horizon/foundation/ai/harness"
 	"horizon/foundation/ai/knowledge"
@@ -27,17 +23,16 @@ import (
 	"horizon/foundation/kernel/eventhub"
 	"horizon/foundation/kernel/executionplan"
 	"horizon/foundation/kernel/outbox"
-	"horizon/foundation/kernel/plugin"
 	orchestrationruntime "horizon/foundation/kernel/workflow"
 	"horizon/foundation/runtime/app"
 	"horizon/foundation/system/applicationruntime"
 	"horizon/foundation/system/files"
 	"horizon/foundation/system/governance"
-	"horizon/foundation/system/identity"
 	memorysystem "horizon/foundation/system/memory"
 	"horizon/internal/repository/dbgen"
 	"net/http"
 	"strings"
+	"sync"
 
 	goahttp "goa.design/goa/v3/http"
 )
@@ -45,7 +40,7 @@ import (
 // mountGovernance wires the capability platform and returns the background
 // starter (outbox relay and AI trigger engine). Every business module now
 // contributes capability entries instead of its own HTTP endpoints.
-func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.Manager, observer *memorysystem.Observer, onError func(context.Context, http.ResponseWriter, error)) func(context.Context) {
+func mountGovernance(mux goahttp.Muxer, core *governance.Core, registration app.Registration, observer *memorysystem.Observer, onError func(context.Context, http.ResponseWriter, error)) func(context.Context) {
 	core.Identity.Policies = core
 
 	f, _ := core.Logos.(*files.Service)
@@ -69,42 +64,23 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	hub := eventhub.NewHub()
 	events := eventhub.NewStore(core.Pool)
 
-	orchestrator := orchestrationruntime.NewWithGraphs(core, app.WorkflowDefinitions(), app.GraphDefinitions())
+	orchestrator := orchestrationruntime.NewWithGraphs(core, registration.WorkflowDefinitions(), registration.Graphs)
 	orchestrator.Observations = observer
-	articleModule := &articles.Module{Pool: core.Pool}
 	memoryModule := memorysystem.New(core.Pool)
 	memoryModule.AttachIdentity(core.Identity)
-	articleModule.Blocked = func(ctx context.Context, p *identity.Principal, content string) (bool, bool, error) {
-		raw, err := core.Setting(ctx, p, "articles.blockedWords")
-		if err != nil {
-			// Absent configuration is not a broken one: with the approval gate in
-			// place there is no automatic publish left to protect. Storage errors
-			// still surface so a broken settings read cannot pass silently.
-			if contracts.Code(err) == "invalid" {
-				return false, false, nil
-			}
-			return false, false, err
+	plugins := registration.Plugins
+	if plugins != nil {
+		if err := core.Identity.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
+			panic(err)
 		}
-		words, err := governance.String(raw)
-		if err != nil || strings.TrimSpace(words) == "" {
-			return false, false, nil
-		}
-		return articles.ContainsBlocked(content, words), true, nil
-	}
-	if plugins == nil {
-		plugins = app.BuiltinPlugins(projects.New(core.Pool))
-	}
-	if err := core.Identity.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
-		panic(err)
 	}
 	runtimeModule := &applicationruntime.Module{}
-	exampleModule := example.New(core.Pool)
-	entries := (app.CapabilityModules{Example: exampleModule, Runtime: runtimeModule, Plugins: plugins, Articles: articleModule, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService, Memory: memoryModule}).Entries()
+	entries := (app.CapabilityModules{Runtime: runtimeModule, Registration: registration, Core: core, MCP: mcpService, Orchestration: orchestrator, Documents: documents, Knowledge: knowledgeService, Memory: memoryModule}).Entries()
 	catalog := registry.New(entries)
 	if err := catalog.Err(); err != nil {
 		panic("capability catalog is invalid: " + err.Error())
 	}
-	catalog.RegisterEntities(app.EntitiesWithPlugins(plugins))
+	catalog.RegisterEntities(app.EntitiesWithRegistration(registration))
 	if err := catalog.Err(); err != nil {
 		panic("invalid entity declarations: " + strings.Join(catalog.EntityProblems(), "; "))
 	}
@@ -118,7 +94,9 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 		Registry: catalog, Identity: core.Identity, Pool: core.Pool, RuntimeCheck: runtimeModule.ValidateInvocation,
 		Approvals: approvals, Audit: auditStore, Events: events, Observations: observer,
 	})
-	exampleModule.AttachGateway(dispatcher)
+	for _, attach := range registration.AttachGateway {
+		attach(dispatcher)
+	}
 	core.Identity.AttachAnalyticsGateway(func(ctx context.Context, name, version string, input contracts.Input) (*contracts.Result, error) {
 		return dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input})
 	})
@@ -132,14 +110,17 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	if err := orchestrator.Attach(dispatcher, catalog); err != nil {
 		panic("invalid workflow definitions")
 	}
-	plugins.AttachCapabilities(func(ctx context.Context, name, version string, input contracts.Input, key string) (*contracts.Result, error) {
-		return dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input, IdempotencyKey: key})
-	})
+	if plugins != nil {
+		plugins.AttachCapabilities(runtimeModule.Invoke)
+	}
 	mcpService.AttachGateway(dispatcher)
 	agentService := harness.New(core, catalog, dispatcher, runs, auditStore, documents)
 	agentService.Profile = runtimeModule.AgentProfile
 	runtimeModule.GenerateAI = agentService.GenerateRuntimeAI
-	plugins.AttachModel(agentService.GenerateRuntimeAI)
+	runtimeModule.GenerateAIWithImage = agentService.GenerateRuntimeAIWithImage
+	if plugins != nil {
+		plugins.AttachModel(agentService.GenerateProjectImportAI)
+	}
 	orchestrator.AgentModel = agentService.WorkflowModel
 	engine := triggers.NewEngine(triggers.NewStore(core.Pool), hub, agentService, core.Identity)
 	relay := outbox.NewRelay(core.Pool, hub)
@@ -149,12 +130,18 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, plugins *plugin.M
 	aihttp.Mount(mux, aihttp.New(genai.NewEndpoints(newAI(agentService)), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, onError, nil))
 	assistanthttp.Mount(mux, assistanthttp.New(genassistant.NewEndpoints(newAssistant(assistantservice.New(core), agentService, knowledgeService)), mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, onError, nil))
 
+	workers := append(app.PlatformWorkers(core), registration.Workers...)
+	var once sync.Once
 	return func(ctx context.Context) {
-		engine.Start(ctx)
-		go drive.RunCleanup(ctx, core.Pool, dispatcher)
-		go orchestrator.Run(ctx)
-		go relay.Run(ctx)
-		go memoryConsumer.Run(ctx)
+		once.Do(func() {
+			engine.Start(ctx)
+			for _, worker := range workers {
+				go worker(ctx, dispatcher, agentService)
+			}
+			go orchestrator.Run(ctx)
+			go relay.Run(ctx)
+			go memoryConsumer.Run(ctx)
+		})
 	}
 }
 

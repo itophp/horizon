@@ -232,6 +232,7 @@ func EncodeRunRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Re
 // endpoint. restoreBody controls whether the response body should be restored
 // after having been read.
 // DecodeRunResponse may return the following errors:
+//   - "ai_model_image_unsupported" (type *ai.IAMProblem): http.StatusUnprocessableEntity
 //   - "unauthenticated" (type *ai.IAMProblem): http.StatusUnauthorized
 //   - "forbidden" (type *ai.IAMProblem): http.StatusForbidden
 //   - "invalid" (type *ai.IAMProblem): http.StatusBadRequest
@@ -275,6 +276,20 @@ func DecodeRunResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody
 			}
 			res := NewRunAIRunCreated(&body)
 			return res, nil
+		case http.StatusUnprocessableEntity:
+			var (
+				body RunAiModelImageUnsupportedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("ai", "run", err)
+			}
+			err = ValidateRunAiModelImageUnsupportedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("ai", "run", err)
+			}
+			return nil, NewRunAiModelImageUnsupported(&body)
 		case http.StatusUnauthorized:
 			var (
 				body RunUnauthenticatedResponseBody
@@ -1477,6 +1492,17 @@ func DecodeUpdateConversationResponse(decoder func(*http.Response) goahttp.Decod
 	}
 }
 
+// marshalAiAIAttachmentToAIAttachmentRequestBody builds a value of type
+// *AIAttachmentRequestBody from a value of type *ai.AIAttachment.
+func marshalAiAIAttachmentToAIAttachmentRequestBody(v *ai.AIAttachment) *AIAttachmentRequestBody {
+	res := &AIAttachmentRequestBody{
+		Name:    v.Name,
+		Content: v.Content,
+	}
+
+	return res
+}
+
 // marshalAiAIPageToAIPageRequestBody builds a value of type *AIPageRequestBody
 // from a value of type *ai.AIPage.
 func marshalAiAIPageToAIPageRequestBody(v *ai.AIPage) *AIPageRequestBody {
@@ -1493,6 +1519,17 @@ func marshalAiAIPageToAIPageRequestBody(v *ai.AIPage) *AIPageRequestBody {
 		for i, val := range v.Selection {
 			res.Selection[i] = val
 		}
+	}
+
+	return res
+}
+
+// marshalAIAttachmentRequestBodyToAiAIAttachment builds a value of type
+// *ai.AIAttachment from a value of type *AIAttachmentRequestBody.
+func marshalAIAttachmentRequestBodyToAiAIAttachment(v *AIAttachmentRequestBody) *ai.AIAttachment {
+	res := &ai.AIAttachment{
+		Name:    v.Name,
+		Content: v.Content,
 	}
 
 	return res
@@ -1591,6 +1628,7 @@ func unmarshalAIConversationResponseToAiAIConversation(v *AIConversationResponse
 		Title:        *v.Title,
 		UpdatedAt:    *v.UpdatedAt,
 		MessageCount: *v.MessageCount,
+		AutomationAt: v.AutomationAt,
 		Archived:     *v.Archived,
 	}
 

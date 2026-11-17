@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { runtimeRead } from "@/lib/capabilities";
 import { ErrorBanner, Loading } from "@/features/administration/shared";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const pageSchema = z.object({
@@ -56,15 +57,19 @@ export function DesignContracts({ identity }: { identity: string }) {
   });
 
   return (
-    <section className="space-y-3" aria-labelledby="runtime-contracts-heading">
-      <h2 id="runtime-contracts-heading" className="text-lg font-semibold">
+    <section
+      className="design-contracts"
+      aria-labelledby="runtime-contracts-heading"
+    >
+      <h2 id="runtime-contracts-heading" className="design-kicker">
         {t("contracts.heading")}
       </h2>
+      <p className="design-tab-hint">{t("design.contractsHint")}</p>
       {list.isPending && <Loading />}
       {list.isError && <ErrorBanner error={list.error} />}
       {list.data && (
         <>
-          <div className="flex flex-wrap gap-2">
+          <div className="design-contract-list">
             {list.data.names.map((name) => (
               <Button
                 key={name}
@@ -78,13 +83,14 @@ export function DesignContracts({ identity }: { identity: string }) {
               </Button>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="design-contract-pager">
             <Button
               type="button"
               variant="outline"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - 50))}
             >
+              <ChevronLeft size={14} />
               {t("contracts.previous")}
             </Button>
             <Button
@@ -94,6 +100,7 @@ export function DesignContracts({ identity }: { identity: string }) {
               onClick={() => setOffset(list.data.nextOffset)}
             >
               {t("contracts.next")}
+              <ChevronRight size={14} />
             </Button>
           </div>
         </>
@@ -101,37 +108,37 @@ export function DesignContracts({ identity }: { identity: string }) {
       {detail.isPending && selected && <Loading />}
       {detail.isError && <ErrorBanner error={detail.error} />}
       {detail.data && (
-        <div className="space-y-2">
-          <h3 className="font-medium">
+        <div className="design-contract-detail">
+          <h3>
             {`${detail.data.contract.name}@${detail.data.contract.version}`}
           </h3>
           <p>{detail.data.contract.description}</p>
-          <p>
-            {t("contracts.events")}{" "}
-            {detail.data.contract.events.join(", ") || "—"}
-          </p>
-          <p>
-            {t("contracts.slots")}{" "}
-            {detail.data.contract.slots.join(", ") || "—"}
-          </p>
-          <p>
-            {t("contracts.binding")} {detail.data.contract.binding || "—"}
-          </p>
-          <p>
-            {t("contracts.readOnly")} {detail.data.contract.readOnly}
-          </p>
-          <details>
+          <dl className="design-facts">
+            <div>
+              <dt>{t("contracts.events")}</dt>
+              <dd>{detail.data.contract.events.join(", ") || "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("contracts.slots")}</dt>
+              <dd>{detail.data.contract.slots.join(", ") || "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("contracts.binding")}</dt>
+              <dd>{detail.data.contract.binding || "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("contracts.readOnly")}</dt>
+              <dd>{detail.data.contract.readOnly}</dd>
+            </div>
+          </dl>
+          <details className="design-definition">
             <summary>{t("contracts.properties")}</summary>
-            <pre className="overflow-auto whitespace-pre-wrap">
-              {detail.data.contract.propsSchema}
-            </pre>
+            <pre>{detail.data.contract.propsSchema}</pre>
           </details>
           {detail.data.contract.example && (
-            <details>
+            <details className="design-definition">
               <summary>{t("contracts.example")}</summary>
-              <pre className="overflow-auto whitespace-pre-wrap">
-                {detail.data.contract.example}
-              </pre>
+              <pre>{detail.data.contract.example}</pre>
             </details>
           )}
         </div>

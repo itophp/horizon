@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"horizon/foundation/ai/attachment"
 	"horizon/foundation/ai/harness"
 	genai "horizon/foundation/gen/ai"
 	"horizon/foundation/kernel/audit"
@@ -63,6 +64,9 @@ func (a *aiAdapter) Status(ctx context.Context, _ *genai.StatusPayload) (*genai.
 
 func (a *aiAdapter) Run(ctx context.Context, payload *genai.RunPayload) (*genai.AIRun, error) {
 	input := harness.RunInput{Question: payload.Question, Origin: contracts.OriginHumanUI}
+	if payload.Attachment != nil {
+		input.Attachment = &attachment.Upload{Name: payload.Attachment.Name, Content: payload.Attachment.Content}
+	}
 	if payload.SessionID != nil {
 		input.SessionID = *payload.SessionID
 	}
@@ -114,11 +118,16 @@ func (a *aiAdapter) UpdateConversation(ctx context.Context, payload *genai.Updat
 }
 
 func aiConversationProjection(item *harness.Conversation) *genai.AIConversation {
-	return &genai.AIConversation{
+	projection := &genai.AIConversation{
 		SessionID: item.SessionID, Title: item.Title,
 		UpdatedAt:    item.UpdatedAt.UTC().Format(time.RFC3339),
 		MessageCount: item.MessageCount, Archived: item.Archived,
 	}
+	if !item.AutomationAt.IsZero() {
+		formatted := item.AutomationAt.UTC().Format(time.RFC3339)
+		projection.AutomationAt = &formatted
+	}
+	return projection
 }
 
 func (a *aiAdapter) Runs(ctx context.Context, payload *genai.RunsPayload) ([]*genai.AIRun, error) {

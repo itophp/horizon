@@ -504,6 +504,24 @@ export type MemoryProjectDeleteOutput = {
   version: number;
 };
 
+export type MemoryProjectEventsInput = {
+  beforeId?: number;
+  eventType?: string;
+  limit?: number;
+  projectId: number;
+};
+export type MemoryProjectEventsOutput = {
+  events: Array<{
+    correlationId: string;
+    eventId: string;
+    eventType: string;
+    id: number;
+    occurredAt: string;
+    resourceId: string;
+    resourceType: "project" | "project_task";
+  }>;
+};
+
 export type MemoryProjectGetInput = { id: number; projectId: number };
 export type MemoryProjectGetOutput = {
   id: number;

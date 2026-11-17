@@ -22,7 +22,7 @@
 3. 以关键词/状态筛选，选择排序，翻页读取完整授权集合。
 4. 草稿可进入原审核流程；非作者编辑或旧 revision 更新由原能力拒绝。
 
-`make generate` 生成 workflow/Goa/sqlc/Orval 与 Runtime 类型；`make check-generated` 校验重复生成。新增页面字段需引用真实 Entity 与具体能力投影，不把整张表映射成表单。
+`./horizon-cli generate` 生成 workflow/Goa/sqlc/Orval 与 Runtime 类型；`./horizon-cli check-generated` 校验重复生成。新增页面字段需引用真实 Entity 与具体能力投影，不把整张表映射成表单。
 
 ## 验证与范围
 

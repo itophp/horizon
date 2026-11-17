@@ -3,7 +3,6 @@ package applicationruntime
 import (
 	"context"
 	"encoding/json"
-	"horizon/applications/articles"
 	gen "horizon/foundation/gen/identity"
 	ar "horizon/foundation/kernel/applicationruntime"
 	"horizon/foundation/kernel/capability/contracts"
@@ -12,14 +11,10 @@ import (
 )
 
 func TestProjectionRemovesUnauthorizedProtocolPagesAndEvents(t *testing.T) {
-	source := articles.RuntimeApplication()
+	source := compiledFixture(t, "articles")
 	definitions := map[string]contracts.Definition{}
-	for _, entry := range (&articles.Module{}).Entries() {
-		definitions[entry.Definition.Key()] = entry.Definition
-	}
-	for i := range source.Protocol.Providers {
-		provider := &source.Protocol.Providers[i]
-		provider.Permission = definitions[provider.Capability.Name+"@"+provider.Capability.Version].Permission
+	for _, page := range source.Protocol.Pages {
+		collectFixtureEvents(page.Root, definitions)
 	}
 	m := Module{Applications: []ar.ApplicationV2{source}, Definitions: definitions}
 	entry := m.Entries()[0]

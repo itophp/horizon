@@ -6,17 +6,18 @@
 
 ```sh
 cp .env.example .env
-pnpm install --frozen-lockfile
-make tools
-make db-up
-make migrate
+./scripts/go.sh run ../cmd/horizon-cli build-cli
+./horizon-cli install
+./horizon-cli tools
+./horizon-cli db-up
+./horizon-cli migrate
 # 在终端安全输入一个 12–128 字符的初始密码（不使用预设默认密码）
 read -s BOOTSTRAP_PASSWORD; export BOOTSTRAP_PASSWORD
-BOOTSTRAP_USERNAME=admin make bootstrap
+BOOTSTRAP_USERNAME=admin ./horizon-cli bootstrap
 unset BOOTSTRAP_PASSWORD
-make dev-api
+./horizon-cli dev-api
 # 另一个终端
-make dev
+./horizon-cli dev
 ```
 
 访问 http://127.0.0.1:5173。API 为 http://127.0.0.1:8080/api/health。Vite 将同源 /api 代理给 Go；不需要开放 CORS。
@@ -32,10 +33,24 @@ make dev
 从仓库根目录用 Go 构建本机可执行文件。
 
 ```sh
-go build -trimpath -o horizon-cli ./foundation/cmd/horizon-cli
+go build -trimpath -o horizon-cli ./cmd/horizon-cli
 ```
 
-Windows PowerShell 使用 `go build -trimpath -o horizon-cli.exe ./foundation/cmd/horizon-cli`，执行命令时使用 `.\horizon-cli.exe`。目录查询可在前后端和 PostgreSQL 均停止时执行。二进制读取构建时注册的能力、流程、Graph 和 Runtime 页面。修改定义后重新构建，或用 `./scripts/go.sh run ./cmd/horizon-cli` 加命令参数直接读取当前工作树的定义。
+Windows PowerShell 使用 `go build -trimpath -o horizon-cli.exe ./cmd/horizon-cli`，执行命令时使用 `.\horizon-cli.exe`。目录查询可在前后端和 PostgreSQL 均停止时执行。二进制读取构建时注册的能力、流程、Graph 和 Runtime 页面。修改定义后重新构建，或用 `./scripts/go.sh run ../cmd/horizon-cli` 加命令参数直接读取当前工作树的定义。
+
+### 克隆新项目
+
+将 Horizon CLI 放到 PATH，然后在希望创建项目的父目录执行。机器需要安装 Git。
+
+```sh
+horizon-cli init
+horizon-cli init my-project
+horizon-cli init --repo git@github.com:itophp/horizon.git my-project
+```
+
+`init` 默认从 `https://github.com/itophp/horizon.git` 克隆到当前目录下的 `horizon/`。可指定新目录名，也可通过 `--repo` 使用镜像、分叉或本地 Git 仓库。目标目录必须不存在，父目录必须已存在。克隆完成后进入项目，按[本地启动](#本地启动)配置环境和依赖。
+
+### 查询开发契约
 
 ```sh
 ./horizon-cli capability
@@ -92,34 +107,36 @@ CLI 直接启动 Go API 和本地 Vite。第一次启动前运行 `pnpm install 
 测试按批次执行：普通连续开发累计待验项，单个功能完成或聊天结束不自动跑测试；高风险改动先定向验证，明确阶段验收/提交/PR 前统一跑快速门禁和相关专项，发布候选、明确全量验收或 CI 才跑完整回归。已通过且输入未变的检查复用。详见 [测试执行节奏](testing.md#测试执行节奏)。
 
 ```sh
-make generate           # Goa → OpenAPI；sqlc；Orval → TanStack Query SDK
-make check-generated    # 生成前后文件摘要比对；不依赖 Git 已提交状态
-make format
-make format-check
+./horizon-cli generate           # Goa → OpenAPI；sqlc；Orval → TanStack Query SDK
+./horizon-cli check-generated    # 生成前后文件摘要比对；不依赖 Git 已提交状态
+./horizon-cli format
+./horizon-cli format-check
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
 pnpm i18n:check
-make lint               # 前端 ESLint + Go vet
-make test               # 前端 + Go 单元/HTTP + 翻译 key
-make build              # 前端 + Go 构建
-make test-integration   # 独立 PostgreSQL schema，缺少测试 URL 则失败
+./horizon-cli lint               # 前端 ESLint + Go vet
+./horizon-cli test               # 前端 + Go 单元/HTTP + 翻译 key
+./horizon-cli build              # 前端 + Go 构建
+./horizon-cli test-integration   # 独立 PostgreSQL schema，缺少测试 URL 则失败
 pnpm --filter @baseline/web exec playwright install chromium
-make test-e2e           # 启动真实前后端；独立端口 5179/8099 必须空闲
-make check-rules       # 项目规则、Skills、引用与门禁路由
-make ci-fast           # 无需 DB/浏览器的完整快速门禁
-make test-security     # 认证/授权/配置 + 真实数据库范围负向用例
-make ci                # 所有门禁，含 DB 和 E2E
+./horizon-cli test-e2e e2e/foundation.spec.ts  # 仅运行所选 spec
+./horizon-cli check-rules       # 项目规则、Skills、引用与门禁路由
+./horizon-cli ci-fast           # 无需 DB/浏览器的完整快速门禁
+./horizon-cli test-security     # 认证/授权/配置 + 真实数据库范围负向用例
+./horizon-cli ci                # 所有门禁，含 DB 和 E2E
 ```
 
 Go 模块位于仓库根目录，平台代码在 `foundation/`，网盘、项目、文章和示例应用在 `applications/`。`scripts/go.sh` 从 `foundation/` 执行，工具链与缓存隔离在 `.tools/`。同时检查平台和应用可运行 `./scripts/go.sh test ./... ../applications/...`，或使用系统 Go 从仓库根目录运行 `go test ./foundation/... ./applications/...`。
 
-`.env` 由 Make 读取并导出；直接使用 pnpm 或脚本不会自动加载它。CI 为测试显式配置环境变量。`make db-down` 只停止容器；开发数据卷不会被删除。
+`./horizon-cli commands` 列出工程子命令。`./horizon-cli build-cli` 重新构建当前平台的可执行文件；没有二进制时，从仓库根用 `go run ./cmd/horizon-cli build-cli` 构建。
+
+Horizon CLI 读取仓库根的 `.env` 并传给子进程，终端环境变量优先。CI 显式配置测试环境变量。`./horizon-cli db-down` 只停止容器；开发数据卷不会被删除。
 
 ## 账号与权限
 
-初始账号由 `make bootstrap` 创建，不提供通用默认密码；已存在工作区不会被重复初始化覆盖。BOOTSTRAP_TENANT 可显式指定工作区，默认为 workspace-default。工作区内为“企业 → 公司 → 部门树 → 账号”，角色可重复分配。
+初始账号由 `./horizon-cli bootstrap` 创建，不提供通用默认密码；已存在工作区不会被重复初始化覆盖。BOOTSTRAP_TENANT 可显式指定工作区，默认为 workspace-default。工作区内为“企业 → 公司 → 部门树 → 账号”，角色可重复分配。
 
 活跃角色权限合并；账号独立允许替换同一操作的继承范围，独立拒绝优先。范围包括工作区全部、本人公司、本人部门、部门及下级、本人账号、自定义部门。操作授权由 Casbin 决策，SQL 强制数据范围与工作区隔离；页面隐藏不能替代后端校验。详见 [身份与权限决策](decisions/002-identity-access.md)。
 
@@ -155,7 +172,7 @@ curl -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/demo/records
 
 开发功能前从 [AGENTS.md](../AGENTS.md) 和 [任务工具矩阵](agent-tooling.md) 进入：按目标路径读取子目录规则，按任务加载 Skill，并执行相应门禁。
 
-本机已安装 Chrome 时，可使用 `PLAYWRIGHT_CHANNEL=chrome make test-e2e`；否则按上文安装配套 Chromium。两者运行同一套功能断言和诊断采集。
+本机已安装 Chrome 时，可用 `PLAYWRIGHT_CHANNEL=chrome ./horizon-cli test-e2e e2e/foundation.spec.ts` 运行所选 spec；否则按上文安装配套 Chromium。
 
 临时权限入口为 `/temporary-access`，所有已登录账号可申请缺失功能或提升数据范围，选择 30 分钟至 7 天的时效；独立 `temporary:approve` 权限控制审批工作台。审批人可修改最终权限/时效/范围，服务端自动处理到期，支持撤回和撤销。默认仅内置管理员可审批；目录和安全边界详见 ADR 003。
 

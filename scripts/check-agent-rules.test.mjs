@@ -8,7 +8,7 @@ const policy = JSON.parse(
   await readFile(new URL("../docs/agent-policy.json", import.meta.url), "utf8"),
 );
 
-test("repository routes resolve to real skills, scoped rules and make targets", async () => {
+test("repository routes resolve to real skills, scoped rules and Horizon CLI commands", async () => {
   const result = await checkPolicy(root);
   assert.ok(result.skills > 0 && result.instructions > 0 && result.gates > 0);
 });
@@ -20,7 +20,10 @@ test("rejects a task that points to a missing skill", async () => {
 test("rejects a named gate whose executable target does not exist", async () => {
   const invalid = structuredClone(policy);
   invalid.gates.fast = "missing-target";
-  await assert.rejects(checkPolicy(root, invalid), /missing make target/);
+  await assert.rejects(
+    checkPolicy(root, invalid),
+    /missing Horizon CLI command/,
+  );
 });
 test("rejects broken local references and paths outside the repository", async () => {
   await assert.rejects(

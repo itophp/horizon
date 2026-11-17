@@ -11,7 +11,7 @@
 | `ai/` · `integrations/` | AI 任务、知识、触发器和 MCP 接入 |
 | `runtime/` · `cmd/` | 服务配置、装配、传输与命令入口 |
 | [design/](design/AGENTS.md) · `gen/` | Goa 传输契约与生成产物 |
-| [db/](db/AGENTS.md) · [tests/](tests/AGENTS.md) | SQL 源与真实数据库集成测试 |
+| [db/](db/AGENTS.md) · [tests/](../tests/integration/AGENTS.md) | SQL 源与真实数据库集成测试 |
 
 | 改动 | Skill 与规则 |
 |---|---|
@@ -26,13 +26,13 @@
 
 ## Go、SQL 与生成边界
 
-- `design/` 是传输契约源，`db/migrations/` 和 `db/query/` 是 SQL 源，业务动作由模块 Definition 声明。禁止手改 `gen/`、根目录 `internal/repository/dbgen/` 或 `apps/web/src/api/generated/`。修改输入后执行 `make generate` 和 `make check-generated`。
-- `cmd/` 管入口与生命周期，`runtime/app/` 统一装配，`runtime/transport/` 管传输与中间件。数据访问消费根目录的 sqlc 生成代码。
+- `design/` 是传输契约源，`db/migrations/` 和 `db/query/` 是 SQL 源，业务动作由模块 Definition 声明。禁止手改 `gen/`、根目录 `internal/repository/dbgen/` 或 `apps/web/src/api/generated/`。修改输入后执行 `./horizon-cli generate` 和 `./horizon-cli check-generated`。
+- `foundation` 不能依赖 `horizon/applications/...` 或仓库部署装配包，包括测试和间接依赖。仓库顶层 `cmd/` 启动部署，`deployment/` 注册业务贡献，`runtime/app/` 消费注册，`runtime/transport/` 管理传输和 Worker 生命周期。数据访问消费根目录的 sqlc 生成代码。
 - 校验、Payload/Result/Error/HTTP/security 声明回到 DSL；读取生成接口后再实现，不凭记忆猜签名。OpenAPI + Orval 是前端类型来源。
 - 使用锁定 Goa 生成器。`scripts/go.sh` 从 `foundation/` 执行，使用根 `horizon` 模块；验证整个 Go 栈时同时覆盖 `./...` 和 `../applications/...`。格式检查覆盖带 integration build tag 的文件。
 - 配置集中验证，非法安全配置启动失败。统一请求 ID、结构化日志、时间/体积限制和稳定错误映射；日志与错误不得泄露凭证/内部数据。
 - 用小接口/Fake 隔离依赖，context/cancellation 传播到 SQL；明确事务提交回滚，服务关闭有界。
-- 按根规则和 [测试节奏](../docs/testing.md#测试执行节奏) 选择检查。安全变更覆盖允许与拒绝；表结构、查询、事务或数据范围变更使用 [真实数据库测试](tests/AGENTS.md)。
+- 按根规则和 [测试节奏](../docs/testing.md#测试执行节奏) 选择检查。安全变更覆盖允许与拒绝；表结构、查询、事务或数据范围变更使用 [真实数据库测试](../tests/integration/AGENTS.md)。
 
 ## Capability-Centric 分层
 
@@ -41,7 +41,7 @@ AI 任务 SSE 契约在 design/ai.go，传输复用既有 harness.Run 的 Princi
 - `kernel/capability/contracts`：稳定词汇（Definition/Schema/Result/Event/Origin），不得引入存储或传输依赖。
 - `kernel/capability/registry`：进程内定义中心；启动时校验版本、Handler、工具名冲突，失败即视为部署错误。
 - `kernel/capability/gateway`：唯一执行入口；顺序固定为身份→权限→Schema→幂等→策略/审批→执行→Outbox→审计。禁止在 Handler 中绕开它直接调用 Executor。
-- `kernel/{policy,approval,audit,outbox,eventhub,metadata}`：确定性策略、审批队列、审计读模型、事务 Outbox 与事件日志。`metadata` 是实体模型：从 embed 迁移解析表/列/外键、从能力目录派生 Capabilities，并执行 E1–E10 校验（`make check-entities`）。
+- `kernel/{policy,approval,audit,outbox,eventhub,metadata}`：确定性策略、审批队列、审计读模型、事务 Outbox 与事件日志。`metadata` 是实体模型：从 embed 迁移解析表/列/外键、从能力目录派生 Capabilities，并执行 E1–E10 校验（`./horizon-cli check-entities`）。
 - `ai/{harness,tools,triggers,context,knowledge,workflow,evaluation}`：AI 任务、工具适配、事件触发与评估。Agent 工具必须经 Gateway；AI 任务与业务调用状态分离。
 - `system/*、../applications/* 与 integrations/*`：业务模块（settings、dictionaries、files、notifications、mcp、example）。每个模块自持领域服务与 `Entries()`，并在 `entity_<name>.go` 声明自己的业务对象（`entities.go` 只汇总），不再声明自己的 Goa 服务或 HTTP 路由；写能力优先实现 `TxExecutor` 并声明 `SuccessEvents`。
 - `design/` 只剩下会话/系统/公开投影与能力、AI、助手契约。新增业务动作不要加 Goa 方法，而是加一条能力定义并在 `runtime/app/capabilities.go` 装配。
@@ -59,7 +59,7 @@ AI 任务 SSE 契约在 design/ai.go，传输复用既有 harness.Run 的 Princi
 - 策略只通过约定模型/策略载体更新并测试；缓存须有撤销失效策略，跨进程行为如实说明。禁止各 Handler 复制隐式权限。
 - 响应与输入都用明确字段投影/白名单；新敏感字段检查 DTO、日志、错误、导出与批量入口。SQL 选择最小必要列。
 - 数据层错误映射为稳定服务错误，不回传堆栈/SQL/凭证。context 传到数据库，事务不跨池误用，失败不吞异常或默认全量访问。
-- 新增安全能力须有允许/拒绝、跨租户与范围外 ID 测试；适用时覆盖更新/删除、关联/聚合/批量/导出和撤销。运行 make test-security。
+- 新增安全能力须有允许/拒绝、跨租户与范围外 ID 测试；适用时覆盖更新/删除、关联/聚合/批量/导出和撤销。运行 ./horizon-cli test-security。
 
 正式后台位于 system/identity（含 `Entries()` 身份管理能力）：Service 管用例和不变量、policy.go 管 Casbin/可信范围、Repository 调用生成的 dbgen、`runtime/transport/identity.go` 校验会话与 Origin/CSRF。旧 auth/authorization/dataaccess 为独立技术 demo，不要把 demo token 接到后台或复制第二套登录。身份变更参考 docs/decisions/002-identity-access.md，保留账号覆盖替换范围、内置管理员保护、授权管理独立门禁及即时撤销。
 
@@ -94,7 +94,7 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 - 审批执行必须用 `PrincipalForTask` 重建申请人身份；决策条件更新，重复/过期/跨租户冲突。
 - `cap_invocations.input` 只落 `Loggable` 白名单；审批 API 只返回脱敏投影。凭证、正文、个人信息不进日志、错误、导出或 trace；不得对外回传 SQL 或上游响应。
 - 每个能力必须声明 `Entity`（主对象）；一个调用改多张表时用 `Entities` 列出全部，且主实体必须在内。判据是“这个调用改了什么”，不是“它产出了什么”。
-- 业务对象在模块内以 `entity_<name>.go` 一实体一文件声明，`entities.go` 只做汇总并接入 `runtime/app/entities.go`；`make check-entities` 对照迁移校验字段、枚举、关系与状态转移，改动表结构或能力必须一并跑。禁止手抄列清单或为通过检查删声明。
+- 业务对象在模块内以 `entity_<name>.go` 一实体一文件声明，`entities.go` 只做汇总并接入 `runtime/app/entities.go`；`./horizon-cli check-entities` 对照迁移校验字段、枚举、关系与状态转移，改动表结构或能力必须一并跑。禁止手抄列清单或为通过检查删声明。
 - 改状态列的写能力必须绑定 `Transition.Capability`；由 worker 驱动的转移留空并作为事实输出。状态只能经转移改变的才用 `state`，一次调用可任意改值的按业务枚举处理。
 - 事件携带 `correlationId`、`causationId`、`triggerDepth`；Trigger 按 policy+event 去重并受 `maxDepth` 限制。Outbox 至少一次投递，消费端按 `(tenant_id, event_id)` 去重。
 - `ai_runs` 与 `cap_invocations` 用 correlation id 关联，AI 失败不得改写已成功的业务结果。事件、审批只投影本人或具备审批权限者可见的数据。
@@ -103,7 +103,7 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 
 ## 流程规格与生成
 
-流程以 Go Definition/Step 为运行源，`kernel/workflow/spec/` 提供纯规格与生成入口。根目录 `docs/generated/workflows/` 的标准 Schema 与示例从源生成，禁止手改。候选 JSON 先用 `workflowcheck -file` 校验，再审查注册；离线校验不执行、不授权。运行时与离线工具共用 `runtime/app.CapabilityModules` 装配。运行 `make check-workflows` 和 `make check-generated` 检查结构与漂移；完整示例使用 `make test-orchestration-example`。Schema、静态检查与行为测试不能替代 Gateway 或 SQL 范围校验。
+流程以 Go Definition/Step 为运行源，`kernel/workflow/spec/` 提供纯规格与生成入口。根目录 `docs/generated/workflows/` 的标准 Schema 与示例从源生成，禁止手改。候选 JSON 先用 `workflowcheck -file` 校验，再审查注册；离线校验不执行、不授权。运行时与离线工具共用 `runtime/app.CapabilityModules` 装配。运行 `./horizon-cli check-workflows` 和 `./horizon-cli check-generated` 检查结构与漂移；完整示例使用 `./horizon-cli test-orchestration-example`。Schema、静态检查与行为测试不能替代 Gateway 或 SQL 范围校验。
 
 ## 持久化流程安全
 
@@ -117,7 +117,7 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 
 应用定义由所属业务模块贡献，底座装配在 `runtime/app/`，协议与校验在 `kernel/applicationruntime/`，发布与授权投影在 `system/applicationruntime/`。页面协议使用 V3，公共 TS 类型和结构校验从 Go 契约生成。目录按应用、页面、Provider 和动作的实际权限投影，页面定义不能扩大权限或替代 SQL 数据范围；页面动作仍经 Gateway。创建/编辑分别用能力 I/O，派生字段只读，普通更新不依赖状态转移存在。批量组合须经注入的 Gateway 调用器执行子能力，禁止把多个独立事务称为原子事务；operationId/子幂等键与外层调用重放按 ADR 018 区分。
 
-Runtime 定义存储见 [数据库版本实施记录](../docs/application-runtime-database.md)。数据库版本不可覆盖更新；生命周期状态和配置内容分别使用运行修订与四级版本，部署重启不得覆盖已发布定制。system-only 能力仅允许系统账号及事件来源，不能借用要求固定父能力的 internal-only 标签。
+Runtime 定义存储见 [数据库版本实施记录](../docs/application-runtime-database.md)。数据库版本不可覆盖更新；生命周期状态和配置内容分别使用运行修订与四级版本，部署重启不得覆盖业务应用的已发布定制。平台托管的基本应用由部署装配分类（`runtime/app/base_applications.go`），reconcile 自动安装/升级并发布部署基线，租户生命周期和定义能力对它返回 forbidden。system-only 能力仅允许系统账号及事件来源，不能借用要求固定父能力的 internal-only 标签。
 
 ## 远程 MCP 动态能力目录（现行）
 

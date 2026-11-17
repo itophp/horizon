@@ -23,6 +23,7 @@ import {
   Trash2,
   Users,
   XCircle,
+  LoaderCircle,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ import { runtimeExecute, runtimeRead } from "@/lib/capabilities";
 import { ApiError } from "@/api/client/request";
 import { RegisteredControl } from "../components";
 import { MarkdownDisplay } from "../markdown";
-import { evaluate, mapInput, type Json } from "../expression";
+import { evaluate, mapInput, referencesPath, type Json } from "../expression";
 import { formSchema } from "../form-schema";
 import { FormField } from "@/components/shared/form-field";
 import type {
@@ -75,12 +76,13 @@ import {
   type ContentAction,
 } from "./content-components";
 import {
-  AIFormAssistant,
   AIResult,
   aiSnapshot,
+  localNowRFC3339,
   requestAI,
   useAIAnalysis,
 } from "./ai-components";
+import { AIFormAssistant } from "./ai-form-assistant";
 import { runtimeAIAnalysisSpecSchema } from "@/api/generated/runtime";
 import type { ComponentRendererProps } from "./component-registry";
 import type { ProtocolRecord } from "./types";
@@ -435,12 +437,13 @@ export function TablePanelComponent({
               ? t("runtime:ai.analyzeSelected", { count: selectedRows.length })
               : t("runtime:ai.analyzePage");
             return (
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-2">
                 {column.labelKey ? t(column.labelKey) : column.name}
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
+                  className="ai-action"
                   disabled={
                     readOnly ||
                     dataRefreshing ||
@@ -456,7 +459,15 @@ export function TablePanelComponent({
                     )
                   }
                 >
-                  <Sparkles aria-hidden="true" size={14} />
+                  {batchRunning ? (
+                    <LoaderCircle
+                      aria-hidden="true"
+                      size={14}
+                      className="motion-safe:animate-spin"
+                    />
+                  ) : (
+                    <Sparkles aria-hidden="true" size={14} />
+                  )}
                 </Button>
               </span>
             );
@@ -2548,8 +2559,15 @@ function ProtocolRecordForm({
   const scopeRecordId = Number(
     mode === "create" ? (route.projectId ?? route.id) : record?.id,
   );
+  // A create form may suggest from the draft before any record exists; edit
+  // still needs the record to authorize the provider read on the server.
+  const hasRecordScope =
+    Number.isSafeInteger(scopeRecordId) && scopeRecordId > 0;
   const aiField = (name: string) =>
-    visibleFields.find((field) => field.name === name);
+    command.fields.find((field) => field.name === name);
+  // A target may be conditionally visible (the schedule kind decides which
+  // time component applies), so it must resolve outside the current visible
+  // set. Input fields still need a visible value the model can read.
   const showAssistant =
     assistant &&
     aiContext?.componentId &&
@@ -2557,10 +2575,33 @@ function ProtocolRecordForm({
     (mode === "create" || mode === "edit") &&
     !readOnly &&
     !runtime.readOnly &&
-    Number.isSafeInteger(scopeRecordId) &&
-    scopeRecordId > 0 &&
-    assistant.inputFields.every((name) => aiField(name)) &&
+    (mode === "create" || hasRecordScope) &&
+    assistant.inputFields.every((name) =>
+      visibleFields.some((field) => field.name === name),
+    ) &&
     assistant.targetFields.every((name) => aiField(name));
+  // Existing definitions can supply a textarea used exclusively as AI input.
+  // Render it inside the assistant when it has no write binding.
+  const assistantSource = showAssistant
+    ? fields.find(
+        (field) =>
+          field.type === "string" &&
+          field.component === "textarea" &&
+          !field.required &&
+          !field.group &&
+          !field.readOnly &&
+          !field.disabledWhen?.kind &&
+          !field.visibleWhen?.kind &&
+          assistant.inputFields.includes(field.name) &&
+          !assistant.targetFields.includes(field.name) &&
+          !command.input.some(({ value }) =>
+            referencesPath(value, `form.${field.name}`),
+          ),
+      )
+    : undefined;
+  const editorFields = fields.filter(
+    (field) => field.name !== assistantSource?.name,
+  );
   const referenceOptions = (
     field: RuntimeFieldV2,
   ): { value: Json; label: string }[] => {
@@ -2664,6 +2705,18 @@ function ProtocolRecordForm({
       {showAssistant && aiContext && (
         <AIFormAssistant
           spec={assistant}
+          draftSource={
+            assistantSource && {
+              label: t(assistantSource.labelKey),
+              value: String(watched[assistantSource.name] ?? ""),
+              maxLength: assistantSource.maxLength,
+              onChange: (value) =>
+                form.setValue(assistantSource.name, value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                }),
+            }
+          }
           disabled={
             busy ||
             assistant.targetFields.every((name) => {
@@ -2671,11 +2724,13 @@ function ProtocolRecordForm({
               return !field || isFieldDisabled(field);
             })
           }
-          request={() =>
+          request={(source) =>
             requestAI(aiContext.emit, assistant.action, {
+              ...source,
+              now: localNowRFC3339(),
               componentId: aiContext.componentId,
               sceneId: definition.id,
-              recordId: scopeRecordId,
+              recordId: hasRecordScope ? scopeRecordId : 0,
               mode,
               draft: Object.fromEntries(
                 assistant.inputFields.map((name) => [
@@ -2686,13 +2741,17 @@ function ProtocolRecordForm({
             })
           }
           current={(name) => watched[name]}
+          currentValue={(name) => form.getValues(name)}
           label={(name) => t(aiField(name)?.labelKey ?? name)}
           canApply={({ field, value }) => {
             const config = aiField(field);
             return Boolean(
               config &&
               !isFieldDisabled(config) &&
-              formSchema([config], {}).safeParse({ [field]: value }).success,
+              formSchema([config], {}).safeParse({
+                ...form.getValues(),
+                [field]: value,
+              }).success,
             );
           }}
           apply={({ field, value }) => {
@@ -2745,7 +2804,7 @@ function ProtocolRecordForm({
         />
       )}
       <div className="editor-grid">
-        {fields.map((field) => (
+        {editorFields.map((field) => (
           <Controller
             key={field.name}
             control={form.control}
@@ -2785,7 +2844,8 @@ function ProtocolRecordForm({
                     error={form.formState.errors[field.name]?.message}
                     wide={
                       field.component === "textarea" ||
-                      field.component === "subtable"
+                      field.component === "subtable" ||
+                      field.component === "markdown"
                     }
                   >
                     <RegisteredControl

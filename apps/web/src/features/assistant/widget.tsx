@@ -87,7 +87,13 @@ export function AssistantLauncher() {
 
   const submit = () => {
     const text = draft.trim();
-    if (!text || assistant.busy) return;
+    if (
+      !text ||
+      assistant.busy ||
+      assistant.historyLoading ||
+      !assistant.configured
+    )
+      return;
     setDraft("");
     void assistant.send(text);
   };
@@ -125,7 +131,7 @@ export function AssistantLauncher() {
               onClick={assistant.clear}
               aria-label={t("clear")}
               title={t("clear")}
-              disabled={!assistant.messages.length}
+              disabled={!assistant.messages.length && !assistant.historyFailed}
             >
               <Eraser size={15} />
             </button>
@@ -147,7 +153,19 @@ export function AssistantLauncher() {
             {!assistant.configured ? (
               <p className="assistant-notice">{t("notConfigured")}</p>
             ) : null}
-            {!assistant.messages.length ? (
+            {assistant.historyLoading && (
+              <p className="assistant-notice" role="status">
+                {t("historyLoading")}
+              </p>
+            )}
+            {assistant.historyFailed && (
+              <p className="assistant-error" role="alert">
+                {t("historyFailed")}
+              </p>
+            )}
+            {!assistant.messages.length &&
+            !assistant.historyLoading &&
+            !assistant.historyFailed ? (
               <div className="assistant-empty">
                 <span className="assistant-avatar large" aria-hidden="true">
                   <Bot size={20} />
@@ -199,7 +217,11 @@ export function AssistantLauncher() {
                 type="button"
                 className="assistant-send"
                 onClick={submit}
-                disabled={!draft.trim() || !assistant.configured}
+                disabled={
+                  !draft.trim() ||
+                  !assistant.configured ||
+                  assistant.historyLoading
+                }
                 aria-label={t("send")}
                 title={t("send")}
               >

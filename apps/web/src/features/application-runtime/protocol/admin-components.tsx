@@ -37,6 +37,7 @@ import {
 import { AIAnalysisPanel, AIResultComponent } from "./ai-components";
 import { ItemListComponent } from "./item-list";
 import { ChangeListForm } from "./change-list-form";
+import { AIModelSettings } from "./ai-model-settings";
 import { ActionForm } from "./action-form";
 import { BatchImport } from "./batch-import";
 import { FileReviewForm } from "./file-review-form";
@@ -414,6 +415,7 @@ export function createAdminRegistry(): ComponentRegistry {
   registry.register("batch-import", "1.0", BatchImport);
   registry.register("file-review-form", "1.0", FileReviewForm);
   registry.register("change-list-form", "1.0", ChangeListForm);
+  registry.register("ai-model-settings", "1.0", AIModelSettings);
   registry.register("metric-value", "1.0", MetricValue);
   registry.register("time-series", "1.0", TimeSeries);
   registry.register("horizontal-bars", "1.0", HorizontalBars);

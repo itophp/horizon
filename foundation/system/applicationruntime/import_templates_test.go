@@ -3,12 +3,11 @@ package applicationruntime
 import (
 	"testing"
 
-	"horizon/applications/projects"
 	ar "horizon/foundation/kernel/applicationruntime"
 )
 
 func TestPublishedProjectImportReceivesDeploymentTemplate(t *testing.T) {
-	baseline := projects.RuntimeApplication()
+	baseline := compiledFixture(t, "projects")
 	module := &Module{Versions: []ar.ApplicationV2{baseline}}
 	published := ar.Canonical(baseline)
 	var component *ar.ComponentSpec

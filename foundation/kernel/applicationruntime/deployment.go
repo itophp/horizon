@@ -100,6 +100,12 @@ func AssembleDeployment(sources []ApplicationV2, entities []contracts.Entity, de
 	}
 	return active, versions, nil
 }
+
+// NewerVersion reports whether left is a newer semantic version than right.
+// Retained deployment sources keep multiple versions, so reconcilers need the
+// same ordering rule as assembly.
+func NewerVersion(left, right string) bool { return newer(left, right) }
+
 func newer(left, right string) bool {
 	l, r := strings.Split(left, "."), strings.Split(right, ".")
 	if len(l) != 3 || len(r) != 3 {

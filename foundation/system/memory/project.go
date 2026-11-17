@@ -27,6 +27,16 @@ func projectDefinitions() []contracts.Definition {
 	listOutput := contracts.Object(map[string]*contracts.Schema{"items": {Type: "array", Items: itemSchema()}}, "items")
 	source := contracts.Object(map[string]*contracts.Schema{"eventId": contracts.Str(1, 256), "eventType": contracts.Str(1, 256), "occurredAt": contracts.Str(1, 64), "correlationId": {Type: "string"}}, "eventId", "eventType", "occurredAt", "correlationId")
 	sourcesOutput := contracts.Object(map[string]*contracts.Schema{"sources": {Type: "array", Items: source}}, "sources")
+	eventsInput := contracts.Object(map[string]*contracts.Schema{
+		"projectId": projectID, "eventType": contracts.Str(1, 256),
+		"beforeId": contracts.Int(0, 1<<53), "limit": contracts.Int(1, 100),
+	}, "projectId")
+	event := contracts.Object(map[string]*contracts.Schema{
+		"id": contracts.Int(1, 1<<53), "eventId": contracts.Str(1, 256), "eventType": contracts.Str(1, 256),
+		"occurredAt": contracts.Str(1, 64), "correlationId": {Type: "string"},
+		"resourceType": {Type: "string", Enum: []string{"project", "project_task"}}, "resourceId": contracts.Str(1, 256),
+	}, "id", "eventId", "eventType", "occurredAt", "correlationId", "resourceType", "resourceId")
+	eventsOutput := contracts.Object(map[string]*contracts.Schema{"events": {Type: "array", Items: event}}, "events")
 	outer := func(name, permission string, input, output *contracts.Schema, read bool) contracts.Definition {
 		d := contracts.Definition{Layer: contracts.LayerOrchestration, Name: name, Version: "1.0.0", Title: name, Description: "Authorize the project and manage its memory through registered capabilities.", Domain: "memory", Entity: "memory_item", Permission: permission, Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, ReadOnly: read, TransientResult: read, Tags: []string{"manual-only"}, Executor: "go:" + name, Input: input, Output: output, Loggable: []string{"projectId", "beforeId", "limit"}}
 		if !read {
@@ -54,7 +64,7 @@ func projectDefinitions() []contracts.Definition {
 		input, output *contracts.Schema
 		read          bool
 	}
-	ops := []operation{{"create", createInput, mutationSchema(), false}, {"list", listInput, listOutput, true}, {"get", getInput, itemSchema(), true}, {"sources", getInput, sourcesOutput, true}, {"correct", correctInput, mutationSchema(), false}, {"archive", changeInput, mutationSchema(), false}, {"delete", changeInput, mutationSchema(), false}}
+	ops := []operation{{"create", createInput, mutationSchema(), false}, {"list", listInput, listOutput, true}, {"get", getInput, itemSchema(), true}, {"sources", getInput, sourcesOutput, true}, {"events", eventsInput, eventsOutput, true}, {"correct", correctInput, mutationSchema(), false}, {"archive", changeInput, mutationSchema(), false}, {"delete", changeInput, mutationSchema(), false}}
 	result := make([]contracts.Definition, 0, len(ops)*2)
 	for _, op := range ops {
 		parent := "memory.project." + op.name
@@ -65,6 +75,12 @@ func projectDefinitions() []contracts.Definition {
 		a := outer(parent, permission, op.input, op.output, op.read)
 		b := data("memory.project.data."+op.name, parent, permission, op.input, op.output, op.read)
 		switch op.name {
+		case "events":
+			a.Description = "Discover events eligible to serve as memory sources for a project."
+			a.Entity, b.Entity = "memory_event", "memory_event"
+			a.Entities = []string{"memory_event", "project", "project_task", "project_member"}
+			b.Entities = []string{"memory_event", "project_task", "project_member", "memory_access_audit"}
+			b.Reads = []string{"memory_event", "project_task", "project_member"}
 		case "create":
 			a.Entities = []string{"memory_item", "memory_source"}
 			b.Entities = []string{"memory_item", "memory_source"}
@@ -94,7 +110,7 @@ func (m *Module) projectFlow(ctx context.Context, name string, in contracts.Inpu
 	if err != nil {
 		return contracts.Output{}, contracts.Problem("unauthenticated")
 	}
-	read := name == "memory.project.list" || name == "memory.project.get" || name == "memory.project.sources"
+	read := name == "memory.project.list" || name == "memory.project.get" || name == "memory.project.sources" || name == "memory.project.events"
 	if !read && !p.Can("projects:write") {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}
@@ -150,6 +166,29 @@ func (m *Module) readProjectData(ctx context.Context, name string, in contracts.
 	}
 	q := dbgen.New(m.pool)
 	scope := strconv.FormatInt(valueInt(in["projectId"]), 10)
+	if name == "memory.project.data.events" {
+		limit := valueInt(in["limit"])
+		if limit == 0 {
+			limit = 30
+		}
+		eventType, _ := in["eventType"].(string)
+		rows, err := q.MemoryListProjectEvents(ctx, dbgen.MemoryListProjectEventsParams{
+			TenantID: p.TenantID, AccountID: p.Account.ID, ProjectID: valueInt(in["projectId"]),
+			EventType: eventType, BeforeID: valueInt(in["beforeId"]), MaxRows: int32(limit),
+		})
+		if err != nil {
+			return contracts.Output{}, err
+		}
+		events := make([]map[string]any, 0, len(rows))
+		for _, row := range rows {
+			events = append(events, map[string]any{
+				"id": row.ID, "eventId": row.EventID, "eventType": row.EventType,
+				"occurredAt": row.OccurredAt.Time.UTC().Format(time.RFC3339Nano), "correlationId": row.CorrelationID,
+				"resourceType": row.ResourceType, "resourceId": row.ResourceID,
+			})
+		}
+		return auditedRead(ctx, q, p, "memory.project.events", valueInt(in["projectId"]), map[string]any{"events": events})
+	}
 	if name == "memory.project.data.get" || name == "memory.project.data.sources" {
 		id := valueInt(in["id"])
 		row, err := q.MemoryGetProject(ctx, dbgen.MemoryGetProjectParams{TenantID: p.TenantID, AccountID: p.Account.ID, ScopeID: scope, ID: id})

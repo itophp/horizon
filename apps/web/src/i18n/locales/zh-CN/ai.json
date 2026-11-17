@@ -1,4 +1,12 @@
 {
+  "automation": {
+    "backToWorkbench": "返回 AI 工作台",
+    "backToTask": "返回任务",
+    "heading": "自动化任务",
+    "back": "返回自动化任务",
+    "openConversation": "打开会话",
+    "conversationSource": "自动化 · {{time}}"
+  },
   "nav": "AI 工作台",
   "title": "AI 工作台",
   "subtitle": "用目标描述你要的结果。智能体只在已注册的业务能力范围内规划，所有动作都不越过你本人的权限。",
@@ -13,6 +21,7 @@
     "capabilities": "{{total}} 项能力"
   },
   "workbench": {
+    "summarizeAttachment": "请总结附件内容。",
     "title": "目标驱动助手",
     "runtime": "{{model}} · 可用能力 {{capabilities}} 项",
     "noModel": "未配置模型",
@@ -37,6 +46,7 @@
     "registry": "能力目录版本",
     "pendingMeta": "{{time}} · 执行 #{{run}}",
     "disabled": "当前工作区尚未启用智能体。管理员可在「系统设置」中开启并配置模型。",
+    "openAISettings": "前往 AI 配置",
     "openSettings": "前往系统设置",
     "modelFailed": "模型没有返回结果。请到「系统设置」检查 Token 是否有效、智能体接口地址是否可达；这次失败的执行已保留在执行记录里。",
     "conversation": "对话内容",

@@ -212,7 +212,14 @@ export function TaskList({
                     }
                     onClick={() => onOpen(task.sessionId)}
                   >
-                    <strong>{task.title}</strong>
+                    <strong title={task.title}>{task.title}</strong>
+                    {task.automationAt && (
+                      <small>
+                        {t("automation.conversationSource", {
+                          time: formatMoment(i18n.language, task.automationAt),
+                        })}
+                      </small>
+                    )}
                     {runningSessionIds.has(task.sessionId) && (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Loader2

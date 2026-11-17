@@ -23,7 +23,7 @@
 - `showcase.test.tsx` 3 项通过：表单失败保留/重试、搜索/批量状态、组织范围与状态组合/清除恢复。
 - Chrome 对8类页面进行 1440/768/390 × Light/Dark 布局检查，截图在 `/tmp/runtime-page-patterns-review`；桌面工作台、组织树列表、移动暗色列表已复看。
 - 浏览器定向交互通过：三种列表布局、组织/状态组合、搜索、审批意见校验与防重复、设置开关与保存、资源 Sheet、单页表单校验与保存、语言切换。修复联动中使用旧 URL 参数覆盖当前组织选择的问题；多个查询控件更新时合并当前完整筛选状态。
-- `make ci-fast` 停在用户原有 `design-preview/main.tsx` 的 5 个 lint 错误（未使用导入/硬编码文案），日志 `/tmp/page-patterns-ci.log`；该文件未修改。`make check-rules` 与 `git diff --check` 通过。
+- `./horizon-cli ci-fast` 停在用户原有 `design-preview/main.tsx` 的 5 个 lint 错误（未使用导入/硬编码文案），日志 `/tmp/page-patterns-ci.log`；该文件未修改。`./horizon-cli check-rules` 与 `git diff --check` 通过。
 - 未运行真实业务全量 E2E、数据库测试、远程 CI，未发布、未推送。Mock 页面通过不代表 Runtime 契约、生产权限或后端能力已对接。
 
 当前组件范围：本地 shadcn Card/Tabs/Input/Textarea/Select/Table/Checkbox/Dialog/DropdownMenu/Badge/Skeleton，加新增 Accordion/Alert/Avatar/Breadcrumb/Popover/Progress/RadioGroup/Sheet/Slider/Switch。新增源码来自官方 base-nova Registry，保留已有 Button，不新增 npm 依赖。统计图沿用现有统计页的 SVG/CSS 路径；未安装 Chart、Drawer、Command 等尚未使用组件。

@@ -59,10 +59,133 @@
   justify-items: start;
 }
 
+:where(.protocol-page, .ai-form-assistant) {
+  --runtime-ai-ink: #6334ad;
+  --runtime-ai-surface: #f6f1ff;
+  --runtime-ai-line: #ded0f6;
+}
+
+.dark :where(.protocol-page, .ai-form-assistant) {
+  --runtime-ai-ink: #d6bafe;
+  --runtime-ai-surface: #282035;
+  --runtime-ai-line: #524069;
+}
+
+.protocol-page .ai-analysis-panel.admin-panel {
+  border-top: 2px solid var(--runtime-ai-line);
+}
+
 .ai-analysis-panel > h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-size: 1rem;
   font-weight: 650;
+}
+
+.ai-panel-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--runtime-ai-surface);
+  color: var(--runtime-ai-ink);
+}
+
+.ai-action[data-slot="button"] {
+  border-color: var(--runtime-ai-line);
+  color: var(--runtime-ai-ink);
+}
+
+.ai-action[data-slot="button"]:is(:hover, [aria-pressed="true"], :disabled) {
+  background: var(--runtime-ai-surface);
+}
+
+.ai-analysis-output {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--runtime-ai-line);
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--runtime-ai-surface) 50%,
+    var(--app-panel)
+  );
+}
+
+.ai-result-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.ai-result-status > svg,
+.ai-result-expand summary > svg {
+  flex: none;
+  color: var(--runtime-ai-ink);
+}
+
+.ai-result-expand summary {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ai-result-expand[open] summary > svg {
+  transform: rotate(180deg);
+}
+
+.ai-result-expand[open] .ai-result-details {
+  margin-top: 8px;
+}
+
+.ai-result-details {
+  display: grid;
+  gap: 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ai-result-details > :is(p, ul) {
+  margin: 0;
+}
+
+.ai-result-summary {
+  font-weight: 600;
+}
+
+.ai-result-coverage {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.ai-result-badge[data-slot="badge"] {
+  border-color: var(--runtime-ai-line);
+  background: var(--runtime-ai-surface);
+}
+
+.ai-form-suggestion {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--runtime-ai-line);
+  border-radius: 8px;
+  background: var(--runtime-ai-surface);
+  overflow-wrap: anywhere;
+}
+
+.ai-suggestion-value {
+  font-weight: 500;
 }
 
 .detail-heading {
@@ -390,4 +513,16 @@
   border-radius: 6px;
   color: var(--app-ink);
   font-size: 10px;
+}
+
+/* The AI settings form panel has no heading element, so it carries its own
+   padding instead of relying on .panel-heading like other runtime cards. */
+.ai-model-panel {
+  padding: 22px;
+}
+
+/* Runtime cards combine .webmcp-section padding with .panel-heading padding,
+   double-spacing the card title. The section padding is authoritative. */
+.webmcp-section > .panel-heading {
+  padding: 0 0 14px;
 }

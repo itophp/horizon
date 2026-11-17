@@ -66,7 +66,7 @@ func TestSendUsesOpenAIResponseProtocol(t *testing.T) {
 
 	service := &Service{HTTP: upstream.Client()}
 	raw, _ := json.Marshal(responseRequest{Model: "glm-5.3-flash", Input: []map[string]any{{"role": "user", "content": "hi"}}, Stream: false})
-	reply, err := service.send(context.Background(), config{baseURL: upstream.URL + "/api/v1", model: "glm-5.3-flash", token: "deployment-token"}, raw)
+	reply, err := service.send(context.Background(), governance.AIModel{BaseURL: upstream.URL + "/api/v1", Name: "glm-5.3-flash", Token: "deployment-token"}, raw)
 	if err != nil {
 		t.Fatalf("send failed: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestSendHidesUpstreamFailureDetail(t *testing.T) {
 	defer upstream.Close()
 
 	service := &Service{HTTP: upstream.Client()}
-	_, err := service.send(context.Background(), config{baseURL: upstream.URL, model: "glm-5.3-flash", token: "x"}, []byte(`{}`))
+	_, err := service.send(context.Background(), governance.AIModel{BaseURL: upstream.URL, Name: "glm-5.3-flash", Token: "x"}, []byte(`{}`))
 	if err == nil || governance.Code(err) != "unavailable" {
 		t.Fatalf("expected a stable unavailable code, got %v", err)
 	}

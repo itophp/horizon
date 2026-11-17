@@ -103,6 +103,19 @@ export function evaluate(
       throw new Error("schema_invalid");
   }
 }
+export function referencesPath(
+  expression: RuntimeExpression,
+  path: string,
+): boolean {
+  return (
+    (expression.kind === "path" &&
+      (expression.path === path || expression.path.startsWith(path + "."))) ||
+    expression.items?.some((item) => referencesPath(item, path)) ||
+    expression.fields?.some(({ value }) => referencesPath(value, path)) ||
+    false
+  );
+}
+
 export function mapInput(
   bindings: RuntimeMapping[],
   scope: Scope,

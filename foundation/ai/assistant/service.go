@@ -16,7 +16,7 @@ import (
 )
 
 // Service resolves the deployment model configuration from governance settings and
-// forwards a single assistant turn to the OpenAI Response compatible endpoint.
+// forwards a single assistant turn using the selected model protocol.
 // The credential never leaves the server and the browser cannot override it.
 type Service struct {
 	*governance.Core
@@ -26,13 +26,6 @@ type Service struct {
 func New(c *governance.Core) *Service {
 	return &Service{Core: c, HTTP: &http.Client{Timeout: 100 * time.Second}}
 }
-
-const (
-	keyEnabled = "assistant.enabled"
-	keyBaseURL = "assistant.baseUrl"
-	keyModel   = "assistant.model"
-	keyToken   = "assistant.token"
-)
 
 // Instruction keeps the model inside the page-tool contract: it may request tools,
 // but the page executes them under its own permission checks.
@@ -46,51 +39,6 @@ func apiError(err *error) {
 	if *err != nil {
 		*err = &genassistant.IAMProblem{Code: governance.Code(*err)}
 	}
-}
-
-type config struct {
-	enabled    bool
-	configured bool
-	model      string
-	baseURL    string
-	token      string
-}
-
-// setting decodes one governance value. Secrets are unsealed by Core.Setting and
-// still arrive JSON encoded, exactly like non-secret values.
-func (s *Service) setting(ctx context.Context, p *identity.Principal, key string) (string, error) {
-	raw, err := s.Core.Setting(ctx, p, key)
-	if err != nil {
-		return "", err
-	}
-	return governance.String(raw)
-}
-
-func (s *Service) settingBool(ctx context.Context, p *identity.Principal, key string) (bool, error) {
-	raw, err := s.Core.Setting(ctx, p, key)
-	if err != nil {
-		return false, err
-	}
-	return governance.Bool(raw)
-}
-
-func (s *Service) resolve(ctx context.Context, p *identity.Principal) (config, error) {
-	out := config{}
-	var err error
-	if out.enabled, err = s.settingBool(ctx, p, keyEnabled); err != nil {
-		return out, err
-	}
-	if out.model, err = s.setting(ctx, p, keyModel); err != nil {
-		return out, err
-	}
-	if out.baseURL, err = s.setting(ctx, p, keyBaseURL); err != nil {
-		return out, err
-	}
-	if out.token, err = s.setting(ctx, p, keyToken); err != nil {
-		return out, err
-	}
-	out.configured = out.token != "" && out.baseURL != "" && out.model != ""
-	return out, nil
 }
 
 func (s *Service) authorize(ctx context.Context) (*identity.Principal, error) {
@@ -110,19 +58,20 @@ func (s *Service) Status(ctx context.Context, _ *genassistant.StatusPayload) (re
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := s.resolve(ctx, p)
+	// The embedded launcher uses the workspace agent, including its browser tools.
+	cfg, err := s.ResolveAIModel(ctx, p, governance.ModelWorkspace)
 	if err != nil {
 		return nil, err
 	}
-	agentEnabled, err := s.settingBool(ctx, p, "agent.enabled")
+	raw, err := s.Setting(ctx, p, "assistant.enabled")
 	if err != nil {
 		return nil, err
 	}
-	agentBaseURL, err := s.setting(ctx, p, "agent.baseUrl")
+	enabled, err := governance.Bool(raw)
 	if err != nil {
 		return nil, err
 	}
-	return &genassistant.AssistantStatus{Enabled: cfg.enabled, Configured: cfg.token != "" && cfg.model != "" && agentBaseURL != "", AgentEnabled: agentEnabled, Model: cfg.model}, nil
+	return &genassistant.AssistantStatus{Enabled: enabled, Configured: cfg.Configured(), AgentEnabled: cfg.Enabled, Model: cfg.DisplayName}, nil
 }
 
 // Response protocol payloads. Only the fields this gateway actually needs are
@@ -232,21 +181,21 @@ func (s *Service) Chat(ctx context.Context, payload *genassistant.ChatPayload) (
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := s.resolve(ctx, p)
+	cfg, err := s.ResolveAIModel(ctx, p, governance.ModelAssistant)
 	if err != nil {
 		return nil, err
 	}
-	if !cfg.enabled {
+	if !cfg.Enabled || !cfg.Configured() {
 		return nil, governance.Problem("unavailable")
 	}
-	if !cfg.configured {
-		return nil, governance.Problem("unavailable")
+	if cfg.Protocol == governance.ChatCompletions {
+		return chatCompletion(ctx, cfg, payload)
 	}
 	input, instructions := s.input(payload.Messages, defaultInstructions)
 	if len(input) == 0 {
 		return nil, governance.Problem("invalid")
 	}
-	request := responseRequest{Model: cfg.model, Input: input, Instructions: instructions, Stream: false}
+	request := responseRequest{Model: cfg.Name, Input: input, Instructions: instructions, Stream: false}
 	for _, tool := range payload.Tools {
 		if tool == nil || tool.Name == "" {
 			continue
@@ -262,15 +211,15 @@ func (s *Service) Chat(ctx context.Context, payload *genassistant.ChatPayload) (
 
 // send performs one Response protocol call. It is separate from Chat so the
 // translation can be verified without a database or session.
-func (s *Service) send(ctx context.Context, cfg config, raw []byte) (*genassistant.AssistantReply, error) {
-	endpoint := strings.TrimSuffix(cfg.baseURL, "/") + "/responses"
+func (s *Service) send(ctx context.Context, cfg governance.AIModel, raw []byte) (*genassistant.AssistantReply, error) {
+	endpoint := strings.TrimSuffix(cfg.BaseURL, "/") + "/responses"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(raw))
 	if err != nil {
 		return nil, governance.Problem("unavailable")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+cfg.token)
+	req.Header.Set("Authorization", "Bearer "+cfg.Token)
 	client := s.HTTP
 	if client == nil {
 		client = &http.Client{Timeout: 100 * time.Second}
@@ -300,7 +249,7 @@ func (s *Service) send(ctx context.Context, cfg config, raw []byte) (*genassista
 	}
 	reply := s.reply(envelope)
 	if reply.Model == "" {
-		reply.Model = cfg.model
+		reply.Model = cfg.Name
 	}
 	return reply, nil
 }

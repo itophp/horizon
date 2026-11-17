@@ -3,11 +3,15 @@ import { z } from "zod";
 export const runtimeDeploymentCandidates = [
   {
     dependencyVersions: [],
-    pluginId: "builtin:articles",
-    version: "2.0.0",
-    digest: "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
-    applications: ["articles"],
+    pluginId: "builtin:automation",
+    version: "1.0.1",
+    digest: "8d18a6babdc96a0dfa6a0b3de579c7b1388786f93d5d2745076b4c8269038a49",
+    applications: ["automation"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      automation: "automation:heading",
+    },
   },
   {
     dependencyVersions: [],
@@ -21,14 +25,13 @@ export const runtimeDeploymentCandidates = [
       "runtime-protocol",
     ],
     dependencies: [],
-  },
-  {
-    dependencyVersions: [],
-    pluginId: "builtin:capabilities",
-    version: "1.0.1",
-    digest: "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
-    applications: ["capabilities"],
-    dependencies: [],
+    base: true,
+    labelKeys: {
+      accounts: "admin:accounts.title",
+      organizations: "admin:organizations.title",
+      permissions: "admin:permissions.title",
+      "runtime-protocol": "runtime:protocol.heading",
+    },
   },
   {
     dependencyVersions: [],
@@ -37,6 +40,10 @@ export const runtimeDeploymentCandidates = [
     digest: "e1bab3048f153d85e7e8131b3c6ad0391087d5c8ec4cc5fadd0b8b6a5757ce61",
     applications: ["analytics"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      analytics: "admin:nav.statistics",
+    },
   },
   {
     dependencyVersions: [],
@@ -45,30 +52,46 @@ export const runtimeDeploymentCandidates = [
     digest: "718e020fd465cd652a8acbc6d6cf78b8e940b4c40499bcb324b2efd9fda53275",
     applications: ["analytics"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      analytics: "admin:nav.statistics",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "builtin:agent-collaboration",
     version: "1.0.0",
-    digest: "26687aa606b98c903034ebd3284118cbb40629f6bed85cb73b9ffdc014fa5189",
+    digest: "97381a2d05b252bd3612de68a333636c283311c56a0c7565b03e42b0d6e4ee66",
     applications: ["agent-collaboration"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "agent-collaboration": "mcp:hub.title",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "builtin:agent-collaboration",
     version: "1.0.1",
-    digest: "4655dc9c397da9b577483a1176689a293876651db1067cc7c62298847ce67f65",
+    digest: "e222543b0a7ecf90cfc0e8fed6e2cd89cdf888b1a1c2da612f77c6b760a25fe9",
     applications: ["agent-collaboration"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "agent-collaboration": "mcp:hub.title",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "builtin:agent-collaboration",
     version: "1.0.2",
-    digest: "4aec1dff200e190d88665c0cb5d0cbcb70d29b032ba6075aec2b358dd7d81e3c",
+    digest: "77c1bbbdb155141e74dc357cb2bbfe45044c59f261cb99aa3a3783e4abbe279e",
     applications: ["agent-collaboration"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "agent-collaboration": "mcp:hub.title",
+    },
   },
   {
     dependencyVersions: [],
@@ -77,6 +100,10 @@ export const runtimeDeploymentCandidates = [
     digest: "2a3963f06b330feca87779ec56ce0b589ff7475238c064579633e1accd8990e9",
     applications: ["personal-preferences"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "personal-preferences": "governance:preferences",
+    },
   },
   {
     dependencyVersions: [],
@@ -85,22 +112,82 @@ export const runtimeDeploymentCandidates = [
     digest: "6148a35590188950bac9206ba917a2493acb141a93dab8e7c4ce5e36c303c1f6",
     applications: ["personal-preferences"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "personal-preferences": "governance:preferences",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "builtin:system-settings",
     version: "1.0.0",
-    digest: "7f1821650d96254ee52f856abff305dac37a32a7a45f1e0a1d314b7195487009",
+    digest: "8dc299a337c5b596b09179f583e98634dad6fd818e31fcd18a2616ef3ef97675",
     applications: ["system-settings"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "system-settings": "governance:settings",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "builtin:system-settings",
     version: "1.0.1",
-    digest: "456972b5a51733402cb28396927a8eec9cfceb27c75c6c8dce2e5951577d7a0c",
+    digest: "47657ffc4d1c4f2e2dc87ae5d4691ab084749a16563e9e1edbb045084df9d900",
     applications: ["system-settings"],
     dependencies: [],
+    base: true,
+    labelKeys: {
+      "system-settings": "governance:settings",
+    },
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:system-settings",
+    version: "1.0.2",
+    digest: "6156b3fa264c144bf66d50a3c1801d0451a02fbfa6f711734b1e80466c0e6e30",
+    applications: ["system-settings"],
+    dependencies: [],
+    base: true,
+    labelKeys: {
+      "system-settings": "governance:settings",
+    },
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:system-settings",
+    version: "1.0.3",
+    digest: "4a1e064fe3be2dbce68e16885cf1b219f5b6692cc73d959c0f94daa95cc50be1",
+    applications: ["system-settings"],
+    dependencies: [],
+    base: true,
+    labelKeys: {
+      "system-settings": "governance:settings",
+    },
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:articles",
+    version: "2.0.0",
+    digest: "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
+    applications: ["articles"],
+    dependencies: [],
+    base: false,
+    labelKeys: {
+      articles: "articles:heading",
+    },
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:capabilities",
+    version: "1.0.1",
+    digest: "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
+    applications: ["capabilities"],
+    dependencies: [],
+    base: true,
+    labelKeys: {
+      capabilities: "capability:title",
+    },
   },
   {
     dependencyVersions: [],
@@ -109,30 +196,46 @@ export const runtimeDeploymentCandidates = [
     digest: "310af6a5671a3d73aa67877eca1eb3d3c401de1d019c2876003d98bad8f0734f",
     applications: ["projects"],
     dependencies: [],
+    base: false,
+    labelKeys: {
+      projects: "projects:heading",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "com.horizon.projects",
     version: "2.0.1",
-    digest: "a645d132f592cf5c25c774dd58dc3d6761c55e1737ad135269c013b162d246ff",
+    digest: "40e086097ec6c09c534775597ebceaea129d8d4c01fdce5a8d47745059f32327",
     applications: ["projects"],
     dependencies: [],
+    base: false,
+    labelKeys: {
+      projects: "projects:heading",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "com.horizon.projects",
     version: "2.0.2",
-    digest: "45ea249e632d68d8bde7684efd291131e04e96735fd9526639840d5ecd0a7cd9",
+    digest: "18e4ba993ff058e1141f87d2eba92aedb4c4b7d9a9a8adfd2110a56ba0d6774d",
     applications: ["projects"],
     dependencies: [],
+    base: false,
+    labelKeys: {
+      projects: "projects:heading",
+    },
   },
   {
     dependencyVersions: [],
     pluginId: "com.horizon.projects",
     version: "2.0.3",
-    digest: "8c826fb84e1ac54edb1f24a7f2fd6483e33402d3582ffffdc518891568e4da1e",
+    digest: "2259aec91f8cf9435ded12b298d45e27c1ee73405a46be960fcf38639885ecc6",
     applications: ["projects"],
     dependencies: [],
+    base: false,
+    labelKeys: {
+      projects: "projects:heading",
+    },
   },
 ] as const;
 export const runtimeUIContracts = [
@@ -641,6 +744,21 @@ export const runtimeUIContracts = [
       "Preserve presentation; Gateway rechecks every provider and action.",
     example:
       '{"type":"element","id":"file-review-form","element":{"kind":"file-review-form","version":"1.0"}}',
+  },
+  {
+    name: "ai-model-settings",
+    version: "1.0",
+    category: "element",
+    description: "Trusted ApplicationRuntime protocol element contract.",
+    propsSchema:
+      '{"additionalProperties":false,"properties":{"disabled":{"type":"boolean"},"view":{"enum":["default","models","routes"],"type":"string"}},"required":["view"],"type":"object"}',
+    slots: [],
+    events: ["submit"],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"ai-model-settings","element":{"kind":"ai-model-settings","version":"1.0"}}',
   },
   {
     name: "settings-panel",
@@ -1896,6 +2014,24 @@ export const runtimeProtocolRoutes = [
     permission: "articles:write",
   },
   {
+    applicationId: "automation",
+    pageId: "automation.list",
+    route: "/automation",
+    permission: "automation:read",
+  },
+  {
+    applicationId: "automation",
+    pageId: "automation.detail",
+    route: "/automation/:id",
+    permission: "automation:read",
+  },
+  {
+    applicationId: "automation",
+    pageId: "automation.run.detail",
+    route: "/automation/runs/:runId",
+    permission: "automation:read",
+  },
+  {
     applicationId: "capabilities",
     pageId: "capabilities.console",
     route: "/capabilities",
@@ -1960,6 +2096,12 @@ export const runtimeProtocolRoutes = [
     pageId: "system-settings.home",
     route: "/settings",
     permission: "authenticated",
+  },
+  {
+    applicationId: "system-settings",
+    pageId: "system-settings.ai",
+    route: "/ai-settings",
+    permission: "settings:read",
   },
 ] as const;
 export interface RuntimeUIContract {
@@ -2373,6 +2515,7 @@ export interface RuntimeFormV2 {
   tags: string[];
 }
 export interface RuntimeAIFormAssistant {
+  defaultExpanded?: boolean;
   labelKey: string;
   action: string;
   inputFields: string[];
@@ -2486,6 +2629,8 @@ export interface RuntimeCandidate {
   digest: string;
   applications: string[];
   dependencies: string[];
+  base: boolean;
+  labelKeys: Record<string, string>;
 }
 export interface RuntimeCompatibilityReport {
   compatible: boolean;
@@ -3036,6 +3181,7 @@ export const runtimeFormV2Schema: z.ZodType<RuntimeFormV2> = z
   .strict();
 export const runtimeAIFormAssistantSchema: z.ZodType<RuntimeAIFormAssistant> = z
   .object({
+    defaultExpanded: z.boolean().optional(),
     labelKey: z.string(),
     action: z.string(),
     inputFields: z.array(z.string()),
@@ -3165,6 +3311,8 @@ export const runtimeCandidateSchema: z.ZodType<RuntimeCandidate> = z
     digest: z.string(),
     applications: z.array(z.string()),
     dependencies: z.array(z.string()),
+    base: z.boolean(),
+    labelKeys: z.record(z.string(), z.string()),
   })
   .strict();
 export const runtimeCompatibilityReportSchema: z.ZodType<RuntimeCompatibilityReport> =

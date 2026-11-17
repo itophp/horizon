@@ -121,4 +121,4 @@ Gateway 注入可信 InvocationContext；嵌套调用强制 OriginCapability、�
 
 未实现：流程数据库发布链与完整 DSL 设计器（当前支持编译图查看及未发布的前端本地草稿）、外部动作对账协议、任意 SQL/command/external 执行器、长期检查点自动归档、分布式业务 exactly-once。E2E 依当前指示暂停，已用 Go SDK 验证真实 Streamable HTTP 协议的目录/启动审批/查询/取消审批/Token 撤销；真实在线模型与原生 MCP 客户端另行验证；测试模型只证明引擎和工具协议。
 
-流程标准 Schema、候选检查和生成器路线见 [规划](agent-generation-plan.md)。make generate-workflows 导出实际 Go 定义；运行时 Validate 也复用同一结构规格，语义检查另行校验能力/依赖/冲突，授权仍在 Gateway。
+流程标准 Schema、候选检查和生成器路线见 [规划](agent-generation-plan.md)。./horizon-cli generate-workflows 导出实际 Go 定义；运行时 Validate 也复用同一结构规格，语义检查另行校验能力/依赖/冲突，授权仍在 Gateway。

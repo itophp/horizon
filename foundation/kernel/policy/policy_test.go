@@ -26,7 +26,7 @@ func TestHumanClicksRunDirectly(t *testing.T) {
 func TestAutomationMustConfirmHighRisk(t *testing.T) {
 	caller := contracts.Caller{Grants: []string{"test:write"}}
 	high := definition(contracts.RiskHigh, contracts.ApprovalConfirm)
-	for _, origin := range []contracts.Origin{contracts.OriginCapability, contracts.OriginAgent, contracts.OriginWorkflow, contracts.OriginEvent, contracts.OriginAPI} {
+	for _, origin := range []contracts.Origin{contracts.OriginCapability, contracts.OriginAgent, contracts.OriginWorkflow, contracts.OriginEvent, contracts.OriginAPI, contracts.OriginAutomation} {
 		decision := Admit(high, caller, origin)
 		if !decision.Allowed || decision.Approval != contracts.ApprovalConfirm {
 			t.Fatalf("%s must confirm: %+v", origin, decision)
@@ -42,6 +42,9 @@ func TestCriticalIsClosedToAutomation(t *testing.T) {
 	}
 	if decision := Admit(critical, caller, contracts.OriginEvent); decision.Allowed {
 		t.Fatal("events must never auto-execute critical capabilities")
+	}
+	if decision := Admit(critical, caller, contracts.OriginAutomation); decision.Allowed {
+		t.Fatal("scheduled automation must never auto-execute critical capabilities")
 	}
 	if decision := Admit(critical, caller, contracts.OriginHumanUI); !decision.Allowed || decision.Approval != contracts.ApprovalFourEyes {
 		t.Fatalf("a human call needs a second approver: %+v", decision)

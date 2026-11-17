@@ -10,17 +10,17 @@ description: "Change PostgreSQL schema, Goose migrations, sqlc queries, pgx repo
 修改前检查已有迁移与 query，明确数据生命周期、约束、租户归属、拥有者语义、查询范围和字段投影。新业务表由实际需求驱动，技术示例表不能直接冒充正式模型。
 
 - 已应用迁移只追加版本；评估锁表、默认值、回填、索引以及已有数据兼容性。Up/Down 不自动等于生产可安全回滚；不可逆操作要明确记录，不自动执行破坏性生产变更。
-- 表和约束在 `foundation/db/migrations/`，参数化查询在 `foundation/db/query/`。改 SQL 后运行 `make generate`，手写 Repository 只消费根目录 `internal/repository/dbgen/`。禁止直接修补 sqlc 输出。
+- 表和约束在 `foundation/db/migrations/`，参数化查询在 `foundation/db/query/`。改 SQL 后运行 `./horizon-cli generate`，手写 Repository 只消费根目录 `internal/repository/dbgen/`。禁止直接修补 sqlc 输出。
 - 所有租户数据的 list/get/update/delete/aggregate/export/batch/joins 都在 SQL 层实施可信 tenant + scope，写入优先带范围的原子查询；不先无约束查出再过滤。
 - 通过 pgx 事务将多步操作绑定同一 DBTX/Queries；明确提交、回滚、并发和幂等策略，禁止事务部分逻辑误用池连接。
 - CUSTOM/组织/部门集合来自后端解析，参数化传入；需要下级部门时明确集合来源。不把请求 tenant/owner 当授权依据。
 - 只选择响应需要的字段。RLS 仅在需求确定、非 BYPASSRLS 角色和连接池事务上下文均验证后引入。
 
-配置 TEST_DATABASE_URL 指向隔离本地/CI 数据库；make db-up 后执行 make test-integration。使用唯一 schema / 数据库并清理，验证迁移往返、约束、范围外 ID、跨租户读写删除及受影响的回滚/并发场景。数据库不可用时报告未通过，不换内存假库冒充 SQL 验证。
+配置 TEST_DATABASE_URL 指向隔离本地/CI 数据库；./horizon-cli db-up 后执行 ./horizon-cli test-integration。使用唯一 schema / 数据库并清理，验证迁移往返、约束、范围外 ID、跨租户读写删除及受影响的回滚/并发场景。数据库不可用时报告未通过，不换内存假库冒充 SQL 验证。
 
-加表或加列同步维护实体声明（`entity_<name>.go` 的 `Attribute`，改枚举/外键则同步 `Enum`/`Relation`），加载 [baseline-entity-model](../baseline-entity-model/SKILL.md)；`make check-entities` 是这条链路的门禁，漏声明会被 E2/E3 拦住。
+加表或加列同步维护实体声明（`entity_<name>.go` 的 `Attribute`，改枚举/外键则同步 `Enum`/`Relation`），加载 [baseline-entity-model](../baseline-entity-model/SKILL.md)；`./horizon-cli check-entities` 是这条链路的门禁，漏声明会被 E2/E3 拦住。
 
-完成 make check-generated、Go 静态/单元检查；有 API/SDK 影响时再按矩阵检查前端与端到端。
+完成 ./horizon-cli check-generated、Go 静态/单元检查；有 API/SDK 影响时再按矩阵检查前端与端到端。
 
 账号多部门变更遵循 [ADR 004](../../../docs/decisions/004-department-memberships.md)。主/附加归属均参与账号 SQL 范围，部门角色复合外键同租户、公司部门一致；成员统计按账号去重。归属/角色写入共用事务，删除归属使临时授权永久失效。修改权限 SQL 必须联动 baseline-security 和安全/目录规则，补跨租户、范围、回滚及上下文隔离回归。
 

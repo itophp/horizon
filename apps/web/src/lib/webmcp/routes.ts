@@ -34,6 +34,12 @@ export const webMcpRoutes = [
     connected: false,
   },
   {
+    path: "/applications/design/:applicationId",
+    module: "runtime",
+    permission: "applications:design",
+    connected: false,
+  },
+  {
     path: "/applications",
     module: "runtime",
     permission: "applications:read",
@@ -88,6 +94,14 @@ export const webMcpRoutes = [
     permission: "assistant:use",
     connected: true,
   },
+  ...["/ai/automation", "/ai/automation/:id", "/ai/automation/runs/:runId"].map(
+    (path) => ({
+      path,
+      module: "ai",
+      permission: "automation:read",
+      connected: false,
+    }),
+  ),
   {
     path: "/knowledge",
     module: "knowledge",

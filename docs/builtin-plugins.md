@@ -16,4 +16,4 @@ Phase 1 仅装配可信、随主程序编译的 Go 插件。插件框架位于 `
 
 能力定义继续由业务模块维护，插件不能直接调用其他能力的 Handler 或绕过 Gateway；原有租户、审批、幂等、事务和 Outbox 边界不因插件化改变。内置 Go 插件与宿主同进程，属于可信代码，并非沙箱。服务重启或重新构建是唯一更新方式，不支持运行时热卸载。
 
-至少运行插件包和业务包测试、`make check-entities`、`make check-generated` 及阶段验收 `make ci-fast`；变更权限行为、SQL 或事务时按仓库规则增加对应安全/数据库验证。浏览器 E2E 按根规则暂停。
+至少运行插件包和业务包测试、`./horizon-cli check-entities`、`./horizon-cli check-generated` 及阶段验收 `./horizon-cli ci-fast`；变更权限行为、SQL 或事务时按仓库规则增加对应安全/数据库验证。浏览器 E2E 按根规则暂停。

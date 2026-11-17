@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"time"
 
 	"horizon/foundation/kernel/audit"
@@ -36,7 +37,7 @@ func (s *Store) Start(ctx context.Context, run Run) (*Run, error) {
 	}
 	row, err := dbgen.New(s.pool).AICreateRun(ctx, dbgen.AICreateRunParams{
 		TenantID: run.TenantID, AccountID: run.AccountID, DepartmentID: run.DepartmentID,
-		SessionID: run.SessionID, Agent: run.Agent, Model: run.Model,
+		SessionID: run.SessionID, ConversationTitle: run.ConversationTitle, Agent: run.Agent, Model: run.Model,
 		InstructionVersion: run.InstructionVersion, Question: run.Question,
 		TraceID: run.TraceID, Context: contextDocument, Origin: run.Origin,
 		CorrelationID: run.CorrelationID, CausationID: run.CausationID,
@@ -124,7 +125,7 @@ func (s *Store) Conversation(ctx context.Context, tenant string, accountID int64
 		return Conversation{}, err
 	}
 	return Conversation{
-		SessionID: row.SessionID, Title: row.Title,
+		SessionID: row.SessionID, Title: row.Title, AutomationAt: row.AutomationAt.Time,
 		MessageCount: int(row.MessageCount), UpdatedAt: row.UpdatedAt.Time, Archived: row.Archived,
 	}, nil
 }
@@ -170,6 +171,7 @@ func (s *Store) ListSession(ctx context.Context, tenant string, accountID int64,
 		run.TenantID = tenant
 		out = append(out, run)
 	}
+	slices.Reverse(out)
 	return out, nil
 }
 
@@ -236,7 +238,7 @@ func (s *Store) Summary(ctx context.Context, tenant string) (dbgen.AIEvaluationR
 
 func conversationFromListRow(row dbgen.AIListConversationsRow) Conversation {
 	return Conversation{
-		SessionID: row.SessionID, Title: row.Title,
+		SessionID: row.SessionID, Title: row.Title, AutomationAt: row.AutomationAt.Time,
 		MessageCount: int(row.MessageCount), UpdatedAt: row.UpdatedAt.Time, Archived: row.Archived,
 	}
 }

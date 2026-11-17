@@ -29,12 +29,15 @@ func workspaceSettingsProviders() []ar.Provider {
 	}
 }
 
-func workspaceSettingsEditor(active ar.Expression) ar.Node {
+func workspaceSettingsEditor(active ar.Expression, version string) ar.Node {
 	groups := []viewProps{}
 	fields := []viewProps{}
 	seen := map[string]bool{}
 	for _, definition := range governance.Registry {
-		if !slices.Contains(definition.Scopes, "workspace") {
+		if !slices.Contains(definition.Scopes, "workspace") ||
+			(version == "1.0.1" && definition.Group == "aiModels") ||
+			(version == "1.0.2" && slices.Contains([]string{"aiModels.glm.type", "aiModels.glm.providerId", "aiModels.custom.type"}, definition.Key)) ||
+			(version == "1.0.3" && governance.IsAIModelSetting(definition.Key)) {
 			continue
 		}
 		if !seen[definition.Group] {
@@ -110,7 +113,7 @@ func workspaceSettingField(definition governance.Definition) viewProps {
 
 const workspaceActionData = "_workspaceAction"
 
-func workspaceSettingsContent(active ar.Expression) ar.Node {
+func workspaceSettingsContent(active ar.Expression, version string) ar.Node {
 	revision := componentNode("workspace-settings-revision", "text", "$"+workspaceSettingsData, viewProps{"textKey": "governance:revision", "className": "muted-text"})
 	componentOf(revision).Bindings = []ar.Mapping{mapping("values", objectValue(
 		mapping("version", fieldPath("record.revision")),
@@ -127,7 +130,7 @@ func workspaceSettingsContent(active ar.Expression) ar.Node {
 		ClassName: "gov-toolbar", Columns: "1fr max-content", Gap: "8px",
 	}, revision, export)
 	root := layoutNode("workspace-config-content", ar.LayoutProps{Gap: "16px"},
-		toolbar, workspaceSettingsEditor(active), workspaceDrafts(), workspaceHistory(),
+		toolbar, workspaceSettingsEditor(active, version), workspaceDrafts(), workspaceHistory(),
 		workspaceScheduleQueue(), workspaceActionDialog("publish"), workspaceActionDialog("rollback"),
 		workspaceActionDialog("schedule"),
 	)

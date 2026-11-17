@@ -42,9 +42,18 @@ func (q *Queries) AIClaimPageTool(ctx context.Context, arg AIClaimPageToolParams
 }
 
 const aICreateRun = `-- name: AICreateRun :one
+WITH run AS (
 INSERT INTO ai_runs (tenant_id, account_id, department_id, session_id, agent, model, instruction_version, question, trace_id, context, origin, correlation_id, causation_id, trigger_depth, trigger_policy, event_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-RETURNING id, created_at
+RETURNING id, created_at, tenant_id, account_id, session_id
+), conversation AS (
+    INSERT INTO ai_conversations (tenant_id, account_id, session_id, title)
+    SELECT tenant_id, account_id, session_id, left($17::text, 200)
+    FROM run
+    WHERE session_id <> '' AND $17::text <> ''
+    ON CONFLICT (tenant_id, account_id, session_id) DO NOTHING
+)
+SELECT id, created_at FROM run
 `
 
 type AICreateRunParams struct {
@@ -64,6 +73,7 @@ type AICreateRunParams struct {
 	TriggerDepth       int32
 	TriggerPolicy      string
 	EventID            string
+	ConversationTitle  string
 }
 
 type AICreateRunRow struct {
@@ -89,6 +99,7 @@ func (q *Queries) AICreateRun(ctx context.Context, arg AICreateRunParams) (AICre
 		arg.TriggerDepth,
 		arg.TriggerPolicy,
 		arg.EventID,
+		arg.ConversationTitle,
 	)
 	var i AICreateRunRow
 	err := row.Scan(&i.ID, &i.CreatedAt)
@@ -187,6 +198,7 @@ SELECT r.session_id,
        COALESCE(NULLIF(c.title, ''), (array_agg(r.question ORDER BY r.id))[1])::text AS title,
        max(r.created_at)::timestamptz AS updated_at,
        count(*)::int AS message_count,
+       min(r.created_at) FILTER (WHERE r.origin = 'automation')::timestamptz AS automation_at,
        (c.archived_at IS NOT NULL)::boolean AS archived
 FROM ai_runs r
 LEFT JOIN ai_conversations c
@@ -208,6 +220,7 @@ type AIGetConversationRow struct {
 	Title        string
 	UpdatedAt    pgtype.Timestamptz
 	MessageCount int32
+	AutomationAt pgtype.Timestamptz
 	Archived     bool
 }
 
@@ -221,6 +234,7 @@ func (q *Queries) AIGetConversation(ctx context.Context, arg AIGetConversationPa
 		&i.Title,
 		&i.UpdatedAt,
 		&i.MessageCount,
+		&i.AutomationAt,
 		&i.Archived,
 	)
 	return i, err
@@ -307,6 +321,7 @@ SELECT r.session_id,
        COALESCE(NULLIF(c.title, ''), (array_agg(r.question ORDER BY r.id))[1])::text AS title,
        max(r.created_at)::timestamptz AS updated_at,
        count(*)::int AS message_count,
+       min(r.created_at) FILTER (WHERE r.origin = 'automation')::timestamptz AS automation_at,
        (c.archived_at IS NOT NULL)::boolean AS archived
 FROM ai_runs r
 LEFT JOIN ai_conversations c
@@ -330,6 +345,7 @@ type AIListConversationsRow struct {
 	Title        string
 	UpdatedAt    pgtype.Timestamptz
 	MessageCount int32
+	AutomationAt pgtype.Timestamptz
 	Archived     bool
 }
 
@@ -351,6 +367,7 @@ func (q *Queries) AIListConversations(ctx context.Context, arg AIListConversatio
 			&i.Title,
 			&i.UpdatedAt,
 			&i.MessageCount,
+			&i.AutomationAt,
 			&i.Archived,
 		); err != nil {
 			return nil, err
@@ -461,7 +478,7 @@ SELECT id, account_id, department_id, session_id, agent, model, instruction_vers
        created_at, finished_at
 FROM ai_runs
 WHERE tenant_id = $1 AND account_id = $2 AND session_id = $3
-ORDER BY id ASC
+ORDER BY id DESC
 LIMIT $4::int
 `
 

@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { runtimeRead, runtimeExecute } from "@/lib/capabilities";
 import { useSession } from "@/features/administration/auth";
+import { AlertTriangle, GitMerge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/features/administration/shared";
 export function DesignBaseline({
@@ -38,79 +39,90 @@ export function DesignBaseline({
     retry: false,
   });
   return (
-    <section>
+    <section className="design-baseline">
+      <p className="design-tab-hint">{t("design.baselineHint")}</p>
       {conflicts.length > 0 && (
-        <div role="alert">
-          <p>{t("design.conflicts")}</p>
-          <ul>
-            {conflicts.map((path) => (
-              <li key={path}>
-                <code>{path}</code>
-              </li>
-            ))}
-          </ul>
+        <div className="design-conflicts" role="alert">
+          <AlertTriangle size={15} />
+          <div>
+            <p>{t("design.conflicts")}</p>
+            <ul>
+              {conflicts.map((path) => (
+                <li key={path}>
+                  <code>{path}</code>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
-      <label>
-        {t("design.baseline")}
-        <select
-          value={digest}
-          onChange={(event) => setDigest(event.target.value)}
+      <div className="design-field">
+        <label>
+          {t("design.baseline")}
+          <select
+            value={digest}
+            onChange={(event) => setDigest(event.target.value)}
+          >
+            <option value="">{t("choose")}</option>
+            {query.data?.items.map((item) => (
+              <option key={item.digest} value={item.digest}>
+                {t("design.baselineVersion", {
+                  version: item.version,
+                  pluginVersion: item.pluginVersion,
+                })}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={
+            !digest ||
+            pending ||
+            !session.permissions.includes("applications:design")
+          }
+          onClick={async () => {
+            setPending(true);
+            setError(undefined);
+            try {
+              const report = runtimeDefinitionMergeReportSchema.parse(
+                await runtimeRead(
+                  "application.runtime.definition.rebase.check",
+                  {
+                    applicationId,
+                    targetDigest: digest,
+                  },
+                ),
+              );
+              setConflicts(report.conflicts);
+              if (!report.compatible) return;
+              const result = await runtimeExecute(
+                "application.runtime.definition.rebase",
+                "1.0.0",
+                { applicationId, targetDigest: digest, revision },
+                crypto.randomUUID(),
+                crypto.randomUUID(),
+              );
+              if (result.status !== "succeeded")
+                throw new Error(result.errorCode || "unavailable");
+              await client.invalidateQueries({
+                queryKey: ["runtime-design-version", identity, applicationId],
+              });
+            } catch (error) {
+              setError(error);
+            } finally {
+              setPending(false);
+            }
+          }}
         >
-          <option value="">{t("choose")}</option>
-          {query.data?.items.map((item) => (
-            <option key={item.digest} value={item.digest}>
-              {t("design.baselineVersion", {
-                version: item.version,
-                pluginVersion: item.pluginVersion,
-              })}
-            </option>
-          ))}
-        </select>
-      </label>
+          <GitMerge size={14} />
+          {t("design.rebase")}
+        </Button>
+      </div>
       {(query.isError || error !== undefined) && (
         <ErrorBanner error={error ?? query.error} />
       )}
-      <Button
-        type="button"
-        disabled={
-          !digest ||
-          pending ||
-          !session.permissions.includes("applications:design")
-        }
-        onClick={async () => {
-          setPending(true);
-          setError(undefined);
-          try {
-            const report = runtimeDefinitionMergeReportSchema.parse(
-              await runtimeRead("application.runtime.definition.rebase.check", {
-                applicationId,
-                targetDigest: digest,
-              }),
-            );
-            setConflicts(report.conflicts);
-            if (!report.compatible) return;
-            const result = await runtimeExecute(
-              "application.runtime.definition.rebase",
-              "1.0.0",
-              { applicationId, targetDigest: digest, revision },
-              crypto.randomUUID(),
-              crypto.randomUUID(),
-            );
-            if (result.status !== "succeeded")
-              throw new Error(result.errorCode || "unavailable");
-            await client.invalidateQueries({
-              queryKey: ["runtime-design-version", identity, applicationId],
-            });
-          } catch (error) {
-            setError(error);
-          } finally {
-            setPending(false);
-          }
-        }}
-      >
-        {t("design.rebase")}
-      </Button>
     </section>
   );
 }

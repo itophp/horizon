@@ -24,6 +24,7 @@ const (
 // the owner's rename when present, otherwise the first question; Archived keeps
 // the entry out of the active list without deleting the thread.
 type Conversation struct {
+	AutomationAt time.Time
 	SessionID    string
 	Title        string
 	MessageCount int
@@ -33,6 +34,7 @@ type Conversation struct {
 
 // Run is one AI task: either a user conversation or an event-triggered job.
 type Run struct {
+	ConversationTitle  string
 	ID                 int64
 	TenantID           string
 	AccountID          int64

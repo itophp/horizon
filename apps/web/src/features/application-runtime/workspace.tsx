@@ -95,7 +95,7 @@ function WorkspaceTab({
     [tab.id, active, guards],
   );
   return (
-    <div hidden={!active}>
+    <div className="workspace-tab" hidden={!active}>
       <UNSAFE_LocationContext.Provider
         value={{ location: tab.location, navigationType: NavigationType.Pop }}
       >

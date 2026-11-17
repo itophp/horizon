@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { runtimeRead, runtimeExecute } from "@/lib/capabilities";
 import { runtimeInstallationSchema } from "@/api/generated/runtime";
 import { useSession } from "@/features/administration/auth";
+import { Power, PowerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/features/administration/shared";
 export function DesignActivation({
@@ -43,6 +44,7 @@ export function DesignActivation({
       {error !== undefined && <ErrorBanner error={error} />}
       <Button
         type="button"
+        variant={enabled ? "outline" : "default"}
         disabled={
           pending ||
           !installation.data ||
@@ -78,6 +80,7 @@ export function DesignActivation({
           }
         }}
       >
+        {enabled ? <PowerOff size={14} /> : <Power size={14} />}
         {t(enabled ? "design.disable" : "design.enable")}
       </Button>
     </>

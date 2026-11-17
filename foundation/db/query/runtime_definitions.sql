@@ -69,3 +69,6 @@ SELECT h.application_id,h.revision,v.version,v.definition,v.digest
 FROM runtime_application_heads h JOIN runtime_application_versions v ON v.tenant_id=h.tenant_id AND v.application_id=h.application_id
 AND v.version=CASE WHEN h.proposal_version<>'' THEN h.proposal_version ELSE h.published_version END
 WHERE h.tenant_id=$1 ORDER BY h.application_id;
+
+-- name: RuntimeSnapshotByIdentity :one
+SELECT digest,definition FROM runtime_deployment_snapshots WHERE plugin_id=$1 AND plugin_version=$2 AND application_id=$3;

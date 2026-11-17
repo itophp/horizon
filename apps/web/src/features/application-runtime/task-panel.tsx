@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { aiRunDetail } from "@/api/generated/baseline";
 import { runtimeExecute } from "@/lib/capabilities";
 import { subscribeTaskEvents } from "@/api/client/task-events";
+import { Sparkles, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/features/administration/shared";
 import { useSession } from "@/features/administration/auth";
@@ -66,42 +67,52 @@ export function TaskPanel({ runId }: { runId: number }) {
   }, [terminal, client]);
   return (
     <section
-      className="admin-panel"
+      className="admin-panel design-task"
       aria-label={t("taskHeading", { id: runId })}
     >
-      <h3>{t("taskHeading", { id: runId })}</h3>
-      {run && (
-        <>
-          <p role="status">{t(`taskStates.${run.status}`)}</p>
-          <p>{run.answer}</p>
-          <small>{t("reference", { id: run.traceId })}</small>
-        </>
-      )}
-      {(query.isError || error !== undefined) && (
-        <ErrorBanner error={error ?? query.error} />
-      )}
-      {run && ["running", "awaiting_approval"].includes(run.status) && (
-        <Button
-          type="button"
-          onClick={async () => {
-            try {
-              const result = await runtimeExecute(
-                "orchestration.workflow.cancel",
-                "1.0.0",
-                { runId },
-                crypto.randomUUID(),
-                run.correlationId,
-              );
-              if (result.status === "failed") throw new Error(result.errorCode);
-              await query.refetch();
-            } catch (error) {
-              setError(error);
-            }
-          }}
-        >
-          {t("cancelTask")}
-        </Button>
-      )}
+      <header className="panel-heading">
+        <div>
+          <h2>{t("taskHeading", { id: runId })}</h2>
+          {run && <p role="status">{t(`taskStates.${run.status}`)}</p>}
+        </div>
+        <Sparkles size={16} />
+      </header>
+      <div className="design-task-body">
+        {run && (
+          <>
+            <p className="design-task-answer">{run.answer}</p>
+            <small>{t("reference", { id: run.traceId })}</small>
+          </>
+        )}
+        {(query.isError || error !== undefined) && (
+          <ErrorBanner error={error ?? query.error} />
+        )}
+        {run && ["running", "awaiting_approval"].includes(run.status) && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              try {
+                const result = await runtimeExecute(
+                  "orchestration.workflow.cancel",
+                  "1.0.0",
+                  { runId },
+                  crypto.randomUUID(),
+                  run.correlationId,
+                );
+                if (result.status === "failed")
+                  throw new Error(result.errorCode);
+                await query.refetch();
+              } catch (error) {
+                setError(error);
+              }
+            }}
+          >
+            <XCircle size={14} />
+            {t("cancelTask")}
+          </Button>
+        )}
+      </div>
     </section>
   );
 }

@@ -112,7 +112,7 @@ func buildRegistry() []Definition {
 	add("drive.maxBytes", "files", "integer", `1073741824`, limits, false, false, true, 1, 1073741824)
 	add("drive.quotaBytes", "files", "integer", `0`, limits, false, false, true, 0, 1<<50)
 	add("drive.blockedExtensions", "files", "string", `""`, limits, true, false, true, 0, 2048)
-	return out
+	return append(out, aiModelDefinitions()...)
 }
 func FindDefinition(key string) *Definition {
 	for i := range Registry {
@@ -171,7 +171,15 @@ func (d Definition) Validate(raw string) error {
 				return Problem("invalid")
 			}
 		}
-		if d.Key == "assistant.baseUrl" || d.Key == "agent.baseUrl" || d.Key == "knowledge.embedding.baseUrl" {
+		managedModel := strings.HasPrefix(d.Key, "aiModels.")
+		if managedModel && strings.HasSuffix(d.Key, ".providerId") && !modelProviderID.MatchString(v) {
+			return Problem("invalid")
+		}
+		if managedModel && (strings.TrimSpace(v) != v || strings.ContainsAny(v, "\r\n\x00")) {
+			return Problem("invalid")
+		}
+		modelEndpoint := managedModel && strings.HasSuffix(d.Key, ".baseUrl") && v != ""
+		if modelEndpoint || d.Key == "assistant.baseUrl" || d.Key == "agent.baseUrl" || d.Key == "knowledge.embedding.baseUrl" {
 			u, err := url.Parse(v)
 			if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" || strings.ContainsAny(v, "\r\n\x00\t ") {
 				return Problem("invalid")

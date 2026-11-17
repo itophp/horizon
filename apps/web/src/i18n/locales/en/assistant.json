@@ -12,12 +12,15 @@
   "toolRunning": "Requested {{name}}",
   "toolResult": "Tool result",
   "thinking": "Thinking…",
+  "historyLoading": "Loading conversation…",
+  "historyFailed": "Could not load the conversation. Refresh the page to try again.",
   "placeholder": "Ask the workspace agent…",
   "send": "Send",
   "stop": "Stop",
   "notConfigured": "Enable the workspace agent and configure its model endpoint and credential in System settings to start a conversation.",
   "errors": {
     "failed": "The request failed. Try again.",
+    "timeout": "The agent took too long to respond. Try again.",
     "forbidden": "You do not have permission to use the agent.",
     "unavailable": "The model service is unavailable or not configured. Try again later."
   }

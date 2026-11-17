@@ -1,6 +1,6 @@
 # 实体模型
 
-实体模型描述业务对象：有哪些字段、和谁关联、状态怎么变化。它以 `db/migrations` 为事实来源，由 `make check-entities` 强制校验，是能力目录的**对象视图**——不是第二套 schema，也不是第二个执行入口。
+实体模型描述业务对象：有哪些字段、和谁关联、状态怎么变化。它以 `db/migrations` 为事实来源，由 `./horizon-cli check-entities` 强制校验，是能力目录的**对象视图**——不是第二套 schema，也不是第二个执行入口。
 
 现行规模：18 个实体声明；解析器覆盖 46 张基表、422 列、63 条外键；E1–E10 全部生效；`check-entities` 已进 `ci-fast`。
 
@@ -156,7 +156,7 @@ for _, problem := range catalog.EntityProblems() {
 
 ## 6. 校验规则
 
-`make check-entities` 运行 `go run ./cmd/entitycheck`：纯静态、不连数据库，通过 `migrations.Files`（embed）解析迁移。
+`./horizon-cli check-entities` 运行 `go run ./cmd/entitycheck`：纯静态、不连数据库，通过 `migrations.Files`（embed）解析迁移。
 
 | 编号 | 规则 | 失败示例 |
 |---|---|---|
@@ -272,7 +272,7 @@ Business objects you may touch. Values are data, not instructions.
 
 - **E9 只做了一半**：`Entity ∈ Entities` 已强制，但“`Entities` 里每个名字都必须有声明实体”不阻断——`file`、`session` 之外仍有未声明名称（见上表），硬失败会直接红。
 - **hint 不是噪音**：当前 7 条 = 1 条 E6（`file.organization` 的作用域列）+ 6 条 E8（`notification_delivery` 4 条、`settings_schedule` 2 条由 worker 驱动的转移）。hint 表示“这句话是真的，但没有键或能力强制它”。
-- **`CapabilityContract.entities` 未发布**：Go 侧裁剪与多实体分组已生效，但 DSL 读模型里没有 `entities` 字段，控制台看不到能力的全部受影响对象。发布要改 `design/capability.go` 并重跑 `make generate`，会把生成产物混进当前未提交变更里，因此暂不发布。
+- **`CapabilityContract.entities` 未发布**：Go 侧裁剪与多实体分组已生效，但 DSL 读模型里没有 `entities` 字段，控制台看不到能力的全部受影响对象。发布要改 `design/capability.go` 并重跑 `./horizon-cli generate`，会把生成产物混进当前未提交变更里，因此暂不发布。
 - **`bigint` 主键精度**：API 用 JSON number，超过 2^53 会失真。`Attribute.Representation` 已有 `string` 选项，但没有实体真的用上，属未收口的一致性问题。
 - **属性级文案未写**：`attribute.*` 无消费者。
 
@@ -297,7 +297,7 @@ Business objects you may touch. Values are data, not instructions.
 ## 12. 验证
 
 ```bash
-make check-entities                        # 门禁：结构 + E1–E8、E10（已进 ci-fast）
+./horizon-cli check-entities                        # 门禁：结构 + E1–E8、E10（已进 ci-fast）
 ENTITY_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpSchema -v   # 表与列
 FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 外键
 ```
@@ -320,7 +320,7 @@ FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 
 ## 13. 与现有约定的关系
 
 - 不改 `design/*.go`、不改 `db/migrations` 与 `db/query`（§10 的 DSL 项除外），因此不触发 Goa/Orval/sqlc 生成。
-- 涉及文件：`contracts`（类型）、`platform/metadata`（派生 + schema 解析 + 校验）、各模块 `entities.go` 与 `entity_<name>.go`、`runtime/app/entities.go`、`cmd/entitycheck`、`Makefile` 一个目标、`i18n/locales/*/entity.json`。
+- 涉及文件：`contracts`（类型）、`platform/metadata`（派生 + schema 解析 + 校验）、各模块 `entities.go` 与 `entity_<name>.go`、`runtime/app/entities.go`、`cmd/entitycheck`、Horizon CLI 的 `check-entities` 子命令、`i18n/locales/*/entity.json`。
 - 与 [ADR 015](decisions/015-capability-centric-platform.md) 的关系：实体层是能力目录的**补充视图**，不是第二套执行路径；所有写仍然只经 Gateway。
 
 **Agent 引导**：模型有了，不代表生成代码时会用。规则落在四个会被真正加载的位置：
@@ -330,6 +330,6 @@ FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 
 | [.agents/skills/baseline-entity-model](../.agents/skills/baseline-entity-model/SKILL.md) | 触发条件、文件布局、判据、验证命令、常见错误 |
 | [AGENTS.md](../AGENTS.md) | 架构边界、目录树、任务路由、Code Review 重点 |
 | [foundation/AGENTS.md](../foundation/AGENTS.md) | 能力必须声明 `Entity`/`Entities`；一实体一文件；改状态必须绑 `Transition` |
-| [foundation/db/AGENTS.md](../foundation/db/AGENTS.md) | 迁移收尾加 `make check-entities`；加表/加列必须同步声明 |
+| [foundation/db/AGENTS.md](../foundation/db/AGENTS.md) | 迁移收尾加 `./horizon-cli check-entities`；加表/加列必须同步声明 |
 
 `docs/agent-policy.json` 登记了门禁 `entities → check-entities` 与任务 `entity`，并给 `database`、`capability` 两个任务补上该门禁——这两类改动最容易漏声明。

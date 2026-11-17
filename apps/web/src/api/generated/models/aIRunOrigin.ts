@@ -15,4 +15,5 @@ export const AIRunOrigin = {
   api: "api",
   event: "event",
   approval: "approval",
+  automation: "automation",
 } as const;

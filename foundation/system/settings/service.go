@@ -259,8 +259,22 @@ func (s *Service) combined(ctx context.Context, q *dbgen.Queries, p *identity.Pr
 		return nil, err
 	}
 	current := map[string]string{}
+	var previous map[string]governance.Value
+	for _, ch := range changes {
+		if t.Kind == "workspace" && governance.IsAIModelSetting(ch.Key) {
+			previous = make(map[string]governance.Value, len(base))
+			for key, value := range base {
+				previous[key] = value
+			}
+			break
+		}
+	}
 	for _, r := range rows {
-		current[r.ConfigKey] = string(r.ValueJson)
+		raw := string(r.ValueJson)
+		current[r.ConfigKey] = raw
+		if previous != nil {
+			previous[r.ConfigKey] = governance.Value{Raw: raw, Source: t.Key, Configured: raw != `""`}
+		}
 	}
 	for _, ch := range changes {
 		if ch.Operation == "reset" {
@@ -295,6 +309,11 @@ func (s *Service) combined(ctx context.Context, q *dbgen.Queries, p *identity.Pr
 			}
 		}
 		base[key] = governance.Value{Raw: raw, Source: t.Key, Configured: raw != `""`}
+	}
+	if previous != nil {
+		if err := governance.ValidateAIModelChanges(previous, base); err != nil {
+			return nil, err
+		}
 	}
 	return base, s.ValidateCombined(base)
 }

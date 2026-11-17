@@ -419,15 +419,15 @@ WHERE p.tenant_id = $1 AND p.id = $2
 
 **门禁**
 
-19. `make check-entities` 通过，且**做过负例**：故意把某个枚举多写一个值、把主实体从 `Entities` 移除，确认门禁失败后改回。
-20. `make ci-fast` 通过；涉及数据库的用例走 `make test-integration`（隔离 PostgreSQL）。
+19. `./horizon-cli check-entities` 通过，且**做过负例**：故意把某个枚举多写一个值、把主实体从 `Entities` 移除，确认门禁失败后改回。
+20. `./horizon-cli ci-fast` 通过；涉及数据库的用例走 `./horizon-cli test-integration`（隔离 PostgreSQL）。
 21. 浏览器验收按根规则暂停；如需旁证，只跑 `features/projects` 对应 spec，并在汇报中列出未覆盖集合。
 
 ## 12. 实施顺序
 
 | 阶段 | 内容 | 交付判据 |
 |---|---|---|
-| P0 契约 | 迁移 `00024`、`db/query/projects.sql`、`make generate`（sqlc）、四个实体声明、能力定义与 Handler、权限点、`app` 装配 | `check-entities` + `check-generated` 通过；能力目录可见 |
+| P0 契约 | 迁移 `00024`、`db/query/projects.sql`、`./horizon-cli generate`（sqlc）、四个实体声明、能力定义与 Handler、权限点、`app` 装配 | `check-entities` + `check-generated` 通过；能力目录可见 |
 | P1 业务 | 能力实现（范围过滤、状态条件更新、事件）、`test-integration` 覆盖 §11 的 1–15 | 集成用例全绿 |
 | P2 页面 | `lib/capabilities.ts` 投影、`features/projects`、路由与菜单、i18n（en/zh-CN） | 主流程可点通；类型检查通过 |
 | P3 AI | `ai_trigger_policies` 登记、`task_briefer` agent、`brief.record` 来源限制、简报展示 | §11 的 16–18 通过 |
@@ -467,7 +467,7 @@ P2 与 P3 可并行，但 P3 依赖 P0 的能力契约。
 | 能力 | `applications/projects/{module,schemas,project,plan,task}.go`（22 个原子能力） |
 | 装配 | `system/identity/catalog.go`（3 个权限点）、`runtime/app/{capabilities,entities}.go` |
 | 前端 | `apps/web/src/features/projects/{page,fields,members,plans,tasks}.tsx`、`lib/capabilities.ts`、路由、菜单、`i18n/locales/*/projects.json`、`entity.json`、`lib/webmcp/routes.ts` |
-| 测试 | `foundation/tests/projects_test.go`（5 个集成用例） |
+| 测试 | `tests/integration/projects_test.go`（5 个集成用例） |
 
 ### 两处语义修正（与初稿不同）
 

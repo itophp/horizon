@@ -61,6 +61,8 @@ it("keeps the interactive timeout off agent tasks", () => {
   // cancels the request server-side and surfaces as a generic failure.
   expect(requestTimeout("/api/ai/runs")).toBe(180000);
   expect(requestTimeout("/api/assistant/chat")).toBe(180000);
+  expect(requestTimeout("/api/assistant/agent")).toBe(180000);
+  expect(requestTimeout("/api/assistant/status")).toBe(10000);
   expect(requestTimeout("/api/capabilities/file.upload/invocations")).toBe(
     180000,
   );

@@ -9,8 +9,9 @@ import {
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { changeLanguage, i18n } from "@/i18n";
+import { ApiError } from "@/api/client/request";
 import type { AIRun, CapabilityApproval } from "@/api/generated/models";
 import { AiPage } from "./page";
 
@@ -115,15 +116,21 @@ const card: CapabilityApproval = {
   mine: true,
 };
 
-function show() {
+function show(path = "/ai") {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={client}>
-        <MemoryRouter initialEntries={["/ai"]}>
-          <AiPage />
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route path="/ai" element={<AiPage />} />
+            <Route
+              path="/ai/automation"
+              element={<h1>Automation management</h1>}
+            />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>
     </I18nextProvider>,
@@ -463,6 +470,98 @@ it("sorts tasks by last activity, oldest first or title", async () => {
       "summarize the audit log",
       "zzz follow up",
     ]),
+  );
+});
+
+it("shows a PDF above the workbench textbox and sends its contents on an attachment-only turn", async () => {
+  api.stream.mockRejectedValueOnce(new ApiError("ai_attachment_invalid", 400));
+  show();
+  const user = userEvent.setup();
+  const composer = await screen.findByLabelText("Ask the agent");
+  const picker = screen.getByLabelText("Source file");
+  const pick = vi.spyOn(picker, "click");
+  await user.click(screen.getByRole("button", { name: "Add attachment" }));
+  expect(pick).toHaveBeenCalledTimes(1);
+  await user.upload(
+    picker,
+    new File(["%PDF-1.4"], "report.pdf", { type: "application/pdf" }),
+  );
+  const card = screen.getByText("report.pdf");
+  expect(
+    card.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Send" }));
+  expect(
+    await screen.findByText(
+      "The file is unsupported, empty, too large, or could not be read.",
+    ),
+  ).toBeVisible();
+  expect(screen.getByText("report.pdf")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Send" }));
+  await waitFor(() =>
+    expect(api.stream).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        question: "Summarize the attached file.",
+        attachment: { name: "report.pdf", content: "JVBERi0xLjQ=" },
+      }),
+      expect.anything(),
+    ),
+  );
+  await waitFor(() => expect(screen.queryByText("report.pdf")).toBeNull());
+});
+
+it("opens automation management on its own route from the workbench header", async () => {
+  api.permissions = ["assistant:use", "automation:read"];
+  show();
+  const entry = screen.getByRole("button", { name: "Automations" });
+  expect(entry).toHaveAttribute("href", "/ai/automation");
+  await userEvent.click(entry);
+  expect(
+    await screen.findByRole("heading", { name: "Automation management" }),
+  ).toBeVisible();
+  expect(screen.queryByRole("textbox", { name: "Ask the agent" })).toBeNull();
+});
+
+it("opens an automation conversation from its link and sends a follow-up to the same session", async () => {
+  const sessionId = "automation:11";
+  api.conversations.mockResolvedValue({
+    status: 200,
+    data: [
+      {
+        sessionId,
+        title: "Daily brief",
+        updatedAt: "2026-11-17T01:00:00Z",
+        automationAt: "2026-11-17T01:00:00Z",
+        messageCount: 1,
+        archived: false,
+      },
+    ],
+  });
+  api.runs.mockResolvedValue({
+    status: 200,
+    data: [
+      {
+        ...run,
+        sessionId,
+        origin: "automation",
+        question: "Report on orders",
+        answer: "Orders increased.",
+        invocations: [],
+      },
+    ],
+  });
+  show("/ai?session=automation%3A11");
+  expect(await screen.findByText("Orders increased.")).toBeVisible();
+  expect(screen.getByText("Daily brief")).toBeVisible();
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText("Ask the agent"), "What changed?");
+  await user.click(screen.getByRole("button", { name: "Send" }));
+  await waitFor(() =>
+    expect(api.stream).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId, question: "What changed?" }),
+      expect.anything(),
+    ),
   );
 });
 

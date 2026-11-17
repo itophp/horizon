@@ -1,6 +1,10 @@
 import { readdir, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
+import { runHorizon } from "./horizon-cli.mjs";
+
+const root = fileURLToPath(new URL("../", import.meta.url));
 const roots = [
   "docs/generated/workflows",
   "docs/generated/runtime",
@@ -11,12 +15,14 @@ const roots = [
 async function snapshot() {
   const result = {};
   async function visit(dir) {
-    for (const entry of await readdir(dir, { withFileTypes: true })) {
+    for (const entry of await readdir(resolve(root, dir), {
+      withFileTypes: true,
+    })) {
       const path = `${dir}/${entry.name}`;
       if (entry.isDirectory()) await visit(path);
       else
         result[path] = createHash("sha256")
-          .update(await readFile(path))
+          .update(await readFile(resolve(root, path)))
           .digest("hex");
     }
   }
@@ -24,7 +30,7 @@ async function snapshot() {
   return result;
 }
 const before = await snapshot();
-const run = spawnSync("make", ["generate"], { stdio: "inherit" });
+const run = runHorizon(root, ["generate"], "inherit");
 if (run.status !== 0) process.exit(run.status ?? 1);
 const after = await snapshot();
 const changed = [

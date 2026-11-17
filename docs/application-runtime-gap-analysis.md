@@ -187,10 +187,10 @@ Runtime Context → 已有 ai/context 与 WebMCP 生命周期 Adapter；Page Sem
 
 ## 9. 验证计划与本轮结果
 
-后续代码阶段：Adapter/Schema/Registry 单测；文章 PostgreSQL 允许/拒绝、范围、分页总数、稳定排序、CAS、幂等与 Outbox 集成；RTL 验证页面跳转、保存、错误及身份切换；公开投影与生成契约一致性检查。复用 `foundation/tests/articles_test.go`、`articles_mcp_test.go` 和模块现有测试，按缺口补用例。
+后续代码阶段：Adapter/Schema/Registry 单测；文章 PostgreSQL 允许/拒绝、范围、分页总数、稳定排序、CAS、幂等与 Outbox 集成；RTL 验证页面跳转、保存、错误及身份切换；公开投影与生成契约一致性检查。复用 `tests/integration/articles_test.go`、`articles_mcp_test.go` 和模块现有测试，按缺口补用例。
 
-每阶段按实际变更集中执行 lint/typecheck/test/build；契约/SQL 源变更执行 `make generate` 与 `make check-generated`；阶段验收执行 `make ci-fast`，SQL/范围变化加 `make test-integration`，授权变化加安全专项。无表结构变更不造迁移；运行生成和浏览器验收必须串行。
+每阶段按实际变更集中执行 lint/typecheck/test/build；契约/SQL 源变更执行 `./horizon-cli generate` 与 `./horizon-cli check-generated`；阶段验收执行 `./horizon-cli ci-fast`，SQL/范围变化加 `./horizon-cli test-integration`，授权变化加安全专项。无表结构变更不造迁移；运行生成和浏览器验收必须串行。
 
-本轮是文档任务，仅运行 `make check-rules`，实际结果见本轮交付回复。未运行业务测试、Go/前端构建、数据库集成、真实模型、远程 CI。E2E 未执行（按当前指示暂停）。未推送、未开 PR。
+本轮是文档任务，仅运行 `./horizon-cli check-rules`，实际结果见本轮交付回复。未运行业务测试、Go/前端构建、数据库集成、真实模型、远程 CI。E2E 未执行（按当前指示暂停）。未推送、未开 PR。
 
 残余不确定性：本轮未证明现有代码运行正常；公开投影设计和 list 参数兼容性仍须实现时以生成产物及真实测试核对。字段权限采用文章固定白名单，不意味着平台已有通用 ABAC 字段策略。后续若要求租户自助安装、元数据在线编辑或动态插件装载，将扩展阶段 3 的存储/授权设计，不能隐含塞进阶段 1。

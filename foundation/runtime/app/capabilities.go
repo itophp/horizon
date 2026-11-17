@@ -1,17 +1,13 @@
 package app
 
 import (
-	"horizon/applications/articles"
-	"horizon/applications/drive"
-	"horizon/applications/example"
-	"horizon/applications/projects"
+	"horizon/foundation/ai/automation"
 	"horizon/foundation/ai/harness"
 	"horizon/foundation/ai/knowledge"
 	"horizon/foundation/integrations/mcp"
 	ar "horizon/foundation/kernel/applicationruntime"
 	"horizon/foundation/kernel/capability/contracts"
 	"horizon/foundation/kernel/capability/registry"
-	"horizon/foundation/kernel/plugin"
 	runtime "horizon/foundation/kernel/workflow"
 	armodule "horizon/foundation/system/applicationruntime"
 	"horizon/foundation/system/dictionaries"
@@ -29,12 +25,10 @@ import (
 // checks. Each domain still owns its definitions; tools must not copy catalogs.
 // Zero value builds declarations without opening a database or executing them.
 type CapabilityModules struct {
-	Example        *example.Module
 	ExecutionPlans *executionplans.Module
 	Runtime        *armodule.Module
-	Articles       *articles.Module
-	Projects       *projects.Module
-	Plugins        *plugin.Manager
+	Automation     *automation.Module
+	Registration   Registration
 	Core           *governance.Core
 	MCP            *mcp.Service
 	Orchestration  *runtime.Engine
@@ -51,7 +45,7 @@ func (m CapabilityModules) Entries() []registry.Entry {
 		m.MCP = mcp.New(m.Core.Pool, m.Core.Identity)
 	}
 	if m.Orchestration == nil {
-		m.Orchestration = runtime.NewWithGraphs(m.Core, WorkflowDefinitions(), GraphDefinitions())
+		m.Orchestration = runtime.NewWithGraphs(m.Core, m.Registration.WorkflowDefinitions(), m.Registration.Graphs)
 	}
 	if m.Documents == nil {
 		m.Documents = &knowledge.Store{Q: m.Core.Q, Core: m.Core}
@@ -59,11 +53,8 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	if m.Knowledge == nil {
 		m.Knowledge = &knowledge.Service{Store: m.Documents}
 	}
-	if m.Articles == nil {
-		m.Articles = &articles.Module{Pool: m.Core.Pool}
-	}
-	if m.Projects == nil {
-		m.Projects = projects.New(m.Core.Pool)
+	if m.Automation == nil {
+		m.Automation = automation.New(m.Core.Pool)
 	}
 	fileService, _ := m.Core.Logos.(*files.Service)
 	if fileService == nil {
@@ -78,12 +69,11 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	m.ExecutionPlans.Inspect = m.Orchestration.InspectPlanReference
 	entries := m.ExecutionPlans.Entries()
 
-	entries = append(entries, m.Articles.Entries()...)
-	if m.Plugins == nil {
-		m.Plugins = BuiltinPlugins(m.Projects)
+	entries = append(entries, m.Registration.Entries...)
+	entries = append(entries, m.Automation.Entries()...)
+	if plugins := m.Registration.Plugins; plugins != nil {
+		entries = append(entries, plugins.Catalog.Entries...)
 	}
-	entries = append(entries, m.Plugins.Catalog.Entries...)
-	entries = append(entries, drive.NewWithFiles(m.Core.Pool, fileService).Entries()...)
 	entries = append(entries, (&orchestration.Module{Engine: m.Orchestration}).Entries()...)
 	entries = append(entries, m.Core.Identity.Entries()...)
 	entries = append(entries, settings.New(m.Core).Entries()...)
@@ -91,10 +81,6 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	entries = append(entries, fileService.Entries()...)
 	entries = append(entries, notifications.New(m.Core).Entries()...)
 	entries = append(entries, m.MCP.Entries()...)
-	if m.Example == nil {
-		m.Example = example.New(m.Core.Pool)
-	}
-	entries = append(entries, m.Example.Entries()...)
 	if m.Memory == nil {
 		m.Memory = memory.New(m.Core.Pool)
 	}
@@ -110,25 +96,23 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	for _, entry := range entries {
 		definitions = append(definitions, entry.Definition)
 	}
-	sources := RuntimeContributions(m.Plugins)
-	applications, versions, err := ar.AssembleDeployment(sources, EntitiesWithPlugins(m.Plugins), definitions)
+	sources := RuntimeContributions(m.Registration)
+	applications, versions, err := ar.AssembleDeployment(sources, EntitiesWithRegistration(m.Registration), definitions)
 	if err != nil {
 		panic(err)
 	}
 	for i := range entries {
 		switch entries[i].Definition.Domain {
-		case "articles":
-			entries[i].Definition.Installation = "builtin:articles"
-			entries[i].Definition.Application = "articles"
-		case "projects":
-			entries[i].Definition.Installation = "com.horizon.projects"
-			entries[i].Definition.Application = "projects"
+		case "automation":
+			entries[i].Definition.Installation = "builtin:automation"
+			entries[i].Definition.Application = "automation"
 		}
 	}
-	m.Runtime.Entities = EntitiesWithPlugins(m.Plugins)
+	m.Runtime.Entities = EntitiesWithRegistration(m.Registration)
 	m.Runtime.Applications = applications
 	m.Runtime.Versions = versions
 	m.Runtime.Pool = m.Core.Pool
+	m.Runtime.BasePlugins = BaseApplicationPlugins()
 	m.Runtime.Definitions = map[string]contracts.Definition{}
 	for _, entry := range entries {
 		m.Runtime.Definitions[entry.Definition.Key()] = entry.Definition
@@ -142,11 +126,16 @@ func (m CapabilityModules) Entries() []registry.Entry {
 }
 
 // RuntimeContributions is shared by server assembly and the spec generator.
-func RuntimeContributions(plugins *plugin.Manager) []ar.ApplicationV2 {
-	return append([]ar.ApplicationV2{
-		articles.RuntimeApplication(), identity.PermissionsRuntimeApplication(),
+func RuntimeContributions(registration Registration) []ar.ApplicationV2 {
+	contributions := []ar.ApplicationV2{
+		automation.RuntimeApplication(), identity.PermissionsRuntimeApplication(),
 		identity.OrganizationsRuntimeApplication(), identity.AccountsRuntimeApplication(),
-		identity.RuntimeProtocolApplication(), CapabilityRuntimeApplication(), analyticsRuntimeApplication("1.0.0"), AnalyticsRuntimeApplication(),
-		legacyAgentCollaborationApplication(), agentCollaborationVersion("1.0.1"), agentCollaborationApplication(), legacyPersonalPreferencesApplication(), personalPreferencesApplication(), legacySystemSettingsApplication(), systemSettingsApplication(),
-	}, plugins.Catalog.Applications...)
+		identity.RuntimeProtocolApplication(), analyticsRuntimeApplication("1.0.0"), AnalyticsRuntimeApplication(),
+		legacyAgentCollaborationApplication(), agentCollaborationVersion("1.0.1"), agentCollaborationApplication(), legacyPersonalPreferencesApplication(), personalPreferencesApplication(), legacySystemSettingsApplication(), systemSettingsApplication("1.0.1"), systemSettingsApplication("1.0.2"), systemSettingsApplication("1.0.3"),
+	}
+	contributions = append(contributions, registration.Applications...)
+	if plugins := registration.Plugins; plugins != nil {
+		contributions = append(contributions, plugins.Catalog.Applications...)
+	}
+	return contributions
 }

@@ -1,4 +1,12 @@
 {
+  "automation": {
+    "backToWorkbench": "Back to AI workbench",
+    "backToTask": "Back to task",
+    "heading": "Automations",
+    "back": "Back to automations",
+    "openConversation": "Open conversation",
+    "conversationSource": "Automation · {{time}}"
+  },
   "nav": "AI workbench",
   "title": "AI workbench",
   "subtitle": "Describe the outcome. The agent plans with registered capabilities and every action stays inside your own authority.",
@@ -13,6 +21,7 @@
     "capabilities": "{{total}} capabilities"
   },
   "workbench": {
+    "summarizeAttachment": "Summarize the attached file.",
     "title": "Goal driven assistant",
     "runtime": "{{model}} · {{capabilities}} capabilities available",
     "noModel": "no model configured",
@@ -37,6 +46,7 @@
     "registry": "Registry version",
     "pendingMeta": "{{time}} · run #{{run}}",
     "disabled": "The agent is not enabled for this workspace yet. An administrator can turn it on and configure the model under System settings.",
+    "openAISettings": "Open AI Configuration",
     "openSettings": "Open system settings",
     "modelFailed": "The model did not answer. Check that the token under System settings is valid and that the agent endpoint is reachable; the failed task is kept in Run history.",
     "conversation": "Conversation",

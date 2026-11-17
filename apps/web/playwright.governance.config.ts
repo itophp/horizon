@@ -21,7 +21,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        "env -u DATABASE_URL -u DEMO_AUTH_TOKEN API_ADDR=127.0.0.1:8101 ../../scripts/go.sh run ./cmd/e2e",
+        "env -u DATABASE_URL -u DEMO_AUTH_TOKEN API_ADDR=127.0.0.1:8101 ../../scripts/go.sh run ../cmd/e2e",
       url: "http://127.0.0.1:8101/api/health",
       reuseExistingServer: false,
       gracefulShutdown: { signal: "SIGTERM", timeout: 10000 },

@@ -17,9 +17,7 @@ const applications = (
     readFileSync("../../docs/generated/runtime/applications.json", "utf8"),
   ) as RuntimeApplicationV2[]
 ).filter(
-  (app) =>
-    app.version === "1.0.1" &&
-    (app.id === "system-settings" || app.id === "personal-preferences"),
+  (app) => app.id === "system-settings" || app.id === "personal-preferences",
 );
 
 const priority = {

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { Link, useSearchParams } from "react-router";
+import { Button } from "@/components/ui/button";
+import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,16 +26,22 @@ export function AiPage() {
   const { t } = useTranslation(["ai", "admin"]);
   const session = useSession();
   const client = useQueryClient();
-  const [firstSession] = useState(() => crypto.randomUUID());
-  const [active, setActive] = useState<string>(firstSession);
+  const [params, setParams] = useSearchParams();
+  const [firstSession] = useState(
+    () => params.get("session") || crypto.randomUUID(),
+  );
+  const active = params.get("session") || firstSession;
   const [opened, setOpened] = useState<string[]>([firstSession]);
+  const canManageAutomation = session.permissions.includes("automation:read");
   const [localTasks, setLocalTasks] = useState<AIConversation[]>([]);
   const [running, setRunning] = useState<ReadonlySet<string>>(new Set());
   function open(sessionId: string) {
-    setOpened((current) =>
-      current.includes(sessionId) ? current : [...current, sessionId],
-    );
-    setActive(sessionId);
+    setOpened((current) => [...new Set([...current, active, sessionId])]);
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("session", sessionId);
+      return next;
+    });
   }
   function create() {
     open(crypto.randomUUID());
@@ -52,6 +61,7 @@ export function AiPage() {
     queryFn: () => aiConversations({ limit: 100 }),
     retry: false,
     enabled: allowed,
+    refetchInterval: 15000,
   });
   const snapshot = status.data?.status === 200 ? status.data.data : undefined;
   const storedTasks =
@@ -115,7 +125,7 @@ export function AiPage() {
   }
 
   return (
-    <>
+    <div className="ai-workspace">
       <PageHeading title={t("ai:title")} subtitle={t("ai:subtitle")}>
         {snapshot && (
           <Badge variant="outline">
@@ -126,6 +136,16 @@ export function AiPage() {
           <Badge variant="secondary">
             {t("ai:runtime.capabilities", { total: snapshot.capabilityCount })}
           </Badge>
+        )}
+        {canManageAutomation && (
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/ai/automation" />}
+          >
+            <Clock aria-hidden />
+            {t("ai:automation.heading")}
+          </Button>
         )}
       </PageHeading>
       <div className="ai-layout">
@@ -148,8 +168,8 @@ export function AiPage() {
             if (archived && active === sessionId) create();
           }}
         />
-        {opened.map((id) => (
-          <div key={id} hidden={id !== active} className="min-w-0">
+        {[...new Set([...opened, active])].map((id) => (
+          <div key={id} hidden={id !== active} className="ai-session">
             <Workbench
               sessionId={id}
               onRunState={runState}
@@ -160,6 +180,6 @@ export function AiPage() {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 }

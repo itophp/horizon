@@ -12,7 +12,7 @@
     "applications/articles/AGENTS.md",
     "foundation/design/AGENTS.md",
     "foundation/db/AGENTS.md",
-    "foundation/tests/AGENTS.md",
+    "tests/integration/AGENTS.md",
     "scripts/AGENTS.md",
     "docs/AGENTS.md"
   ],
@@ -88,6 +88,7 @@
     "docs/agent-tooling.md",
     "docs/agent-workflow.md",
     "docs/testing.md",
+    "docs/local-development.md",
     "docs/security.md",
     "docs/architecture.md",
     "docs/coding-conventions.md",
@@ -211,7 +212,7 @@
       "instructions": [
         "foundation/db/AGENTS.md",
         "foundation/AGENTS.md",
-        "foundation/tests/AGENTS.md"
+        "tests/integration/AGENTS.md"
       ],
       "tools": ["PostgreSQL", "pgx", "sqlc", "Goose"],
       "gates": ["generate", "generated", "integration", "fast", "entities"]
@@ -226,14 +227,14 @@
     {
       "id": "security",
       "skills": ["baseline-security"],
-      "instructions": ["foundation/AGENTS.md", "foundation/tests/AGENTS.md"],
+      "instructions": ["foundation/AGENTS.md", "tests/integration/AGENTS.md"],
       "tools": ["Principal", "Casbin", "DataScope", "Scoped SQL"],
       "gates": ["security", "fast"]
     },
     {
       "id": "testing",
       "skills": ["baseline-quality-gates"],
-      "instructions": ["apps/web/e2e/AGENTS.md", "foundation/tests/AGENTS.md"],
+      "instructions": ["apps/web/e2e/AGENTS.md", "tests/integration/AGENTS.md"],
       "tools": ["Vitest", "React Testing Library", "Go testing", "Playwright"],
       "gates": ["fast", "integration", "e2e-changed", "e2e"]
     },
@@ -315,7 +316,9 @@
       "instructions": ["AGENTS.md", "foundation/AGENTS.md"],
       "tools": [
         "Horizon CLI typed Schema guides and compiled catalog",
-        "Cross-platform local environment checks and Go/Vite processes"
+        "Cross-platform local environment checks and Go/Vite processes",
+        "Horizon CLI project initialization from a Git repository",
+        "Horizon CLI project commands for generation, quality gates and CI"
       ],
       "gates": ["rules", "workflows"]
     },
@@ -330,7 +333,7 @@
       "instructions": [
         "AGENTS.md",
         "foundation/AGENTS.md",
-        "foundation/tests/AGENTS.md"
+        "tests/integration/AGENTS.md"
       ],
       "tools": [
         "Eino Workflow",
@@ -382,7 +385,7 @@
       "instructions": [
         "AGENTS.md",
         "foundation/AGENTS.md",
-        "foundation/tests/AGENTS.md"
+        "tests/integration/AGENTS.md"
       ],
       "tools": [
         "Independent collection, ingestion, retrieval and memory governance",

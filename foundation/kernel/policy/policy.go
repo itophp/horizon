@@ -30,7 +30,7 @@ func Admit(def contracts.Definition, caller contracts.Caller, origin contracts.O
 	if origin == contracts.OriginApproval {
 		return Decision{Allowed: true, Approval: contracts.ApprovalAuto}
 	}
-	automated := origin == contracts.OriginCapability || origin == contracts.OriginAgent || origin == contracts.OriginWorkflow || origin == contracts.OriginEvent || origin == contracts.OriginAPI
+	automated := origin == contracts.OriginCapability || origin == contracts.OriginAgent || origin == contracts.OriginWorkflow || origin == contracts.OriginEvent || origin == contracts.OriginAPI || origin == contracts.OriginAutomation
 
 	if def.Risk == contracts.RiskCritical {
 		if automated {

@@ -222,7 +222,12 @@ func ProtocolCapabilityRefs(app ApplicationV3) []CapabilityRef {
 					add(CapabilityRef{Name: name, Version: version})
 				}
 			}
-			for _, child := range node {
+			for key, child := range node {
+				// Reauthentication is checked with its consuming action by the
+				// protocol validator. It is not an independent page capability.
+				if key == "reauthenticate" && node["action"] == "invoke" {
+					continue
+				}
 				visit(child)
 			}
 		case []any:

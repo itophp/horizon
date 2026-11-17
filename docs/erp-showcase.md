@@ -18,4 +18,4 @@
 - TypeScript、定向 ESLint、i18n 键检查、独立构建通过。4 项组件回归通过，包括采购查询与明细打开。
 - `check-erp-showcase.mjs`：五视图 × 三种尺寸 × 两种主题，共30项布局检查通过；查询、单据明细/流转/附件、模拟收货与防重复、仓库筛选、中文切换通过，无 pageerror。证据 `/tmp/erp-showcase-review`。
 - 视觉复看桌面总览与生产视图；经营金额采用紧凑格式，单据保留精确金额，避免窄屏指标溢出。
-- `make ci-fast` 仍被原有 design-preview/main.tsx 的5个lint错误阻断（日志 `/tmp/erp-ci-fast.log`）；未修改该用户预览文件。未运行全量业务E2E、数据库和远程CI，未推送或发布。
+- `./horizon-cli ci-fast` 仍被原有 design-preview/main.tsx 的5个lint错误阻断（日志 `/tmp/erp-ci-fast.log`）；未修改该用户预览文件。未运行全量业务E2E、数据库和远程CI，未推送或发布。

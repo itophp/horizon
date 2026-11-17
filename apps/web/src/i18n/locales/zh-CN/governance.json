@@ -1,4 +1,34 @@
 {
+  "aiSettings": {
+    "title": "AI 配置",
+    "hint": "管理默认模型、模型连接与各业务的模型分配。",
+    "tabs": {
+      "default": "默认模型",
+      "models": "模型管理",
+      "routes": "业务模型分配"
+    },
+    "types": {
+      "text": "纯文本模型",
+      "embedding": "向量模型",
+      "multimodal": "多模态模型"
+    },
+    "model": "模型",
+    "type": "模型类型",
+    "allTypes": "全部类型",
+    "credential": "API 密钥",
+    "missingKey": "密钥未配置",
+    "effective": "当前生效 {{model}}",
+    "editHint": "修改模型配置，保存为草稿后在本页发布。",
+    "draftSaved": "草稿已保存，可在本页发布。",
+    "embeddingHint": "向量模型不会用于对话。知识库向量化仍从现有知识库设置读取模型。",
+    "glmProtocols": "GLM 智能体使用 OpenAI Chat Completions，页面聊天 API 使用 Responses。",
+    "errors": {
+      "ai_model_incomplete": "{{scene}}选择的 {{model}} 配置不完整。请填写 API 地址、模型名称和密钥等必填项。",
+      "ai_model_type_unsupported": "{{scene}}选择的 {{model}} 类型不支持对话。请选择纯文本或多模态模型。",
+      "ai_model_image_unsupported": "当前模型不支持图片。请在 AI 配置中为该业务选择多模态模型。",
+      "wrongType": "此业务需要纯文本或多模态模型。"
+    }
+  },
   "settings": "系统设置",
   "generalTab": "系统配置",
   "fieldsTab": "字段管理",
@@ -142,6 +172,7 @@
   "fileLimit": "所选文件超过大小限制。",
   "fileReadFailed": "无法读取所选文件。",
   "groups": {
+    "aiModels": "模型管理",
     "knowledge": "知识检索",
     "memory": "记忆采集",
     "articles": "文章审核",
@@ -157,6 +188,29 @@
     "assistant": "AI 助手"
   },
   "labels": {
+    "aiModels_glm_providerId": "GLM 提供商 ID",
+    "aiModels_default": "默认模型",
+    "aiModels_glm_displayName": "GLM 显示名称",
+    "aiModels_route_workspace": "工作区智能体（含浮动助手）",
+    "aiModels_route_assistant": "页面聊天 API",
+    "aiModels_route_knowledge": "知识库问答",
+    "aiModels_route_workflow": "流程编排（Workflow / Graph）",
+    "aiModels_route_runtimeDesign": "运行时设计",
+    "aiModels_route_projectImport": "项目导入",
+    "aiModels_route_eventTrigger": "事件触发",
+    "aiModels_route_automation": "定时自动化",
+    "aiModels_deepseek_providerId": "DeepSeek 提供商 ID",
+    "aiModels_deepseek_displayName": "DeepSeek 显示名称",
+    "aiModels_deepseek_baseUrl": "DeepSeek API 地址",
+    "aiModels_deepseek_protocol": "DeepSeek API 协议",
+    "aiModels_deepseek_model": "DeepSeek 模型名称（API 请求值）",
+    "aiModels_deepseek_token": "DeepSeek API 密钥",
+    "aiModels_custom_providerId": "自定义 提供商 ID",
+    "aiModels_custom_displayName": "自定义 显示名称",
+    "aiModels_custom_baseUrl": "自定义 API 地址",
+    "aiModels_custom_protocol": "自定义 API 协议",
+    "aiModels_custom_model": "自定义 模型名称（API 请求值）",
+    "aiModels_custom_token": "自定义 API 密钥",
     "articles_blockedWords": "文章屏蔽词（每行一个或用逗号分隔）",
     "agent_enabled": "启用工作空间 Agent",
     "agent_baseUrl": "工作空间 Agent API 地址",
@@ -230,12 +284,17 @@
     "templates_revoked_zh-CN_body": "撤销 · 中文正文",
     "smtp_username": "SMTP 用户名",
     "assistant_enabled": "开启 AI 助手",
-    "assistant_baseUrl": "模型地址",
-    "assistant_model": "模型",
-    "assistant_token": "API Token",
+    "assistant_baseUrl": "GLM Responses API 地址",
+    "assistant_model": "GLM 模型名称",
+    "assistant_token": "GLM API 密钥",
     "articles.blockedWords": "文章屏蔽词（每行一个或用逗号分隔）"
   },
   "choices": {
+    "inherit": "使用默认模型",
+    "deepseek": "DeepSeek-V4.1-Flash",
+    "glm": "GLM",
+    "custom": "自定义模型",
+    "chat-completions": "OpenAI Chat Completions",
     "en": "English",
     "zh-CN": "简体中文",
     "dark": "暗色",

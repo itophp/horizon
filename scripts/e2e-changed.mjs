@@ -91,7 +91,7 @@ const inert = [
   /^_tmp_/,
   /^\.env/,
   /^compose\.yaml$/,
-  /^Makefile$/,
+  /^cmd\/horizon-cli\//,
   /^(pnpm-lock\.yaml|pnpm-workspace\.yaml|package\.json|skills-lock\.json)$/,
   /^apps\/web\/(package\.json|tsconfig\.json|vite\.config\.ts|orval\.config\.ts|eslint)/,
   /^apps\/web\/playwright[^/]*\.config\.ts$/,
@@ -180,7 +180,7 @@ if (
       `未映射、本次未选浏览器文件（请人工确认范围）：${unmapped.join(", ")}`,
     );
   console.log(
-    "这是所选文件的验收，不等于全量浏览器集合；全量用 make test-e2e。",
+    "这是所选文件的验收，不等于全量浏览器集合；全量用 ./horizon-cli test-e2e。",
   );
   if (process.argv.includes("--dry-run")) process.exit(0);
 

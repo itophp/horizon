@@ -1818,6 +1818,11 @@ export type aiRunResponse404 = {
   status: 404;
 };
 
+export type aiRunResponse422 = {
+  data: IAMProblem;
+  status: 422;
+};
+
 export type aiRunResponse500 = {
   data: IAMProblem;
   status: 500;
@@ -1836,6 +1841,7 @@ export type aiRunResponseError = (
   | aiRunResponse401
   | aiRunResponse403
   | aiRunResponse404
+  | aiRunResponse422
   | aiRunResponse500
   | aiRunResponse503
 ) & {

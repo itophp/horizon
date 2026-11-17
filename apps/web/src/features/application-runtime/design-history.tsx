@@ -1,15 +1,23 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Check, FileDiff, Trash2, Undo2 } from "lucide-react";
 import {
   runtimeDefinitionHistorySchema,
   runtimeDefinitionDiffSchema,
   type RuntimeDefinitionView,
 } from "@/api/generated/runtime";
 import { runtimeRead, runtimeExecute } from "@/lib/capabilities";
+import { formatDate } from "@/lib/format";
 import { useSession } from "@/features/administration/auth";
+import {
+  ErrorBanner,
+  EditorDialog,
+  EmptyState,
+  Loading,
+} from "@/features/administration/shared";
 import { Button } from "@/components/ui/button";
-import { ErrorBanner, EditorDialog } from "@/features/administration/shared";
+
 export function DesignHistory({
   current,
   identity,
@@ -17,7 +25,7 @@ export function DesignHistory({
   current: RuntimeDefinitionView;
   identity: string;
 }) {
-  const { t } = useTranslation("runtime");
+  const { t, i18n } = useTranslation("runtime");
   const session = useSession();
   const client = useQueryClient();
   const [choice, setChoice] = useState<{
@@ -62,62 +70,93 @@ export function DesignHistory({
     retry: false,
   });
   return (
-    <section>
-      <h3>{t("design.history")}</h3>
+    <section className="design-history">
+      <p className="design-tab-hint">{t("design.historyHint")}</p>
+      <div className="design-history-toolbar">
+        {current.publishedVersion && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowDiff((value) => !value)}
+          >
+            <FileDiff size={14} />
+            {t("design.diff")}
+          </Button>
+        )}
+        {current.proposalVersion && (
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={!session.permissions.includes("applications:design")}
+            onClick={() => {
+              setError(undefined);
+              setChoice({
+                action: "discard",
+                version: current.version,
+                digest: current.digest,
+                revision: current.revision,
+                key: crypto.randomUUID(),
+              });
+            }}
+          >
+            <Trash2 size={14} />
+            {t("design.discard")}
+          </Button>
+        )}
+      </div>
       {history.isError && <ErrorBanner error={history.error} />}
-      <ul>
-        {history.data?.items.map((item) => (
-          <li key={item.version}>
-            {t("design.version", { version: item.version })}
-            <Button
-              type="button"
-              disabled={!session.permissions.includes("applications:manage")}
-              onClick={() => {
-                setError(undefined);
-                setChoice({
-                  action: "rollback",
-                  version: item.version,
-                  digest: item.digest,
-                  revision: current.revision,
-                  key: crypto.randomUUID(),
-                });
-              }}
-            >
-              {t("design.rollback")}
-            </Button>
-          </li>
-        ))}
-      </ul>
-      {current.proposalVersion && (
-        <Button
-          type="button"
-          disabled={!session.permissions.includes("applications:design")}
-          onClick={() => {
-            setError(undefined);
-            setChoice({
-              action: "discard",
-              version: current.version,
-              digest: current.digest,
-              revision: current.revision,
-              key: crypto.randomUUID(),
-            });
-          }}
-        >
-          {t("design.discard")}
-        </Button>
-      )}
-      {current.publishedVersion && (
-        <Button type="button" onClick={() => setShowDiff((value) => !value)}>
-          {t("design.diff")}
-        </Button>
+      {history.isPending ? (
+        <Loading />
+      ) : !history.data?.items.length ? (
+        <EmptyState />
+      ) : (
+        <ul className="design-history-list">
+          {history.data.items.map((item) => (
+            <li key={item.version} className="design-history-item">
+              <div className="design-history-meta">
+                <strong>
+                  {t("design.version", { version: item.version })}
+                </strong>
+                <small>
+                  {t("design.sourceLine", {
+                    source: t(`design.sources.${item.source}`),
+                    date: formatDate(item.createdAt, i18n.language),
+                  })}
+                </small>
+              </div>
+              <div className="design-history-actions">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={
+                    !session.permissions.includes("applications:manage")
+                  }
+                  onClick={() => {
+                    setError(undefined);
+                    setChoice({
+                      action: "rollback",
+                      version: item.version,
+                      digest: item.digest,
+                      revision: current.revision,
+                      key: crypto.randomUUID(),
+                    });
+                  }}
+                >
+                  <Undo2 size={13} />
+                  {t("design.rollback")}
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
       {showDiff &&
         (diff.isError ? (
           <ErrorBanner error={diff.error} />
         ) : (
           diff.data && (
-            <details open>
-              <summary>{t("design.diff")}</summary>
+            <div className="design-diff">
               <ul>
                 {diff.data.changes.map((change) => (
                   <li key={`${change.section}:${change.id}`}>
@@ -135,7 +174,7 @@ export function DesignHistory({
                   {JSON.stringify(diff.data.candidateDefinition, null, 2)}
                 </pre>
               </div>
-            </details>
+            </div>
           )
         ))}
       <EditorDialog
@@ -184,6 +223,7 @@ export function DesignHistory({
             }
           }}
         >
+          <Check size={14} />
           {t("confirm")}
         </Button>
       </EditorDialog>

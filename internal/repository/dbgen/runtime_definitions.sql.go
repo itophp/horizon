@@ -544,3 +544,25 @@ func (q *Queries) RuntimeRegisterSnapshot(ctx context.Context, arg RuntimeRegist
 	}
 	return result.RowsAffected(), nil
 }
+
+const runtimeSnapshotByIdentity = `-- name: RuntimeSnapshotByIdentity :one
+SELECT digest,definition FROM runtime_deployment_snapshots WHERE plugin_id=$1 AND plugin_version=$2 AND application_id=$3
+`
+
+type RuntimeSnapshotByIdentityParams struct {
+	PluginID      string
+	PluginVersion string
+	ApplicationID string
+}
+
+type RuntimeSnapshotByIdentityRow struct {
+	Digest     string
+	Definition []byte
+}
+
+func (q *Queries) RuntimeSnapshotByIdentity(ctx context.Context, arg RuntimeSnapshotByIdentityParams) (RuntimeSnapshotByIdentityRow, error) {
+	row := q.db.QueryRow(ctx, runtimeSnapshotByIdentity, arg.PluginID, arg.PluginVersion, arg.ApplicationID)
+	var i RuntimeSnapshotByIdentityRow
+	err := row.Scan(&i.Digest, &i.Definition)
+	return i, err
+}

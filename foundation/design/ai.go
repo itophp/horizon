@@ -6,6 +6,13 @@ import . "goa.design/goa/v3/dsl"
 // read its trace, and check runtime quality. Business execution and approvals
 // live in the capability service; this service never exposes a second path.
 
+var AIAttachment = Type("AIAttachment", func() {
+	Description("One transient source file for the current turn, encoded in base64.")
+	Attribute("name", String, func() { MinLength(1); MaxLength(255) })
+	Attribute("content", String, func() { MinLength(1); MaxLength(((2 << 20) + 2) / 3 * 4) })
+	Required("name", "content")
+})
+
 var AIPage = Type("AIPage", func() {
 	Description("Current page context. It is validated against the route and entity catalog and treated as data, not instructions.")
 	Attribute("applicationId", String, func() { MaxLength(80) })
@@ -59,7 +66,7 @@ var AIRun = Type("AIRun", func() {
 	Attribute("agent", String)
 	Attribute("model", String)
 	Attribute("instructionVersion", String)
-	Attribute("origin", String, func() { Enum("human-ui", "agent", "workflow", "api", "event", "approval") })
+	Attribute("origin", String, func() { Enum("human-ui", "agent", "workflow", "api", "event", "approval", "automation") })
 	Attribute("errorCode", String)
 	Attribute("toolCalls", Int)
 	Attribute("promptTokens", Int)
@@ -83,6 +90,7 @@ var AIConversation = Type("AIConversation", func() {
 	Attribute("title", String)
 	Attribute("updatedAt", String)
 	Attribute("messageCount", Int)
+	Attribute("automationAt", String)
 	Attribute("archived", Boolean)
 	Required("sessionId", "title", "updatedAt", "messageCount", "archived")
 })
@@ -127,19 +135,26 @@ var _ = Service("ai", func() {
 		Description("Execute one agent task. Business actions inside it go through the capability gateway.")
 		Payload(func() {
 			cookiePayload()
-			Attribute("question", String, func() { MinLength(1); MaxLength(4000) })
+			Attribute("question", String, func() { MaxLength(4000) })
+			Attribute("attachment", AIAttachment)
 			Attribute("sessionId", String, func() { MaxLength(80) })
 			Attribute("page", AIPage)
 			Required("question")
 		})
 		Result(AIRun)
-		HTTP(func() { POST("/api/ai/runs"); Response(StatusCreated) })
+		Error("ai_model_image_unsupported", IAMProblem, "The selected model does not accept image input.")
+		HTTP(func() {
+			POST("/api/ai/runs")
+			Response(StatusCreated)
+			Response("ai_model_image_unsupported", StatusUnprocessableEntity)
+		})
 	})
 	Method("runStream", func() {
 		Description("Execute one agent task. Business actions inside it go through the capability gateway.")
 		Payload(func() {
 			cookiePayload()
-			Attribute("question", String, func() { MinLength(1); MaxLength(4000) })
+			Attribute("question", String, func() { MaxLength(4000) })
+			Attribute("attachment", AIAttachment)
 			Attribute("sessionId", String, func() { MaxLength(80) })
 			Attribute("page", AIPage)
 			Required("question")

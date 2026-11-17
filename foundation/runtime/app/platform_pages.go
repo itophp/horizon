@@ -28,7 +28,10 @@ func platformPageVersion(id, route, title, subtitle, version string, providers [
 
 func platformTabs(id string, props viewProps, children ...ar.Node) ar.Node {
 	tabs := componentNode(id, "layout-tabs", "", props)
-	componentOf(tabs).Content = layoutNode(id+"-content", ar.LayoutProps{Gap: "16px"}, children...).Layout
+	// Tab panels are mutually exclusive; a grid gap here would still reserve
+	// row gaps for the inactive (empty) panel wrappers and shift the active
+	// panel down by one gap per preceding tab.
+	componentOf(tabs).Content = layoutNode(id+"-content", ar.LayoutProps{}, children...).Layout
 	return tabs
 }
 
@@ -171,7 +174,7 @@ func legacySystemSettingsApplication() ar.ApplicationV2 {
 		}}, tabs)
 }
 
-func systemSettingsApplication() ar.ApplicationV2 {
+func systemSettingsApplication(version string) ar.ApplicationV2 {
 	configPermission := permits("settings:read")
 	fieldsPermission := permits("dictionaries:read")
 	fieldsSelected := same("query.tab", "fields")
@@ -180,7 +183,11 @@ func systemSettingsApplication() ar.ApplicationV2 {
 	tabs := platformTabs("settings-tabs", viewProps{"param": "tab", "hideSingleTab": true, "tabs": []viewProps{
 		{"id": "config", "labelKey": "governance:generalTab", "icon": "sliders", "permission": "settings:read"},
 		{"id": "fields", "labelKey": "governance:fieldsTab", "icon": "tree", "permission": "dictionaries:read"},
-	}}, platformTab("config", workspaceSettingsContent(configActive)), platformTab("fields", workspaceDictionaryContent(fieldsActive)))
-	return platformPageVersion("system-settings", "/settings", "governance:settings", "governance:settingsHint", "1.0.1",
+	}}, platformTab("config", workspaceSettingsContent(configActive, version)), platformTab("fields", workspaceDictionaryContent(fieldsActive)))
+	application := platformPageVersion("system-settings", "/settings", "governance:settings", "governance:settingsHint", version,
 		append(workspaceSettingsProviders(), workspaceDictionaryProviders()...), tabs)
+	if version == "1.0.3" {
+		application.Protocol.Pages = append(application.Protocol.Pages, aiSettingsPage())
+	}
+	return application
 }

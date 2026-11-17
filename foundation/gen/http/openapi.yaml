@@ -719,6 +719,12 @@ paths:
                         $ref: '#/definitions/IAMProblem'
                         required:
                             - code
+                "422":
+                    description: 'ai_model_image_unsupported: The selected model does not accept image input.'
+                    schema:
+                        $ref: '#/definitions/IAMProblem'
+                        required:
+                            - code
                 "500":
                     description: 'internal: Internal Server Error response.'
                     schema:
@@ -2126,6 +2132,27 @@ paths:
                 - http
             security: []
 definitions:
+    AIAttachment:
+        title: AIAttachment
+        type: object
+        properties:
+            content:
+                type: string
+                example: p6s
+                minLength: 1
+                maxLength: 2796204
+            name:
+                type: string
+                example: 2u
+                minLength: 1
+                maxLength: 255
+        description: One transient source file for the current turn, encoded in base64.
+        example:
+            content: p6s
+            name: 2u
+        required:
+            - name
+            - content
     AIConversation:
         title: AIConversation
         type: object
@@ -2133,6 +2160,9 @@ definitions:
             archived:
                 type: boolean
                 example: true
+            automationAt:
+                type: string
+                example: Ut quo voluptatem ratione.
             messageCount:
                 type: integer
                 example: 592256525368354716
@@ -2149,6 +2179,7 @@ definitions:
         description: 'One conversation: the tasks recorded under a session, so the workbench can reopen and continue it. An archived conversation is kept and can be restored.'
         example:
             archived: true
+            automationAt: Ut quo voluptatem ratione.
             messageCount: 592256525368354716
             sessionId: Qui amet aliquam sint blanditiis.
             title: Corrupti maiores ut est a fugit.
@@ -2332,7 +2363,7 @@ definitions:
                 example: Error sapiente.
             origin:
                 type: string
-                example: human-ui
+                example: automation
                 enum:
                     - human-ui
                     - agent
@@ -2340,6 +2371,7 @@ definitions:
                     - api
                     - event
                     - approval
+                    - automation
             promptTokens:
                 type: integer
                 example: 8757904503096358304
@@ -2454,7 +2486,7 @@ definitions:
                   triggerDepth: 3328960312055392617
                   version: Asperiores voluptatum blanditiis.
             model: Error sapiente.
-            origin: human-ui
+            origin: automation
             promptTokens: 8757904503096358304
             question: Tempora totam et et ea.
             status: awaiting_approval
@@ -3881,18 +3913,22 @@ definitions:
         title: AiRunRequestBody
         type: object
         properties:
+            attachment:
+                $ref: '#/definitions/AIAttachment'
             page:
                 $ref: '#/definitions/AIPage'
             question:
                 type: string
-                example: q
-                minLength: 1
+                example: q1k
                 maxLength: 4000
             sessionId:
                 type: string
                 example: 2vr
                 maxLength: 80
         example:
+            attachment:
+                content: p6s
+                name: 2u
             page:
                 applicationId: 2y7
                 entity: w7q
@@ -3904,7 +3940,7 @@ definitions:
                     - 8615325486438952813
                     - 3615004802301163038
                     - 8292885423084348597
-            question: q
+            question: q1k
             sessionId: 2vr
         required:
             - question
@@ -3912,18 +3948,22 @@ definitions:
         title: AiRunStreamRequestBody
         type: object
         properties:
+            attachment:
+                $ref: '#/definitions/AIAttachment'
             page:
                 $ref: '#/definitions/AIPage'
             question:
                 type: string
-                example: sm
-                minLength: 1
+                example: smi
                 maxLength: 4000
             sessionId:
                 type: string
                 example: i6d
                 maxLength: 80
         example:
+            attachment:
+                content: p6s
+                name: 2u
             page:
                 applicationId: 2y7
                 entity: w7q
@@ -3935,7 +3975,7 @@ definitions:
                     - 8615325486438952813
                     - 3615004802301163038
                     - 8292885423084348597
-            question: sm
+            question: smi
             sessionId: i6d
         required:
             - question

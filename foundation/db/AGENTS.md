@@ -6,9 +6,9 @@
 
 查询必须考虑 list/detail/update/delete/aggregate/export/batch/joins 的同等隔离与字段投影；不要 SELECT * 暴露后续敏感新增列。多步操作用同一事务 Queries。
 
-变更运行 make generate、make check-generated、make check-entities 和真实 PostgreSQL test-integration，覆盖迁移、约束、越权及实际受影响的事务/并发行为。
+变更运行 ./horizon-cli generate、./horizon-cli check-generated、./horizon-cli check-entities 和真实 PostgreSQL test-integration，覆盖迁移、约束、越权及实际受影响的事务/并发行为。
 
-加表或加列必须同步实体声明：新表写 `entity_<name>.go`，新列在对应实体加 `Attribute`（`Kind` 区分可写/系统注入/状态/引用），改枚举同步 `Attribute.Enum`，改外键同步 `Relation`。`make check-entities` 会拦住漏声明的 NOT NULL 列和与 `CHECK` 不一致的枚举；不要为了让检查通过而删声明或放宽规则。实体语义与新 i18n label 见 [baseline-entity-model](../../.agents/skills/baseline-entity-model/SKILL.md)。
+加表或加列必须同步实体声明：新表写 `entity_<name>.go`，新列在对应实体加 `Attribute`（`Kind` 区分可写/系统注入/状态/引用），改枚举同步 `Attribute.Enum`，改外键同步 `Relation`。`./horizon-cli check-entities` 会拦住漏声明的 NOT NULL 列和与 `CHECK` 不一致的枚举；不要为了让检查通过而删声明或放宽规则。实体语义与新 i18n label 见 [baseline-entity-model](../../.agents/skills/baseline-entity-model/SKILL.md)。
 
 测试环境不可用时明确失败，不跳过或替换内存实现。RLS 仅在实际角色/连接池上下文验证后按需启用。
 

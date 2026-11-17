@@ -15,6 +15,12 @@ type Candidate struct {
 	Digest             string             `json:"digest"`
 	Applications       []string           `json:"applications"`
 	Dependencies       []string           `json:"dependencies"`
+	// Base marks a platform-managed application package. Base packages ship
+	// with the deployment, are always installed and enabled, and are upgraded
+	// automatically; tenants cannot install, disable, uninstall or upgrade them.
+	Base bool `json:"base"`
+	// LabelKeys maps application IDs of this package to their localization keys.
+	LabelKeys map[string]string `json:"labelKeys"`
 }
 type ApplicationState struct {
 	ApplicationID string `json:"applicationId"`

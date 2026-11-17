@@ -5,12 +5,16 @@ go 1.27.3
 require (
 	github.com/casbin/casbin/v2 v2.135.0
 	github.com/cloudwego/eino v0.9.22
+	github.com/cloudwego/eino-ext/components/embedding/openai v0.0.0-20261019121619-eee37f63ff95
+	github.com/cloudwego/eino-ext/components/indexer/redis v0.0.0-20261019121619-eee37f63ff95
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.13
+	github.com/cloudwego/eino-ext/components/retriever/redis v0.0.0-20261019121619-eee37f63ff95
 	github.com/eino-contrib/jsonschema v1.0.3
 	github.com/google/jsonschema-go v0.4.3
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/pressly/goose/v3 v3.29.0
+	github.com/redis/go-redis/v9 v9.10.0
 	goa.design/goa/v3 v3.35.0
 	golang.org/x/crypto v0.58.0
 	golang.org/x/sys v0.49.0
@@ -29,9 +33,6 @@ require (
 	github.com/casbin/govaluate v1.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/cloudwego/eino-ext/components/embedding/openai v0.0.0-20261019121619-eee37f63ff95 // indirect
-	github.com/cloudwego/eino-ext/components/indexer/redis v0.0.0-20261019121619-eee37f63ff95 // indirect
-	github.com/cloudwego/eino-ext/components/retriever/redis v0.0.0-20261019121619-eee37f63ff95 // indirect
 	github.com/cloudwego/eino-ext/libs/acl/openai v0.1.17 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
@@ -57,7 +58,6 @@ require (
 	github.com/nikolalohinski/gonja v1.5.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/redis/go-redis/v9 v9.10.0 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

@@ -13,7 +13,9 @@ import (
 	"strings"
 )
 
-func (m *Module) candidates() []ar.Candidate { return ar.DeploymentCandidates(m.contributions()) }
+func (m *Module) candidates() []ar.Candidate {
+	return ar.MarkBase(ar.DeploymentCandidates(m.contributions()), m.BasePlugins)
+}
 func (m *Module) candidate(id, version string) (ar.Candidate, bool) {
 	for _, c := range m.candidates() {
 		if c.PluginID == id && (version == "" || c.Version == version) {
@@ -179,6 +181,10 @@ func (m *Module) lifecycleWrite(ctx context.Context, tx pgx.Tx, action string, i
 	}
 	q := dbgen.New(tx)
 	id := in["pluginId"].(string)
+	if m.isBasePlugin(id) {
+		// Base packages are provisioned and upgraded with the deployment.
+		return contracts.Output{}, contracts.Problem("forbidden")
+	}
 	if id == identity.AnalyticsRuntimeSource && (action == "disable" || action == "uninstall" || action == "application.disable") {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}

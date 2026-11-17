@@ -20,9 +20,11 @@
 
 应用/页面解析、Provider、Action、语义上下文、AgentProfile、工具发现及调用新鲜度检查读取数据库已发布快照。内存目录仅用于可信代码可用性、部署基线和离线校验；数据库缺失时不回退为默认启用。
 
-启动在就绪前通过固定 `application.runtime.catalog.reconcile` 能力登记部署快照。Gateway 和执行端同时限制系统账号及事件来源，自动化发现排除此能力。租户事务锁、唯一键与 Gateway 幂等避免重复登记；同部署重启不生成版本，也不覆盖定制。新租户通过显式初始化模板在事务内建立基线与发布指针。
+启动在就绪前通过固定 `application.runtime.catalog.reconcile` 能力登记部署快照。Gateway 和执行端同时限制系统账号及事件来源，自动化发现排除此能力。租户事务锁、唯一键与 Gateway 幂等避免重复登记；同部署重启不生成版本，也不覆盖业务应用的已发布定制。新租户通过显式初始化模板在事务内建立基线与发布指针。
 
 安装、启停、卸载、重装、升级与回退在现有基础设施事务中维护状态、定义指针、历史及 Outbox。卸载保留版本、业务记录和审计；重装保持包停用，并保留应用单独启停配置。Runtime Host 不能通过普通插件操作停用或卸载，动态应用仍可单独管理。
+
+平台托管的基本应用（账号/组织/权限、系统设置及 AI 配置、能力、统计、Agent 协作、个人偏好、运行时协议）不是租户可安装包：reconcile 在启用前为每个租户补齐缺失的安装和应用状态，把旧版本安装推进到部署版本（历史动作 `provision`/`auto_upgrade` 记录系统账号），并始终以部署基线覆盖其已发布定义。基本应用不出现在设计目录，`installation.install/enable/disable/upgrade/rollback/uninstall`、`application.enable/disable` 和定义提案/发布/回退一律拒绝。分类来自部署装配（`foundation/runtime/app/base_applications.go`），不接受客户端输入；文章、项目、自动化及租户设计应用仍是可安装、可升级的业务包。
 
 包升级采用旧基线/当前定制/新基线三方合并，按稳定声明 ID 识别修改和顺序；重叠修改返回冲突路径。带定制或待处理候选的升级须绑定人工审查过的候选版本、摘要及修订，包版本和定义指针原子切换。普通发布不能绕过生命周期切换至另一包版本。原有活动任务、审批及依赖限制继续适用。
 
@@ -56,9 +58,9 @@
 
 | 命令 | 结果 |
 |---|---|
-| `make ci-fast` | 通过；45 个前端测试文件、178 项测试，Go 测试、规则、格式、类型、生成一致性、Workflow 校验和前后端构建通过 |
-| `make test-security` | 通过，包含真实 PostgreSQL 的 `make test-integration`；最终集成测试耗时 55.700 秒 |
-| `make check-entities`（包含于 ci-fast） | 51 个声明实体，0 声明问题、0 契约问题、0 Schema 问题 |
+| `./horizon-cli ci-fast` | 通过；45 个前端测试文件、178 项测试，Go 测试、规则、格式、类型、生成一致性、Workflow 校验和前后端构建通过 |
+| `./horizon-cli test-security` | 通过，包含真实 PostgreSQL 的 `./horizon-cli test-integration`；最终集成测试耗时 55.700 秒 |
+| `./horizon-cli check-entities`（包含于 ci-fast） | 51 个声明实体，0 声明问题、0 契约问题、0 Schema 问题 |
 | 候选预览、发布确认、资源隔离定向测试 | 3 个文件、3 项通过 |
 | `git diff --check` | 通过 |
 

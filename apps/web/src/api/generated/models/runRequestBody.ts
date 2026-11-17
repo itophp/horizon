@@ -5,17 +5,16 @@
  * Application infrastructure and technical demonstrations
  * OpenAPI spec version: 0.0.1
  */
+import type { AIAttachment } from "./aIAttachment";
 import type { AIPage } from "./aIPage";
 
 /**
  * Request body for run.
  */
 export interface RunRequestBody {
+  attachment?: AIAttachment;
   page?: AIPage;
-  /**
-   * @minLength 1
-   * @maxLength 4000
-   */
+  /** @maxLength 4000 */
   question: string;
   /** @maxLength 80 */
   sessionId?: string;

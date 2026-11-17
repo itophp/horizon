@@ -36,20 +36,24 @@ V3 应用以 `ApplicationV2.protocol: ApplicationV3` 随部署定义发布，外
 
 展示绑定可读取当前会话的 `context.activeDepartmentId` 与 `context.departmentOptions`。选项仅包含本人归属的部门 ID 和名称。凭据表单可用它们声明部门选择与默认值，提交时仍由 Gateway 和业务服务校验部门归属。
 
-`change-list-form@1.0` 从 Schema 读取分组、字段和选项，从绑定数据读取键、JSON 值与覆盖状态。它只发出实际发生的 `set` 或 `reset`，由页面的 `submit` 事件将变更映射到目标能力。个人偏好在 `builtin:personal-preferences@1.0.1` 使用该组件，已有发布定义通过 Runtime 安装升级流程更新。
+`change-list-form@1.0` 从 Schema 读取分组、字段和选项，从绑定数据读取键、JSON 值与覆盖状态。它只发出实际发生的 `set` 或 `reset`，由页面的 `submit` 事件将变更映射到目标能力。个人偏好在 `builtin:personal-preferences@1.0.1` 使用该组件；它是平台基本应用，定义随部署版本由 reconcile 自动升级。
 
-`/capabilities` 由 `builtin:capabilities@1.0.1` 的 V3 定义提供。部署迁移 00031 为现有租户写入安装记录，并为新租户登记默认安装模板，服务启动时由 Runtime reconcile 初始化发布定义。00032 将安装模板和未初始化的安装推进到 1.0.1，已有发布或草稿通过 Runtime 安装升级流程处理。系统 Provider 只接受固定适配器，复用现有 SDK 和 Gateway 的授权投影。调用记录、审批和事件绑定只保留显示所需字段。部署内置页面可声明 `authenticated` 可见范围，页面内的 Provider 和动作继续各自鉴权。
+`/capabilities` 由 `builtin:capabilities@1.0.1` 的 V3 定义提供。部署迁移 00031 为现有租户写入安装记录，并为新租户登记默认安装模板，服务启动时由 Runtime reconcile 初始化发布定义。00032 将安装模板和未初始化的安装推进到 1.0.1；当前 `builtin:capabilities` 是平台基本应用，后续版本由 reconcile 自动对齐，租户不执行手动升级。系统 Provider 只接受固定适配器，复用现有 SDK 和 Gateway 的授权投影。调用记录、审批和事件绑定只保留显示所需字段。部署内置页面可声明 `authenticated` 可见范围，页面内的 Provider 和动作继续各自鉴权。
 
 
 Phase 4 起，账号、组织和权限管理页已由 `system.identity` V3 定义提供，当前部署包为 `system.identity@2.3.0`，并通过通用 `table-panel`、`page-tabs`、`tree-table-panel`、`cards-panel`、`master-detail-panel` 与表单 Workbench 渲染。原账号/组织/权限 React 页面、custom-view 贡献和旧页面路由已移除。浏览器验收覆盖账号列表与账号表单、组织/部门两个视图、角色卡片/列表与账号独立授权，实际数据分别来自 `identity.accounts.admin.read`、`identity.organizations.read`、`identity.departments.read` 和 `identity.roles.read`。
 
 Phase 5 起，文章与项目也全部改为 V3：`builtin:articles@2.0.0` 提供列表、详情、创建与编辑页，`com.horizon.projects@2.0.0` 提供项目、概览/计划/任务/成员详情页、项目任务与任务详情页。前端只保留通用 `detail-panel`、`record-form-panel`、`search-picker-panel`、`markdown`、分页表格和事件动作适配；文章/项目专用 React 路由、页面和扩展贡献已删除。Provider、表单命令与事件调用都在装配时绑定能力输入 Schema，前端按 Schema 做类型转换后仍经 Gateway 执行。设计契约同样只暴露 V3 Layout、Component 与 Interaction，不再暴露 V2 Composition/container/custom-view 目录。
 
-`/analytics` 由 `builtin:analytics@1.0.0` 提供，内置安装覆盖现有租户和新租户。作为已登录用户的默认回落入口，应用和部署包均受停用保护。页面采用响应式网格、卡片、`layout-tabs` 与 `layout-tab-panel` 内容插槽。指标和图表读取 `identity.analytics.read@1.0.0` 投影，近期列表只显示当前范围内的创建记录。
+`/analytics` 由 `builtin:analytics@1.0.1` 提供，是覆盖现有租户和新租户的平台基本应用，版本随部署自动升级，租户不能停用或卸载。作为已登录用户的默认回落入口，应用和部署包均受保护。页面采用响应式网格、卡片、`layout-tabs` 与 `layout-tab-panel` 内容插槽。指标和图表读取 `identity.analytics.read@1.0.0` 投影，近期列表只显示当前范围内的创建记录。
 
-`/settings`、`/preferences` 和 `/mcp` 分别由 `builtin:system-settings@1.0.0`、`builtin:personal-preferences@1.0.0` 和 `builtin:agent-collaboration@1.0.0` 提供。迁移 00035 为现有租户登记安装并提供新租户默认模板。设置保留侧栏入口，个人偏好和 Agent 协作保留顶栏入口。原标签深链接继续映射到 V3 页面。
+`/settings`、`/preferences` 和 `/mcp` 分别由 `builtin:system-settings@1.0.0`、`builtin:personal-preferences@1.0.0` 和 `builtin:agent-collaboration@1.0.0` 提供。迁移 00035 为现有租户登记安装并提供新租户默认模板；三者都是平台基本应用，后续版本由 reconcile 自动推进。设置保留侧栏入口，个人偏好和 Agent 协作保留顶栏入口。原标签深链接继续映射到 V3 页面。
 
 字段、Token 和审计列表复用 Runtime 表格，WebSkills 使用声明式内容。可信组件复用既有设置发布、字典编辑、凭据管理和本机连接流程。表格刷新由 V3 事件触发，业务写入仍走既有 Gateway 能力。只读预览允许查看已授权设置和列表，禁用变更及本机连接操作。
+
+## 应用管理与基本应用
+
+`/applications` 只列出可管理的业务应用。基本应用是平台内置功能（账号、组织、权限、系统设置及 AI 配置、能力、统计、Agent 协作、个人偏好和运行时协议），由部署随包提供并始终启用，不在应用管理页展示；服务端拒绝其安装、停用、卸载、升级、回退和定义提案。业务应用（文章、项目和自动化等）仍按需安装、启用、停用、升级、回退和卸载，卸载保留业务数据，升级前的兼容检查与三方合并规则不变。基本应用分类来自部署装配，不由租户输入决定，也不作为可设计对象出现在设计目录。
 
 Go Runtime 契约通过现有生成器输出 TS/Zod 和示例；修改手写源后生成，禁止手改生成结果。部署贡献是可信基线，数据库保存已发布定制；不能直接改版本表、用重启/部署覆盖定制，或把单租户配置自动反写为公共部署默认值。无授权运行环境时可分析离线定义，但不能宣称已读取当前租户版本。
 
@@ -59,7 +63,7 @@ Go Runtime 契约通过现有生成器输出 TS/Zod 和示例；修改手写源�
 
 - 区分 schemaVersion、三级部署包版本、四级应用配置版本、内容摘要和运行修订。第四级由服务端分配，Agent 与人工在线修改共用序列，不能指定前三位。
 - 提案绑定父版本与修订；发布绑定已审查的候选版本、摘要和修订。Agent 只形成候选，不能自行发布、回退或扩权。
-- 带定制的部署升级先做三方合并和兼容检查；回退按现有规则形成新版本，不倒退配置修订。
+- 带定制的业务应用部署升级先做三方合并和兼容检查；回退按现有规则形成新版本，不倒退配置修订。平台托管的基本应用由 reconcile 自动对齐部署基线，不接受租户定制。
 - 预览不执行写副作用，候选不混入普通导航。验证发布后的菜单/页面、旧表单及工具失效、资源释放、安装状态和重启保留。
 - 代码交付继续走修改唯一源、生成、测试、提交及按授权部署；代码提交/推送授权不代替配置发布授权。
 
@@ -77,7 +81,7 @@ Go Runtime 契约通过现有生成器输出 TS/Zod 和示例；修改手写源�
 
 ## shadcn/ui 组件
 
-Runtime 支持[用户提供的 shadcn/ui 组件目录](https://www.shadcn-ui.cn/docs/components)中的 59 项。有 `applications:design` 权限的用户可在 `/applications/design` 查看组件契约。Runtime 设计 Agent 通过 `application.runtime.definition.contracts` 读取同一目录，先用 `kind: "element"` 分页查询，再用 `name: "<组件>@<版本>"` 查询属性、插槽和事件。页面声明使用 `kind` 和 `version` 固定版本。完整属性、内容插槽、数据绑定与事件见[生成的 UI 契约](generated/runtime/ui-contracts.json)。运行时组件复用仓库的 Base Nova 和主题 tokens。
+Runtime 支持[用户提供的 shadcn/ui 组件目录](https://www.shadcn-ui.cn/docs/components)中的 59 项。有 `applications:design` 权限的用户从业务应用行进入 `/applications/design/:applicationId`，页面按单应用组织设计需求、候选与发布、版本历史、部署基线和组件契约；基本应用不提供设计入口，旧 `/applications/design` 只做重定向。Runtime 设计 Agent 通过 `application.runtime.definition.contracts` 读取同一目录，先用 `kind: "element"` 分页查询，再用 `name: "<组件>@<版本>"` 查询属性、插槽和事件。页面声明使用 `kind` 和 `version` 固定版本。完整属性、内容插槽、数据绑定与事件见[生成的 UI 契约](generated/runtime/ui-contracts.json)。运行时组件复用仓库的 Base Nova 和主题 tokens。
 
 | 用途 | Runtime 组件 |
 | --- | --- |
@@ -182,6 +186,8 @@ aiAssistant:
 ```
 
 列和表单所在组件分别声明 `analyze-risk-column → application.runtime.ai.analyze@1.0.0` 和 `suggest-task-description → application.runtime.ai.suggest@1.0.0` 的 `invoke` 事件。AI 事件使用组件提供的调用载荷。分析返回 `{ status, summary, label?, evidence?, coverage? }`，列标签为 `high | medium | low | insufficient`。表单返回 `{ suggestions: [{ field, value }] }`，建议值可逐项采纳到表单草稿。
+
+表单目标字段可以是 `string`、`enum`、`date`、`time` 或 `datetime`，并允许带 `visibleWhen`：排期表单由 `scheduleKind` 决定哪个时间字段生效，助手要在同一句话里一并给出名称、周期与具体时间，因此条件字段也必须能被建议。目标字段的类型、枚举、长度和默认值随请求的 `targetFields` 元数据交给模型；建议值按同一套规则校验，`now`（可选，RFC3339 设备时间）只作为解析「明天」等相对日期的 `currentTime` 上下文，建议值不合法时整次请求失败，不写入草稿；最终提交仍由表单能力和 Gateway 重新校验。
 
 两个能力沿用 `assistant:use`、Runtime 发布版本校验及原 Provider/表单权限。服务端按 Schema 裁剪数据并执行一次无工具 Eino 模型调用。提示词、草稿和结果内容不写入能力审计。状态及记录标识可用于定位调用。模型生成不可用或结果校验失败时，原业务表单和页面数据仍可使用。
 

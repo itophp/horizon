@@ -8,6 +8,10 @@ import { DriveDetailPage } from "@/features/drive/detail";
 import { DriveMembersPage } from "@/features/drive/members";
 import { DriveTrashPage } from "@/features/drive/trash";
 import { AiPage } from "@/features/ai/page";
+import {
+  AutomationView,
+  LegacyAutomationRedirect,
+} from "@/features/ai/automation-view";
 import { KnowledgePage } from "@/features/knowledge/page";
 import "@/features/capabilities/capability.css";
 import { FilesPage, FileDownloadPage } from "@/features/governance/files";
@@ -24,7 +28,7 @@ import {
 } from "@/features/administration/layout";
 import { LoginPage } from "@/features/administration/login";
 import { useSession } from "@/features/administration/auth";
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, Navigate, useSearchParams } from "react-router";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Loading } from "@/features/administration/shared";
@@ -69,6 +73,30 @@ function DefaultWorkspace() {
   const session = useSession();
   return <Navigate to={defaultWorkspacePath(session.permissions)} replace />;
 }
+function LegacyDesignRedirect() {
+  const [params] = useSearchParams();
+  const application = params.get("application");
+  return (
+    <Navigate
+      to={
+        application
+          ? `/applications/design/${encodeURIComponent(application)}`
+          : "/applications"
+      }
+      replace
+    />
+  );
+}
+
+function WorkbenchRoute() {
+  const [params] = useSearchParams();
+  return params.get("tab") === "automation" ? (
+    <LegacyAutomationRedirect />
+  ) : (
+    <AiPage />
+  );
+}
+
 export const router = createBrowserRouter([
   {
     element: <AuthBoundary />,
@@ -84,6 +112,10 @@ export const router = createBrowserRouter([
               { path: "/applications", element: <InstallationsPage /> },
               {
                 path: "/applications/design",
+                element: <LegacyDesignRedirect />,
+              },
+              {
+                path: "/applications/design/:applicationId",
                 element: <ApplicationDesignPage />,
               },
               { path: "*", element: <DynamicApplicationRoute /> },
@@ -105,7 +137,22 @@ export const router = createBrowserRouter([
                   </Suspense>
                 ),
               },
-              { path: "/ai", element: <AiPage /> },
+              { path: "/ai", element: <WorkbenchRoute /> },
+              { path: "/ai/automation", element: <AutomationView /> },
+              { path: "/ai/automation/:id", element: <AutomationView /> },
+              {
+                path: "/ai/automation/runs/:runId",
+                element: <AutomationView />,
+              },
+              { path: "/automation", element: <LegacyAutomationRedirect /> },
+              {
+                path: "/automation/:id",
+                element: <LegacyAutomationRedirect />,
+              },
+              {
+                path: "/automation/runs/:runId",
+                element: <LegacyAutomationRedirect />,
+              },
               ...frontendExtensions.routes,
               { path: "/drive", element: <DrivePage /> },
               { path: "/drive/:id", element: <DriveDetailPage /> },

@@ -227,5 +227,20 @@
   },
   "execution_record": {
     "label": "执行记录"
+  },
+  "automation_task": {
+    "label": "自动化任务"
+  },
+  "automation_run": {
+    "label": "自动化执行",
+    "states": {
+      "queued": "排队中",
+      "running": "运行中",
+      "awaiting_approval": "等待审批",
+      "completed": "已完成",
+      "failed": "失败",
+      "skipped": "已跳过",
+      "cancelled": "已取消"
+    }
   }
 }

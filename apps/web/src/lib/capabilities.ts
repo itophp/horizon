@@ -49,6 +49,8 @@ import type {
   MemoryProjectCreateOutput,
   MemoryProjectListInput,
   MemoryProjectListOutput,
+  MemoryProjectEventsInput,
+  MemoryProjectEventsOutput,
   MemoryProjectGetOutput,
   MemoryProjectSourcesOutput,
   MemoryProjectCorrectInput,
@@ -160,6 +162,8 @@ export const projectMemoryCreate = (
 ) => invoke<MemoryProjectCreateOutput>("memory.project.create", input, key);
 export const projectMemoryList = (input: MemoryProjectListInput) =>
   invoke<MemoryProjectListOutput>("memory.project.list", input);
+export const projectMemoryEvents = (input: MemoryProjectEventsInput) =>
+  invoke<MemoryProjectEventsOutput>("memory.project.events", input);
 export const projectMemoryGet = (projectId: number, id: number) =>
   invoke<MemoryProjectGetOutput>("memory.project.get", { projectId, id });
 export const projectMemorySources = (projectId: number, id: number) =>

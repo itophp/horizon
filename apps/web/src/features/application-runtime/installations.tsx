@@ -1,5 +1,5 @@
-import { Link } from "react-router";
-import { Settings2 } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { PenLine, Plus, Settings2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -18,15 +18,55 @@ import {
   RowActions,
   EditorDialog,
   ErrorBanner,
+  EmptyState,
   Loading,
   type AdminColumn,
 } from "@/features/administration/shared";
 import { Button } from "@/components/ui/button";
+import "./runtime.css";
+
+type CandidateGroup = {
+  id: number;
+  pluginId: string;
+  candidates: RuntimeCandidate[];
+  installation?: RuntimeInstallation;
+};
+
+function compareVersions(left: string, right: string) {
+  const a = left.split(".").map(Number);
+  const b = right.split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    const difference = (a[i] ?? 0) - (b[i] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+function latestCandidate(candidates: RuntimeCandidate[]) {
+  return candidates.reduce((best, candidate) =>
+    compareVersions(candidate.version, best.version) > 0 ? candidate : best,
+  );
+}
+
+function applicationNames(
+  candidate: RuntimeCandidate,
+  translate: (key: string) => string,
+) {
+  return candidate.applications
+    .map((id) => {
+      const key = candidate.labelKeys[id];
+      return key ? translate(key) : id;
+    })
+    .join(" · ");
+}
+
 export function InstallationsPage() {
   const { t } = useTranslation("runtime");
   const session = useSession();
   const client = useQueryClient();
+  const navigate = useNavigate();
   const canManage = session.permissions.includes("applications:manage");
+  const canDesign = session.permissions.includes("applications:design");
   const key = [
     "runtime-installations",
     session.tenantId,
@@ -53,7 +93,7 @@ export function InstallationsPage() {
   const [error, setError] = useState<unknown>();
   const [pending, setPending] = useState(false);
   const [issues, setIssues] = useState<string[]>();
-  const rows = useMemo(() => {
+  const rows = useMemo<CandidateGroup[]>(() => {
     const candidatesByPlugin = new Map<string, RuntimeCandidate[]>();
     for (const candidate of q.data?.candidates ?? []) {
       const candidates = candidatesByPlugin.get(candidate.pluginId) ?? [];
@@ -67,12 +107,15 @@ export function InstallationsPage() {
       installation: q.data?.items.find((item) => item.pluginId === pluginId),
     }));
   }, [q.data]);
+  const installableRows = rows.filter(
+    (row) => !latestCandidate(row.candidates).base,
+  );
   type Row = (typeof rows)[number];
   const columns: AdminColumn<Row>[] = [
     {
-      id: "plugin",
-      header: t("plugin"),
-      cell: (row) => row.pluginId,
+      id: "application",
+      header: t("application"),
+      cell: (row) => applicationNames(latestCandidate(row.candidates), t),
     },
     {
       id: "version",
@@ -98,12 +141,17 @@ export function InstallationsPage() {
       id: "actions",
       header: t("actions"),
       cell: (row) => {
-        if (!canManage) return null;
+        if (!canManage && !canDesign) return null;
         const { pluginId, candidates, installation } = row;
+        const latest = latestCandidate(candidates);
         const installed = installation && installation.status !== "uninstalled";
         const currentAvailable = candidates.some(
           (candidate) => candidate.version === installation?.version,
         );
+        const applicationLabel = (applicationId: string) => {
+          const applicationKey = latest.labelKeys[applicationId];
+          return applicationKey ? t(applicationKey) : applicationId;
+        };
         const command = (
           action: string,
           version?: string,
@@ -114,7 +162,7 @@ export function InstallationsPage() {
           );
           return {
             label: applicationId
-              ? `${applicationId}: ${name}`
+              ? `${applicationLabel(applicationId)}: ${name}`
               : version
                 ? t("installationVersionAction", { action: name, version })
                 : name,
@@ -133,20 +181,34 @@ export function InstallationsPage() {
             },
           };
         };
-        const actions = candidates.flatMap(({ version }) =>
-          installed
-            ? [
-                command("check", version),
-                ...(version !== installation.version
-                  ? [command("upgrade", version)]
-                  : []),
-                ...(version === installation.previousVersion
-                  ? [command("rollback", version)]
-                  : []),
-              ]
-            : [command("install", version)],
-        );
-        if (installed && currentAvailable) {
+        const actions = canManage
+          ? candidates.flatMap(({ version }) =>
+              installed
+                ? [
+                    command("check", version),
+                    ...(version !== installation.version
+                      ? [command("upgrade", version)]
+                      : []),
+                    ...(version === installation.previousVersion
+                      ? [command("rollback", version)]
+                      : []),
+                  ]
+                : [command("install", version)],
+            )
+          : [];
+        const designLinks = canDesign
+          ? latest.applications.map((applicationId) => (
+              <Link
+                key={applicationId}
+                className="design-row-link"
+                to={`/applications/design/${encodeURIComponent(applicationId)}`}
+              >
+                <PenLine size={13} />
+                {t("design.action")}
+              </Link>
+            ))
+          : [];
+        if (canManage && installed && currentAvailable) {
           actions.unshift(
             command(installation.status === "enabled" ? "disable" : "enable"),
             command("uninstall"),
@@ -163,22 +225,49 @@ export function InstallationsPage() {
             }
           }
         }
-        return <RowActions actions={actions} />;
+        return designLinks.length || actions.length ? (
+          <div className="design-row-actions">
+            {designLinks}
+            {actions.length > 0 && <RowActions actions={actions} />}
+          </div>
+        ) : null;
       },
     },
   ];
   return (
     <>
-      <PageHeading title={t("applications")} subtitle={t("installationHint")} />
-      {session.permissions.includes("applications:design") && (
-        <Link to="/applications/design">{t("design.heading")}</Link>
-      )}
+      <PageHeading title={t("applications")} subtitle={t("applicationsHint")} />
       {q.isPending ? (
         <Loading />
       ) : q.isError ? (
         <ErrorBanner error={q.error} />
       ) : (
-        <DataTable rows={rows} columns={columns} />
+        <div className="application-management">
+          <section className="admin-panel">
+            <header className="panel-heading">
+              <div>
+                <h2>{t("installableApplications")}</h2>
+                <p>{t("installableApplicationHint")}</p>
+              </div>
+              {canDesign && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/applications/design/new")}
+                >
+                  <Plus size={14} />
+                  {t("design.createApplication")}
+                </Button>
+              )}
+            </header>
+            {installableRows.length ? (
+              <DataTable rows={installableRows} columns={columns} />
+            ) : (
+              <EmptyState />
+            )}
+          </section>
+        </div>
       )}
       <EditorDialog
         open={!!choice}

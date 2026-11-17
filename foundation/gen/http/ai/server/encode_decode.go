@@ -218,6 +218,19 @@ func EncodeRunError(encoder func(context.Context, http.ResponseWriter) goahttp.E
 			return encodeError(ctx, w, v)
 		}
 		switch en.GoaErrorName() {
+		case "ai_model_image_unsupported":
+			var res *ai.IAMProblem
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewRunAiModelImageUnsupportedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return enc.Encode(body)
 		case "unauthenticated":
 			var res *ai.IAMProblem
 			errors.As(v, &res)
@@ -1250,6 +1263,17 @@ func EncodeUpdateConversationError(encoder func(context.Context, http.ResponseWr
 	}
 }
 
+// unmarshalAIAttachmentRequestBodyToAiAIAttachment builds a value of type
+// *ai.AIAttachment from a value of type *AIAttachmentRequestBody.
+func unmarshalAIAttachmentRequestBodyToAiAIAttachment(v *AIAttachmentRequestBody) *ai.AIAttachment {
+	res := &ai.AIAttachment{
+		Name:    *v.Name,
+		Content: *v.Content,
+	}
+
+	return res
+}
+
 // unmarshalAIPageRequestBodyToAiAIPage builds a value of type *ai.AIPage from
 // a value of type *AIPageRequestBody.
 func unmarshalAIPageRequestBodyToAiAIPage(v *AIPageRequestBody) *ai.AIPage {
@@ -1347,6 +1371,7 @@ func marshalAiAIConversationToAIConversationResponse(v *ai.AIConversation) *AICo
 		Title:        v.Title,
 		UpdatedAt:    v.UpdatedAt,
 		MessageCount: v.MessageCount,
+		AutomationAt: v.AutomationAt,
 		Archived:     v.Archived,
 	}
 

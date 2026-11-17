@@ -18,7 +18,7 @@ description: "Implement or review authentication, authorization, tenant/data-sco
 - 内嵌 Agent 的 WebMCP 交接使用 Eino 原生中断和加密检查点；恢复凭证由 SQL 条件更新原子消费，绑定租户、账号、部门、调用 ID 与有效期。浏览器执行前核对当前注册表及 Schema，工具结果不授予业务权限，业务动作仍经 Gateway。身份切换取消旧请求并清理浏览器会话。
 - 环境变量记录在 .env.example，真密钥不提交；修改配置时覆盖缺失/非法值和安全默认值。新依赖检查官方版本、兼容性、许可证与维护性，不引入同职能重复框架。
 
-补允许和拒绝测试。make test-security 对当前真实认证/授权与 PostgreSQL 范围执行验证；扩展新的入口就补相应负向行为。人工检查的认证设计、字段分类和威胁边界要在报告说明，不能声称静态脚本已经证明安全。
+补允许和拒绝测试。./horizon-cli test-security 对当前真实认证/授权与 PostgreSQL 范围执行验证；扩展新的入口就补相应负向行为。人工检查的认证设计、字段分类和威胁边界要在报告说明，不能声称静态脚本已经证明安全。
 
 ## 两级目录与临时授权
 

@@ -106,8 +106,8 @@ Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapa
 
 1. 先选原子动作与权限边界；字段、版本、依赖使用当前能力目录，不猜能力名称。
 2. 候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件>` 校验（脚本工作目录 foundation）。它不执行也不注册定义；结构合法不代表授权、SQL 范围或业务顺序正确。
-3. 流程运行源仍是 Go Definition；编辑源后 `make generate-workflows`。字段映射/DependsOn 决定顺序，Reads/Writes 检查冲突，不自动猜顺序。
-4. `make check-workflows` 校验结构/目录/依赖/预算，`make check-generated` 拦截漂移。阶段验收 ci-fast；完整参考的数据库验收用 `make test-orchestration-example`。
+3. 流程运行源仍是 Go Definition；编辑源后 `./horizon-cli generate-workflows`。字段映射/DependsOn 决定顺序，Reads/Writes 检查冲突，不自动猜顺序。
+4. `./horizon-cli check-workflows` 校验结构/目录/依赖/预算，`./horizon-cli check-generated` 拦截漂移。阶段验收 ci-fast；完整参考的数据库验收用 `./horizon-cli test-orchestration-example`。
 5. 参数类型、Schema、目录、语义和 Gateway 各守一层；禁止生成第二份权限/审批策略或新的任意 JSON 执行入口。
 
 ## 复核清单
@@ -121,7 +121,7 @@ Gateway 已提供 CurrentInvocation / ChildKey，嵌套 Invoke 强制 OriginCapa
 - [ ] 嵌套深度是否继承并受 MaxDepth 限制？
 - [ ] 两层权限与两个语言文案是否都补齐？
 
-验证：`make check-entities`、`make check-rules`，阶段验收 `make ci-fast`。
+验证：`./horizon-cli check-entities`、`./horizon-cli check-rules`，阶段验收 `./horizon-cli ci-fast`。
 
 ## 受限数据能力的固定父能力
 

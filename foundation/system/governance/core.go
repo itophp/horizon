@@ -475,6 +475,10 @@ func (c *Core) Setting(ctx context.Context, p *identity.Principal, key string) (
 	if !ok {
 		return "", Problem("invalid")
 	}
+	return c.settingValue(p.TenantID, key, v)
+}
+
+func (c *Core) settingValue(tenant, key string, v Value) (string, error) {
 	d := c.Definition(key)
 	if d.Secret && v.Source != "default" {
 		encoded, err := String(v.Raw)
@@ -484,7 +488,7 @@ func (c *Core) Setting(ctx context.Context, p *identity.Principal, key string) (
 		if encoded == "" {
 			return `""`, nil
 		}
-		return c.Unseal(p.TenantID, v.Source, key, encoded)
+		return c.Unseal(tenant, v.Source, key, encoded)
 	}
 	return v.Raw, nil
 }

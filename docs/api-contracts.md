@@ -2,9 +2,9 @@
 
 1. 阅读 design/design.go、当前生成接口及实现。
 2. 修改 Goa DSL 的 Payload / Result / HTTP / Errors，字段 Required 与 Validation 必须明确。
-3. make generate：相同模块图中的 Goa → OpenAPI；锁定 sqlc 生成 SQL；锁定 Orval 输出 hooks 与模型，最后统一格式化生成 SDK。
+3. ./horizon-cli generate：相同模块图中的 Goa → OpenAPI；锁定 sqlc 生成 SQL；锁定 Orval 输出 hooks 与模型，最后统一格式化生成 SDK。
 4. 在 runtime/app / system/identity、Repository 和 runtime/transport 实现逻辑，在前端使用生成的 hooks。
-5. make check-generated、make lint、make typecheck、make test、make build；改数据库时额外 test-integration，完成流程后 test-e2e。
+5. ./horizon-cli check-generated、./horizon-cli lint、./horizon-cli typecheck、./horizon-cli test、./horizon-cli build；改数据库时额外 test-integration，完成流程后 test-e2e。
 6. 审查生成差异。删除字段、缩窄输入、改变授权范围都要报告兼容性影响。
 
 GET /api/health 返回存活状态。GET /api/echo?name=… 要求 1–80 个字符，返回同一 name 和 RFC3339 UTC 时间点。演示记录 API 为租户/所有者隔离的持久化示例。

@@ -113,7 +113,7 @@ WorkBuddy 推荐生成官方连接器结构：`connector-meta.json`、`mcp.json`
 | D | 首批只读工具、生产代理、真实两平台端到端 | 各平台初始化→目录→调用→撤销拒绝；关闭网页后仍可用；原 WebMCP 回归 |
 | E | 单独确认的写工具与 OAuth | 幂等/确认重放/过期/撤权/回滚及标准授权互通 |
 
-代码批次依赖顺序为 SQL/Goa → generate → 应用/协议 → SDK/UI → check-generated → 浏览器与客户端；阶段统一 ci-fast，追加 test-security（含真实数据库）、协议测试、相关 Playwright 和 `pnpm webmcp:test`。发布候选运行完整 ci。新增 MCP 专项命令需实施时接入 Makefile/CI；目前不存在，不报告运行成功。
+代码批次依赖顺序为 SQL/Goa → generate → 应用/协议 → SDK/UI → check-generated → 浏览器与客户端；阶段统一 ci-fast，追加 test-security（含真实数据库）、协议测试、相关 Playwright 和 `pnpm webmcp:test`。发布候选运行完整 ci。MCP 专项命令由 Horizon CLI 提供，见 [验证入口](testing.md#账号远程-mcp)。
 
 负向验收至少覆盖：无效/过期/撤销 Token、A 管理 B Token、越权工具直接调用、篡改部门/租户/owner、禁用与归属移除、敏感字段泄漏、readonly 调写、批量范围混入、日志/下载/安装包泄密、恶意 Origin/Host、请求过大/超时/限流、跨身份流/会话、轮换并发与审计失败。客户端缺失应记未执行，不能以模拟器代替真实平台通过。
 

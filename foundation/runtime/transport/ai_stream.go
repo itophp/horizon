@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"horizon/foundation/ai/attachment"
 	"horizon/foundation/ai/harness"
 	genai "horizon/foundation/gen/ai"
 	"horizon/foundation/kernel/capability/contracts"
@@ -11,6 +12,9 @@ import (
 // The generated Goa SSE transport shares the authenticated run boundary.
 func (a *aiAdapter) RunStream(ctx context.Context, payload *genai.RunStreamPayload, stream genai.RunStreamServerStream) error {
 	input := harness.RunInput{Question: payload.Question, Origin: contracts.OriginHumanUI}
+	if payload.Attachment != nil {
+		input.Attachment = &attachment.Upload{Name: payload.Attachment.Name, Content: payload.Attachment.Content}
+	}
 	if payload.SessionID != nil {
 		input.SessionID = *payload.SessionID
 	}

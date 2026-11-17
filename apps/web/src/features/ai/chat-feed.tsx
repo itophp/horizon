@@ -45,7 +45,7 @@ export function ChatFeed({
   const { t, i18n } = useTranslation("ai");
   return (
     <MessageScrollerProvider autoScroll>
-      <MessageScroller className="h-[min(62vh,720px)] min-h-80">
+      <MessageScroller className="h-auto flex-1">
         <MessageScrollerViewport
           role="log"
           aria-label={t("workbench.conversation")}

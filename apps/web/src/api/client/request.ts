@@ -17,6 +17,7 @@ export function requestTimeout(url: string): number {
   const longRunning =
     url.startsWith("/api/capabilities/") ||
     url.startsWith("/api/assistant/chat") ||
+    url.startsWith("/api/assistant/agent") ||
     url.startsWith("/api/ai/runs");
   return longRunning ? 180000 : 10000;
 }

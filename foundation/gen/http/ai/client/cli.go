@@ -43,13 +43,15 @@ func BuildRunPayload(aiRunBody *string, aiRunCookie *string) (*ai.RunPayload, er
 		}
 		err = json.Unmarshal([]byte(*aiRunBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }'")
-		}
-		if utf8.RuneCountInString(body.Question) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attachment\": {\n         \"content\": \"p6s\",\n         \"name\": \"2u\"\n      },\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"q1k\",\n      \"sessionId\": \"2vr\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.Question) > 4000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 4000, false))
+		}
+		if body.Attachment != nil {
+			if err2 := validateAIAttachmentRequestBody(body.Attachment, "body.attachment"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
 		}
 		if body.SessionID != nil {
 			if utf8.RuneCountInString(*body.SessionID) > 80 {
@@ -76,6 +78,9 @@ func BuildRunPayload(aiRunBody *string, aiRunCookie *string) (*ai.RunPayload, er
 		Question:  body.Question,
 		SessionID: body.SessionID,
 	}
+	if body.Attachment != nil {
+		v.Attachment = marshalAIAttachmentRequestBodyToAiAIAttachment(body.Attachment)
+	}
 	if body.Page != nil {
 		v.Page = marshalAIPageRequestBodyToAiAIPage(body.Page)
 	}
@@ -95,13 +100,15 @@ func BuildRunStreamPayload(aiRunStreamBody *string, aiRunStreamCookie *string) (
 		}
 		err = json.Unmarshal([]byte(*aiRunStreamBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"sm\",\n      \"sessionId\": \"i6d\"\n   }'")
-		}
-		if utf8.RuneCountInString(body.Question) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 1, true))
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attachment\": {\n         \"content\": \"p6s\",\n         \"name\": \"2u\"\n      },\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"smi\",\n      \"sessionId\": \"i6d\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.Question) > 4000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", body.Question, utf8.RuneCountInString(body.Question), 4000, false))
+		}
+		if body.Attachment != nil {
+			if err2 := validateAIAttachmentRequestBody(body.Attachment, "body.attachment"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
 		}
 		if body.SessionID != nil {
 			if utf8.RuneCountInString(*body.SessionID) > 80 {
@@ -127,6 +134,9 @@ func BuildRunStreamPayload(aiRunStreamBody *string, aiRunStreamCookie *string) (
 	v := &ai.RunStreamPayload{
 		Question:  body.Question,
 		SessionID: body.SessionID,
+	}
+	if body.Attachment != nil {
+		v.Attachment = marshalAIAttachmentRequestBodyToAiAIAttachment(body.Attachment)
 	}
 	if body.Page != nil {
 		v.Page = marshalAIPageRequestBodyToAiAIPage(body.Page)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"horizon/applications/projects"
 	"horizon/foundation/integrations/mcp"
 	"horizon/foundation/runtime/app"
 	"horizon/foundation/runtime/config"
@@ -19,7 +18,7 @@ import (
 	"time"
 )
 
-func Run(ctx context.Context, c config.Config) error {
+func Run(ctx context.Context, c config.Config, register app.Register) error {
 	var identityPool *pgxpool.Pool
 	if c.DatabaseURL != "" {
 		dbctx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -39,22 +38,28 @@ func Run(ctx context.Context, c config.Config) error {
 	iam := identity.New(identityPool, c.SecureCookies)
 	core := governance.New(identityPool, iam, c.Governance)
 	iam.Policies = core
-	plugins := app.BuiltinPlugins(projects.New(core.Pool))
-	if err := iam.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
-		return err
+	var registration app.Registration
+	if register != nil {
+		registration = register(core)
+	}
+	plugins := registration.Plugins
+	if plugins != nil {
+		if err := iam.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
+			return err
+		}
+		if err := plugins.Start(ctx); err != nil {
+			return err
+		}
+		defer func() {
+			cancelWorkers()
+			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := plugins.Stop(stopCtx); err != nil {
+				slog.Error("plugin shutdown failed", "error", err)
+			}
+		}()
 	}
 
-	if err := plugins.Start(ctx); err != nil {
-		return err
-	}
-	defer func() {
-		cancelWorkers()
-		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := plugins.Stop(stopCtx); err != nil {
-			slog.Error("plugin shutdown failed", "error", err)
-		}
-	}()
 	if identityPool != nil {
 		fileService := files.New(core)
 		mcpService := mcp.New(identityPool, iam)
@@ -79,7 +84,7 @@ func Run(ctx context.Context, c config.Config) error {
 			}
 		}()
 	}
-	handler, start := transport.HandlerWithPlugins(app.System{}, core, plugins, iam)
+	handler, start := transport.HandlerWithRegistration(app.System{}, core, registration, iam)
 	if identityPool != nil {
 		go start(workerCtx)
 	}

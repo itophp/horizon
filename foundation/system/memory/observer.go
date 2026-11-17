@@ -16,7 +16,7 @@ import (
 // Observer is a bounded best-effort transport for non-business telemetry.
 // Business facts must continue through the transactional outbox instead.
 type Observer struct {
-	pool      *pgxpool.Pool
+	persist   func(context.Context, canonical.Envelope) error
 	queue     chan canonical.Envelope
 	submitted atomic.Uint64
 	stored    atomic.Uint64
@@ -25,7 +25,14 @@ type Observer struct {
 }
 
 func NewObserver(pool *pgxpool.Pool) *Observer {
-	return &Observer{pool: pool, queue: make(chan canonical.Envelope, 512)}
+	o := &Observer{queue: make(chan canonical.Envelope, 512)}
+	if pool != nil {
+		q := dbgen.New(pool)
+		o.persist = func(ctx context.Context, e canonical.Envelope) error {
+			return storeObservation(ctx, q, e)
+		}
+	}
+	return o
 }
 
 var observationPolicy = canonical.Policy{
@@ -40,7 +47,7 @@ var observationPolicy = canonical.Policy{
 
 // Submit never blocks a request, and normalizes before anything enters the queue.
 func (o *Observer) Submit(e canonical.Envelope) {
-	if o == nil || o.pool == nil {
+	if o == nil || o.persist == nil {
 		return
 	}
 	clean, err := observationPolicy.Normalize(e, time.Now())
@@ -61,52 +68,63 @@ func (o *Observer) Submit(e canonical.Envelope) {
 func (o *Observer) Run(ctx context.Context) {
 	metrics := time.NewTicker(time.Minute)
 	defer metrics.Stop()
-	for {
+	for ctx.Err() == nil {
 		select {
 		case <-ctx.Done():
-			if len(o.queue) > 0 {
-				slog.Warn("memory observations not delivered", "code", "shutdown", "count", len(o.queue))
-			}
-			return
 		case <-metrics.C:
 			slog.Info("memory observation metrics", "submitted", o.submitted.Load(), "delivered", o.stored.Load(), "dropped", o.dropped.Load(), "failed", o.failed.Load(), "queued", len(o.queue))
 		case e := <-o.queue:
-			var err error
-			for attempt := 0; attempt < 5; attempt++ {
-				err = o.store(ctx, e)
-				if err == nil || ctx.Err() != nil {
-					break
-				}
-				timer := time.NewTimer(time.Duration(attempt+1) * time.Second)
-				select {
-				case <-ctx.Done():
-					timer.Stop()
-					o.dropped.Add(1)
-					slog.Warn("memory observations not delivered", "code", "shutdown", "count", len(o.queue)+1)
-					return
-				case <-timer.C:
-				}
-			}
-			if err != nil && ctx.Err() == nil {
+			if err := o.deliver(ctx, e); err == nil {
+				o.stored.Add(1)
+			} else if ctx.Err() == nil {
 				o.failed.Add(1)
 				slog.Error("memory observation delivery failed", "code", "storage_error")
-			} else if err == nil {
-				o.stored.Add(1)
 			} else {
-				o.dropped.Add(1)
-				slog.Warn("memory observations not delivered", "code", "shutdown", "count", len(o.queue)+1)
+				o.reportShutdown(len(o.queue) + 1)
 				return
 			}
 		}
 	}
+	o.reportShutdown(len(o.queue))
 }
 
-func (o *Observer) store(ctx context.Context, e canonical.Envelope) error {
+func (o *Observer) deliver(ctx context.Context, e canonical.Envelope) error {
+	const maxAttempts = 5
+	var err error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		attemptCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		err = o.persist(attemptCtx, e)
+		cancel()
+		if err == nil || attempt == maxAttempts {
+			return err
+		}
+		timer := time.NewTimer(time.Duration(attempt) * time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+	return err
+}
+
+func (o *Observer) reportShutdown(count int) {
+	if count > 0 {
+		o.dropped.Add(uint64(count))
+		slog.Warn("memory observations not delivered", "code", "shutdown", "count", count)
+	}
+}
+
+func storeObservation(ctx context.Context, q *dbgen.Queries, e canonical.Envelope) error {
 	payload, err := json.Marshal(e.Payload)
 	if err != nil {
 		return err
 	}
-	_, err = dbgen.New(o.pool).MemoryInsertEvent(ctx, dbgen.MemoryInsertEventParams{TenantID: e.TenantID, OrganizationID: e.OrganizationID,
+	_, err = q.MemoryInsertEvent(ctx, dbgen.MemoryInsertEventParams{TenantID: e.TenantID, OrganizationID: e.OrganizationID,
 		EventID: e.EventID, EventType: e.EventType, EventVersion: e.EventVersion, OccurredAt: pgtype.Timestamptz{Time: e.OccurredAt, Valid: true},
 		ActorID: e.Actor.ID, ActorType: e.Actor.Type, DepartmentID: e.DepartmentID, SourceType: e.Source.Type, SourceID: e.Source.ID,
 		SourceModule: e.Source.Module, ResourceType: e.Resource.Type, ResourceID: e.Resource.ID, ActionName: e.ActionName, Result: e.Result, InvocationID: e.InvocationID,

@@ -1,13 +1,17 @@
 [
   {
     "dependencyVersions": [],
-    "pluginId": "builtin:articles",
-    "version": "2.0.0",
-    "digest": "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
+    "pluginId": "builtin:automation",
+    "version": "1.0.1",
+    "digest": "8d18a6babdc96a0dfa6a0b3de579c7b1388786f93d5d2745076b4c8269038a49",
     "applications": [
-      "articles"
+      "automation"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "automation": "automation:heading"
+    }
   },
   {
     "dependencyVersions": [],
@@ -20,17 +24,14 @@
       "accounts",
       "runtime-protocol"
     ],
-    "dependencies": []
-  },
-  {
-    "dependencyVersions": [],
-    "pluginId": "builtin:capabilities",
-    "version": "1.0.1",
-    "digest": "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
-    "applications": [
-      "capabilities"
-    ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "accounts": "admin:accounts.title",
+      "organizations": "admin:organizations.title",
+      "permissions": "admin:permissions.title",
+      "runtime-protocol": "runtime:protocol.heading"
+    }
   },
   {
     "dependencyVersions": [],
@@ -40,7 +41,11 @@
     "applications": [
       "analytics"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "analytics": "admin:nav.statistics"
+    }
   },
   {
     "dependencyVersions": [],
@@ -50,37 +55,53 @@
     "applications": [
       "analytics"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "analytics": "admin:nav.statistics"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "builtin:agent-collaboration",
     "version": "1.0.0",
-    "digest": "26687aa606b98c903034ebd3284118cbb40629f6bed85cb73b9ffdc014fa5189",
+    "digest": "97381a2d05b252bd3612de68a333636c283311c56a0c7565b03e42b0d6e4ee66",
     "applications": [
       "agent-collaboration"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "agent-collaboration": "mcp:hub.title"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "builtin:agent-collaboration",
     "version": "1.0.1",
-    "digest": "4655dc9c397da9b577483a1176689a293876651db1067cc7c62298847ce67f65",
+    "digest": "e222543b0a7ecf90cfc0e8fed6e2cd89cdf888b1a1c2da612f77c6b760a25fe9",
     "applications": [
       "agent-collaboration"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "agent-collaboration": "mcp:hub.title"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "builtin:agent-collaboration",
     "version": "1.0.2",
-    "digest": "4aec1dff200e190d88665c0cb5d0cbcb70d29b032ba6075aec2b358dd7d81e3c",
+    "digest": "77c1bbbdb155141e74dc357cb2bbfe45044c59f261cb99aa3a3783e4abbe279e",
     "applications": [
       "agent-collaboration"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "agent-collaboration": "mcp:hub.title"
+    }
   },
   {
     "dependencyVersions": [],
@@ -90,7 +111,11 @@
     "applications": [
       "personal-preferences"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "personal-preferences": "governance:preferences"
+    }
   },
   {
     "dependencyVersions": [],
@@ -100,27 +125,95 @@
     "applications": [
       "personal-preferences"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "personal-preferences": "governance:preferences"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "builtin:system-settings",
     "version": "1.0.0",
-    "digest": "7f1821650d96254ee52f856abff305dac37a32a7a45f1e0a1d314b7195487009",
+    "digest": "8dc299a337c5b596b09179f583e98634dad6fd818e31fcd18a2616ef3ef97675",
     "applications": [
       "system-settings"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "system-settings": "governance:settings"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "builtin:system-settings",
     "version": "1.0.1",
-    "digest": "456972b5a51733402cb28396927a8eec9cfceb27c75c6c8dce2e5951577d7a0c",
+    "digest": "47657ffc4d1c4f2e2dc87ae5d4691ab084749a16563e9e1edbb045084df9d900",
     "applications": [
       "system-settings"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "system-settings": "governance:settings"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:system-settings",
+    "version": "1.0.2",
+    "digest": "6156b3fa264c144bf66d50a3c1801d0451a02fbfa6f711734b1e80466c0e6e30",
+    "applications": [
+      "system-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "system-settings": "governance:settings"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:system-settings",
+    "version": "1.0.3",
+    "digest": "4a1e064fe3be2dbce68e16885cf1b219f5b6692cc73d959c0f94daa95cc50be1",
+    "applications": [
+      "system-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "system-settings": "governance:settings"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:articles",
+    "version": "2.0.0",
+    "digest": "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
+    "applications": [
+      "articles"
+    ],
+    "dependencies": [],
+    "base": false,
+    "labelKeys": {
+      "articles": "articles:heading"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:capabilities",
+    "version": "1.0.1",
+    "digest": "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
+    "applications": [
+      "capabilities"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "capabilities": "capability:title"
+    }
   },
   {
     "dependencyVersions": [],
@@ -130,36 +223,52 @@
     "applications": [
       "projects"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": false,
+    "labelKeys": {
+      "projects": "projects:heading"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "com.horizon.projects",
     "version": "2.0.1",
-    "digest": "a645d132f592cf5c25c774dd58dc3d6761c55e1737ad135269c013b162d246ff",
+    "digest": "40e086097ec6c09c534775597ebceaea129d8d4c01fdce5a8d47745059f32327",
     "applications": [
       "projects"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": false,
+    "labelKeys": {
+      "projects": "projects:heading"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "com.horizon.projects",
     "version": "2.0.2",
-    "digest": "45ea249e632d68d8bde7684efd291131e04e96735fd9526639840d5ecd0a7cd9",
+    "digest": "18e4ba993ff058e1141f87d2eba92aedb4c4b7d9a9a8adfd2110a56ba0d6774d",
     "applications": [
       "projects"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": false,
+    "labelKeys": {
+      "projects": "projects:heading"
+    }
   },
   {
     "dependencyVersions": [],
     "pluginId": "com.horizon.projects",
     "version": "2.0.3",
-    "digest": "8c826fb84e1ac54edb1f24a7f2fd6483e33402d3582ffffdc518891568e4da1e",
+    "digest": "2259aec91f8cf9435ded12b298d45e27c1ee73405a46be960fcf38639885ecc6",
     "applications": [
       "projects"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "base": false,
+    "labelKeys": {
+      "projects": "projects:heading"
+    }
   }
 ]

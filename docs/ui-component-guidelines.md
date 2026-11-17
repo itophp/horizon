@@ -64,6 +64,10 @@
 | 一次性验证码 | InputOTP | 允许粘贴与自动填充；不是密码输入替代品 |
 | 文件与附件 | Button + 必要的隐藏原生 file input + 共享文件服务 | 类型/大小、上传进度、取消/重试、删除与权限校验；不虚构 shadcn 内置 Upload |
 
+Markdown/富文本编辑器、多行文本域与子表在双列表单中**必须占整行（跨列）**，不与单行字段并排；只有短字段才允许两列并排。Markdown 编辑器需要足够的编辑高度，字段说明与校验错误紧随其后。
+
+日期与时间必须使用日期/时间选择器，离散的时、分、秒、星期和日号使用下拉选择，不提供需要用户手填的分段数字输入框；服务端仍按稳定格式解析并校验范围。
+
 Field/FieldGroup/FieldLabel/FieldDescription/FieldError 组织标签、说明和错误；与 RHF Controller 及 Zod 配合，具体 props 按所引入 Base UI 源码核对。字段错误关联 aria-describedby/aria-invalid；错误不改控件可访问名称。必填、禁用、只读、加载、无权语义分开；业务服务端验证仍是最终依据。
 
 ## 下拉选择决策

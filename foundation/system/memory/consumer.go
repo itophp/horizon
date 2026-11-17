@@ -105,13 +105,18 @@ func (c *Consumer) consume(ctx context.Context) (bool, error) {
 	// No business payload is copied without an explicit per-type policy.
 	e, err = (canonical.Policy{row.EventType: {}}).Normalize(e, time.Now())
 	if err != nil {
-		return c.fail(ctx, tx, row, "invalid_event")
+		return failEvent(ctx, tx, q, row, "invalid_event")
 	}
 	payload, err := json.Marshal(e.Payload)
 	if err != nil {
-		return c.fail(ctx, tx, row, "invalid_event")
+		return failEvent(ctx, tx, q, row, "invalid_event")
 	}
-	_, err = q.MemoryInsertEvent(ctx, dbgen.MemoryInsertEventParams{
+	// Roll back a failed insert without releasing the inbox claim.
+	insertTx, err := tx.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	_, err = dbgen.New(insertTx).MemoryInsertEvent(ctx, dbgen.MemoryInsertEventParams{
 		TenantID: e.TenantID, OrganizationID: e.OrganizationID, EventID: e.EventID, EventType: e.EventType, EventVersion: e.EventVersion,
 		OccurredAt: pgtype.Timestamptz{Time: e.OccurredAt, Valid: true}, ActorID: e.Actor.ID, ActorType: e.Actor.Type,
 		DepartmentID: e.DepartmentID, InvocationID: e.InvocationID,
@@ -123,8 +128,16 @@ func (c *Consumer) consume(ctx context.Context) (bool, error) {
 		CandidatePartitions: e.CandidatePartitions,
 	})
 	if err != nil {
-		// A SQL failure aborts the transaction, so record the retry in a fresh one.
-		return c.fail(ctx, tx, row, "storage_error")
+		if ctx.Err() != nil {
+			return false, ctx.Err()
+		}
+		if rollbackErr := insertTx.Rollback(ctx); rollbackErr != nil {
+			return false, rollbackErr
+		}
+		return failEvent(ctx, tx, q, row, "storage_error")
+	}
+	if err = insertTx.Commit(ctx); err != nil {
+		return false, err
 	}
 	if err = q.MemoryCompleteEvent(ctx, dbgen.MemoryCompleteEventParams{SourceEventID: row.SourceEventID, TenantID: row.TenantID}); err != nil {
 		return false, err
@@ -135,14 +148,16 @@ func (c *Consumer) consume(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (c *Consumer) fail(ctx context.Context, tx pgx.Tx, row dbgen.MemoryClaimEventRow, code string) (bool, error) {
-	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-		return false, err
-	}
+func failEvent(ctx context.Context, tx pgx.Tx, q *dbgen.Queries, row dbgen.MemoryClaimEventRow, code string) (bool, error) {
 	delay := (row.Attempts + 1) * 5
 	if delay > 60 {
 		delay = 60
 	}
-	err := dbgen.New(c.pool).MemoryFailEvent(ctx, dbgen.MemoryFailEventParams{SourceEventID: row.SourceEventID, TenantID: row.TenantID, MaxAttempts: 5, DelaySeconds: delay, ErrorCode: code})
-	return true, err
+	if err := q.MemoryFailEvent(ctx, dbgen.MemoryFailEventParams{SourceEventID: row.SourceEventID, TenantID: row.TenantID, MaxAttempts: 5, DelaySeconds: delay, ErrorCode: code}); err != nil {
+		return false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	return true, nil
 }

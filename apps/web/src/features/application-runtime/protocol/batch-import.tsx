@@ -1,3 +1,4 @@
+import { readFileBase64 } from "@/components/shared/read-file";
 import { useId, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { runtimeFieldV2Schema } from "@/api/generated/runtime";
@@ -20,7 +21,6 @@ import { ImportTable } from "./import-table";
 import {
   draftRows,
   extractionResult,
-  readExcel,
   standardDraft,
   validateDraft,
   workbookResult,
@@ -151,7 +151,9 @@ export function BatchImport({
       setParsing(mode);
       if (!/\.xlsx$/i.test(file.name)) throw new Error("excel_invalid");
       if (file.size > maxFileBytes) throw new Error("excel_limit");
-      const content = await readExcel(file);
+      const content = await readFileBase64(file).catch(() => {
+        throw new Error("excel_invalid");
+      });
       const parsed = workbookResult.safeParse(
         await request("parse", {
           content,

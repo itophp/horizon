@@ -13,3 +13,5 @@ coverage/
 .workbuddy/
 /horizon-cli
 /horizon-cli.exe
+/horizon-studio/
+/website/

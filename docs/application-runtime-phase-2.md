@@ -6,7 +6,7 @@
 
 首轮文章 List/Detail/Form 示例已经运行，但不代表当时完成了通用平台。v2 将应用、页面、Provider、创建/编辑命令、字段、布局、表格、动作、表达式和扩展分开建模。Entity、Capability Definition 和 SQL 仍是各自事实源，未建立第二套实体、权限、Gateway 或 Workflow。
 
-Go 模型生成 TS/Zod；能力 Output Schema 同源派生。表达式递归结构由结构校验与独立语义/类型检查共同验证，不能将反射生成的递归对象宽泛 Schema 当成完整授权。业务调用信封未改，没有新增 Goa 业务方法；会话契约仅增补可选授权缓存版本，见下文。`make generate` 还生成 `docs/generated/runtime/applications.json`，供跨语言测试消费；不手改生成物。
+Go 模型生成 TS/Zod；能力 Output Schema 同源派生。表达式递归结构由结构校验与独立语义/类型检查共同验证，不能将反射生成的递归对象宽泛 Schema 当成完整授权。业务调用信封未改，没有新增 Goa 业务方法；会话契约仅增补可选授权缓存版本，见下文。`./horizon-cli generate` 还生成 `docs/generated/runtime/applications.json`，供跨语言测试消费；不手改生成物。
 
 ## 引擎交付边界
 

@@ -9,16 +9,16 @@ description: "Select and run appropriate frontend, Go, database, generation and 
 
 业务能力开发完成后，优先通过现有 MCP 入口发现并调用对应能力进行定向调试，核对输入、输出和实际业务结果；写操作使用隔离测试数据并遵守权限、审批、幂等和 Gateway 规则。仅在工具已暴露且环境和授权可用时执行；不可用或未暴露时记录原因和未验证项，不为调试擅自扩大 MCP 暴露范围。按风险分配验证职责，避免跨层重复同一业务场景：MCP 优先验证能力的业务输入、输出和结果；页面测试聚焦交互、状态展示及能力调用接入。权限、租户隔离、事务和持久化等在最能证明其行为的层验证；只有入口特有风险或契约差异需要时才跨入口补测。MCP 调试不能替代必要的自动化、数据库或安全检查，也不能单独证明页面行为。
 
-**E2E 暂停（用户现行指令，优先于下文与 docs 中的历史描述）**：默认不启动任何浏览器验收，包括不带 `E2E_ARGS` 的 `make test-e2e`、`test-e2e-parallel`、`test-webmcp-e2e`、`test-mcp-e2e` 和默认 `make ci`，也不触发远程 CI 的浏览器阶段。确需旁证时只跑改动模块对应的单个 spec：按 `scripts/e2e-changed.mjs` 的映射选取，用 `E2E_ARGS="<spec>"` 或 `make test-e2e-changed` 执行，映射未命中就不跑浏览器并记未覆盖。全量浏览器集合必须在当轮得到用户明确授权；未授权时汇报写“E2E 未执行（按当前指示暂停）”。
+**E2E 暂停（用户现行指令，优先于下文与 docs 中的历史描述）**：默认不启动任何浏览器验收，包括未指定 spec 的 `./horizon-cli test-e2e`、`test-e2e-parallel`、`test-webmcp-e2e`、`test-mcp-e2e` 和默认 `./horizon-cli ci`，也不触发远程 CI 的浏览器阶段。确需旁证时只跑改动模块对应的单个 spec：按 `scripts/e2e-changed.mjs` 的映射选取，用 `./horizon-cli test-e2e <spec>` 或 `./horizon-cli test-e2e-changed` 执行，映射未命中就不跑浏览器并记未覆盖。全量浏览器集合必须在当轮得到用户明确授权；未授权时汇报写“E2E 未执行（按当前指示暂停）”。
 
-- 编排/Schema：make check-workflows、check-generated；完整生命周期参考用 make test-orchestration-example（真实 PostgreSQL + Eino + 确定性测试模型），不把它描述成真实模型或浏览器验收。
-- 文档/规则：make check-rules；检查链接和适用范围。新 Skill 另用官方 quick_validate.py 验证，不能依赖该全局脚本作为仓库 CI 前提。
+- 编排/Schema：./horizon-cli check-workflows、check-generated；完整生命周期参考用 ./horizon-cli test-orchestration-example（真实 PostgreSQL + Eino + 确定性测试模型），不把它描述成真实模型或浏览器验收。
+- 文档/规则：./horizon-cli check-rules；检查链接和适用范围。新 Skill 另用官方 quick_validate.py 验证，不能依赖该全局脚本作为仓库 CI 前提。
 - 前端：lint/typecheck、受影响 Vitest、i18n key、build。交互用 RTL + user-event；关键流程用普通 Playwright 测试。
 - Go：gofmt、go vet、相关 go test；HTTP 编解码与状态用 httptest，依赖用小接口/Fake。
-- DSL/SQL/SDK：make generate → 实现/消费者 → make check-generated → 两端编译和相关测试。生成检查与浏览器验收串行。
-- SQL/迁移：make test-integration，真实隔离 PostgreSQL，不因本机环境不支持而吞掉/静默跳过。
-- 权限：make test-security，覆盖允许与拒绝、范围外直接 ID、跨租户和撤销；授权 UI 隐藏不是安全证据。
-- 跨层批次验收：快速门禁加相关数据库/安全检查；浏览器只在需要旁证时跑映射命中的单个模块 spec，全量集合与默认 `make ci` 需明确授权。计划跑 ci 时不先重复执行其子门禁；test-security 已包含 integration。环境不足则列出失败/未执行项，不报告全量通过。
+- DSL/SQL/SDK：./horizon-cli generate → 实现/消费者 → ./horizon-cli check-generated → 两端编译和相关测试。生成检查与浏览器验收串行。
+- SQL/迁移：./horizon-cli test-integration，真实隔离 PostgreSQL，不因本机环境不支持而吞掉/静默跳过。
+- 权限：./horizon-cli test-security，覆盖允许与拒绝、范围外直接 ID、跨租户和撤销；授权 UI 隐藏不是安全证据。
+- 跨层批次验收：快速门禁加相关数据库/安全检查；浏览器只在需要旁证时跑映射命中的单个模块 spec，全量集合与默认 `./horizon-cli ci` 需明确授权。计划跑 ci 时不先重复执行其子门禁；test-security 已包含 integration。环境不足则列出失败/未执行项，不报告全量通过。
 
 读取完整退出码、断言、堆栈和日志，先复现，再修源代码或夹具；重跑失败集，再扩大到受影响模块。同一根因连续三轮未解决时暂停该部分自动修改，汇报证据和判断选项；已识别的新根因可以单独验证，不盲猜更多补丁。
 

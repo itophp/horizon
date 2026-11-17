@@ -146,6 +146,13 @@ func (s *Service) Drivers(ctx context.Context, _ *DriversPayload) (res []*Storag
 	sort.Slice(res, func(i, j int) bool { return res[i].Code < res[j].Code })
 	return res, nil
 }
+
+// ValidateAttachment checks the name and content without storing a file.
+func ValidateAttachment(name string, content []byte) (string, error) {
+	mime, _, err := detect(name, "attachment", content)
+	return mime, err
+}
+
 func detect(name, purpose string, content []byte) (string, []byte, error) {
 	if strings.ContainsAny(name, "\x00\r\n/\\") || name == "." || name == ".." {
 		return "", nil, governance.Problem("invalid")

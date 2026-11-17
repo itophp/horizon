@@ -1,12 +1,7 @@
-import { DesignHistory } from "./design-history";
-import { DesignValidation } from "./design-validation";
-import { z } from "zod";
-import { DesignBaseline } from "./design-baseline";
-import { DesignActivation } from "./design-activation";
-import { DesignPreview } from "./design-preview";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Check, Code2, Eye, Rocket } from "lucide-react";
 import { runtimeRead, runtimeExecute } from "@/lib/capabilities";
 import {
   runtimeDefinitionViewSchema,
@@ -21,6 +16,10 @@ import {
   EditorDialog,
 } from "@/features/administration/shared";
 import { Button } from "@/components/ui/button";
+import { z } from "zod";
+import { DesignValidation } from "./design-validation";
+import { DesignPreview } from "./design-preview";
+
 export function DesignVersion({
   applicationId,
   identity,
@@ -78,35 +77,62 @@ export function DesignVersion({
   const current = query.data;
   const candidate = current.version !== current.publishedVersion;
   return (
-    <section className="admin-panel">
-      {current.publishedVersion && (
-        <DesignActivation
-          applicationId={applicationId}
-          source={current.application.source}
-          enabled={current.enabled}
-          identity={identity}
-        />
-      )}
-      <h2>{t("design.version", { version: current.version })}</h2>
+    <div className="design-candidate">
+      <div className="design-candidate-head">
+        <div>
+          <span className="design-kicker">{t("design.candidateLabel")}</span>
+          <strong>{current.version}</strong>
+          <small>
+            {t("design.published", {
+              version: current.publishedVersion || t("design.notPublished"),
+            })}
+          </small>
+        </div>
+        <div className="design-actions">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setPreview(true)}
+          >
+            <Eye size={14} />
+            {t("design.preview")}
+          </Button>
+          {candidate ? (
+            <Button
+              type="button"
+              disabled={
+                !installation.data ||
+                !session.permissions.includes("applications:manage")
+              }
+              onClick={() => {
+                setReviewed(current);
+                setPublicationKey(crypto.randomUUID());
+                setReviewedInstallation(installation.data?.installation);
+                setConfirm(true);
+                setError(undefined);
+              }}
+            >
+              <Rocket size={14} />
+              {t("design.publish")}
+            </Button>
+          ) : (
+            <span className="design-tab-hint">{t("design.noCandidate")}</span>
+          )}
+        </div>
+      </div>
       <DesignValidation
         applicationId={applicationId}
         version={current.version}
         revision={current.revision}
         identity={identity}
       />
-      <DesignHistory current={current} identity={identity} />
-      <DesignBaseline
-        applicationId={applicationId}
-        identity={identity}
-        revision={current.revision}
-      />
-      <p>{t("design.published", { version: current.publishedVersion })}</p>
-      <Button type="button" onClick={() => void query.refetch()}>
-        {t("design.refresh")}
-      </Button>
-      <Button type="button" onClick={() => setPreview(true)}>
-        {t("design.preview")}
-      </Button>
+      <details className="design-definition">
+        <summary>
+          <Code2 size={14} />
+          {t("design.definition")}
+        </summary>
+        <pre>{JSON.stringify(current.application, null, 2)}</pre>
+      </details>
       <EditorDialog
         open={preview}
         onOpenChange={setPreview}
@@ -116,27 +142,6 @@ export function DesignVersion({
       >
         {preview && <DesignPreview current={current} />}
       </EditorDialog>
-      <details>
-        <summary>{t("design.definition")}</summary>
-        <pre>{JSON.stringify(current.application, null, 2)}</pre>
-      </details>
-      {candidate && (
-        <Button
-          type="button"
-          disabled={
-            !installation.data ||
-            !session.permissions.includes("applications:manage")
-          }
-          onClick={() => {
-            setReviewed(current);
-            setPublicationKey(crypto.randomUUID());
-            setReviewedInstallation(installation.data?.installation);
-            setConfirm(true);
-          }}
-        >
-          {t("design.publish")}
-        </Button>
-      )}
       <EditorDialog
         open={confirm}
         onOpenChange={(open) => {
@@ -146,6 +151,21 @@ export function DesignVersion({
         description={t("design.publishHint")}
       >
         {error !== undefined && <ErrorBanner error={error} />}
+        <p className="design-tab-hint">{t("design.candidateHint")}</p>
+        <dl className="design-publish-summary">
+          <div>
+            <dt>{t("design.publishVersion")}</dt>
+            <dd>{reviewed?.version}</dd>
+          </div>
+          <div>
+            <dt>{t("design.publishDigest")}</dt>
+            <dd>
+              {t("design.digestValue", {
+                digest: reviewed?.digest.slice(0, 16) ?? "",
+              })}
+            </dd>
+          </div>
+        </dl>
         <Button
           type="button"
           disabled={pending}
@@ -206,9 +226,10 @@ export function DesignVersion({
             }
           }}
         >
+          <Check size={14} />
           {t("confirm")}
         </Button>
       </EditorDialog>
-    </section>
+    </div>
   );
 }

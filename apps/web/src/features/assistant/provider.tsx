@@ -19,6 +19,11 @@ import { getPageReference } from "@/features/application-runtime/semantic-store"
 import { ApiError } from "@/api/client/request";
 import { useWebMcp } from "@/features/webmcp/provider";
 import { useSession } from "@/features/administration/auth";
+import {
+  readConversation,
+  rememberConversation,
+  useRestoredConversation,
+} from "./conversation";
 
 export interface AssistantTurn {
   id: string;
@@ -33,6 +38,8 @@ export interface AssistantTurn {
 
 export interface AssistantContextValue {
   messages: AssistantTurn[];
+  historyLoading: boolean;
+  historyFailed: boolean;
   busy: boolean;
   error: string | null;
   model: string;
@@ -77,23 +84,28 @@ export function AssistantProvider({ children }: PropsWithChildren) {
   const session = useSession();
   const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}:${session.authorizationVersion ?? ""}`;
   return (
-    <ScopedAssistantProvider key={identityKey}>
+    <ScopedAssistantProvider key={identityKey} identityKey={identityKey}>
       {children}
     </ScopedAssistantProvider>
   );
 }
 
-function ScopedAssistantProvider({ children }: PropsWithChildren) {
+function ScopedAssistantProvider({
+  children,
+  identityKey,
+}: PropsWithChildren<{ identityKey: string }>) {
   const { connection, toolCount } = useWebMcp();
   const session = useSession();
   const allowed = session.permissions.includes("assistant:use");
-  const [messages, setMessages] = useState<AssistantTurn[]>([]);
-  const sessionId = useRef(crypto.randomUUID());
+  const [liveMessages, setMessages] = useState<AssistantTurn[]>([]);
+  const [restoredId, setRestoredId] = useState(() =>
+    allowed ? readConversation(identityKey) : undefined,
+  );
+  const sessionId = useRef<string | undefined>(restoredId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
-  const identityKey = `${session.tenantId}:${session.account?.id}:${session.activeDepartmentId}:${session.authorizationVersion ?? ""}`;
 
   useEffect(() => {
     mounted.current = true;
@@ -115,6 +127,14 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
   const ready = allowed && Boolean(snapshot?.enabled);
   const configured = Boolean(snapshot?.configured && snapshot?.agentEnabled);
   const model = snapshot?.model ?? "";
+  const history = useRestoredConversation(identityKey, restoredId, ready);
+  const historyLoading =
+    ready && Boolean(restoredId) && (history.isPending || history.isFetching);
+  const historyFailed = ready && history.isError;
+  const messages = useMemo(
+    () => [...(history.data ?? []), ...liveMessages],
+    [history.data, liveMessages],
+  );
 
   // Page tools reach the model only when the workspace switch is on and a model is
   // configured; the same registry still powers the remote MCP connection.
@@ -147,20 +167,32 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
   const clear = useCallback(() => {
     stop();
     setMessages([]);
-    sessionId.current = crypto.randomUUID();
+    setRestoredId(undefined);
+    sessionId.current = undefined;
+    rememberConversation(identityKey);
     setError(null);
-  }, [stop]);
+  }, [identityKey, stop]);
 
   const send = useCallback(
     async (text: string) => {
       const question = text.trim();
-      if (!question || busy || controller.current) return;
+      if (
+        !question ||
+        !ready ||
+        !configured ||
+        historyLoading ||
+        busy ||
+        controller.current
+      )
+        return;
+      const id = (sessionId.current ??= crypto.randomUUID());
+      rememberConversation(identityKey, id);
       setError(null);
       setBusy(true);
       const abort = new AbortController();
       controller.current = abort;
       let history: AssistantTurn[] = [
-        ...messages,
+        ...liveMessages,
         { id: identifier(), role: "user", content: question },
       ];
       setMessages(history);
@@ -180,7 +212,7 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
             {
               question,
               page: getPageReference(),
-              sessionId: sessionId.current,
+              sessionId: id,
               ...(continuation ?? { tools: inventory }),
             },
             { signal: abort.signal },
@@ -254,14 +286,21 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
         throw new ApiError("invalid", 400);
       } catch (caught) {
         if (abort.signal.aborted) return;
-        const code = caught instanceof ApiError ? caught.code : "internal";
+        const code =
+          caught instanceof ApiError
+            ? caught.code
+            : caught instanceof DOMException && caught.name === "TimeoutError"
+              ? "timeout"
+              : "internal";
         if (mounted.current) {
           setError(
             code === "forbidden" || code === "unauthenticated"
               ? "forbidden"
               : code === "unavailable"
                 ? "unavailable"
-                : "failed",
+                : code === "timeout"
+                  ? "timeout"
+                  : "failed",
           );
         }
       } finally {
@@ -328,12 +367,23 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
         }
       }
     },
-    [busy, connection, messages, tools],
+    [
+      busy,
+      configured,
+      connection,
+      historyLoading,
+      identityKey,
+      liveMessages,
+      ready,
+      tools,
+    ],
   );
 
   const value = useMemo<AssistantContextValue>(
     () => ({
       messages,
+      historyLoading,
+      historyFailed,
       busy,
       error,
       model,
@@ -346,6 +396,8 @@ function ScopedAssistantProvider({ children }: PropsWithChildren) {
     }),
     [
       messages,
+      historyLoading,
+      historyFailed,
       busy,
       error,
       model,

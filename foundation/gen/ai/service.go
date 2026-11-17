@@ -104,6 +104,12 @@ type RunEventsClientStream interface {
 	RecvWithContext(context.Context) (*AIRunEvent, error)
 }
 
+// One transient source file for the current turn, encoded in base64.
+type AIAttachment struct {
+	Name    string
+	Content string
+}
+
 // AIConversation is the result type of the ai service updateConversation
 // method.
 type AIConversation struct {
@@ -111,6 +117,7 @@ type AIConversation struct {
 	Title        string
 	UpdatedAt    string
 	MessageCount int
+	AutomationAt *string
 	Archived     bool
 }
 
@@ -242,18 +249,20 @@ type RunEventsPayload struct {
 
 // RunPayload is the payload type of the ai service run method.
 type RunPayload struct {
-	Cookie    string
-	Question  string
-	SessionID *string
-	Page      *AIPage
+	Cookie     string
+	Question   string
+	Attachment *AIAttachment
+	SessionID  *string
+	Page       *AIPage
 }
 
 // RunStreamPayload is the payload type of the ai service runStream method.
 type RunStreamPayload struct {
-	Cookie    string
-	Question  string
-	SessionID *string
-	Page      *AIPage
+	Cookie     string
+	Question   string
+	Attachment *AIAttachment
+	SessionID  *string
+	Page       *AIPage
 }
 
 // RunsPayload is the payload type of the ai service runs method.

@@ -17,17 +17,19 @@ import (
 // RunRequestBody is the type of the "ai" service "run" endpoint HTTP request
 // body.
 type RunRequestBody struct {
-	Question  *string            `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
-	SessionID *string            `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
-	Page      *AIPageRequestBody `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
+	Question   *string                  `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+	Attachment *AIAttachmentRequestBody `form:"attachment,omitempty" json:"attachment,omitempty" xml:"attachment,omitempty"`
+	SessionID  *string                  `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
+	Page       *AIPageRequestBody       `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
 }
 
 // RunStreamRequestBody is the type of the "ai" service "runStream" endpoint
 // HTTP request body.
 type RunStreamRequestBody struct {
-	Question  *string            `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
-	SessionID *string            `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
-	Page      *AIPageRequestBody `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
+	Question   *string                  `form:"question,omitempty" json:"question,omitempty" xml:"question,omitempty"`
+	Attachment *AIAttachmentRequestBody `form:"attachment,omitempty" json:"attachment,omitempty" xml:"attachment,omitempty"`
+	SessionID  *string                  `form:"sessionId,omitempty" json:"sessionId,omitempty" xml:"sessionId,omitempty"`
+	Page       *AIPageRequestBody       `form:"page,omitempty" json:"page,omitempty" xml:"page,omitempty"`
 }
 
 // UpdateConversationRequestBody is the type of the "ai" service
@@ -149,11 +151,12 @@ type RunDetailResponseBody struct {
 // UpdateConversationResponseBody is the type of the "ai" service
 // "updateConversation" endpoint HTTP response body.
 type UpdateConversationResponseBody struct {
-	SessionID    string `form:"sessionId" json:"sessionId" xml:"sessionId"`
-	Title        string `form:"title" json:"title" xml:"title"`
-	UpdatedAt    string `form:"updatedAt" json:"updatedAt" xml:"updatedAt"`
-	MessageCount int    `form:"messageCount" json:"messageCount" xml:"messageCount"`
-	Archived     bool   `form:"archived" json:"archived" xml:"archived"`
+	SessionID    string  `form:"sessionId" json:"sessionId" xml:"sessionId"`
+	Title        string  `form:"title" json:"title" xml:"title"`
+	UpdatedAt    string  `form:"updatedAt" json:"updatedAt" xml:"updatedAt"`
+	MessageCount int     `form:"messageCount" json:"messageCount" xml:"messageCount"`
+	AutomationAt *string `form:"automationAt,omitempty" json:"automationAt,omitempty" xml:"automationAt,omitempty"`
+	Archived     bool    `form:"archived" json:"archived" xml:"archived"`
 }
 
 // StatusUnauthenticatedResponseBody is the type of the "ai" service "status"
@@ -189,6 +192,12 @@ type StatusUnavailableResponseBody struct {
 // StatusInternalResponseBody is the type of the "ai" service "status" endpoint
 // HTTP response body for the "internal" error.
 type StatusInternalResponseBody struct {
+	Code string `form:"code" json:"code" xml:"code"`
+}
+
+// RunAiModelImageUnsupportedResponseBody is the type of the "ai" service "run"
+// endpoint HTTP response body for the "ai_model_image_unsupported" error.
+type RunAiModelImageUnsupportedResponseBody struct {
 	Code string `form:"code" json:"code" xml:"code"`
 }
 
@@ -494,11 +503,18 @@ type AIRun struct {
 
 // AIConversationResponse is used to define fields on response body types.
 type AIConversationResponse struct {
-	SessionID    string `form:"sessionId" json:"sessionId" xml:"sessionId"`
-	Title        string `form:"title" json:"title" xml:"title"`
-	UpdatedAt    string `form:"updatedAt" json:"updatedAt" xml:"updatedAt"`
-	MessageCount int    `form:"messageCount" json:"messageCount" xml:"messageCount"`
-	Archived     bool   `form:"archived" json:"archived" xml:"archived"`
+	SessionID    string  `form:"sessionId" json:"sessionId" xml:"sessionId"`
+	Title        string  `form:"title" json:"title" xml:"title"`
+	UpdatedAt    string  `form:"updatedAt" json:"updatedAt" xml:"updatedAt"`
+	MessageCount int     `form:"messageCount" json:"messageCount" xml:"messageCount"`
+	AutomationAt *string `form:"automationAt,omitempty" json:"automationAt,omitempty" xml:"automationAt,omitempty"`
+	Archived     bool    `form:"archived" json:"archived" xml:"archived"`
+}
+
+// AIAttachmentRequestBody is used to define fields on request body types.
+type AIAttachmentRequestBody struct {
+	Name    *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	Content *string `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
 }
 
 // AIPageRequestBody is used to define fields on request body types.
@@ -685,6 +701,7 @@ func NewUpdateConversationResponseBody(res *ai.AIConversation) *UpdateConversati
 		Title:        res.Title,
 		UpdatedAt:    res.UpdatedAt,
 		MessageCount: res.MessageCount,
+		AutomationAt: res.AutomationAt,
 		Archived:     res.Archived,
 	}
 	return body
@@ -739,6 +756,15 @@ func NewStatusUnavailableResponseBody(res *ai.IAMProblem) *StatusUnavailableResp
 // of the "status" endpoint of the "ai" service.
 func NewStatusInternalResponseBody(res *ai.IAMProblem) *StatusInternalResponseBody {
 	body := &StatusInternalResponseBody{
+		Code: res.Code,
+	}
+	return body
+}
+
+// NewRunAiModelImageUnsupportedResponseBody builds the HTTP response body from
+// the result of the "run" endpoint of the "ai" service.
+func NewRunAiModelImageUnsupportedResponseBody(res *ai.IAMProblem) *RunAiModelImageUnsupportedResponseBody {
+	body := &RunAiModelImageUnsupportedResponseBody{
 		Code: res.Code,
 	}
 	return body
@@ -1137,6 +1163,9 @@ func NewRunPayload(body *RunRequestBody, cookie string) *ai.RunPayload {
 		Question:  *body.Question,
 		SessionID: body.SessionID,
 	}
+	if body.Attachment != nil {
+		v.Attachment = unmarshalAIAttachmentRequestBodyToAiAIAttachment(body.Attachment)
+	}
 	if body.Page != nil {
 		v.Page = unmarshalAIPageRequestBodyToAiAIPage(body.Page)
 	}
@@ -1150,6 +1179,9 @@ func NewRunStreamPayload(body *RunStreamRequestBody, cookie string) *ai.RunStrea
 	v := &ai.RunStreamPayload{
 		Question:  *body.Question,
 		SessionID: body.SessionID,
+	}
+	if body.Attachment != nil {
+		v.Attachment = unmarshalAIAttachmentRequestBodyToAiAIAttachment(body.Attachment)
 	}
 	if body.Page != nil {
 		v.Page = unmarshalAIPageRequestBodyToAiAIPage(body.Page)
@@ -1217,11 +1249,13 @@ func ValidateRunRequestBody(body *RunRequestBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("question", "body"))
 	}
 	if body.Question != nil {
-		if utf8.RuneCountInString(*body.Question) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 1, true))
-		}
 		if utf8.RuneCountInString(*body.Question) > 4000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 4000, false))
+		}
+	}
+	if body.Attachment != nil {
+		if err2 := validateAIAttachmentRequestBody(body.Attachment, "body.attachment"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.SessionID != nil {
@@ -1244,11 +1278,13 @@ func ValidateRunStreamRequestBody(body *RunStreamRequestBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("question", "body"))
 	}
 	if body.Question != nil {
-		if utf8.RuneCountInString(*body.Question) < 1 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 1, true))
-		}
 		if utf8.RuneCountInString(*body.Question) > 4000 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.question", *body.Question, utf8.RuneCountInString(*body.Question), 4000, false))
+		}
+	}
+	if body.Attachment != nil {
+		if err2 := validateAIAttachmentRequestBody(body.Attachment, "body.attachment"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.SessionID != nil {
@@ -1273,6 +1309,61 @@ func ValidateUpdateConversationRequestBody(body *UpdateConversationRequestBody) 
 		}
 		if utf8.RuneCountInString(*body.Title) > 200 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", *body.Title, utf8.RuneCountInString(*body.Title), 200, false))
+		}
+	}
+	return
+}
+
+// ValidateAIAttachmentRequestBody runs the validations defined on AIAttachment
+func ValidateAIAttachmentRequestBody(body *AIAttachmentRequestBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.Content == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
+	}
+	if body.Content != nil {
+		if utf8.RuneCountInString(*body.Content) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content", *body.Content, utf8.RuneCountInString(*body.Content), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Content) > 2796204 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.content", *body.Content, utf8.RuneCountInString(*body.Content), 2796204, false))
+		}
+	}
+	return
+}
+
+// validateAIAttachmentRequestBody checks AIAttachment and reports errors using
+// the path supplied by its caller
+func validateAIAttachmentRequestBody(body *AIAttachmentRequestBody, path string) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", path))
+	}
+	if body.Content == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content", path))
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".name", *body.Name, utf8.RuneCountInString(*body.Name), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Name) > 255 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".name", *body.Name, utf8.RuneCountInString(*body.Name), 255, false))
+		}
+	}
+	if body.Content != nil {
+		if utf8.RuneCountInString(*body.Content) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".content", *body.Content, utf8.RuneCountInString(*body.Content), 1, true))
+		}
+		if utf8.RuneCountInString(*body.Content) > 2796204 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError(path+".content", *body.Content, utf8.RuneCountInString(*body.Content), 2796204, false))
 		}
 	}
 	return

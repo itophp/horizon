@@ -22,3 +22,12 @@
 人工通知使用 notificationsAudience → notificationsPreview → notificationsSend，查看 notificationsSent；独立通知中心管理站内/SMTP 投递，SMTP 参数仍在系统设置。Markdown 使用 NotificationMarkdown，上传后保存附件 ID 并插入 file:ID，通知收件人的读取走 notificationsAttachment；不得要求收件人先获得全局文件管理权限。完整边界见 [ADR 008](decisions/008-notification-center.md)。
 
 设置排期复用 settingsSchedules / settingsSchedule / settingsCancelSchedule 和现有草稿。敏感排期先调用 settingsReauthenticate（settings.schedule），证明只在提交时使用；消费者仍只读已发布设置。后台必须按 [ADR 010](decisions/010-settings-schedules.md) 重查原账号/部门正式权限、版本与依赖，不复制一套发布逻辑或用浏览器定时器执行。
+
+## AI 模型管理
+
+「AI 配置」是独立的工作空间管理入口，路径为 `/ai-settings`。系统设置 Runtime 基线 `1.0.3` 同时增加该页面、移出通用设置表单中的模型字段。新工作空间使用该基线，旧工作空间通过「应用管理」升级已有系统设置应用。定制版本按现有三方合并流程审查和发布。
+
+- 默认模型、模型管理、业务模型分配通过 URL 标签切换。默认模型为 DeepSeek-V4.1-Flash，请求模型名为 `deepseek-flash`。各业务覆盖优先，选择「使用默认模型」时跟随工作空间默认。
+- 模型管理沿用 DeepSeek、GLM 和自定义三个配置项，类型为纯文本、向量和多模态。DeepSeek 归为多模态，GLM 和自定义项可修改类型。向量类型不参与对话模型选择，现有知识库向量化继续使用独立配置。
+- 配置沿用原有模型键和加密密钥。草稿、发布、排期和回退使用同一个工作空间设置版本及既有授权。选中的新模型或受类型变更影响的模型缺少配置时，设置校验指出具体模型和场景。纯文本模型收到图片请求时，运行时返回模型类型提示。
+- 页面采用 B5 设置模板和 L6 表单布局，模型管理复用 DataTable、类型筛选和 EditorDialog。主操作为保存草稿，后续在页面共用的发布面板完成确认。配置加载、只读、空筛选结果及提交失败沿用后台状态组件。

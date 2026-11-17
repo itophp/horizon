@@ -100,6 +100,40 @@ type Article struct {
 	UpdatedAt  pgtype.Timestamptz
 }
 
+type AutomationRun struct {
+	ID            int64
+	TenantID      string
+	TaskID        int64
+	OccurrenceKey string
+	ScheduledFor  pgtype.Timestamptz
+	TriggerKind   string
+	Status        string
+	ErrorCode     string
+	AiRunID       pgtype.Int8
+	CreatedAt     pgtype.Timestamptz
+	StartedAt     pgtype.Timestamptz
+	FinishedAt    pgtype.Timestamptz
+}
+
+type AutomationTask struct {
+	ID           int64
+	TenantID     string
+	OwnerID      int64
+	DepartmentID int64
+	Name         string
+	Description  string
+	ScheduleKind string
+	RunAt        pgtype.Timestamptz
+	Timezone     string
+	Enabled      bool
+	NextRunAt    pgtype.Timestamptz
+	LastRunAt    pgtype.Timestamptz
+	FailureCount int32
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	ScheduleDay  pgtype.Int4
+}
+
 type CapApproval struct {
 	ID                int64
 	TenantID          string

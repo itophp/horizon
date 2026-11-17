@@ -11,6 +11,7 @@
  */
 export interface AIConversation {
   archived: boolean;
+  automationAt?: string;
   messageCount: number;
   sessionId: string;
   title: string;

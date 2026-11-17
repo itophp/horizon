@@ -47,13 +47,14 @@ type AIResultProps struct {
 }
 
 type AIFormAssistant struct {
-	LabelKey     string   `json:"labelKey"`
-	Action       string   `json:"action"`
-	InputFields  []string `json:"inputFields"`
-	TargetFields []string `json:"targetFields"`
-	Prompt       string   `json:"prompt"`
-	CreateScope  string   `json:"createScope,omitempty"`
-	EditScope    string   `json:"editScope,omitempty"`
+	DefaultExpanded bool     `json:"defaultExpanded,omitempty"`
+	LabelKey        string   `json:"labelKey"`
+	Action          string   `json:"action"`
+	InputFields     []string `json:"inputFields"`
+	TargetFields    []string `json:"targetFields"`
+	Prompt          string   `json:"prompt"`
+	CreateScope     string   `json:"createScope,omitempty"`
+	EditScope       string   `json:"editScope,omitempty"`
 }
 
 type AIResult struct {
@@ -177,21 +178,35 @@ func AIPromptValid(prompt string) bool {
 	return strings.TrimSpace(prompt) != "" && len(prompt) <= 4096
 }
 
+// AIFormField resolves a field that either feeds the model or receives a
+// suggestion. A target may be conditionally visible: a schedule form decides
+// which time component applies from another target (the schedule kind), so the
+// visible set at suggestion time is not the final set. Values are still plain
+// strings and the suggesting capability validates them by field type before
+// they reach the form.
 func AIFormField(command Command, name string, target bool) (FieldV2, bool) {
 	for _, field := range command.Fields {
 		if field.Name != name || field.Hidden || field.Sensitive || field.Derived ||
-			field.Fixed || field.Multiple || field.VisibleWhen.Kind != "" || field.DisabledWhen.Kind != "" {
+			field.Fixed || field.Multiple || field.DisabledWhen.Kind != "" {
 			continue
 		}
-		if target && (field.Type != "string" || field.ReadOnly) {
+		if target {
+			if field.ReadOnly || !slices.Contains([]string{"string", "enum", "date", "time", "datetime"}, field.Type) {
+				continue
+			}
+			if slices.ContainsFunc(command.Input, func(mapping Mapping) bool {
+				return mapping.Value.Kind == "path" && NormalizePath(mapping.Value.Path) == "form."+name
+			}) {
+				return field, true
+			}
 			continue
 		}
-		if !slices.Contains([]string{"string", "enum", "date", "integer", "number", "boolean"}, field.Type) {
+		// An input field only feeds the model: a hidden field has no value to
+		// send, and a form-only helper does not have to be submitted.
+		if field.VisibleWhen.Kind != "" {
 			continue
 		}
-		if slices.ContainsFunc(command.Input, func(mapping Mapping) bool {
-			return mapping.Value.Kind == "path" && NormalizePath(mapping.Value.Path) == "form."+name
-		}) {
+		if slices.Contains([]string{"string", "enum", "date", "integer", "number", "boolean"}, field.Type) {
 			return field, true
 		}
 	}
@@ -350,7 +365,7 @@ func validateAIComponent(root Node, component *ComponentSpec, providers map[stri
 			continue
 		}
 		if resolved == nil || spec.LabelKey == "" || !AIPromptValid(spec.Prompt) ||
-			!aiFieldsValid(spec.InputFields) || !aiFieldsValid(spec.TargetFields) || !AIAction(component, spec.Action, SuggestCapability) {
+			(len(spec.InputFields) > 0 && !aiFieldsValid(spec.InputFields)) || !aiFieldsValid(spec.TargetFields) || !AIAction(component, spec.Action, SuggestCapability) {
 			return fmt.Errorf("invalid AI form assistant")
 		}
 		for _, pair := range []struct {

@@ -13,13 +13,21 @@ import (
 )
 
 type Module struct {
-	Entities     []contracts.Entity
-	Applications []ar.ApplicationV2
-	Versions     []ar.ApplicationV2
-	Pool         *pgxpool.Pool
-	Invoke       func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)
-	Definitions  map[string]contracts.Definition
-	GenerateAI   func(context.Context, string, string) (string, error)
+	Entities            []contracts.Entity
+	Applications        []ar.ApplicationV2
+	Versions            []ar.ApplicationV2
+	BasePlugins         map[string]bool
+	Pool                *pgxpool.Pool
+	Invoke              func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error)
+	Definitions         map[string]contracts.Definition
+	GenerateAIWithImage func(context.Context, string, string, string, string) (string, error)
+	GenerateAI          func(context.Context, string, string) (string, error)
+}
+
+// isBasePlugin reports a platform-managed application package. The set comes
+// from deployment composition, never from tenant input.
+func (m *Module) isBasePlugin(pluginID string) bool {
+	return m.BasePlugins[pluginID]
 }
 
 func (m *Module) Entries() []registry.Entry {

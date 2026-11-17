@@ -24,7 +24,7 @@ Create/UpdateAccount 的可选 departmentAccess 对象表示显式替换附加�
 
 ## 规则同步与验证
 
-任何权限控制变更都必须同步 baseline-security、受影响目录 AGENTS.md 与 docs/security.md / 决策规则；涉及前端、数据库时同步相应 Skill 的操作约束。不得只改实现。覆盖部门角色隔离、独立 allow/deny、六种范围、范围内成员可见性、非法切换、CSRF 轮换、跨租户/公司不一致、持久授权边界、撤权与临时权限上下文，并执行 make test-security 与 make ci。
+任何权限控制变更都必须同步 baseline-security、受影响目录 AGENTS.md 与 docs/security.md / 决策规则；涉及前端、数据库时同步相应 Skill 的操作约束。不得只改实现。覆盖部门角色隔离、独立 allow/deny、六种范围、范围内成员可见性、非法切换、CSRF 轮换、跨租户/公司不一致、持久授权边界、撤权与临时权限上下文，并执行 ./horizon-cli test-security 与 ./horizon-cli ci。
 
 Down 会删除附加部门配置与上下文列，只用于隔离迁移验证；真实部署回滚需先导出新配置并评估数据丢失，不自动执行。
 

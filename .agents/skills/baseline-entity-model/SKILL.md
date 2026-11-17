@@ -1,11 +1,11 @@
 ---
 name: baseline-entity-model
-description: "Declare or change the business entity model (fields, relations, states) that is validated against the migrations. Use when adding a table or column, adding a capability, changing a status column or its transitions, or when make check-entities fails. The model is descriptive, not a second schema: every attribute, enum, relation and transition must match the physical schema."
+description: "Declare or change the business entity model (fields, relations, states) that is validated against the migrations. Use when adding a table or column, adding a capability, changing a status column or its transitions, or when ./horizon-cli check-entities fails. The model is descriptive, not a second schema: every attribute, enum, relation and transition must match the physical schema."
 ---
 
 # 实体模型
 
-实体模型描述业务对象（有哪些字段、和谁关联、状态怎么变），由 `make check-entities` 对照迁移强制校验。它是能力目录的对象视图，不是第二套 schema，也不是第二个执行入口。
+实体模型描述业务对象（有哪些字段、和谁关联、状态怎么变），由 `./horizon-cli check-entities` 对照迁移强制校验。它是能力目录的对象视图，不是第二套 schema，也不是第二个执行入口。
 
 先读 [实体模型](../../../docs/entity-model.md) 与 [底座实现规则](../../../foundation/AGENTS.md)。
 
@@ -18,7 +18,7 @@ description: "Declare or change the business entity model (fields, relations, st
 | 改状态列 | 同步 `States` / `Transitions`，每个转移绑定触发它的能力 |
 | 改枚举取值 | 改 `Attribute.Enum`，必须与 `CHECK (... IN ...)` 完全一致 |
 | 新增/改外键 | 同步 `Relation`（正向 `Via` 是本地列，反向 `Via` 是子表名） |
-| `make check-entities` 报错 | 按 code 修声明；**不要**为了让检查通过而删声明或放宽规则 |
+| `./horizon-cli check-entities` 报错 | 按 code 修声明；**不要**为了让检查通过而删声明或放宽规则 |
 
 ## 文件布局
 
@@ -47,7 +47,7 @@ foundation/runtime/app/entities.go             # 汇总所有模块，供 CLI �
 ## 验证
 
 ```bash
-make check-entities                        # 门禁：E1–E8、E10，已接入 ci-fast
+./horizon-cli check-entities                        # 门禁：E1–E8、E10，已接入 ci-fast
 ENTITY_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpSchema -v   # 表与列
 FK_DUMP=1 ./scripts/go.sh test ./kernel/metadata -run TestDumpForeignKeys -v  # 外键
 ```

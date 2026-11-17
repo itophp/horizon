@@ -20,6 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
+  Clock,
   HardDrive,
   Users,
   Building2,
@@ -140,37 +141,43 @@ export function AdminLayout() {
   const runtimeIcons: Record<string, typeof Boxes> = {
     boxes: Boxes,
     dashboard: LayoutDashboard,
+    clock: Clock,
     users: Users,
     network: Building2,
     shield: KeyRound,
   };
   const links = [
-    ...(applicationCatalog.data?.items ?? []).flatMap((application) =>
-      (application.navigation ?? []).flatMap(
-        (nav: { pageId: string; labelKey: string; icon?: string }) => {
-          const page = (application.protocol?.pages ?? application.pages).find(
-            (page: { id: string; route: string }) => page.id === nav.pageId,
-          );
-          return page && !page.route.includes(":")
-            ? [
-                {
-                  to: page.route,
-                  label:
-                    application.messages?.find(
-                      (message) => message.key === nav.labelKey,
-                    )?.[i18n.language.startsWith("zh") ? "zhCN" : "en"] ??
-                    t(nav.labelKey),
-                  icon: runtimeIcons[nav.icon ?? "boxes"] ?? Boxes,
-                  permissions:
-                    application.permission === "authenticated"
-                      ? []
-                      : [application.permission],
-                },
-              ]
-            : [];
-        },
+    ...(applicationCatalog.data?.items ?? [])
+      .filter((application) => application.id !== "automation")
+      .flatMap((application) =>
+        (application.navigation ?? []).flatMap(
+          (nav: { pageId: string; labelKey: string; icon?: string }) => {
+            const page = (
+              application.protocol?.pages ?? application.pages
+            ).find(
+              (page: { id: string; route: string }) => page.id === nav.pageId,
+            );
+            if (page?.route === "/runtime-protocol") return [];
+            return page && !page.route.includes(":")
+              ? [
+                  {
+                    to: page.route,
+                    label:
+                      application.messages?.find(
+                        (message) => message.key === nav.labelKey,
+                      )?.[i18n.language.startsWith("zh") ? "zhCN" : "en"] ??
+                      t(nav.labelKey),
+                    icon: runtimeIcons[nav.icon ?? "boxes"] ?? Boxes,
+                    permissions:
+                      application.permission === "authenticated"
+                        ? []
+                        : [application.permission],
+                  },
+                ]
+              : [];
+          },
+        ),
       ),
-    ),
     {
       to: "/applications",
       label: t("runtime:applications"),
@@ -188,6 +195,12 @@ export function AdminLayout() {
       label: t("ai:nav"),
       icon: Sparkles,
       permissions: ["assistant:use"],
+    },
+    {
+      to: hasRuntimePage("/ai-settings") ? "/ai-settings" : "",
+      label: t("governance:aiSettings.title"),
+      icon: Sparkles,
+      permissions: ["settings:read"],
     },
     {
       to: hasRuntimePage("/settings") ? "/settings" : "",

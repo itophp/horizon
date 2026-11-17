@@ -24,9 +24,9 @@
 - 原子能力：`applications/example/module.go`。新增 get 强制 tenant + created_by，不因为 Admin 而放宽详情归属；复用 example:read 权限。
 - 标准规格：`docs/generated/workflows/workflow.schema.json`（JSON Schema Draft 2020-12）。
 - 可读导出：`docs/generated/workflows/example-lifecycle.workflow.json`。它来自 Go 定义，是生成产物，不能修改后期待服务器自动加载。
-- 检查命令：`make check-workflows`；候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件路径>` 检查。脚本的工作目录是 foundation，根目录文件需使用相应路径。
+- 检查命令：`./horizon-cli check-workflows`；候选 JSON 用 `./scripts/go.sh run ./cmd/workflowcheck -file <文件路径>` 检查。脚本的工作目录是 foundation，根目录文件需使用相应路径。
 
-新增业务流程可以先生成候选 JSON 做检查，再转换为同一个 Definition 的 Go 声明、加入 Builtins，执行 `make generate-workflows`。当前不提供从 HTTP/MCP 上传任意流程定义的入口，流程发布链尚未实现。
+新增业务流程可以先生成候选 JSON 做检查，再转换为同一个 Definition 的 Go 声明、加入 Builtins，执行 `./horizon-cli generate-workflows`。当前不提供从 HTTP/MCP 上传任意流程定义的入口，流程发布链尚未实现。
 
 ## 3. 使用方式
 
@@ -64,7 +64,7 @@ MCP/Agent 启动先产生启动审批，批准后得到 runId；人类页面按�
 
 ```sh
 # 显式设置为隔离本地测试 PostgreSQL，不使用生产地址。
-TEST_DATABASE_URL='<本机隔离 PostgreSQL URL>' make test-orchestration-example
+TEST_DATABASE_URL='<本机隔离 PostgreSQL URL>' ./horizon-cli test-orchestration-example
 ```
 
 命令运行真实 PostgreSQL、真实 Gateway、Eino Workflow/Graph/ADK、审批、加密检查点、Outbox Relay、Event Hub 和 Trigger。仅将远程模型替换为确定性测试模型，因此不需要模型密钥，也不产生外部模型费用。它不是浏览器 E2E，也不能证明真实模型的推理质量。

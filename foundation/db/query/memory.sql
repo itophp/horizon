@@ -182,7 +182,11 @@ WHERE m.tenant_id=sqlc.arg(tenant_id) AND m.scope_type='project' AND m.scope_id=
 INSERT INTO memory_sources (tenant_id, memory_id, event_id)
 SELECT m.tenant_id, m.id, e.event_id FROM memory_items m JOIN memory_events e ON e.tenant_id=m.tenant_id AND e.event_id=sqlc.arg(event_id)
 WHERE m.tenant_id=sqlc.arg(tenant_id) AND m.id=sqlc.arg(memory_id) AND m.scope_type='project' AND m.scope_id=sqlc.arg(scope_id)
- AND e.resource_type='project' AND e.resource_id=m.scope_id AND EXISTS
+ AND ((e.resource_type='project' AND e.resource_id=m.scope_id) OR (e.source_type='domain_event' AND e.resource_type='project_task'
+       AND e.event_type IN ('project.task.created','project.task.updated','project.task.status.changed','project.task.assigned')
+       AND EXISTS (SELECT 1 FROM project_tasks t WHERE t.tenant_id=e.tenant_id
+                   AND t.project_id::text=m.scope_id AND t.id::text=e.resource_id)))
+ AND EXISTS
  (SELECT 1 FROM project_members p WHERE p.tenant_id=m.tenant_id AND p.project_id::text=m.scope_id AND p.account_id=sqlc.arg(account_id))
 ON CONFLICT DO NOTHING;
 
@@ -192,9 +196,31 @@ FROM memory_sources s JOIN memory_items m ON m.tenant_id=s.tenant_id AND m.id=s.
 JOIN memory_events e ON e.tenant_id=s.tenant_id AND e.event_id=s.event_id
 WHERE m.tenant_id=sqlc.arg(tenant_id) AND m.id=sqlc.arg(memory_id) AND m.scope_type='project' AND m.scope_id=sqlc.arg(scope_id)
  AND m.status='active' AND m.valid_from<=now() AND (m.valid_to IS NULL OR m.valid_to>now())
- AND e.resource_type='project' AND e.resource_id=m.scope_id AND EXISTS
+ AND ((e.resource_type='project' AND e.resource_id=m.scope_id) OR (e.source_type='domain_event' AND e.resource_type='project_task'
+       AND e.event_type IN ('project.task.created','project.task.updated','project.task.status.changed','project.task.assigned')
+       AND EXISTS (SELECT 1 FROM project_tasks t WHERE t.tenant_id=e.tenant_id
+                   AND t.project_id::text=m.scope_id AND t.id::text=e.resource_id)))
+ AND EXISTS
  (SELECT 1 FROM project_members p WHERE p.tenant_id=m.tenant_id AND p.project_id::text=m.scope_id AND p.account_id=sqlc.arg(account_id))
 ORDER BY e.id DESC LIMIT 100;
+
+-- List only explicit business event types. Task events must resolve to a task
+-- in the same project; aggregate events can use IDs with a different meaning.
+-- name: MemoryListProjectEvents :many
+SELECT e.id, e.event_id, e.event_type, e.occurred_at, e.correlation_id, e.resource_type, e.resource_id
+FROM memory_events e
+WHERE e.tenant_id=sqlc.arg(tenant_id) AND e.source_type='domain_event'
+ AND EXISTS (SELECT 1 FROM project_members p WHERE p.tenant_id=e.tenant_id
+             AND p.project_id=sqlc.arg(project_id) AND p.account_id=sqlc.arg(account_id))
+ AND ((e.resource_type='project' AND e.resource_id=sqlc.arg(project_id)::bigint::text
+       AND e.event_type IN ('project.created','project.status.changed'))
+      OR (e.source_type='domain_event' AND e.resource_type='project_task'
+       AND e.event_type IN ('project.task.created','project.task.updated','project.task.status.changed','project.task.assigned')
+       AND EXISTS (SELECT 1 FROM project_tasks t WHERE t.tenant_id=e.tenant_id
+                   AND t.project_id::text=sqlc.arg(project_id)::bigint::text AND t.id::text=e.resource_id)))
+ AND (sqlc.arg(event_type)::text='' OR e.event_type=sqlc.arg(event_type))
+ AND (sqlc.arg(before_id)::bigint=0 OR e.id<sqlc.arg(before_id))
+ORDER BY e.id DESC LIMIT sqlc.arg(max_rows)::int;
 
 -- name: MemoryGetPersonal :one
 SELECT id, partition, memory_type, title, summary, status, verification_status, version, sensitivity, valid_from, valid_to, created_at, updated_at

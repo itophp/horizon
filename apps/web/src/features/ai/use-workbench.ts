@@ -1,3 +1,5 @@
+import { readFileBase64 } from "@/components/shared/read-file";
+import { invalidAIAttachment } from "@/components/shared/ai-composer";
 import { useRunMessages } from "./run-messages";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,6 +50,7 @@ export function useWorkbench({
   const client = useQueryClient();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
+  const [file, setFile] = useState<File>();
   const [busy, setBusy] = useState(false);
   const [stopped, setStopped] = useState(false);
   const [deciding, setDeciding] = useState(false);
@@ -96,6 +99,15 @@ export function useWorkbench({
     queryFn: () => aiRuns({ sessionId: sessionId ?? undefined, limit: 100 }),
     enabled: Boolean(sessionId),
     retry: false,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.status === 200 &&
+        data.data.some(
+          (run) => run.origin === "automation" && run.status === "running",
+        )
+        ? 5000
+        : false;
+    },
   });
   const messages = useRunMessages(
     history.data?.status === 200 ? history.data.data : undefined,
@@ -106,24 +118,39 @@ export function useWorkbench({
 
   async function send(text: string) {
     const question = text.trim();
-    if (!question || busy || controller.current || blocked) return;
+    if (
+      (!question && !file) ||
+      busy ||
+      controller.current ||
+      blocked ||
+      invalidAIAttachment(file)
+    )
+      return;
+    const displayedQuestion = question || t("workbench.summarizeAttachment");
     setError(null);
     setBusy(true);
     setStopped(false);
-    onRunState?.(thread.current, question, true);
+    onRunState?.(thread.current, displayedQuestion, true);
     setDraft("");
+    const questionId = identifier();
     const replyId = identifier();
     setTurns((current) => [
       ...current,
-      { id: identifier(), role: "user", content: question },
+      { id: questionId, role: "user", content: displayedQuestion },
       { id: replyId, role: "assistant", content: "", progress: [] },
     ]);
     const abort = new AbortController();
     controller.current = abort;
     try {
+      const attachment = file && {
+        name: file.name,
+        content: await readFileBase64(file),
+      };
+      if (abort.signal.aborted) return;
       const run = await streamAIRun(
         {
-          question,
+          question: displayedQuestion,
+          ...(attachment && { attachment }),
           sessionId: thread.current,
           page: { route: location.pathname },
         },
@@ -167,6 +194,12 @@ export function useWorkbench({
             : turn,
         ),
       );
+      if (run.status === "failed" || run.status === "cancelled") {
+        setError(new ApiError(run.errorCode || "unavailable", 502));
+        setDraft((current) => current || question);
+      } else if (file) {
+        setFile((current) => (current === file ? undefined : current));
+      }
       // The run only carries business invocations; a pending confirmation is a
       // gateway approval, so resolve it by invocation id.
       const cards = await capabilityApprovals();
@@ -189,6 +222,16 @@ export function useWorkbench({
       if (abort.signal.aborted) return;
       setError(caught);
       setDraft((current) => current || question);
+      if (
+        caught instanceof ApiError &&
+        (caught.code === "ai_attachment_invalid" ||
+          caught.code === "ai_pdf_unavailable")
+      ) {
+        setTurns((current) =>
+          current.filter(({ id }) => id !== questionId && id !== replyId),
+        );
+        return;
+      }
       // A refused turn is still a recorded task; show it in the run history.
       await client.invalidateQueries({ queryKey: runsKey });
       onTurnComplete?.();
@@ -196,7 +239,7 @@ export function useWorkbench({
       if (controller.current === abort) {
         controller.current = null;
         setBusy(false);
-        onRunState?.(thread.current, question, false);
+        onRunState?.(thread.current, displayedQuestion, false);
       }
     }
   }
@@ -254,6 +297,8 @@ export function useWorkbench({
     messages,
     draft,
     setDraft,
+    file,
+    setFile,
     busy,
     stopped,
     deciding,

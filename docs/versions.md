@@ -105,7 +105,7 @@ PostgreSQL 18.6，官方 release notes 确认为稳定主线 18；容器实际�
 - [Playwright](https://playwright.dev/docs/test-webserver)
 - [PostgreSQL](https://www.postgresql.org/docs/current/release.html)
 
-Goa 生成器通过 go.mod tool 指令与框架共享版本；sqlc CLI 用 make tools 固定版本。shadcn CLI 新增依赖也在初始化后改为精确版本。官方文档会随时间更新，以锁定版本及可执行验证结果为准。
+Goa 生成器通过 go.mod tool 指令与框架共享版本；sqlc CLI 用 ./horizon-cli tools 固定版本。shadcn CLI 新增依赖也在初始化后改为精确版本。官方文档会随时间更新，以锁定版本及可执行验证结果为准。
 
 Goa 官方 Skill 完整安装，内容 hash 见 skills-lock.json。当前模块的生成器 CLI 和服务依赖共用 go.mod tool 固定版本，安装 skill 不修改工具链版本。
 
@@ -171,3 +171,9 @@ SDK 与 x/time 是应用直接依赖，其余由 SDK 引入；全部由 go.mod/g
 ## 2026-11-06 页面模式前端评审
 
 通过锁定的 shadcn CLI 4.23.0、官方 base-nova Registry 新增 Accordion、Alert、Avatar、Breadcrumb、Popover、Progress、RadioGroup、Sheet、Slider、Switch 源码（MIT）。基于已有 @base-ui/react 1.9.0、React 19.3.1、Tailwind 4；没有新增 npm 依赖或改锁文件，已有 Button 保留不覆盖。新原语已在页面模式中消费，默认关闭/导航辅助名称接现有 i18next。来源：https://ui.shadcn.com/docs/components/base 与 https://ui.shadcn.com/r/styles/base-nova/accordion.json 。
+
+## AI 输入附件的 PDF 解析
+
+服务端通过独立的 Poppler `pdftotext` 进程读取 PDF 文本层，验证使用 26.05.0。部署 AI API 的主机需将系统发行版的 `pdftotext` 放到服务进程 PATH，例如 Debian/Ubuntu 的 `poppler-utils` 或 macOS 的 Homebrew `poppler`。Poppler 以 GPL 发布，通过标准输入和输出与 Go 服务交互。[Poppler 项目](https://poppler.freedesktop.org/) · [pdftotext 手册](https://manpages.debian.org/trixie/poppler-utils/pdftotext.1.en.html)
+
+每轮限一个 2 MiB 文件。PDF 提取文本层，输出上限 12 KiB，解析期限 5 秒。没有可读文本层或受密码保护的文件返回附件错误。附件正文用于当前模型请求，原始附件由请求处理完后释放。

@@ -176,6 +176,10 @@ func UIContracts() []UIContract {
 		"invalidFileKey": stringProp, "invalidReasonKey": stringProp, "reviewAccepted": map[string]any{"type": "boolean"},
 	}, "formats", "maxBytes", "fileKey", "reviewKey", "submitKey", "cancelKey", "reasonKey", "invalidFileKey", "invalidReasonKey")))
 	result[len(result)-1].Slots = []string{"content"}
+	add("ai-model-settings", "element", "data", []string{"submit"}, marshal(object(map[string]any{
+		"view":     map[string]any{"type": "string", "enum": []string{"default", "models", "routes"}},
+		"disabled": map[string]any{"type": "boolean"},
+	}, "view")))
 	add("settings-panel", "element", "", nil, marshal(map[string]any{
 		"type": "object", "additionalProperties": false,
 		"properties": map[string]any{"personal": map[string]any{"type": "boolean"}},

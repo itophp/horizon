@@ -49,7 +49,7 @@ Go 类型 + 共享限制常量
   → 真实数据库的独立行为测试
 ```
 
-make generate-workflows 写 docs/generated/workflows；make check-generated 检查生成漂移；make check-workflows 检查生成 Schema、拒绝路径和离线校验。ci-fast 已加入 check-workflows。make test-orchestration-example 验证完整示例，test-security 包含数据库集合。
+./horizon-cli generate-workflows 写 docs/generated/workflows；./horizon-cli check-generated 检查生成漂移；./horizon-cli check-workflows 检查生成 Schema、拒绝路径和离线校验。ci-fast 已加入 check-workflows。./horizon-cli test-orchestration-example 验证完整示例，test-security 包含数据库集合。
 
 纯规格位于 ai/orchestration/spec，workflowspec 不依赖应用服务或生成的 Goa/sqlc，workflowcheck 才依赖共享装配目录，避免“必须先编译未生成的代码才能生成”的循环。
 

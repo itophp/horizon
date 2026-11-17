@@ -59,6 +59,7 @@ func (c *Client) Status(ctx context.Context, p *StatusPayload) (res *AIStatus, e
 
 // Run calls the "run" endpoint of the "ai" service.
 // Run may return the following errors:
+//   - "ai_model_image_unsupported" (type *IAMProblem): The selected model does not accept image input.
 //   - "unauthenticated" (type *IAMProblem)
 //   - "forbidden" (type *IAMProblem)
 //   - "invalid" (type *IAMProblem)

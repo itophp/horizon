@@ -96,11 +96,11 @@ func TestGovernanceCatalogDoesNotMakeManagementTemporary(t *testing.T) {
 		}
 	}
 
-	// 76 covers the four identity resources, access/temporary/mcp management, the
+	// 78 covers the four identity resources, access/temporary/mcp management, the
 	// capability approval gate, the three example module permissions, the three
 	// knowledge base management grants, three orchestration permissions, three
-	// article grants, three project grants, two cloud drive grants and two runtime grants and five memory grants, plus seven execution plan grants.
-	if len(seen) != 76 {
+	// article grants, three project grants, two cloud drive grants and two runtime grants and five memory grants, plus seven execution plan grants and two automation grants.
+	if len(seen) != 78 {
 		t.Fatal("unexpected catalog", len(seen))
 	}
 }

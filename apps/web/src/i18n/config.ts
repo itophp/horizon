@@ -3,6 +3,8 @@ import zhShowcase from "./locales/zh-CN/showcase.json";
 import enRuntime from "./locales/en/runtime.json";
 import zhRuntime from "./locales/zh-CN/runtime.json";
 import enArticles from "./locales/en/articles.json";
+import enAutomation from "./locales/en/automation.json";
+import zhAutomation from "./locales/zh-CN/automation.json";
 import enDrive from "./locales/en/drive.json";
 import zhDrive from "./locales/zh-CN/drive.json";
 import { frontendExtensions } from "@/app/plugins/builtins";
@@ -50,6 +52,7 @@ const coreResources = {
     showcase: enShowcase,
     runtime: enRuntime,
     articles: enArticles,
+    automation: enAutomation,
     drive: enDrive,
     admin: enAdmin,
     ai: enAi,
@@ -69,6 +72,7 @@ const coreResources = {
     showcase: zhShowcase,
     runtime: zhRuntime,
     articles: zhArticles,
+    automation: zhAutomation,
     drive: zhDrive,
     admin: zhAdmin,
     ai: zhAi,

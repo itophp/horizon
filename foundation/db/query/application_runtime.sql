@@ -1,12 +1,16 @@
 -- name: RuntimeProvisionTenant :exec
+-- An installation owns every application of its deployment package version,
+-- not only the template's representative application. Platform packages with
+-- several applications therefore provision all of them for a new tenant.
 WITH installations AS (
  INSERT INTO runtime_installations(tenant_id,plugin_id,version,status)
  SELECT sqlc.arg(tenant_id)::text,plugin_id,version,CASE WHEN enabled THEN 'enabled' ELSE 'installed' END
  FROM runtime_installation_templates ON CONFLICT DO NOTHING RETURNING tenant_id,plugin_id,version
 ), states AS (
  INSERT INTO runtime_application_states(tenant_id,application_id,plugin_id)
- SELECT i.tenant_id,t.application_id,i.plugin_id FROM installations i
- JOIN runtime_installation_templates t ON t.plugin_id=i.plugin_id ON CONFLICT DO NOTHING
+ SELECT i.tenant_id,s.application_id,i.plugin_id FROM installations i
+ JOIN runtime_deployment_snapshots s ON s.plugin_id=i.plugin_id AND s.plugin_version=i.version
+ ON CONFLICT DO NOTHING
  RETURNING tenant_id,application_id,plugin_id
 ), heads AS (
  INSERT INTO runtime_application_heads(tenant_id,application_id,plugin_id,base_digest,route_root,published_version)

@@ -68,7 +68,7 @@ test("routes backend modules to the feature they back", () => {
 
 test("keeps harness and dependency edits out of the browser run", () => {
   const { specs, unmapped } = selectSpecs([
-    "Makefile",
+    "cmd/horizon-cli/project.go",
     "package.json",
     "apps/web/playwright.config.ts",
     "apps/web/vite.config.ts",

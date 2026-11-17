@@ -744,7 +744,7 @@ func aiRunUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run --body '{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"q\",\n      \"sessionId\": \"2vr\"\n   }' --cookie \"Ut dicta autem.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run --body '{\n      \"attachment\": {\n         \"content\": \"p6s\",\n         \"name\": \"2u\"\n      },\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"q1k\",\n      \"sessionId\": \"2vr\"\n   }' --cookie \"Ut dicta autem.\"")
 }
 
 func aiRunStreamUsage() {
@@ -764,7 +764,7 @@ func aiRunStreamUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run-stream --body '{\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"sm\",\n      \"sessionId\": \"i6d\"\n   }' --cookie \"Consectetur vel.\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "ai run-stream --body '{\n      \"attachment\": {\n         \"content\": \"p6s\",\n         \"name\": \"2u\"\n      },\n      \"page\": {\n         \"applicationId\": \"2y7\",\n         \"entity\": \"w7q\",\n         \"entityId\": 5722665807259745387,\n         \"metadataVersion\": \"knc\",\n         \"pageId\": \"kp6\",\n         \"route\": \"xh0\",\n         \"selection\": [\n            8615325486438952813,\n            3615004802301163038,\n            8292885423084348597\n         ]\n      },\n      \"question\": \"smi\",\n      \"sessionId\": \"i6d\"\n   }' --cookie \"Consectetur vel.\"")
 }
 
 func aiRunsUsage() {

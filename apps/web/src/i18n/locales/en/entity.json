@@ -227,5 +227,20 @@
   },
   "execution_record": {
     "label": "Execution record"
+  },
+  "automation_task": {
+    "label": "Automation task"
+  },
+  "automation_run": {
+    "label": "Automation run",
+    "states": {
+      "queued": "Queued",
+      "running": "Running",
+      "awaiting_approval": "Awaiting approval",
+      "completed": "Completed",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "cancelled": "Cancelled"
+    }
   }
 }

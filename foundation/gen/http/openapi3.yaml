@@ -1390,42 +1390,50 @@ paths:
                                     $ref: '#/components/schemas/AIConversation'
                                 example:
                                     - archived: true
+                                      automationAt: Ut quo voluptatem ratione.
                                       messageCount: 592256525368354716
                                       sessionId: Qui amet aliquam sint blanditiis.
                                       title: Corrupti maiores ut est a fugit.
                                       updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                                     - archived: true
+                                      automationAt: Ut quo voluptatem ratione.
                                       messageCount: 592256525368354716
                                       sessionId: Qui amet aliquam sint blanditiis.
                                       title: Corrupti maiores ut est a fugit.
                                       updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                                     - archived: true
+                                      automationAt: Ut quo voluptatem ratione.
                                       messageCount: 592256525368354716
                                       sessionId: Qui amet aliquam sint blanditiis.
                                       title: Corrupti maiores ut est a fugit.
                                       updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                                     - archived: true
+                                      automationAt: Ut quo voluptatem ratione.
                                       messageCount: 592256525368354716
                                       sessionId: Qui amet aliquam sint blanditiis.
                                       title: Corrupti maiores ut est a fugit.
                                       updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                             example:
                                 - archived: true
+                                  automationAt: Ut quo voluptatem ratione.
                                   messageCount: 592256525368354716
                                   sessionId: Qui amet aliquam sint blanditiis.
                                   title: Corrupti maiores ut est a fugit.
                                   updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                                 - archived: true
+                                  automationAt: Ut quo voluptatem ratione.
                                   messageCount: 592256525368354716
                                   sessionId: Qui amet aliquam sint blanditiis.
                                   title: Corrupti maiores ut est a fugit.
                                   updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                                 - archived: true
+                                  automationAt: Ut quo voluptatem ratione.
                                   messageCount: 592256525368354716
                                   sessionId: Qui amet aliquam sint blanditiis.
                                   title: Corrupti maiores ut est a fugit.
                                   updatedAt: Tenetur eos enim voluptatibus autem occaecati sint.
                                 - archived: true
+                                  automationAt: Ut quo voluptatem ratione.
                                   messageCount: 592256525368354716
                                   sessionId: Qui amet aliquam sint blanditiis.
                                   title: Corrupti maiores ut est a fugit.
@@ -1518,6 +1526,7 @@ paths:
                                 $ref: '#/components/schemas/AIConversation'
                             example:
                                 archived: false
+                                automationAt: Unde asperiores quo non perspiciatis enim.
                                 messageCount: 1575522350308192356
                                 sessionId: Eos soluta dolor.
                                 title: Quo voluptatem perferendis.
@@ -2010,6 +2019,9 @@ paths:
                         schema:
                             $ref: '#/components/schemas/RunRequestBody'
                         example:
+                            attachment:
+                                content: p6s
+                                name: 2u
                             page:
                                 applicationId: 2y7
                                 entity: w7q
@@ -2021,7 +2033,7 @@ paths:
                                     - 8615325486438952813
                                     - 3615004802301163038
                                     - 8292885423084348597
-                            question: q
+                            question: q1k
                             sessionId: 2vr
             responses:
                 "201":
@@ -2113,7 +2125,7 @@ paths:
                                       triggerDepth: 3328960312055392617
                                       version: Asperiores voluptatum blanditiis.
                                 model: Error sapiente.
-                                origin: human-ui
+                                origin: automation
                                 promptTokens: 8757904503096358304
                                 question: Tempora totam et et ea.
                                 status: awaiting_approval
@@ -2153,6 +2165,14 @@ paths:
                                 $ref: '#/components/schemas/IAMProblem'
                             example:
                                 code: Nihil aut at ea vel sit qui.
+                "422":
+                    description: 'ai_model_image_unsupported: The selected model does not accept image input.'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IAMProblem'
+                            example:
+                                code: Omnis fugit esse neque eos.
                 "500":
                     description: 'internal: Internal Server Error response.'
                     content:
@@ -2261,7 +2281,7 @@ paths:
                                       triggerDepth: 3328960312055392617
                                       version: Asperiores voluptatum blanditiis.
                                 model: Aut alias et tempora praesentium in.
-                                origin: api
+                                origin: event
                                 promptTokens: 3286761961603591277
                                 question: Eum harum fuga reprehenderit molestias expedita.
                                 status: awaiting_approval
@@ -2436,6 +2456,9 @@ paths:
                         schema:
                             $ref: '#/components/schemas/RunRequestBody'
                         example:
+                            attachment:
+                                content: p6s
+                                name: 2u
                             page:
                                 applicationId: 2y7
                                 entity: w7q
@@ -2447,7 +2470,7 @@ paths:
                                     - 8615325486438952813
                                     - 3615004802301163038
                                     - 8292885423084348597
-                            question: sm
+                            question: smi
                             sessionId: i6d
             responses:
                 "200":
@@ -4919,12 +4942,35 @@ paths:
             security: []
 components:
     schemas:
+        AIAttachment:
+            type: object
+            properties:
+                content:
+                    type: string
+                    example: p6s
+                    minLength: 1
+                    maxLength: 2796204
+                name:
+                    type: string
+                    example: 2u
+                    minLength: 1
+                    maxLength: 255
+            description: One transient source file for the current turn, encoded in base64.
+            example:
+                content: p6s
+                name: 2u
+            required:
+                - name
+                - content
         AIConversation:
             type: object
             properties:
                 archived:
                     type: boolean
                     example: true
+                automationAt:
+                    type: string
+                    example: Ut quo voluptatem ratione.
                 messageCount:
                     type: integer
                     example: 592256525368354716
@@ -4941,6 +4987,7 @@ components:
             description: 'One conversation: the tasks recorded under a session, so the workbench can reopen and continue it. An archived conversation is kept and can be restored.'
             example:
                 archived: true
+                automationAt: Ut quo voluptatem ratione.
                 messageCount: 592256525368354716
                 sessionId: Qui amet aliquam sint blanditiis.
                 title: Corrupti maiores ut est a fugit.
@@ -5122,7 +5169,7 @@ components:
                     example: Error sapiente.
                 origin:
                     type: string
-                    example: human-ui
+                    example: automation
                     enum:
                         - human-ui
                         - agent
@@ -5130,6 +5177,7 @@ components:
                         - api
                         - event
                         - approval
+                        - automation
                 promptTokens:
                     type: integer
                     example: 8757904503096358304
@@ -5244,7 +5292,7 @@ components:
                       triggerDepth: 3328960312055392617
                       version: Asperiores voluptatum blanditiis.
                 model: Error sapiente.
-                origin: human-ui
+                origin: automation
                 promptTokens: 8757904503096358304
                 question: Tempora totam et et ea.
                 status: awaiting_approval
@@ -8506,12 +8554,13 @@ components:
         RunRequestBody:
             type: object
             properties:
+                attachment:
+                    $ref: '#/components/schemas/AIAttachment'
                 page:
                     $ref: '#/components/schemas/AIPage'
                 question:
                     type: string
-                    example: q
-                    minLength: 1
+                    example: q1k
                     maxLength: 4000
                 sessionId:
                     type: string
@@ -8519,6 +8568,9 @@ components:
                     maxLength: 80
             description: Request body for run.
             example:
+                attachment:
+                    content: p6s
+                    name: 2u
                 page:
                     applicationId: 2y7
                     entity: w7q
@@ -8530,7 +8582,7 @@ components:
                         - 8615325486438952813
                         - 3615004802301163038
                         - 8292885423084348597
-                question: q
+                question: q1k
                 sessionId: 2vr
             required:
                 - question

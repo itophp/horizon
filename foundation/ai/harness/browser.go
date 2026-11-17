@@ -19,6 +19,7 @@ import (
 	js "github.com/google/jsonschema-go/jsonschema"
 	"github.com/jackc/pgx/v5"
 	aicontext "horizon/foundation/ai/context"
+	"horizon/foundation/ai/modelclient"
 	capabilitytools "horizon/foundation/ai/tools"
 	"horizon/foundation/kernel/capability/contracts"
 	"horizon/foundation/system/governance"
@@ -51,6 +52,7 @@ type BrowserReply struct {
 	Call  *BrowserCall
 }
 type browserManifest struct {
+	ModelStamp     string         `json:"modelStamp,omitempty"`
 	AuthorityStamp string         `json:"authorityStamp,omitempty"`
 	Page           aicontext.Page `json:"page"`
 	Tools          []BrowserTool  `json:"tools"`
@@ -224,13 +226,14 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 	if len(in.Question) > 8000 || strings.TrimSpace(in.Question) == "" || len(in.SessionID) > 80 || len(in.Result) > 12000 {
 		return nil, governance.Problem("invalid")
 	}
-	cfg, err := s.resolve(ctx, p)
+	cfg, err := s.ResolveAIModel(ctx, p, governance.ModelWorkspace)
 	if err != nil {
 		return nil, err
 	}
-	if !cfg.ready() {
+	if !cfg.Enabled || !cfg.Configured() {
 		return nil, governance.Problem("unavailable")
 	}
+	modelStamp := governance.Hash(strings.Join([]string{cfg.Profile, cfg.ProviderID, cfg.BaseURL, cfg.Protocol, cfg.Name}, "\x00"))
 	q := dbgen.New(s.Core.Pool)
 	if err = q.AIExpirePageTools(ctx, dbgen.AIExpirePageToolsParams{TenantID: p.TenantID, AccountID: p.Account.ID}); err != nil {
 		return nil, err
@@ -251,7 +254,7 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 			}
 			return nil, err
 		}
-		if run.Agent != agentName || run.DepartmentID != p.Account.DepartmentID || run.Status != StatusRunning || run.SessionID != in.SessionID || run.Model != cfg.model || run.Question != in.Question {
+		if run.Agent != agentName || run.DepartmentID != p.Account.DepartmentID || run.Status != StatusRunning || run.SessionID != in.SessionID || run.Model != cfg.Name || run.Question != in.Question {
 			return nil, governance.Problem("invalid")
 		}
 		sealed, e := q.OrchGetCheckpoint(ctx, dbgen.OrchGetCheckpointParams{TenantID: p.TenantID, AccountID: p.Account.ID, RunID: run.ID, CheckpointKey: "embedded:manifest"})
@@ -260,6 +263,9 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 		}
 		raw, e := checkpoint.unseal("manifest", sealed)
 		if e != nil || json.Unmarshal(raw, &manifest) != nil || manifest.Pending == nil || manifest.Pending.ID != in.CallID || manifest.Turns > 12 || !json.Valid([]byte(in.Result)) {
+			return nil, governance.Problem("invalid")
+		}
+		if manifest.ModelStamp != "" && manifest.ModelStamp != modelStamp {
 			return nil, governance.Problem("invalid")
 		}
 		if _, err = q.AIClaimPageTool(ctx, dbgen.AIClaimPageToolParams{TenantID: p.TenantID, AccountID: p.Account.ID, DepartmentID: p.Account.DepartmentID, RunID: run.ID, Token: in.Token}); err != nil {
@@ -292,6 +298,7 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 			return nil, err
 		}
 		manifest.Page = in.Page
+		manifest.ModelStamp = modelStamp
 		if err = in.Page.Validate(s.registry.EntitySet()); err != nil {
 			return nil, err
 		}
@@ -300,7 +307,7 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 		if err != nil {
 			return nil, err
 		}
-		run, err = s.start(ctx, p, StartInput{Question: in.Question, SessionID: in.SessionID, Origin: contracts.OriginHumanUI, TraceID: traceID(), Block: block})
+		run, err = s.start(ctx, p, cfg, StartInput{Question: in.Question, SessionID: in.SessionID, Origin: contracts.OriginHumanUI, TraceID: traceID(), Block: block})
 		if err != nil {
 			return nil, err
 		}
@@ -308,7 +315,7 @@ func (s *Service) AskBrowser(ctx context.Context, in BrowserTurn) (*BrowserReply
 		manifest.Tools = in.Tools
 	}
 	started := time.Now()
-	chat, err := s.chatModel(ctx, cfg)
+	chat, err := modelclient.NewChat(ctx, cfg)
 	if err != nil {
 		_, err = fail(ctx, s.runs, p.TenantID, run, "unavailable", started)
 		return nil, err

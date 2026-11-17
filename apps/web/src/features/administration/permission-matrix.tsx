@@ -34,6 +34,7 @@ export function permissionFunctionLabel(key: string, t: TFunction) {
   const labels: Record<string, string> = {
     drive: t("drive:heading"),
     articles: t("articles:heading"),
+    automation: t("automation:heading"),
     accounts: t("admin:nav.accounts"),
     organizations: t("admin:nav.organizations"),
     departments: t("admin:nav.departments"),

@@ -1,24 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles } from "lucide-react";
+import { ChevronDown, LoaderCircle, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   runtimeAIAnalysisPanelPropsSchema,
   runtimeAIResultSchema,
-  runtimeAISuggestionsSchema,
   type RuntimeAIAnalysisSpec,
-  type RuntimeAIFormAssistant,
   type RuntimeAIResult,
-  type RuntimeAIFieldSuggestion,
 } from "@/api/generated/runtime";
 import type { ComponentRendererProps } from "./component-registry";
 
 type AIEmitter = ComponentRendererProps["emit"];
-const quotaExhausted = "ai_quota_exhausted";
+export const quotaExhausted = "ai_quota_exhausted";
+export const modelImageUnsupported = "ai_model_image_unsupported";
+export const attachmentInvalid = "ai_attachment_invalid";
 type AnalysisResult = RuntimeAIResult & { quotaExhausted?: boolean };
 
 type RecordData = Record<string, unknown>;
+
+// localNowRFC3339 is the device clock with its UTC offset. The AI form
+// assistant uses it only to resolve relative dates ("tomorrow at 09:00"); the
+// suggested instant is revalidated by the business capability on save.
+export function localNowRFC3339(date = new Date()): string {
+  const offset = -date.getTimezoneOffset();
+  const pad = (value: number, size = 2) =>
+    String(Math.abs(value)).padStart(size, "0");
+  const zone = `${offset >= 0 ? "+" : "-"}${pad(Math.trunc(offset / 60))}:${pad(offset % 60)}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${zone}`;
+}
 
 export async function requestAI(
   emit: AIEmitter,
@@ -36,7 +46,13 @@ export async function requestAI(
       result = data;
     },
   });
-  if (errorCode === quotaExhausted) throw new Error(quotaExhausted);
+  if (
+    errorCode === quotaExhausted ||
+    errorCode === attachmentInvalid ||
+    errorCode === modelImageUnsupported ||
+    errorCode === "ai_pdf_unavailable"
+  )
+    throw new Error(errorCode);
   return succeeded ? result : undefined;
 }
 
@@ -51,9 +67,18 @@ export function AIResult({
 }) {
   const { t } = useTranslation("runtime");
   if (!value || value.status === "idle")
-    return <span className="text-muted-foreground">{t("ai.idle")}</span>;
+    return <span className="ai-result-status">{t("ai.idle")}</span>;
   if (value.status === "running")
-    return <span role="status">{t("ai.running")}</span>;
+    return (
+      <span className="ai-result-status" role="status">
+        <LoaderCircle
+          className="motion-safe:animate-spin"
+          size={14}
+          aria-hidden
+        />
+        {t("ai.running")}
+      </span>
+    );
   if (value.status === "failed")
     return (
       <span className="inline-flex items-center gap-2">
@@ -78,8 +103,8 @@ export function AIResult({
       ? labels[value.label as keyof typeof labels]
       : undefined;
   const details = (
-    <div className="space-y-1 whitespace-normal">
-      <p>{value.summary}</p>
+    <div className="ai-result-details">
+      <p className="ai-result-summary">{value.summary}</p>
       {value.evidence?.length ? (
         <ul className="list-disc pl-5">
           {value.evidence.map((item, index) => (
@@ -88,7 +113,7 @@ export function AIResult({
         </ul>
       ) : null}
       {value.coverage && (
-        <p className="text-muted-foreground">
+        <p className="ai-result-coverage">
           {t("ai.coverage", { ...value.coverage })}
         </p>
       )}
@@ -100,15 +125,22 @@ export function AIResult({
         <span className="text-muted-foreground">{t("ai.stale")}</span>
       )}
       {compact && label ? (
-        <details>
-          <summary className="cursor-pointer">
-            <Badge variant="outline">{label}</Badge>
+        <details className="ai-result-expand">
+          <summary>
+            <Badge variant="outline" className="ai-result-badge">
+              {label}
+            </Badge>
+            <ChevronDown size={14} aria-hidden />
           </summary>
           {details}
         </details>
       ) : (
         <>
-          {label && <Badge variant="outline">{label}</Badge>}
+          {label && (
+            <Badge variant="outline" className="ai-result-badge">
+              {label}
+            </Badge>
+          )}
           {details}
         </>
       )}
@@ -225,7 +257,12 @@ export function AIAnalysisPanel({
   const value = analysis.value(active.id, recordId, snapshot(active.analysis));
   return (
     <section className="admin-panel ai-analysis-panel">
-      <h2>{t("ai.analysis")}</h2>
+      <h2>
+        <span className="ai-panel-icon">
+          <Sparkles size={18} aria-hidden />
+        </span>
+        {t("ai.analysis")}
+      </h2>
       <div className="flex flex-wrap gap-2">
         {scenes.map((scene) => (
           <Button
@@ -233,6 +270,7 @@ export function AIAnalysisPanel({
             type="button"
             size="sm"
             variant={scene.id === active.id ? "secondary" : "outline"}
+            className="ai-action"
             disabled={
               readOnly ||
               dataRefreshing ||
@@ -251,25 +289,26 @@ export function AIAnalysisPanel({
                 );
             }}
           >
-            <Sparkles aria-hidden="true" size={14} />
             {t(scene.labelKey)}
           </Button>
         ))}
       </div>
-      <AIResult
-        value={value}
-        retry={
-          readOnly || dataRefreshing
-            ? undefined
-            : () =>
-                void analysis.run(
-                  active.id,
-                  active.analysis,
-                  recordId,
-                  snapshot(active.analysis),
-                )
-        }
-      />
+      <div className="ai-analysis-output">
+        <AIResult
+          value={value}
+          retry={
+            readOnly || dataRefreshing
+              ? undefined
+              : () =>
+                  void analysis.run(
+                    active.id,
+                    active.analysis,
+                    recordId,
+                    snapshot(active.analysis),
+                  )
+          }
+        />
+      </div>
       {!readOnly &&
         !dataRefreshing &&
         (value?.status === "succeeded" || value?.status === "stale") && (
@@ -290,100 +329,5 @@ export function AIAnalysisPanel({
           </Button>
         )}
     </section>
-  );
-}
-
-export function AIFormAssistant({
-  spec,
-  request,
-  current,
-  label,
-  canApply,
-  apply,
-  disabled,
-}: {
-  spec: RuntimeAIFormAssistant;
-  request: () => Promise<unknown>;
-  current: (field: string) => unknown;
-  label: (field: string) => string;
-  canApply: (suggestion: RuntimeAIFieldSuggestion) => boolean;
-  apply: (suggestion: RuntimeAIFieldSuggestion) => void;
-  disabled: boolean;
-}) {
-  const { t } = useTranslation(["runtime", "projects"]);
-  const [state, setState] = useState<
-    "idle" | "running" | "failed" | "quotaExhausted" | "succeeded"
-  >("idle");
-  const [items, setItems] = useState<RuntimeAIFieldSuggestion[]>([]);
-  async function generate() {
-    setState("running");
-    setItems([]);
-    try {
-      const parsed = runtimeAISuggestionsSchema.safeParse(await request());
-      if (!parsed.success) {
-        setState("failed");
-        return;
-      }
-      setItems(
-        parsed.data.suggestions.filter((item) =>
-          spec.targetFields.includes(item.field),
-        ),
-      );
-      setState("succeeded");
-    } catch (error) {
-      setState(
-        error instanceof Error && error.message === quotaExhausted
-          ? "quotaExhausted"
-          : "failed",
-      );
-    }
-  }
-  return (
-    <div className="space-y-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={disabled || state === "running"}
-        onClick={() => void generate()}
-      >
-        <Sparkles aria-hidden="true" size={14} />
-        {t(spec.labelKey)}
-      </Button>
-      {state === "running" && <p role="status">{t("ai.running")}</p>}
-      {state === "failed" && <p role="status">{t("ai.failed")}</p>}
-      {state === "quotaExhausted" && (
-        <p role="status">{t("ai.quotaExhausted")}</p>
-      )}
-      {state === "succeeded" && !items.length && (
-        <p role="status">{t("ai.noSuggestions")}</p>
-      )}
-      {items.map((item) => (
-        <div key={item.field} className="space-y-1 rounded-md border p-3">
-          <p className="font-medium">{label(item.field)}</p>
-          <p className="whitespace-pre-wrap">
-            {t("ai.current", { value: String(current(item.field) ?? "") })}
-          </p>
-          <p className="whitespace-pre-wrap">
-            {t("ai.suggestion", { value: item.value })}
-          </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={disabled || !canApply(item)}
-            onClick={() => {
-              apply(item);
-              setItems((previous) =>
-                previous.filter((entry) => entry.field !== item.field),
-              );
-              setState("idle");
-            }}
-          >
-            {t("ai.apply")}
-          </Button>
-        </div>
-      ))}
-    </div>
   );
 }

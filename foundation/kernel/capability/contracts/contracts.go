@@ -49,6 +49,10 @@ const (
 	OriginAPI        Origin = "api"
 	OriginEvent      Origin = "event"
 	OriginApproval   Origin = "approval"
+	// OriginAutomation is a scheduled automation task launched by the runtime
+	// worker. It is automated for risk admission: high risk work waits for a
+	// human and critical work is never reachable from it.
+	OriginAutomation Origin = "automation"
 )
 
 // Status is the invocation state machine.

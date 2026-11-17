@@ -35,17 +35,18 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      - run: pnpm install --frozen-lockfile
-      - run: make tools
+      - run: ./scripts/go.sh build -trimpath -o ../horizon-cli ../cmd/horizon-cli
+      - run: ./horizon-cli install
+      - run: ./horizon-cli tools
       - name: Fast gates, contracts and builds
-        run: make ci-fast
+        run: ./horizon-cli ci-fast
       - name: Isolated PostgreSQL integration and negative authorization cases
-        run: make test-integration
+        run: ./horizon-cli test-integration
       - run: pnpm --filter @baseline/web exec playwright install --with-deps chromium
       - name: WebMCP real client smoke
-        run: make test-webmcp-e2e
+        run: ./horizon-cli test-webmcp-e2e
       - name: Real frontend and backend end-to-end
-        run: make test-e2e
+        run: ./horizon-cli test-e2e
       - uses: actions/upload-artifact@v4
         if: always()
         with:

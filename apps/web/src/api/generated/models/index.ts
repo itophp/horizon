@@ -9,6 +9,7 @@
 export * from "./accountRecord";
 export * from "./adminSnapshot";
 export * from "./agentRequestBody";
+export * from "./aIAttachment";
 export * from "./aIConversation";
 export * from "./aiConversationsParams";
 export * from "./aIPage";

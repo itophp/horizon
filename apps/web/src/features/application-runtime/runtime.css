@@ -1,3 +1,7 @@
+.application-management {
+  display: grid;
+  gap: 1rem;
+}
 .runtime-layout {
   display: grid;
   gap: 1rem;
@@ -359,4 +363,343 @@
 .runtime-import-cell .field-error {
   display: block;
   margin-inline: 0.5rem;
+}
+
+/* Application design workspace: one application per page, primary actions
+   stay in the composer and candidate tab; the overview is secondary. */
+.design-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--app-muted);
+}
+.design-breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--app-muted);
+}
+.design-breadcrumb a:hover {
+  color: var(--app-ink);
+}
+.design-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+.design-main,
+.design-side {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.design-request-form {
+  gap: 14px;
+}
+.design-request-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.design-request-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.design-request-actions small,
+.design-tab-hint {
+  color: var(--app-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.design-kicker {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--app-muted);
+}
+.design-tabs {
+  padding: 16px 18px 20px;
+}
+.design-tabs [data-slot="tabs-list"] {
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.design-tabs [data-slot="tabs-content"] {
+  padding-top: 14px;
+}
+.design-facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 6px 22px 14px;
+}
+.design-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--app-line);
+  font-size: 11px;
+}
+.design-facts > div:last-child {
+  border-bottom: 0;
+}
+.design-facts dt {
+  color: var(--app-muted);
+}
+.design-facts dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.design-side-actions {
+  display: flex;
+  padding: 0 22px 18px;
+}
+.design-side-actions [data-slot="button"] {
+  width: 100%;
+}
+.design-candidate {
+  display: grid;
+  gap: 14px;
+}
+.design-candidate-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.design-candidate-head > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+.design-candidate-head strong {
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+.design-candidate-head small {
+  color: var(--app-muted);
+  font-size: 11px;
+}
+.design-actions,
+.design-history-toolbar,
+.design-contract-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.design-history-toolbar {
+  margin: 12px 0;
+}
+.design-definition {
+  border-top: 1px solid var(--app-line);
+  padding-top: 12px;
+}
+.design-definition summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.design-definition pre {
+  max-height: 320px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--app-bg);
+  font-size: 11px;
+}
+.design-publish-summary {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.design-publish-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.design-publish-summary dt {
+  color: var(--app-muted);
+}
+.design-publish-summary dd {
+  margin: 0;
+}
+.design-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.design-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-line);
+}
+.design-history-item:last-child {
+  border-bottom: 0;
+}
+.design-history-meta {
+  display: grid;
+  gap: 3px;
+}
+.design-history-meta small {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.design-history-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.design-diff {
+  margin-top: 14px;
+  border-top: 1px solid var(--app-line);
+  padding-top: 14px;
+}
+.design-diff pre {
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--app-bg);
+  font-size: 11px;
+}
+.design-baseline {
+  display: grid;
+  gap: 12px;
+}
+.design-field {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+.design-field label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+}
+.design-field select {
+  min-height: 36px;
+  padding: 8px;
+  border: 1px solid var(--app-line);
+  border-radius: 7px;
+  background: var(--app-bg);
+  color: var(--app-ink);
+}
+.design-field [data-slot="button"] {
+  justify-self: start;
+}
+.design-conflicts {
+  display: flex;
+  gap: 9px;
+  padding: 12px 14px;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+  color: var(--app-muted);
+  font-size: 11px;
+}
+.design-conflicts p {
+  margin: 0 0 6px;
+  color: var(--app-ink);
+}
+.design-conflicts ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.design-task-body {
+  display: grid;
+  gap: 10px;
+  padding: 0 22px 20px;
+}
+.design-task-answer {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.design-task-body small {
+  color: var(--app-muted);
+  font-size: 10px;
+}
+.design-contracts {
+  display: grid;
+  gap: 12px;
+}
+.design-contract-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.design-contract-detail {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--app-line);
+}
+.design-contract-detail h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.design-contract-detail p {
+  margin: 0;
+  font-size: 12px;
+}
+.design-contract-detail .design-facts {
+  padding: 0;
+  border: 1px solid var(--app-line);
+  border-radius: 8px;
+}
+.design-contract-detail .design-facts > div {
+  padding: 8px 12px;
+}
+@media (max-width: 1080px) {
+  .design-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .design-tabs {
+    padding: 14px;
+  }
+  .design-facts,
+  .design-side-actions,
+  .design-task-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+.design-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.design-row-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--app-muted);
+  white-space: nowrap;
+}
+.design-row-link:hover {
+  color: var(--app-ink);
 }
