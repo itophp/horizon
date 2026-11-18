@@ -23,6 +23,9 @@ const (
 func (s *Service) Entries() []registry.Entry {
 	return []registry.Entry{
 		{Definition: listDefinition(), Handler: contracts.Handler{Execute: s.list}},
+		{Definition: queryDefinition(), Handler: contracts.Handler{Execute: s.query}},
+		{Definition: readDefinition(), Handler: contracts.Handler{Execute: s.read}},
+		{Definition: updateDefinition(), Handler: contracts.Handler{ExecuteTx: s.update}},
 		{Definition: createDefinition(), Handler: contracts.Handler{Execute: s.create}},
 		{Definition: deleteDefinition(), Handler: contracts.Handler{Execute: s.remove}},
 		{Definition: reindexDefinition(), Handler: contracts.Handler{Execute: s.reindex}},

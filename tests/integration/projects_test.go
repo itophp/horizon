@@ -24,7 +24,6 @@ import (
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
 	"horizon/foundation/kernel/eventhub"
-	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -608,24 +607,11 @@ func TestProjectImportRuntimeParsesSelectedWorkbookAndCommitsDraft(t *testing.T)
 		_, _ = fmt.Fprintf(w, `{"id":"test","model":"test","choices":[{"index":0,"message":{"role":"assistant","content":%q},"finish_reason":"stop"}]}`, draft)
 	}))
 	defer upstream.Close()
-	core := governance.New(pool, nil, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	secret, err := core.Seal("tenant-a", "workspace:0", "assistant.token", `"test-only-token"`)
-	if err != nil {
-		t.Fatal(err)
-	}
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO gov_scopes(tenant_id,scope_key,kind,entity_id) VALUES('tenant-a','workspace:0','workspace',0) ON CONFLICT DO NOTHING"); err != nil {
-		t.Fatal(err)
-	}
-	for key, value := range map[string]any{"aiModels.route.projectImport": "glm", "assistant.enabled": true, "agent.enabled": true, "agent.baseUrl": upstream.URL + "/v1", "assistant.model": "test", "assistant.token": secret} {
-		encoded, err := json.Marshal(value)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := pool.Exec(ctx, "INSERT INTO gov_values(tenant_id,scope_key,config_key,value_json) VALUES('tenant-a','workspace:0',$1,$2) ON CONFLICT(tenant_id,scope_key,config_key) DO UPDATE SET value_json=EXCLUDED.value_json", key, string(encoded)); err != nil {
-			t.Fatal(err)
-		}
-	}
+	saveAIConfig(t, client, 0, map[string]any{
+		"aiModels.route.projectImport": "glm", "assistant.enabled": true, "agent.enabled": true,
+		"agent.baseUrl": upstream.URL + "/v1", "assistant.model": "test", "assistant.token": "test-only-token",
+	})
 	aiFile, err := os.ReadFile("../../foundation/ai/workbook/testdata/projects-ai-import.xlsx")
 	if err != nil {
 		t.Fatal(err)

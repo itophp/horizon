@@ -29,6 +29,10 @@ func PermissionCatalog() []*genidentity.PermissionDefinition {
 			out = append(out, &genidentity.PermissionDefinition{Code: resource + ":" + action, Module: "system", Function: resource, Action: action, ScopeConfigurable: resource != "memory" && resource != "applications" && resource != "drive" && resource != "articles" && resource != "automation" && resource != "orchestration" && resource != "settings" && (resource != "dictionaries" || action == "use"), TemporaryEligible: resource == "files" && action == "read" || resource == "dictionaries" && action == "use"})
 		}
 	}
+	for _, action := range []string{"read", "update"} {
+		out = append(out, &genidentity.PermissionDefinition{Code: "aiConfig:" + action, Module: "system", Function: "aiConfig", Action: action})
+	}
+	out = append(out, &genidentity.PermissionDefinition{Code: "knowledge:update", Module: "system", Function: "knowledge", Action: "update"})
 	for _, action := range []string{"read", "edit", "validate", "publish", "bind", "rollback", "records"} {
 		out = append(out, &genidentity.PermissionDefinition{Code: "executionPlans:" + action, Module: "system", Function: "executionPlans", Action: action, ScopeConfigurable: false, TemporaryEligible: false})
 	}

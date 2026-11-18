@@ -4,174 +4,276 @@ package tests
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"image"
-	"image/png"
-	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
+	"horizon/foundation/db/migrations"
 	gen "horizon/foundation/gen/capability"
-	"horizon/foundation/runtime/app"
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
 	"horizon/foundation/system/settings"
 )
 
-func TestSystemSettingsRuntimeUpgradesWithReauthentication(t *testing.T) {
-	freshHandler, pool, _ := iamFixture(t)
-	fresh := loginIAM(t, freshHandler, "root-admin")
-	assertAISettingsPublished(t, fresh, "1.0.3")
-
-	// Bootstrap the older installation in a separate tenant before reconciling.
-	if _, err := pool.Exec(t.Context(), `UPDATE runtime_installation_templates SET version = '1.0.2' WHERE plugin_id = 'builtin:system-settings'`); err != nil {
-		t.Fatal(err)
-	}
-	account, err := identity.Bootstrap(t.Context(), pool, "ai-upgrade", "upgrade-admin", "TestOnly!2026Secure")
-	if err != nil {
-		t.Fatal(err)
-	}
-	iam := identity.New(pool, false)
-	core := governance.New(pool, iam, governance.Options{PublicWorkspace: "ai-upgrade", EncryptionKey: []byte("01234567890123456789012345678901")})
-	handler := deploymentHandler(app.System{}, core, iam)
-	root := loginIAM(t, handler, "upgrade-admin")
-	const plugin = "builtin:system-settings"
-	const testKey = "ai-config-test-key"
-	temp := map[string]any{"kind": "workspace", "id": 0}
-	workspace := func() *settings.SettingsWorkspace {
-		reply := root.invoke(t, "settings.workspace.read", map[string]any{"targetKind": "workspace", "targetId": 0}, true)
-		if strings.Contains(reply.Body.String(), testKey) {
-			t.Fatal("workspace projection exposed the model key")
+func aiConfigChanges(t *testing.T, values map[string]any) []map[string]any {
+	t.Helper()
+	changes := make([]map[string]any, 0, len(values))
+	for key, value := range values {
+		raw, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
 		}
-		data := decodeData[settings.SettingsWorkspace](t, reply)
-		return &data
+		changes = append(changes, map[string]any{"key": key, "value": string(raw), "operation": "set"})
 	}
-	change := func(key, raw string) map[string]any {
-		return map[string]any{"key": key, "value": raw, "operation": "set"}
+	return changes
+}
+
+func saveAIConfig(t *testing.T, client iamClient, revision int64, values map[string]any) {
+	t.Helper()
+	checkSucceeded(t, client.invoke(t, "ai.config.save", map[string]any{
+		"baseRevision": revision, "changes": aiConfigChanges(t, values),
+	}, true))
+}
+
+func TestAIConfigurationSavesImmediatelyWithIndependentPermissions(t *testing.T) {
+	handler, pool, account := iamFixture(t)
+	root := loginIAM(t, handler, "root-admin")
+	assertAISettingsPublished(t, root)
+	const secret = "test-only-custom-credential"
+	read := func(client iamClient) map[string]any {
+		t.Helper()
+		reply := client.invoke(t, "ai.config.read", map[string]any{}, true)
+		if strings.Contains(reply.Body.String(), secret) {
+			t.Fatal("AI configuration exposed the model key")
+		}
+		return decodeData[map[string]any](t, reply)
 	}
-	draft := func(changes ...map[string]any) map[string]any {
-		return map[string]any{"target": temp, "baseRevision": workspace().Revision, "reason": "verify AI settings", "changes": changes}
-	}
-	assertRejected := func(code string, changes ...map[string]any) {
-		reply := root.invoke(t, "settings.draft.create", draft(changes...), true)
+	reject := func(revision int64, code string, values map[string]any) {
+		t.Helper()
+		reply := root.invoke(t, "ai.config.save", map[string]any{
+			"baseRevision": revision, "changes": aiConfigChanges(t, values),
+		}, true)
 		result := decodeBody[gen.CapabilityResult](t, reply)
 		if result.Status != "failed" || result.ErrorCode != code {
 			t.Fatalf("wanted %s, got %s (%s)", code, result.ErrorCode, result.Status)
 		}
 	}
-	proof := func(id, revision int64, operation string) string {
-		return decodeData[settings.ReauthProof](t, root.invoke(t, "settings.password.verify", map[string]any{
-			"password": "TestOnly!2026Secure", "operation": operation, "resourceId": id, "revision": revision,
-		}, true)).Proof
+	if revision := read(root)["revision"]; revision != float64(0) {
+		t.Fatalf("unexpected initial revision: %v", revision)
 	}
-	publish := func(changes ...map[string]any) settings.ChangeRecord {
-		d := decodeData[settings.ChangeRecord](t, root.invoke(t, "settings.draft.create", draft(changes...), true))
-		return decodeData[settings.ChangeRecord](t, root.invoke(t, "settings.draft.publish", map[string]any{
-			"id": d.ID, "baseRevision": d.BaseRevision, "proof": proof(d.ID, d.BaseRevision, "settings.publish"),
-		}, true))
+	reject(0, "invalid", map[string]any{"branding.name": "Invalid"})
+	reject(0, "ai_model_incomplete.custom-first.models", map[string]any{"aiModels.custom-first.displayName": "Incomplete"})
+	for i, profile := range []string{"custom-first", "custom-second"} {
+		prefix := "aiModels." + profile + "."
+		saveAIConfig(t, root, int64(i), map[string]any{
+			prefix + "type": "text", prefix + "displayName": profile,
+			prefix + "baseUrl": "https://example.test/v1", prefix + "providerId": "example",
+			prefix + "model": profile, prefix + "token": secret,
+		})
 	}
-	assignment := change("aiModels.route.projectImport", `"glm"`)
-	assertRejected("ai_model_incomplete.glm.projectImport", assignment)
-	original := publish(
-		change("assistant.token", `"`+testKey+`"`),
-		change("aiModels.route.workspace", `"glm"`),
-		change("agent.enabled", "true"),
-		change("agent.baseUrl", `"http://127.0.0.1:1"`),
-		assignment,
-	)
+	reject(1, "conflict", map[string]any{"agent.enabled": false})
+	saveAIConfig(t, root, 2, map[string]any{
+		"agent.enabled": true, "aiModels.default": "custom-first", "aiModels.route.projectImport": "custom-second",
+	})
+	config := read(root)
+	if config["revision"] != float64(3) {
+		t.Fatal("configuration did not advance immediately")
+	}
+	keys := 0
+	for _, entry := range config["entries"].([]any) {
+		field := entry.(map[string]any)
+		if field["key"] == "aiModels.custom-first.token" || field["key"] == "aiModels.custom-second.token" {
+			if field["value"] != "" || field["configured"] != true {
+				t.Fatal("configured credential was not redacted")
+			}
+			keys++
+		}
+	}
+	if keys != 2 {
+		t.Fatalf("got %d custom models", keys)
+	}
 
-	// Platform-managed base applications follow the deployment baseline: the
-	// startup reconciliation already aligned the un-customized 1.0.2 installation
-	// with 1.0.3, and tenants cannot propose definition revisions for it.
-	assertAISettingsPublished(t, root, "1.0.3")
-	propose := root.invoke(t, "application.runtime.definition.propose", map[string]any{
-		"applicationId": "system-settings", "baseVersion": "1.0.3.0", "revision": 1,
-		"changes": []map[string]any{{"section": "navigation", "id": "system-settings.home", "operation": "upsert", "value": `{"pageId":"system-settings.home","labelKey":"governance:settings","icon":"sliders"}`}},
-	}, true)
-	if propose.Code == 200 {
-		denied := decodeBody[gen.CapabilityResult](t, propose)
-		if denied.Status != "failed" || denied.ErrorCode != "forbidden" {
-			t.Fatalf("base application definition write must be forbidden: %+v", denied)
-		}
-	} else if propose.Code != 403 && propose.Code != 400 {
-		t.Fatalf("base application definition propose: HTTP %d %s", propose.Code, propose.Body.String())
-	}
-	for _, item := range decodeData[map[string]any](t, root.invoke(t, "application.runtime.definition.list", map[string]any{}, true))["items"].([]any) {
-		if item.(map[string]any)["applicationId"] == "system-settings" {
-			t.Fatal("base applications must not be designable")
-		}
-	}
-	assertRejected("ai_model_type_unsupported.glm.workspace", change("aiModels.glm.type", `"embedding"`))
-	updated := publish(change("aiModels.glm.type", `"multimodal"`))
-	principal, err := iam.PrincipalForTask(t.Context(), "ai-upgrade", account.ID, account.DepartmentID)
+	iam := identity.New(pool, false)
+	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
+	principal, err := iam.PrincipalForTask(t.Context(), "tenant-a", account.ID, account.DepartmentID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	checkModel := func(wantType string) {
-		t.Helper()
-		model, err := core.ResolveAIModel(t.Context(), principal, governance.ModelProjectImport)
-		if err != nil || model.Profile != "glm" || model.Token != testKey || model.Type != wantType {
-			t.Fatalf("published GLM route, credential, or type mismatch: %v", err)
+	for use, want := range map[governance.AIModelUse]string{
+		governance.ModelWorkspace: "custom-first", governance.ModelProjectImport: "custom-second",
+	} {
+		model, e := core.ResolveAIModel(t.Context(), principal, use)
+		if e != nil || !model.Enabled || model.Name != want || model.Token != secret || model.Protocol != governance.ChatCompletions {
+			t.Fatalf("%s did not resolve the saved model: %v", use, e)
 		}
-		workspace()
 	}
-	checkModel(governance.ModelMultimodal)
-	checkSucceeded(t, root.invoke(t, "settings.history.rollback", map[string]any{
-		"id": original.ID, "baseRevision": updated.Revision,
-		"proof": proof(original.ID, updated.Revision, "settings.rollback"), "reason": "restore model type",
-	}, true))
-	checkModel(governance.ModelText)
-	var imageBuffer bytes.Buffer
-	if err := png.Encode(&imageBuffer, image.NewRGBA(image.Rect(0, 0, 1, 1))); err != nil {
+	reject(3, "ai_embedding_incomplete", map[string]any{"knowledge.embedding.profile": "bailian"})
+	reject(3, "ai_embedding_dashscope_invalid", map[string]any{"aiModels.bailian.baseUrl": "https://example.test/api/v1"})
+	notConfigured := root.invoke(t, "knowledge.reindex", map[string]any{}, true)
+	reindexResult := decodeBody[gen.CapabilityResult](t, notConfigured)
+	if reindexResult.Status != "failed" || reindexResult.ErrorCode != "ai_embedding_incomplete" {
+		t.Fatalf("wanted an incomplete embedding configuration error, got %s (%s)", reindexResult.ErrorCode, reindexResult.Status)
+	}
+	saveAIConfig(t, root, 3, map[string]any{
+		"aiModels.bailian.token": secret, "knowledge.embedding.profile": "bailian",
+	})
+	embedding, err := core.KnowledgeVector(t.Context(), principal)
+	if err != nil || embedding.Protocol != governance.DashScopeEmbedding || embedding.Token != secret ||
+		embedding.Name != "qwen3-vl-embedding" || embedding.Dimensions != 2560 {
+		t.Fatalf("knowledge did not resolve the committed Bailian model: %v", err)
+	}
+	read(root)
+
+	reject(4, "ai_embedding_dashscope_invalid", map[string]any{"aiModels.bailian.dimensions": 300})
+	reject(4, "ai_embedding_model_required", map[string]any{"knowledge.embedding.profile": "custom-first"})
+	saveAIConfig(t, root, 4, map[string]any{
+		"aiModels.custom-vector.type": "embedding", "aiModels.custom-vector.protocol": "openai-embedding",
+		"aiModels.custom-vector.displayName": "Custom vector", "aiModels.custom-vector.providerId": "example",
+		"aiModels.custom-vector.baseUrl": "https://example.test/v1", "aiModels.custom-vector.model": "vector-model",
+		"aiModels.custom-vector.dimensions": 1024, "aiModels.custom-vector.token": secret,
+		"knowledge.embedding.profile": "custom-vector",
+	})
+	vector, err := core.KnowledgeVector(t.Context(), principal)
+	if err != nil || vector.Protocol != governance.OpenAIEmbedding || vector.Name != "vector-model" ||
+		vector.Dimensions != 1024 || vector.Token != secret {
+		t.Fatalf("custom embedding configuration was not applied: %v", err)
+	}
+
+	other, err := identity.Bootstrap(t.Context(), pool, "tenant-b", "other-admin", "TestOnly!2026Secure")
+	if err != nil {
 		t.Fatal(err)
 	}
-	response := root.request(t, "POST", "/api/ai/runs", map[string]any{
-		"question":   "Describe this image",
-		"attachment": map[string]any{"name": "fixture.png", "content": base64.StdEncoding.EncodeToString(imageBuffer.Bytes())},
+	otherClient := loginIAM(t, newRuntimeHandler(pool, "tenant-b"), other.Username)
+	otherConfig := read(otherClient)
+	if otherConfig["revision"] != float64(0) {
+		t.Fatal("AI configuration revision crossed workspace boundary")
+	}
+	for _, entry := range otherConfig["entries"].([]any) {
+		if strings.HasPrefix(entry.(map[string]any)["key"].(string), "aiModels.custom-first.") {
+			t.Fatal("custom model crossed workspace boundary")
+		}
+	}
+
+	workspace := decodeData[settings.SettingsWorkspace](t, root.invoke(t, "settings.workspace.read", map[string]any{"targetKind": "workspace", "targetId": 0}, true))
+	for _, entry := range workspace.Entries {
+		if governance.IsAISetting(entry.Key) {
+			t.Fatalf("system settings still return %s", entry.Key)
+		}
+	}
+	old := root.invoke(t, "settings.draft.create", map[string]any{
+		"target": map[string]any{"kind": "workspace", "id": 0}, "baseRevision": workspace.Revision,
+		"reason": "Verify system settings isolation", "changes": aiConfigChanges(t, map[string]any{"agent.enabled": false}),
 	}, true)
-	checkStatus(t, response, http.StatusUnprocessableEntity)
-	var problem struct{ Code string }
-	if err := json.Unmarshal(response.Body.Bytes(), &problem); err != nil || problem.Code != "ai_model_image_unsupported" {
-		t.Fatalf("expected image capability error before sending a model request: HTTP %d %s", response.Code, response.Body.String())
+	if result := decodeBody[gen.CapabilityResult](t, old); result.ErrorCode != "invalid" {
+		t.Fatalf("system settings accepted an AI write: %s", result.ErrorCode)
 	}
 }
 
-func assertAISettingsPublished(t *testing.T, client iamClient, version string) {
+func TestAIConfigurationMigrationMovesActiveOverridesAndPreservesCredentials(t *testing.T) {
+	_, pool, account := iamFixture(t)
+	ctx := t.Context()
+	db := stdlib.OpenDB(*pool.Config().ConnConfig)
+	defer db.Close()
+	provider, err := goose.NewProvider(goose.DialectPostgres, db, migrations.Files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = provider.DownTo(ctx, 46); err != nil {
+		t.Fatal(err)
+	}
+	iam := identity.New(pool, false)
+	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
+	sealed, err := core.Seal("tenant-a", "workspace:0", "aiModels.deepseek.token", `"test-only-legacy-key"`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO gov_scopes (tenant_id,scope_key,kind,entity_id)
+		VALUES ('tenant-a','workspace:0','workspace',0) ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO gov_values (tenant_id,scope_key,config_key,value_json) VALUES
+		('tenant-a','workspace:0','aiModels.deepseek.token',to_jsonb($1::text)),
+		('tenant-a','workspace:0','agent.enabled','true'),
+		('tenant-a','workspace:0','branding.name','"Legacy workspace"')`, sealed); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatal(err)
+	}
+	principal, err := iam.PrincipalForTask(ctx, "tenant-a", account.ID, account.DepartmentID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	model, err := core.ResolveAIModel(ctx, principal, governance.ModelWorkspace)
+	if err != nil || !model.Enabled || model.Token != "test-only-legacy-key" {
+		t.Fatalf("migrated credential was not usable: %v", err)
+	}
+	var general, legacyAI int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FILTER (WHERE config_key = 'branding.name'),
+		count(*) FILTER (WHERE config_key IN ('aiModels.deepseek.token','agent.enabled'))
+		FROM gov_values WHERE tenant_id = 'tenant-a'`).Scan(&general, &legacyAI); err != nil || general != 1 || legacyAI != 0 {
+		t.Fatalf("unexpected split of persisted settings: system=%d, AI=%d, err=%v", general, legacyAI, err)
+	}
+	if _, err := provider.DownTo(ctx, 46); err != nil {
+		t.Fatal(err)
+	}
+	var restored string
+	if err := pool.QueryRow(ctx, `SELECT value_json #>> '{}' FROM gov_values
+		WHERE tenant_id = 'tenant-a' AND scope_key = 'workspace:0' AND config_key = 'aiModels.deepseek.token'`).Scan(&restored); err != nil || restored != sealed {
+		t.Fatalf("down migration lost the encrypted override: %v", err)
+	}
+	if _, err := provider.Up(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertAISettingsPublished(t *testing.T, client iamClient) {
 	t.Helper()
-	active := invokeCapability(t, client, "application.runtime.resolve", map[string]any{
-		"input": map[string]any{"applicationId": "system-settings"},
-	})
-	if active.Status != "succeeded" {
-		t.Fatal(active)
-	}
-	application := active.Data.(map[string]any)
-	if applicationVersion, _ := application["applicationVersion"].(string); !strings.HasPrefix(applicationVersion, version+".") {
-		t.Fatal(application["applicationVersion"])
-	}
-	pages := application["protocol"].(map[string]any)["pages"].([]any)
-	if len(pages) != 2 {
-		t.Fatalf("expected settings and AI configuration pages, got %d", len(pages))
-	}
-	for _, page := range pages {
-		view := page.(map[string]any)
+	for id, version := range map[string]string{"system-settings": "1.0.4", "ai-settings": "1.0.3"} {
+		active := invokeCapability(t, client, "application.runtime.resolve", map[string]any{
+			"input": map[string]any{"applicationId": id},
+		})
+		if active.Status != "succeeded" {
+			t.Fatal(active)
+		}
+		application := active.Data.(map[string]any)
+		if applicationVersion, _ := application["applicationVersion"].(string); !strings.HasPrefix(applicationVersion, version+".") {
+			t.Fatal(application["applicationVersion"])
+		}
+		pages := application["protocol"].(map[string]any)["pages"].([]any)
+		if len(pages) != 1 {
+			t.Fatalf("%s: expected one page, got %d", id, len(pages))
+		}
+		view := pages[0].(map[string]any)
 		raw, err := json.Marshal(view)
 		if err != nil {
 			t.Fatal(err)
 		}
-		switch view["route"] {
-		case "/settings":
-			if bytes.Contains(raw, []byte(`"aiModels.default"`)) || bytes.Contains(raw, []byte(`"assistant.model"`)) {
-				t.Fatal("the general settings form still edits model configuration")
+		if id == "system-settings" {
+			if view["route"] != "/settings" {
+				t.Fatal(view["route"])
 			}
-		case "/ai-settings":
-			for _, field := range []string{`"ai-model-settings"`, `"settings.password.verify"`} {
-				if !bytes.Contains(raw, []byte(field)) {
-					t.Errorf("AI configuration page is missing %s", field)
+			for _, field := range []string{`"aiModels.default"`, `"assistant.model"`, `"agent.enabled"`, `"knowledge.embedding.model"`} {
+				if bytes.Contains(raw, []byte(field)) {
+					t.Errorf("system settings still edits %s", field)
 				}
 			}
-		default:
-			t.Fatalf("unexpected page route %v", view["route"])
+			continue
+		}
+		if view["route"] != "/ai-settings" {
+			t.Fatal(view["route"])
+		}
+		for _, obsolete := range []string{"settings.draft.create", "settings.workspace.read", "workspace-schedules", "aiSettings.tabs.releases", "knowledge.embedding.model", "knowledge.embedding.token"} {
+			if bytes.Contains(raw, []byte(obsolete)) {
+				t.Fatalf("AI configuration uses legacy system settings: %s", obsolete)
+			}
+		}
+		for _, field := range []string{`"ai-model-settings"`, `"agent.enabled"`, `"knowledge.embedding.profile"`, `"ai.config.save@1.0.0"`} {
+			if !bytes.Contains(raw, []byte(field)) {
+				t.Errorf("AI configuration page is missing %s", field)
+			}
 		}
 	}
 }

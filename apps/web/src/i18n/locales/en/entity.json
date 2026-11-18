@@ -1,4 +1,10 @@
 {
+  "ai_configuration": {
+    "label": "AI configuration"
+  },
+  "knowledge_document": {
+    "label": "Knowledge document"
+  },
   "memory_event": {
     "label": "Memory event"
   },

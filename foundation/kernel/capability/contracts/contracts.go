@@ -42,6 +42,10 @@ const (
 type Origin string
 
 const (
+	TagSealedApprovalInput = "sealed-approval-input"
+)
+
+const (
 	OriginHumanUI    Origin = "human-ui"
 	OriginAgent      Origin = "agent"
 	OriginWorkflow   Origin = "workflow"

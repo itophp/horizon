@@ -21,6 +21,7 @@ import (
 	"horizon/internal/repository/dbgen"
 	"log/slog"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -80,7 +81,7 @@ type Core struct {
 }
 
 func New(pool *pgxpool.Pool, iam *identity.Service, options Options) *Core {
-	c := &Core{Definitions: append([]Definition{}, Registry...), Pool: pool, Identity: iam, Options: options}
+	c := &Core{Definitions: slices.DeleteFunc(slices.Clone(Registry), func(d Definition) bool { return IsAISetting(d.Key) }), Pool: pool, Identity: iam, Options: options}
 	if pool != nil {
 		c.Q = dbgen.New(pool)
 	}
@@ -395,7 +396,7 @@ func (c *Core) ValuesWith(ctx context.Context, q *dbgen.Queries, tenant string, 
 	}
 	for _, key := range chain {
 		for _, row := range rows {
-			if row.ScopeKey != key {
+			if row.ScopeKey != key || IsAISetting(row.ConfigKey) {
 				continue
 			}
 			d := c.Definition(row.ConfigKey)
@@ -479,8 +480,8 @@ func (c *Core) Setting(ctx context.Context, p *identity.Principal, key string) (
 }
 
 func (c *Core) settingValue(tenant, key string, v Value) (string, error) {
-	d := c.Definition(key)
-	if d.Secret && v.Source != "default" {
+	d := FindDefinition(key)
+	if d != nil && d.Secret && v.Source != "default" {
 		encoded, err := String(v.Raw)
 		if err != nil {
 			return "", err

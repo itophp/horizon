@@ -15,7 +15,6 @@ import (
 
 	"horizon/foundation/ai/harness"
 	genassistant "horizon/foundation/gen/assistant"
-	"horizon/foundation/system/governance"
 	"horizon/internal/repository/dbgen"
 
 	"github.com/jackc/pgx/v5"
@@ -27,7 +26,10 @@ func TestEmbeddedWorkspaceAgentUsesBrowserToolAndResumesSameTask(t *testing.T) {
 	var calls atomic.Int32
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
-			Model    string `json:"model"`
+			Model string `json:"model"`
+			Tools []struct {
+				Function struct{ Name string }
+			} `json:"tools"`
 			Messages []struct {
 				Role       string `json:"role"`
 				Content    string `json:"content"`
@@ -41,6 +43,17 @@ func TestEmbeddedWorkspaceAgentUsesBrowserToolAndResumesSameTask(t *testing.T) {
 		}
 		if body.Model != "deepseek-flash" || r.Header.Get("Authorization") != "Bearer test-only-token" {
 			t.Error("workspace agent did not use the DeepSeek default")
+		}
+		if calls.Load() == 0 {
+			available := map[string]bool{}
+			for _, tool := range body.Tools {
+				available[tool.Function.Name] = true
+			}
+			for _, name := range []string{"knowledge_query", "knowledge_read", "knowledge_update"} {
+				if !available[name] {
+					t.Errorf("embedded agent is missing %s", name)
+				}
+			}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if calls.Add(1) == 1 {
@@ -59,25 +72,12 @@ func TestEmbeddedWorkspaceAgentUsesBrowserToolAndResumesSameTask(t *testing.T) {
 		}
 	}))
 	defer upstream.Close()
-	core := governance.New(pool, nil, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	secret, err := core.Seal("tenant-a", "workspace:0", "aiModels.deepseek.token", `"test-only-token"`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = pool.Exec(ctx, `INSERT INTO gov_scopes(tenant_id,scope_key,kind,entity_id) VALUES('tenant-a','workspace:0','workspace',0) ON CONFLICT DO NOTHING`); err != nil {
-		t.Fatal(err)
-	}
-	settings := map[string]any{"assistant.enabled": true, "agent.enabled": true, "aiModels.deepseek.baseUrl": upstream.URL + "/v1", "aiModels.deepseek.token": secret}
-	for key, value := range settings {
-		raw, err := json.Marshal(value)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err = pool.Exec(ctx, `INSERT INTO gov_values(tenant_id,scope_key,config_key,value_json) VALUES('tenant-a','workspace:0',$1,$2) ON CONFLICT(tenant_id,scope_key,config_key) DO UPDATE SET value_json=EXCLUDED.value_json`, key, string(raw)); err != nil {
-			t.Fatal(err)
-		}
-	}
 	owner := loginIAM(t, handler, "root-admin")
+	saveAIConfig(t, owner, 0, map[string]any{
+		"assistant.enabled": true, "agent.enabled": true,
+		"aiModels.deepseek.baseUrl": upstream.URL + "/v1",
+		"aiModels.deepseek.token":   "test-only-token",
+	})
 	question := "Which page am I on?"
 	first := owner.request(t, "POST", "/api/assistant/agent", map[string]any{"question": question, "sessionId": "embedded-test", "tools": []map[string]any{{"name": "baseline_page_context", "description": "Current page", "parameters": map[string]any{"type": "object", "properties": map[string]any{}}}}}, true)
 	checkStatus(t, first, 200)
@@ -86,7 +86,7 @@ func TestEmbeddedWorkspaceAgentUsesBrowserToolAndResumesSameTask(t *testing.T) {
 		t.Fatalf("missing browser suspension: %+v", pending)
 	}
 	var storedStatus string
-	if err = pool.QueryRow(ctx, "SELECT status FROM ai_runs WHERE tenant_id='tenant-a' AND account_id=$1 AND id=$2", root.ID, *pending.RunID).Scan(&storedStatus); err != nil || storedStatus != "running" {
+	if err := pool.QueryRow(ctx, "SELECT status FROM ai_runs WHERE tenant_id='tenant-a' AND account_id=$1 AND id=$2", root.ID, *pending.RunID).Scan(&storedStatus); err != nil || storedStatus != "running" {
 		t.Fatalf("task not running: %s %v", storedStatus, err)
 	}
 	resume := map[string]any{"question": question, "sessionId": "embedded-test", "runId": *pending.RunID, "resumeToken": *pending.ResumeToken, "toolCallId": "wrong-call", "toolResult": `{"route":"/accounts"}`}
@@ -101,7 +101,7 @@ func TestEmbeddedWorkspaceAgentUsesBrowserToolAndResumesSameTask(t *testing.T) {
 	if final.RunID == nil || *final.RunID != *pending.RunID || final.PageCall != nil || final.Content != "You are on the accounts page." || calls.Load() != 2 {
 		t.Fatalf("did not resume the same task: %+v", final)
 	}
-	if err = pool.QueryRow(ctx, "SELECT status FROM ai_runs WHERE tenant_id='tenant-a' AND account_id=$1 AND id=$2", root.ID, *pending.RunID).Scan(&storedStatus); err != nil || storedStatus != "completed" {
+	if err := pool.QueryRow(ctx, "SELECT status FROM ai_runs WHERE tenant_id='tenant-a' AND account_id=$1 AND id=$2", root.ID, *pending.RunID).Scan(&storedStatus); err != nil || storedStatus != "completed" {
 		t.Fatalf("task not completed: %s %v", storedStatus, err)
 	}
 	checkStatus(t, owner.request(t, "POST", "/api/assistant/agent", resume, true), 400)

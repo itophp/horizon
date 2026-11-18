@@ -253,6 +253,15 @@ func (a *capabilityAdapter) redact(card *approval.Approval) any {
 	if !ok {
 		return map[string]any{}
 	}
+	for _, tag := range definition.Definition.Tags {
+		if tag == contracts.TagSealedApprovalInput {
+			var envelope approval.SealedArguments
+			if json.Unmarshal(card.Arguments, &envelope) != nil || envelope.Ciphertext == "" {
+				return map[string]any{}
+			}
+			return definition.Definition.Redact(envelope.Projection)
+		}
+	}
 	input := contracts.Input{}
 	if err := json.Unmarshal(card.Arguments, &input); err != nil {
 		return map[string]any{}

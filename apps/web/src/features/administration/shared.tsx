@@ -85,21 +85,37 @@ export function useRefreshAdmin() {
 export function errorText(error: unknown, t: TFunction) {
   const code = error instanceof ApiError ? error.code : "internal";
   const modelIssue =
-    /^(ai_model_incomplete|ai_model_type_unsupported)\.(deepseek|glm|custom)\.(default|workspace|assistant|knowledge|workflow|runtimeDesign|projectImport|eventTrigger|automation)$/.exec(
+    /^(ai_model_incomplete|ai_model_type_unsupported)\.(deepseek|glm|bailian|legacy-embedding|custom(?:-[a-z0-9-]+)?)\.(models|default|workspace|assistant|knowledge|workflow|runtimeDesign|projectImport|eventTrigger|automation)$/.exec(
       code,
     );
   if (modelIssue) {
     const [, kind, profile, use] = modelIssue;
     return t(`governance:aiSettings.errors.${kind}`, {
-      model: t(`governance:choices.${profile}`),
+      model: t(
+        `governance:choices.${profile.startsWith("custom-") ? "custom" : profile}`,
+      ),
       scene: t(
         use === "default"
           ? "governance:labels.aiModels_default"
-          : `governance:labels.aiModels_route_${use}`,
+          : use === "models"
+            ? "governance:aiSettings.tabs.models"
+            : `governance:labels.aiModels_route_${use}`,
       ),
     });
   }
   const messages: Record<string, string> = {
+    ai_embedding_incomplete: t(
+      "governance:aiSettings.errors.embeddingIncomplete",
+    ),
+    ai_embedding_model_required: t(
+      "governance:aiSettings.errors.embeddingModelRequired",
+    ),
+    ai_model_protocol_mismatch: t(
+      "governance:aiSettings.errors.protocolMismatch",
+    ),
+    ai_embedding_dashscope_invalid: t(
+      "governance:aiSettings.errors.dashscopeInvalid",
+    ),
     ai_model_image_unsupported: t(
       "governance:aiSettings.errors.ai_model_image_unsupported",
     ),

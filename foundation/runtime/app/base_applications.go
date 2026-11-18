@@ -13,7 +13,8 @@ import (
 var baseApplicationPlugins = map[string]bool{
 	"builtin:automation":           true, // AI workbench scheduling pages
 	"system.identity":              true, // accounts, organizations, permissions, runtime-protocol
-	"builtin:system-settings":      true, // system settings and AI configuration
+	"builtin:system-settings":      true,
+	"builtin:ai-settings":          true,
 	"builtin:capabilities":         true,
 	"builtin:analytics":            true,
 	"builtin:agent-collaboration":  true,

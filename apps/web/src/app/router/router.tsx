@@ -13,6 +13,7 @@ import {
   LegacyAutomationRedirect,
 } from "@/features/ai/automation-view";
 import { KnowledgePage } from "@/features/knowledge/page";
+import { KnowledgeDetailPage } from "@/features/knowledge/detail";
 import "@/features/capabilities/capability.css";
 import { FilesPage, FileDownloadPage } from "@/features/governance/files";
 import {
@@ -159,6 +160,7 @@ export const router = createBrowserRouter([
               { path: "/drive/:id/members", element: <DriveMembersPage /> },
               { path: "/drive/:id/trash", element: <DriveTrashPage /> },
               { path: "/knowledge", element: <KnowledgePage /> },
+              { path: "/knowledge/:id", element: <KnowledgeDetailPage /> },
               {
                 path: "/departments",
                 element: (

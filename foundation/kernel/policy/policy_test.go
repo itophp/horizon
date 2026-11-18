@@ -34,6 +34,18 @@ func TestAutomationMustConfirmHighRisk(t *testing.T) {
 	}
 }
 
+func TestSameMediumRiskCapabilityUsesOriginPolicy(t *testing.T) {
+	caller := contracts.Caller{Grants: []string{"test:write"}}
+	medium := definition(contracts.RiskMedium, contracts.ApprovalConfirm)
+
+	if decision := Admit(medium, caller, contracts.OriginHumanUI); !decision.Allowed || decision.Approval != contracts.ApprovalAuto {
+		t.Fatalf("a direct human call is the confirmation: %+v", decision)
+	}
+	if decision := Admit(medium, caller, contracts.OriginAgent); !decision.Allowed || decision.Approval != contracts.ApprovalConfirm {
+		t.Fatalf("an AI call must wait for human confirmation: %+v", decision)
+	}
+}
+
 func TestCriticalIsClosedToAutomation(t *testing.T) {
 	caller := contracts.Caller{Grants: []string{"test:write"}}
 	critical := definition(contracts.RiskCritical, contracts.ApprovalFourEyes)

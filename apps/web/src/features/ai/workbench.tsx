@@ -75,12 +75,14 @@ export function Workbench(props: {
           {blocked && (
             <p className="ai-empty-note" role="status">
               {t("workbench.disabled")}{" "}
-              <Link to={snapshot?.enabled ? "/ai-settings" : "/settings"}>
-                {t(
+              <Link
+                to={
                   snapshot?.enabled
-                    ? "workbench.openAISettings"
-                    : "workbench.openSettings",
-                )}
+                    ? "/ai-settings"
+                    : "/ai-settings?tab=general"
+                }
+              >
+                {t("workbench.openAISettings")}
               </Link>
             </p>
           )}

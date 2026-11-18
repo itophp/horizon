@@ -14,29 +14,57 @@
     "hint": "Text is chunked into ~600 characters with 80 characters of overlap. Existing documents are not replaced."
   },
   "list": {
-    "title": "Indexed documents",
+    "title": "Documents",
+    "keyword": "Search titles and document text",
+    "search": "Search",
+    "read": "View text",
+    "readDocument": "View text for {{title}}",
+    "clear": "Clear search",
+    "noMatches": "No documents match this search.",
+    "failed": "Could not load knowledge documents.",
     "empty": "No documents yet. Add the first one so answers can cite it.",
     "chunks": "{{count}} fragments",
     "source": {
       "manual": "Pasted",
       "file": "Uploaded"
     },
-    "created": "Indexed {{time}}",
+    "created": "Added {{time}}",
     "loading": "Loading documents…",
     "meta": "{{chunks}} · {{source}} · {{created}}"
+  },
+  "detail": {
+    "title": "Knowledge document",
+    "back": "Back to knowledge base",
+    "loading": "Loading document…",
+    "notFound": "This document is unavailable in this workspace.",
+    "failed": "Could not load the document.",
+    "empty": "No original text is stored for this document."
   },
   "delete": {
     "label": "Delete",
     "confirm": "Delete “{{title}}” and all of its fragments? Answers will stop citing it."
   },
+  "edit": {
+    "title": "Edit document",
+    "description": "Edit the title or text. Saving rebuilds the vectors for this document.",
+    "saving": "Saving and indexing…",
+    "saved": "Document updated. Its new index is active.",
+    "conflict": "This document has changed. Close the editor to load the latest version before editing again.",
+    "failed": "Could not update the document. Try again."
+  },
   "errors": {
     "forbidden": "You do not have permission to manage the knowledge base.",
-    "failed": "The knowledge base did not accept that change."
+    "failed": "The knowledge base did not accept that change.",
+    "embeddingIncomplete": "The selected knowledge embedding model is missing connection settings or an API key.",
+    "embeddingInvalid": "The selected knowledge embedding model is invalid. Check its protocol, API URL, model name, and vector dimension.",
+    "embeddingAuthentication": "The embedding provider rejected the API request. Check whether the API key is valid and belongs to the endpoint’s region.",
+    "vectorStore": "The Redis vector store is unavailable. Check its address in AI Services and make sure Redis has the search module enabled."
   },
   "reindex": {
     "label": "Rebuild vectors",
     "busy": "Rebuilding…",
-    "done": "Rebuilt {{count}} documents"
+    "done_one": "Rebuilt {{count}} document",
+    "done_other": "Rebuilt {{count}} documents"
   },
-  "notConfigured": "The embedding endpoint is not configured yet, so documents cannot be indexed or searched. An administrator can add it under System settings → knowledge."
+  "notConfigured": "The embedding service is unavailable. An administrator can check the selected model, API key, and vector store under AI Configuration."
 }

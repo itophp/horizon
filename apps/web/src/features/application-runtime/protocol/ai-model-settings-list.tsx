@@ -1,151 +1,26 @@
-import { useId, useState } from "react";
-import { Pencil } from "lucide-react";
+import { useState } from "react";
+import { Pencil, Plus } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { ChangeEntry, ConfigEntry } from "@/api/types";
+import { ApiError } from "@/api/client/request";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   DataTable,
   EditorDialog,
+  errorText,
   RowActions,
   type AdminColumn,
 } from "@/features/administration/shared";
+import { ModelEditor } from "./ai-model-editor";
 import {
   Choice,
-  DraftForm,
   choiceOptions,
-  modelKey,
   modelTypes,
-  value,
+  type AIConfigEntry,
   type Model,
   type Save,
 } from "./ai-model-settings-controls";
-
-const fields = {
-  deepseek: [
-    "providerId",
-    "displayName",
-    "baseUrl",
-    "protocol",
-    "model",
-    "token",
-  ],
-  glm: [
-    "type",
-    "providerId",
-    "displayName",
-    "agent.baseUrl",
-    "assistant.baseUrl",
-    "assistant.model",
-    "assistant.token",
-  ],
-  custom: [
-    "type",
-    "providerId",
-    "displayName",
-    "baseUrl",
-    "protocol",
-    "model",
-    "token",
-  ],
-};
-
-function ModelEdit({
-  model,
-  entries,
-  save,
-}: {
-  model: Model;
-  entries: ConfigEntry[];
-  save: Save;
-}) {
-  const { t } = useTranslation("governance");
-  const uid = useId();
-  const [type, setType] = useState<string>(model.type);
-  const { profile } = model;
-  return (
-    <DraftForm
-      disabled={false}
-      submit={(form, reason) => {
-        const changes = fields[profile].flatMap((field): ChangeEntry[] => {
-          const key = modelKey(profile, field);
-          const next = field === "type" ? type : form.get(key);
-          const secret = field === "token" || field === "assistant.token";
-          if (
-            typeof next !== "string" ||
-            next === value(entries, key) ||
-            (secret && !next)
-          )
-            return [];
-          return [{ key, operation: "set", value: JSON.stringify(next) }];
-        });
-        return save(changes, reason);
-      }}
-    >
-      {profile === "deepseek" && (
-        <dl className="flex flex-wrap gap-x-2 text-sm">
-          <dt className="text-muted-foreground">{t("aiSettings.type")}</dt>
-          <dd>{t("aiSettings.types.multimodal")}</dd>
-        </dl>
-      )}
-      {fields[profile].map((field) => {
-        const key = modelKey(profile, field);
-        const id = `${uid}-${field}`;
-        const label = t(`labels.${key.replaceAll(".", "_")}`, {
-          defaultValue: t("aiSettings.type"),
-        });
-        if (field === "type") {
-          return (
-            <Choice
-              key={key}
-              label={t("aiSettings.type")}
-              selected={type}
-              options={choiceOptions(modelTypes, (kind) =>
-                t(`aiSettings.types.${kind}`),
-              )}
-              onChange={setType}
-            />
-          );
-        }
-        if (field === "protocol") {
-          return (
-            <dl className="flex flex-wrap gap-x-2 text-sm" key={key}>
-              <dt className="text-muted-foreground">{label}</dt>
-              <dd>{t("choices.chat-completions")}</dd>
-            </dl>
-          );
-        }
-        const secret = field === "token" || field === "assistant.token";
-        return (
-          <div key={key} className="grid gap-2">
-            <Label htmlFor={id}>{label}</Label>
-            <Input
-              id={id}
-              name={key}
-              type={secret ? "password" : "text"}
-              autoComplete={secret ? "new-password" : "off"}
-              maxLength={field === "providerId" ? 64 : 500}
-              defaultValue={secret ? "" : value(entries, key)}
-              placeholder={secret ? t("secretHint") : undefined}
-            />
-          </div>
-        );
-      })}
-      {type === "embedding" && (
-        <p className="text-sm text-muted-foreground">
-          {t("aiSettings.embeddingHint")}
-        </p>
-      )}
-      {profile === "glm" && (
-        <p className="text-sm text-muted-foreground">
-          {t("aiSettings.glmProtocols")}
-        </p>
-      )}
-    </DraftForm>
-  );
-}
 
 export function ModelList({
   entries,
@@ -153,14 +28,22 @@ export function ModelList({
   disabled,
   save,
 }: {
-  entries: ConfigEntry[];
+  entries: AIConfigEntry[];
   models: Model[];
   disabled: boolean;
   save: Save;
 }) {
   const { t } = useTranslation("governance");
   const [params, setParams] = useSearchParams();
-  const [editing, setEditing] = useState<Model>();
+  const [editor, setEditor] = useState<{ profile: string; model?: Model }>();
+  const [error, setError] = useState("");
+  function openEditor(model?: Model) {
+    setError("");
+    setEditor({
+      profile: model?.profile ?? `custom-${crypto.randomUUID()}`,
+      model,
+    });
+  }
   const filter =
     modelTypes.find((type) => type === params.get("modelType")) ?? "all";
   const display = (m: Model) => m.name || t(`choices.${m.profile}`);
@@ -202,7 +85,7 @@ export function ModelList({
                   {
                     label: t("admin:actions.edit"),
                     icon: <Pencil size={16} />,
-                    onClick: () => setEditing(m),
+                    onClick: () => openEditor(m),
                   },
                 ]}
               />
@@ -213,7 +96,7 @@ export function ModelList({
   ];
   return (
     <div className="admin-panel">
-      <div className="table-toolbar">
+      <div className="table-toolbar flex-wrap items-end">
         <Choice
           label={t("aiSettings.type")}
           selected={filter}
@@ -235,28 +118,45 @@ export function ModelList({
             )
           }
         />
+        {!disabled && (
+          <Button type="button" onClick={() => openEditor()}>
+            <Plus aria-hidden="true" />
+            {t("aiSettings.add")}
+          </Button>
+        )}
       </div>
       <DataTable
         rows={models.filter(({ type }) => filter === "all" || filter === type)}
         columns={columns}
       />
       <EditorDialog
-        open={Boolean(editing)}
+        open={!disabled && Boolean(editor)}
         onOpenChange={(open) => {
-          if (!open) setEditing(undefined);
+          if (!open) setEditor(undefined);
         }}
-        title={editing ? display(editing) : t("aiSettings.model")}
+        title={editor?.model ? display(editor.model) : t("aiSettings.add")}
         description={t("aiSettings.editHint")}
       >
-        {editing && (
-          <ModelEdit
-            key={editing.profile}
-            model={editing}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error === "no_changes"
+              ? t("noChanges")
+              : errorText(new ApiError(error, 400), t)}
+          </p>
+        )}
+        {editor && (
+          <ModelEditor
+            key={editor.profile}
+            profile={editor.profile}
+            model={editor.model}
             entries={entries}
-            save={async (changes, reason) => {
-              const saved = await save(changes, reason);
-              if (saved) setEditing(undefined);
-              return saved;
+            save={async (changes) => {
+              setError("");
+              const success = await save(changes, setError);
+              if (success) {
+                setEditor(undefined);
+              }
+              return success;
             }}
           />
         )}

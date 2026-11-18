@@ -42,6 +42,7 @@ export function permissionFunctionLabel(key: string, t: TFunction) {
     policies: t("admin:permissions.grantAdmin"),
     temporary: t("admin:temporary.approvalPermission"),
     settings: t("governance:settings"),
+    aiConfig: t("governance:aiSettings.title"),
     dictionaries: t("governance:dictionaries"),
     files: t("governance:files"),
     notifications: t("governance:messages"),

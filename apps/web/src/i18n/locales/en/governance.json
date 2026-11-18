@@ -1,11 +1,13 @@
 {
   "aiSettings": {
     "title": "AI Configuration",
-    "hint": "Manage the default model, model connections, and business assignments.",
+    "hint": "Manage model connections, business assignments, and AI service settings.",
     "tabs": {
       "default": "Default Model",
       "models": "Model Management",
-      "routes": "Business Assignments"
+      "routes": "Business Assignments",
+      "general": "AI Services",
+      "releases": "Publishing"
     },
     "types": {
       "text": "Text model",
@@ -13,16 +15,34 @@
       "multimodal": "Multimodal model"
     },
     "model": "Model",
+    "add": "Add custom model",
+    "providerIdHint": "Start with a lowercase letter. Use lowercase letters, numbers, and hyphens.",
     "type": "Model type",
     "allTypes": "All types",
     "credential": "API key",
     "missingKey": "Key missing",
     "effective": "Active model: {{model}}",
-    "editHint": "Save model changes as a draft, then publish it on this page.",
-    "draftSaved": "Draft saved. Publish it on this page.",
-    "embeddingHint": "Embedding models are excluded from chat. Knowledge embedding still uses the existing knowledge settings.",
-    "glmProtocols": "GLM uses OpenAI Chat Completions for agents and Responses for the page chat API.",
+    "editHint": "Changes take effect when saved.",
+    "assignmentHint": "Assign saved text or multimodal models to Q&A and other chat tasks. Knowledge search uses its own embedding model.",
+    "releaseHint": "Drafts, scheduled releases, and version restores use the shared workspace configuration. Restoring a version applies to the whole workspace.",
+    "embeddingHint": "Embedding models are used for vector search. Select the knowledge embedding model in AI Services.",
+    "bailianHint": "Save the connection, then select it in AI Services. Rebuild existing knowledge vectors when you switch embedding models or dimensions.",
+    "fields": {
+      "displayName": "Display name",
+      "providerId": "Provider ID",
+      "type": "Model type",
+      "protocol": "API protocol",
+      "baseUrl": "API base URL",
+      "model": "Model name (API request value)",
+      "token": "API key",
+      "dimensions": "Embedding dimensions",
+      "responsesBaseUrl": "Responses API base URL (optional)"
+    },
     "errors": {
+      "embeddingIncomplete": "Complete the selected embedding model’s connection and API key in Model Management.",
+      "embeddingModelRequired": "Select an embedding model for knowledge search.",
+      "protocolMismatch": "Select a protocol supported by the model type.",
+      "dashscopeInvalid": "DashScope embeddings require qwen3-vl-embedding, a Model Studio API base URL, and a supported vector dimension.",
       "ai_model_incomplete": "{{model}} is missing required configuration for {{scene}}. Check its API URL, model name, and key.",
       "ai_model_type_unsupported": "{{model}} cannot handle chat for {{scene}}. Select a text or multimodal model.",
       "ai_model_image_unsupported": "The active model cannot accept images. Select a multimodal model for this business in AI Configuration.",
@@ -188,6 +208,9 @@
     "assistant": "AI assistant"
   },
   "labels": {
+    "knowledge_embedding_profile": "Knowledge embedding model",
+    "aiModels_bailian_baseUrl": "DashScope API base URL",
+    "aiModels_bailian_token": "Model Studio API key",
     "aiModels_glm_providerId": "GLM provider ID",
     "aiModels_default": "Default model",
     "aiModels_glm_displayName": "GLM display name",
@@ -290,6 +313,10 @@
     "articles.blockedWords": "Blocked words (one per line or comma separated)"
   },
   "choices": {
+    "openai-embedding": "OpenAI Embeddings",
+    "dashscope-embedding": "DashScope multimodal embeddings",
+    "legacy-embedding": "OpenAI-compatible embedding",
+    "bailian": "Alibaba Cloud Model Studio",
     "inherit": "Use default model",
     "deepseek": "DeepSeek-V4.1-Flash",
     "glm": "GLM",

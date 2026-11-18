@@ -53,7 +53,7 @@ func TestPlatformRuntimeInstallationsAndProviders(t *testing.T) {
 	}
 
 	routes := map[string]string{
-		"system-settings": "/settings", "personal-preferences": "/preferences", "agent-collaboration": "/mcp",
+		"system-settings": "/settings", "ai-settings": "/ai-settings", "personal-preferences": "/preferences", "agent-collaboration": "/mcp",
 	}
 	protocol := func(client iamClient, id string) map[string]any {
 		t.Helper()
@@ -67,11 +67,6 @@ func TestPlatformRuntimeInstallationsAndProviders(t *testing.T) {
 		for id, route := range routes {
 			pages := protocol(root, id)["pages"].([]any)
 			expected := []string{route}
-			if id == "system-settings" {
-				// Platform base applications follow the deployment baseline, so
-				// existing installations receive the AI configuration page too.
-				expected = append(expected, "/ai-settings")
-			}
 			if len(pages) != len(expected) {
 				t.Fatalf("%s %s returned %d pages, want %d", tenant, id, len(pages), len(expected))
 			}
@@ -121,11 +116,17 @@ func TestPlatformRuntimeInstallationsAndProviders(t *testing.T) {
 			"roleIds": []int64{}, "overrides": []any{}, "password": "TestOnly!2026Secure",
 		}, true))
 		reader := loginIAM(t, handler, readerName)
-		for _, page := range protocol(reader, "system-settings")["pages"].([]any) {
-			if page.(map[string]any)["route"] == "/ai-settings" {
-				t.Fatal("ordinary account can discover the AI configuration page")
+		catalog := decodeData[map[string]any](t, reader.invoke(t, "application.runtime.list", map[string]any{}, true))
+		for _, app := range catalog["items"].([]any) {
+			if app.(map[string]any)["id"] == "ai-settings" {
+				t.Fatal("ordinary account can discover the AI configuration application")
 			}
 		}
+		denied := decodeBody[gencap.CapabilityResult](t, reader.invoke(t, "application.runtime.resolve", map[string]any{"applicationId": "ai-settings"}, true))
+		if denied.Status != "failed" || denied.ErrorCode != "not_found" {
+			t.Fatalf("ordinary account resolved the AI configuration application: %+v", denied)
+		}
+		checkStatus(t, reader.invoke(t, "ai.config.read", map[string]any{}, true), 403)
 		checkStatus(t, reader.invoke(t, "settings.workspace.read", map[string]any{"targetKind": "workspace", "targetId": 0}, true), 403)
 		preferences := reader.invoke(t, "application.runtime.resolve", map[string]any{"applicationId": "personal-preferences"}, true)
 		checkSucceeded(t, preferences)

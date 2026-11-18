@@ -47,7 +47,6 @@
     "pendingMeta": "{{time}} · 执行 #{{run}}",
     "disabled": "当前工作区尚未启用智能体。管理员可在「系统设置」中开启并配置模型。",
     "openAISettings": "前往 AI 配置",
-    "openSettings": "前往系统设置",
     "modelFailed": "模型没有返回结果。请到「系统设置」检查 Token 是否有效、智能体接口地址是否可达；这次失败的执行已保留在执行记录里。",
     "conversation": "对话内容",
     "loadingHistory": "正在加载对话",

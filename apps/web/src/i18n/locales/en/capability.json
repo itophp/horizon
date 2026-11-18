@@ -122,6 +122,18 @@
       "title": "Knowledge search",
       "description": "Search the workspace knowledge base for rules, configuration and uploaded documents."
     },
+    "knowledge_query": {
+      "title": "Find knowledge documents",
+      "description": "Find workspace documents by a keyword in the title or text."
+    },
+    "knowledge_read": {
+      "title": "Read a knowledge document",
+      "description": "Open the original text and metadata of a workspace document."
+    },
+    "knowledge_update": {
+      "title": "Update a knowledge document",
+      "description": "Save the title and original text and rebuild this document’s vectors."
+    },
     "dictionary_options": {
       "title": "Dictionary options",
       "description": "Read the published options of a business dictionary."

@@ -101,6 +101,61 @@ test("settings draft, publish, runtime branding and server preferences persist",
   });
   expect(errors).toEqual([]);
 });
+test("AI configuration saves custom models immediately", async ({ page }) => {
+  await signIn(page);
+  await page
+    .getByRole("link", { name: "System settings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("combobox", {
+      name: "Product name · Operation",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Enable the workspace agent", { exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("link", { name: "AI Configuration", exact: true })
+    .click();
+  await page.getByRole("tab", { name: "AI Services", exact: true }).click();
+  await expect(
+    page.getByText("Enable the workspace agent", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", {
+      name: "Product name · Operation",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("tab", { name: "Model Management", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Add custom model", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Add custom model" });
+  const model = `Example chat ${Date.now()}`;
+  await dialog.getByLabel("Provider ID", { exact: true }).fill("example");
+  await dialog.getByLabel("Display name", { exact: true }).fill(model);
+  await dialog
+    .getByLabel("API base URL", { exact: true })
+    .fill("https://example.test/v1");
+  await dialog
+    .getByLabel("Model name (API request value)", { exact: true })
+    .fill("example-chat");
+  await dialog.getByLabel("API key", { exact: true }).fill("e2e-placeholder");
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Changes saved", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("tab", { name: "Publishing", exact: true }),
+  ).toHaveCount(0);
+  await page.reload();
+  const row = page.getByRole("row").filter({ hasText: model });
+  await expect(row).toContainText("Configured");
+  await expect(row).not.toContainText("e2e-placeholder");
+});
+
 test("dictionary editing, import preview and private file downloads use real services", async ({
   page,
 }, testInfo) => {

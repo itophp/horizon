@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ChangeEntry, ConfigEntry, SettingsWorkspace } from "@/api/types";
+import { Link } from "react-router";
+import type { AiConfigReadOutput } from "@/api/generated/capability-ai-config";
 import { Loading } from "@/features/administration/shared";
 import type { ComponentRendererProps } from "./component-registry";
 import {
   Choice,
-  DraftForm,
+  SaveForm,
   modelsFrom,
   value,
+  type AIConfigEntry,
+  type AIConfigChange,
   type Model,
   type Save,
 } from "./ai-model-settings-controls";
@@ -24,15 +27,19 @@ const routes = [
   "automation",
 ] as const;
 
+const embeddingKey = "knowledge.embedding.profile";
+
 function ModelAssignment({
   entries,
   models,
+  embeddingModels,
   view,
   disabled,
   save,
 }: {
-  entries: ConfigEntry[];
+  entries: AIConfigEntry[];
   models: Model[];
+  embeddingModels: NonNullable<AiConfigReadOutput["embeddingModels"]>;
   view: "default" | "routes";
   disabled: boolean;
   save: Save;
@@ -54,19 +61,28 @@ function ModelAssignment({
   const keys =
     view === "default"
       ? [defaultKey]
-      : routes.map((route) => `aiModels.route.${route}`);
+      : [
+          ...routes.map((route) => `aiModels.route.${route}`),
+          ...(embeddingModels.length ? [embeddingKey] : []),
+        ];
   return (
     <div className="admin-panel ai-model-panel">
-      <DraftForm
+      <p className="mb-4 text-sm text-muted-foreground">
+        {t("aiSettings.assignmentHint")}{" "}
+        <Link className="underline" to="?tab=models">
+          {t("aiSettings.tabs.models")}
+        </Link>
+      </p>
+      <SaveForm
         disabled={disabled}
-        submit={async (_form, reason) => {
-          const draft = Object.entries(changes).flatMap(
-            ([key, selected]): ChangeEntry[] =>
+        submit={async () => {
+          const updates = Object.entries(changes).flatMap(
+            ([key, selected]): AIConfigChange[] =>
               selected === value(entries, key)
                 ? []
                 : [{ key, operation: "set", value: JSON.stringify(selected) }],
           );
-          const saved = await save(draft, reason);
+          const saved = await save(updates);
           if (saved) setChanges({});
           return saved;
         }}
@@ -83,12 +99,14 @@ function ModelAssignment({
                 selected={selected}
                 disabled={disabled}
                 options={
-                  key === defaultKey
-                    ? options
-                    : [
-                        { id: "inherit", label: t("choices.inherit") },
-                        ...options,
-                      ]
+                  key === embeddingKey
+                    ? embeddingModels
+                    : key === defaultKey
+                      ? options
+                      : [
+                          { id: "inherit", label: t("choices.inherit") },
+                          ...options,
+                        ]
                 }
                 onChange={(id) =>
                   setChanges((previous) => ({ ...previous, [key]: id }))
@@ -112,7 +130,7 @@ function ModelAssignment({
             </div>
           );
         })}
-      </DraftForm>
+      </SaveForm>
     </div>
   );
 }
@@ -124,16 +142,25 @@ export function AIModelSettings({
   emit,
 }: ComponentRendererProps) {
   const { t } = useTranslation("governance");
-  const [notice, setNotice] = useState(false);
-  const workspace = data as SettingsWorkspace | undefined;
+  const [notice, setNotice] = useState<"saved" | "noChanges">();
+  const workspace = data as AiConfigReadOutput | undefined;
   const entries = workspace?.entries;
   if (!Array.isArray(entries)) return <Loading />;
   const disabled = readOnly || props.disabled === true;
   const models = modelsFrom(entries);
-  const save: Save = async (changes, reason) => {
-    setNotice(changes.length === 0);
-    if (disabled || changes.length === 0) return false;
-    return (await emit("submit", { changes, reason })) === true;
+  const save: Save = async (changes, onError) => {
+    setNotice(undefined);
+    if (disabled || changes.length === 0) {
+      onError?.(disabled ? "forbidden" : "no_changes");
+      if (!onError && changes.length === 0) setNotice("noChanges");
+      return false;
+    }
+    const payload = { changes };
+    const saved =
+      (await emit("submit", payload, onError ? { onError } : undefined)) ===
+      true;
+    if (saved) setNotice("saved");
+    return saved;
   };
   return (
     <>
@@ -150,12 +177,13 @@ export function AIModelSettings({
           key={workspace?.revision}
           entries={entries}
           models={models}
+          embeddingModels={workspace?.embeddingModels ?? []}
           view={props.view === "routes" ? "routes" : "default"}
           disabled={disabled}
           save={save}
         />
       )}
-      {notice && <p role="status">{t("noChanges")}</p>}
+      {notice && <p role="status">{t(notice)}</p>}
     </>
   );
 }

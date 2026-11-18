@@ -15,7 +15,7 @@ import (
 	"horizon/foundation/system/identity"
 )
 
-// Service resolves the deployment model configuration from governance settings and
+// Service resolves the deployment model configuration from the workspace AI configuration and
 // forwards a single assistant turn using the selected model protocol.
 // The credential never leaves the server and the browser cannot override it.
 type Service struct {
@@ -63,7 +63,7 @@ func (s *Service) Status(ctx context.Context, _ *genassistant.StatusPayload) (re
 	if err != nil {
 		return nil, err
 	}
-	raw, err := s.Setting(ctx, p, "assistant.enabled")
+	raw, err := s.AISetting(ctx, p, "assistant.enabled")
 	if err != nil {
 		return nil, err
 	}

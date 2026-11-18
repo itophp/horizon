@@ -6,6 +6,7 @@ import (
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
 	"horizon/internal/repository/dbgen"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -36,6 +37,9 @@ func (s *Service) definitions(kind string) []*ConfigDefinition {
 func (s *Service) redact(changes []*ChangeEntry) []*ChangeEntry {
 	out := []*ChangeEntry{}
 	for _, ch := range changes {
+		if governance.IsAISetting(ch.Key) {
+			continue
+		}
 		copy := *ch
 		if d := s.Definition(ch.Key); d != nil && d.Secret {
 			copy.Value = ""
@@ -57,6 +61,11 @@ func (s *Service) draftRecord(ctx context.Context, row dbgen.GovDraftRow) (*Chan
 	ch, err := decodeChanges(row.Payload)
 	if err != nil {
 		return nil, err
+	}
+	// Drafts staged before migration may include AI writes. Keep their audit
+	// record intact and omit the whole draft from the system publishing queue.
+	if slices.ContainsFunc(ch, func(change *ChangeEntry) bool { return governance.IsAISetting(change.Key) }) {
+		ch = nil
 	}
 	return &ChangeRecord{ID: row.ID, Target: target(t), Domain: row.Domain, BaseRevision: row.BaseRevision, Status: row.Status, Reason: row.Reason, ActorID: row.ActorID, CreatedAt: governance.Time(row.CreatedAt), Sensitive: row.Sensitive, Changes: s.redact(ch)}, nil
 }
@@ -124,7 +133,9 @@ func (s *Service) Workspace(ctx context.Context, payload *WorkspacePayload) (res
 				if e != nil {
 					return nil, e
 				}
-				res.Drafts = append(res.Drafts, r)
+				if len(r.Changes) > 0 {
+					res.Drafts = append(res.Drafts, r)
+				}
 			}
 		} else if governance.Code(authErr) != "forbidden" {
 			return nil, authErr
@@ -259,21 +270,9 @@ func (s *Service) combined(ctx context.Context, q *dbgen.Queries, p *identity.Pr
 		return nil, err
 	}
 	current := map[string]string{}
-	var previous map[string]governance.Value
-	for _, ch := range changes {
-		if t.Kind == "workspace" && governance.IsAIModelSetting(ch.Key) {
-			previous = make(map[string]governance.Value, len(base))
-			for key, value := range base {
-				previous[key] = value
-			}
-			break
-		}
-	}
 	for _, r := range rows {
-		raw := string(r.ValueJson)
-		current[r.ConfigKey] = raw
-		if previous != nil {
-			previous[r.ConfigKey] = governance.Value{Raw: raw, Source: t.Key, Configured: raw != `""`}
+		if !governance.IsAISetting(r.ConfigKey) {
+			current[r.ConfigKey] = string(r.ValueJson)
 		}
 	}
 	for _, ch := range changes {
@@ -309,11 +308,6 @@ func (s *Service) combined(ctx context.Context, q *dbgen.Queries, p *identity.Pr
 			}
 		}
 		base[key] = governance.Value{Raw: raw, Source: t.Key, Configured: raw != `""`}
-	}
-	if previous != nil {
-		if err := governance.ValidateAIModelChanges(previous, base); err != nil {
-			return nil, err
-		}
 	}
 	return base, s.ValidateCombined(base)
 }
@@ -481,6 +475,8 @@ func (s *Service) Rollback(ctx context.Context, payload *RollbackPayload) (res *
 	if err != nil {
 		return nil, err
 	}
+	// Historical revisions may contain values that migrated to AI configuration.
+	snapshot = slices.DeleteFunc(snapshot, func(change *ChangeEntry) bool { return governance.IsAISetting(change.Key) })
 	changes, _, err := s.validate(ctx, p, t, snapshot, true)
 	if err != nil {
 		return nil, err
@@ -494,7 +490,7 @@ func (s *Service) Rollback(ctx context.Context, payload *RollbackPayload) (res *
 		return nil, err
 	}
 	for _, v := range rows {
-		if !present[v.ConfigKey] {
+		if !present[v.ConfigKey] && !governance.IsAISetting(v.ConfigKey) {
 			changes = append(changes, &ChangeEntry{Key: v.ConfigKey, Operation: "reset", Value: ""})
 		}
 	}
@@ -569,9 +565,9 @@ func (s *Service) Export(ctx context.Context, payload *ExportPayload) (res []*Ch
 		return nil, err
 	}
 	res = []*ChangeEntry{}
-	for _, d := range s.Definitions {
-		if !d.Secret && governance.Has(d.Scopes, t.Kind) {
-			res = append(res, &ChangeEntry{Key: d.Key, Operation: "set", Value: values[d.Key].Raw})
+	for _, entry := range s.entries(values, t.Kind, t.Key, false) {
+		if d := s.Definition(entry.Key); d != nil && !d.Secret {
+			res = append(res, &ChangeEntry{Key: entry.Key, Operation: "set", Value: entry.Value})
 		}
 	}
 	sort.Slice(res, func(i, j int) bool { return res[i].Key < res[j].Key })

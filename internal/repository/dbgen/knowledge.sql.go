@@ -11,37 +11,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const kBAllDocuments = `-- name: KBAllDocuments :many
-SELECT d.id, d.title, d.source, d.content
+const kBAllDocumentIDs = `-- name: KBAllDocumentIDs :many
+SELECT d.id
 FROM kb_documents d
 WHERE d.tenant_id = $1 ORDER BY d.id ASC
 `
 
-type KBAllDocumentsRow struct {
-	ID      int64
-	Title   string
-	Source  string
-	Content string
-}
-
-func (q *Queries) KBAllDocuments(ctx context.Context, tenantID string) ([]KBAllDocumentsRow, error) {
-	rows, err := q.db.Query(ctx, kBAllDocuments, tenantID)
+func (q *Queries) KBAllDocumentIDs(ctx context.Context, tenantID string) ([]int64, error) {
+	rows, err := q.db.Query(ctx, kBAllDocumentIDs, tenantID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []KBAllDocumentsRow{}
+	items := []int64{}
 	for rows.Next() {
-		var i KBAllDocumentsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Source,
-			&i.Content,
-		); err != nil {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -75,6 +63,41 @@ func (q *Queries) KBCreateDocument(ctx context.Context, arg KBCreateDocumentPara
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const kBCurrentDocumentVersions = `-- name: KBCurrentDocumentVersions :many
+SELECT id, version FROM kb_documents
+WHERE tenant_id = $1 AND id = ANY($2::bigint[])
+`
+
+type KBCurrentDocumentVersionsParams struct {
+	TenantID    string
+	DocumentIds []int64
+}
+
+type KBCurrentDocumentVersionsRow struct {
+	ID      int64
+	Version string
+}
+
+func (q *Queries) KBCurrentDocumentVersions(ctx context.Context, arg KBCurrentDocumentVersionsParams) ([]KBCurrentDocumentVersionsRow, error) {
+	rows, err := q.db.Query(ctx, kBCurrentDocumentVersions, arg.TenantID, arg.DocumentIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []KBCurrentDocumentVersionsRow{}
+	for rows.Next() {
+		var i KBCurrentDocumentVersionsRow
+		if err := rows.Scan(&i.ID, &i.Version); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const kBDeleteDocument = `-- name: KBDeleteDocument :exec
@@ -131,6 +154,131 @@ func (q *Queries) KBListDocuments(ctx context.Context, tenantID string) ([]KBLis
 	return items, nil
 }
 
+const kBLockDocument = `-- name: KBLockDocument :one
+SELECT d.id, d.title, d.content, d.version
+FROM kb_documents d
+WHERE d.tenant_id = $1 AND d.id = $2
+FOR UPDATE
+`
+
+type KBLockDocumentParams struct {
+	TenantID string
+	ID       int64
+}
+
+type KBLockDocumentRow struct {
+	ID      int64
+	Title   string
+	Content string
+	Version string
+}
+
+func (q *Queries) KBLockDocument(ctx context.Context, arg KBLockDocumentParams) (KBLockDocumentRow, error) {
+	row := q.db.QueryRow(ctx, kBLockDocument, arg.TenantID, arg.ID)
+	var i KBLockDocumentRow
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Content,
+		&i.Version,
+	)
+	return i, err
+}
+
+const kBQueryDocuments = `-- name: KBQueryDocuments :many
+SELECT d.id, d.title, d.source, d.created_at, d.chunks::bigint AS chunks
+FROM kb_documents d
+WHERE d.tenant_id = $1
+  AND ($2::bigint = 0 OR d.id < $2)
+  AND ($3::text = ''
+       OR strpos(lower(d.title), lower($3)) > 0
+       OR strpos(lower(d.content), lower($3)) > 0)
+ORDER BY d.id DESC
+LIMIT $4::int
+`
+
+type KBQueryDocumentsParams struct {
+	TenantID string
+	BeforeID int64
+	Keyword  string
+	RowLimit int32
+}
+
+type KBQueryDocumentsRow struct {
+	ID        int64
+	Title     string
+	Source    string
+	CreatedAt pgtype.Timestamptz
+	Chunks    int64
+}
+
+func (q *Queries) KBQueryDocuments(ctx context.Context, arg KBQueryDocumentsParams) ([]KBQueryDocumentsRow, error) {
+	rows, err := q.db.Query(ctx, kBQueryDocuments,
+		arg.TenantID,
+		arg.BeforeID,
+		arg.Keyword,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []KBQueryDocumentsRow{}
+	for rows.Next() {
+		var i KBQueryDocumentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Source,
+			&i.CreatedAt,
+			&i.Chunks,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const kBReadDocument = `-- name: KBReadDocument :one
+SELECT d.id, d.title, d.source, d.created_at, d.chunks::bigint AS chunks, d.content, d.version
+FROM kb_documents d
+WHERE d.tenant_id = $1 AND d.id = $2
+`
+
+type KBReadDocumentParams struct {
+	TenantID string
+	ID       int64
+}
+
+type KBReadDocumentRow struct {
+	ID        int64
+	Title     string
+	Source    string
+	CreatedAt pgtype.Timestamptz
+	Chunks    int64
+	Content   string
+	Version   string
+}
+
+func (q *Queries) KBReadDocument(ctx context.Context, arg KBReadDocumentParams) (KBReadDocumentRow, error) {
+	row := q.db.QueryRow(ctx, kBReadDocument, arg.TenantID, arg.ID)
+	var i KBReadDocumentRow
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Source,
+		&i.CreatedAt,
+		&i.Chunks,
+		&i.Content,
+		&i.Version,
+	)
+	return i, err
+}
+
 const kBUpdateChunks = `-- name: KBUpdateChunks :exec
 UPDATE kb_documents SET chunks = $3 WHERE tenant_id = $1 AND id = $2
 `
@@ -143,5 +291,31 @@ type KBUpdateChunksParams struct {
 
 func (q *Queries) KBUpdateChunks(ctx context.Context, arg KBUpdateChunksParams) error {
 	_, err := q.db.Exec(ctx, kBUpdateChunks, arg.TenantID, arg.ID, arg.Chunks)
+	return err
+}
+
+const kBUpdateDocument = `-- name: KBUpdateDocument :exec
+UPDATE kb_documents SET title = $3, content = $4, chunks = $5, version = $6
+WHERE tenant_id = $1 AND id = $2
+`
+
+type KBUpdateDocumentParams struct {
+	TenantID string
+	ID       int64
+	Title    string
+	Content  string
+	Chunks   int32
+	Version  string
+}
+
+func (q *Queries) KBUpdateDocument(ctx context.Context, arg KBUpdateDocumentParams) error {
+	_, err := q.db.Exec(ctx, kBUpdateDocument,
+		arg.TenantID,
+		arg.ID,
+		arg.Title,
+		arg.Content,
+		arg.Chunks,
+		arg.Version,
+	)
 	return err
 }

@@ -46,7 +46,12 @@ func (s *Service) resolveSemantic(ctx context.Context, page aicontext.Page) (*ar
 }
 
 func (s *Service) toolProfile(ctx context.Context) ([]string, error) {
-	keys := []string{"example.record.list@1.0.0", "example.record.get@1.0.0", "example.record.create@1.0.0", "example.record.archive@1.0.0", "knowledge.search@1.0.0"}
+	keys := []string{
+		"example.record.list@1.0.0", "example.record.get@1.0.0",
+		"example.record.create@1.0.0", "example.record.archive@1.0.0",
+		"knowledge.search@1.0.0", "knowledge.query@1.0.0",
+		"knowledge.read@1.0.0", "knowledge.update@1.0.0",
+	}
 	if s.Profile != nil {
 		extra, err := s.Profile(ctx)
 		if err != nil {

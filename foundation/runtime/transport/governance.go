@@ -62,6 +62,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, registration app.
 	auditStore := audit.NewStore(core.Pool)
 	approvals := approval.NewStore(core.Pool)
 	hub := eventhub.NewHub()
+	hub.Subscribe(documents.CleanUpdatedDocument)
 	events := eventhub.NewStore(core.Pool)
 
 	orchestrator := orchestrationruntime.NewWithGraphs(core, registration.WorkflowDefinitions(), registration.Graphs)
@@ -92,7 +93,7 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, registration app.
 	}
 	dispatcher := gateway.New(gateway.Options{
 		Registry: catalog, Identity: core.Identity, Pool: core.Pool, RuntimeCheck: runtimeModule.ValidateInvocation,
-		Approvals: approvals, Audit: auditStore, Events: events, Observations: observer,
+		Approvals: approvals, ApprovalCipher: core, Audit: auditStore, Events: events, Observations: observer,
 	})
 	for _, attach := range registration.AttachGateway {
 		attach(dispatcher)

@@ -8,7 +8,7 @@ import (
 func TestResolveAIModelUsesBusinessOverrideAndWorkspaceDefault(t *testing.T) {
 	core := New(nil, nil, Options{EncryptionKey: []byte("01234567890123456789012345678901")})
 	values := map[string]Value{}
-	for _, d := range core.Definitions {
+	for _, d := range Registry {
 		values[d.Key] = Value{Raw: d.Default, Source: "default"}
 	}
 	set := func(key, raw string) { values[key] = Value{Raw: raw, Source: "workspace:0"} }

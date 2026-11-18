@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Upload,
   Users,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -304,6 +305,7 @@ const tabIcons = {
   sparkles: Sparkles,
   sliders: SlidersHorizontal,
   tree: ListTree,
+  upload: Upload,
 };
 
 function WebMcpTabLabel({ label }: { label: string }) {

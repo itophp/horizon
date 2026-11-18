@@ -1,4 +1,10 @@
 {
+  "ai_configuration": {
+    "label": "AI 配置"
+  },
+  "knowledge_document": {
+    "label": "知识库文档"
+  },
   "memory_event": {
     "label": "记忆事件"
   },

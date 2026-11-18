@@ -670,6 +670,15 @@ body {
   color: var(--app-muted);
   cursor: pointer;
 }
+.ai-settings-page .overview-tabs {
+  max-width: 100%;
+  height: auto;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.ai-settings-page .overview-tabs > button {
+  flex: 0 0 auto;
+}
 .overview-tabs > button.active,
 .permission-page-tabs > button.active,
 .admin-page-tabs > button.active {

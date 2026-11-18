@@ -187,7 +187,7 @@ func systemSettingsApplication(version string) ar.ApplicationV2 {
 	application := platformPageVersion("system-settings", "/settings", "governance:settings", "governance:settingsHint", version,
 		append(workspaceSettingsProviders(), workspaceDictionaryProviders()...), tabs)
 	if version == "1.0.3" {
-		application.Protocol.Pages = append(application.Protocol.Pages, aiSettingsPage())
+		application.Protocol.Pages = append(application.Protocol.Pages, aiSettingsPage("system-settings.ai", false))
 	}
 	return application
 }

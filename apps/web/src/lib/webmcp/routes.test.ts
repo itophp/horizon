@@ -19,9 +19,18 @@ it("inventories every declared route and identifies parameterized pages", () => 
     ].sort(),
   );
   expect(findWebMcpRoute("/files/123")?.path).toBe("/files/:id");
+  expect(findWebMcpRoute("/knowledge/123")).toMatchObject({
+    path: "/knowledge/:id",
+    permission: "knowledge:read",
+    connected: false,
+  });
   expect(findWebMcpRoute("/projects/7/tasks/9")?.path).toBe(
     "/projects/:projectId/tasks/:id",
   );
   expect(findWebMcpRoute("/login")?.connected).toBe(false);
+  expect(findWebMcpRoute("/ai-settings")).toMatchObject({
+    module: "ai-settings",
+    permission: "aiConfig:read",
+  });
   expect(findWebMcpRoute("/files/123/other")).toBeUndefined();
 });

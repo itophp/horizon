@@ -54,31 +54,33 @@ type Request struct {
 
 // Options wires the gateway.
 type Options struct {
-	RuntimeCheck func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
-	Registry     *registry.Registry
-	Identity     *identity.Service
-	Pool         *pgxpool.Pool
-	Approvals    *approval.Store
-	Audit        *audit.Store
-	Events       *eventhub.Store
-	Now          func() time.Time
-	Observations ObservationSink
+	RuntimeCheck   func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
+	Registry       *registry.Registry
+	Identity       *identity.Service
+	Pool           *pgxpool.Pool
+	Approvals      *approval.Store
+	ApprovalCipher ApprovalCipher
+	Audit          *audit.Store
+	Events         *eventhub.Store
+	Now            func() time.Time
+	Observations   ObservationSink
 }
 
 type ObservationSink interface{ Submit(canonical.Envelope) }
 
 // Gateway executes capabilities.
 type Gateway struct {
-	workflowPlans WorkflowPlanRuntime
-	runtimeCheck  func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
-	registry      *registry.Registry
-	identity      *identity.Service
-	pool          *pgxpool.Pool
-	approvals     *approval.Store
-	audit         *audit.Store
-	events        *eventhub.Store
-	now           func() time.Time
-	observations  ObservationSink
+	workflowPlans  WorkflowPlanRuntime
+	runtimeCheck   func(context.Context, *contracts.RuntimeReference, contracts.Definition, *dbgen.Queries) error
+	registry       *registry.Registry
+	identity       *identity.Service
+	pool           *pgxpool.Pool
+	approvals      *approval.Store
+	approvalCipher ApprovalCipher
+	audit          *audit.Store
+	events         *eventhub.Store
+	now            func() time.Time
+	observations   ObservationSink
 }
 
 // New builds a gateway.
@@ -89,7 +91,8 @@ func New(options Options) *Gateway {
 	}
 	return &Gateway{
 		registry: options.Registry, runtimeCheck: options.RuntimeCheck, identity: options.Identity, pool: options.Pool,
-		approvals: options.Approvals, audit: options.Audit, events: options.Events, now: now, observations: options.Observations,
+		approvals: options.Approvals, approvalCipher: options.ApprovalCipher,
+		audit: options.Audit, events: options.Events, now: now, observations: options.Observations,
 	}
 }
 
@@ -340,9 +343,9 @@ func isConflict(err error) bool {
 // requestApproval books the invocation and the confirmation card in one
 // transaction, so a pending call never exists without its approval.
 func (g *Gateway) requestApproval(ctx context.Context, p *identity.Principal, entry registry.Entry, request Request, invocationID, traceID, digest string, redacted json.RawMessage, kind contracts.Approval) (*contracts.Result, error) {
-	arguments, err := json.Marshal(request.Input)
+	arguments, err := g.approvalArguments(p.TenantID, invocationID, entry.Definition, request.Input)
 	if err != nil {
-		return nil, contracts.Problem("invalid")
+		return nil, err
 	}
 	tx, err := g.pool.Begin(ctx)
 	if err != nil {
@@ -456,8 +459,8 @@ func (g *Gateway) Decide(ctx context.Context, id int64, approve bool, note strin
 		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "forbidden")
 		return nil, contracts.Problem("forbidden")
 	}
-	input := contracts.Input{}
-	if err = json.Unmarshal(card.Arguments, &input); err != nil || entry.Definition.Input.Validate(input) != nil {
+	input, err := g.openApprovalArguments(card, entry.Definition)
+	if err != nil || entry.Definition.Input.Validate(input) != nil {
 		_ = g.approvals.Complete(ctx, p.TenantID, id, approval.Failed, "invalid")
 		_ = g.finish(ctx, p.TenantID, card.InvocationID, contracts.StatusFailed, nil, "invalid", 0)
 		return nil, contracts.Problem("invalid")

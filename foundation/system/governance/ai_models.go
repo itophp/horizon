@@ -2,7 +2,9 @@ package governance
 
 import (
 	"context"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 
 	"horizon/foundation/system/identity"
@@ -36,6 +38,34 @@ const (
 )
 
 var modelProviderID = regexp.MustCompile(`^[a-z][a-z0-9-]{0,63}$`)
+var customModelID = regexp.MustCompile(`^custom-[a-z0-9][a-z0-9-]{0,55}$`)
+
+func customModelField(key string) (profile, field string, ok bool) {
+	key, ok = strings.CutPrefix(key, "aiModels.")
+	if !ok {
+		return "", "", false
+	}
+	profile, field, _ = strings.Cut(key, ".")
+	return profile, field, customModelID.MatchString(profile)
+}
+
+// Custom models reuse the setting definitions of the original custom slot.
+// Their keys have no effective default until the model has been saved.
+func customModelDefinition(definitions []Definition, key string) *Definition {
+	_, field, ok := customModelField(key)
+	if !ok || field == "" {
+		return nil
+	}
+	template := "aiModels.custom." + field
+	for _, definition := range definitions {
+		if definition.Key == template {
+			definition.Key = key
+			definition.UI = false
+			return &definition
+		}
+	}
+	return nil
+}
 
 func aiModelDefinitions() []Definition {
 	var definitions []Definition
@@ -73,6 +103,7 @@ func aiModelDefinitions() []Definition {
 type AIModel struct {
 	Profile, ProviderID, DisplayName, BaseURL, Protocol, Name, Token string
 	Type                                                             string
+	Dimensions                                                       int64
 	Enabled                                                          bool
 }
 
@@ -84,11 +115,11 @@ func (c *Core) ResolveAIModel(ctx context.Context, p *identity.Principal, use AI
 	if p == nil || p.Account == nil {
 		return AIModel{}, Problem("forbidden")
 	}
-	values, err := c.Values(ctx, p.TenantID, []string{"workspace:0"})
+	snapshot, err := LoadAIConfiguration(ctx, c.Q, p.TenantID)
 	if err != nil {
 		return AIModel{}, err
 	}
-	return c.resolveAIModel(p.TenantID, values, use)
+	return c.resolveAIModel(p.TenantID, snapshot.Values(), use)
 }
 
 func aiModelValue(values map[string]Value, key string) string {
@@ -130,46 +161,83 @@ func aiModelProfile(values map[string]Value, profile string, use AIModelUse) (AI
 	if err != nil {
 		return AIModel{}, "", err
 	}
-	prefix := "aiModels." + profile + "."
-	m := AIModel{Profile: profile, Enabled: enabled, Type: read(prefix + "type")}
-	switch profile {
-	case "glm":
-		m.ProviderID, m.DisplayName = read(prefix+"providerId"), read(prefix+"displayName")
-		m.BaseURL, m.Protocol = read("agent.baseUrl"), ChatCompletions
-		if use == ModelAssistant {
-			m.BaseURL, m.Protocol = read("assistant.baseUrl"), Responses
-		}
-		m.Name = read("assistant.model")
-		return m, "assistant.token", nil
-	case "deepseek", "custom":
-		if profile == "deepseek" {
-			m.Type = ModelMultimodal
-		}
-		m.ProviderID, m.DisplayName, m.BaseURL = read(prefix+"providerId"), read(prefix+"displayName"), read(prefix+"baseUrl")
-		m.Protocol, m.Name = read(prefix+"protocol"), read(prefix+"model")
-		return m, prefix + "token", nil
-	default:
+	if !isModelProfile(profile) {
 		return AIModel{}, "", Problem("invalid")
 	}
+	field := func(name string) string { return read(modelSettingKey(profile, name)) }
+	m := AIModel{
+		Profile: profile, Enabled: enabled, Type: field("type"),
+		ProviderID: field("providerId"), DisplayName: field("displayName"),
+		BaseURL: field("baseUrl"), Name: field("model"),
+		Dimensions: modelProfileDimensions(values, profile),
+	}
+	if m.DisplayName == "" && (profile == BailianEmbeddingProfile || profile == LegacyEmbeddingProfile) {
+		m.DisplayName = m.ProviderID
+	}
+	m.Protocol = modelProfileProtocol(values, profile, m.Type)
+	if use == ModelAssistant && m.Type != ModelEmbedding {
+		if endpoint := field("responsesBaseUrl"); endpoint != "" {
+			m.BaseURL, m.Protocol = endpoint, Responses
+		}
+	}
+	return m, modelSettingKey(profile, "token"), nil
 }
 
-// IsAIModelSetting identifies model configuration shared by the settings pages.
+// IsAIModelSetting identifies model connection and assignment keys.
 func IsAIModelSetting(key string) bool {
 	return strings.HasPrefix(key, "aiModels.") || Has([]string{"agent.baseUrl", "assistant.baseUrl", "assistant.model", "assistant.token"}, key)
+}
+
+func IsAISetting(key string) bool {
+	return IsAIModelSetting(key) || strings.HasPrefix(key, "knowledge.") ||
+		key == "agent.enabled" || key == "assistant.enabled"
 }
 
 // ValidateAIModelChanges checks the affected selections against the prospective
 // settings snapshot. Credential values are still sealed at this point.
 func ValidateAIModelChanges(current, next map[string]Value) error {
 	changed := func(key string) bool { return current[key].Raw != next[key].Raw }
+	changedProfiles := map[string]bool{}
+	presentProfiles := map[string]bool{}
+	for key := range next {
+		if profile, _, ok := customModelField(key); ok {
+			presentProfiles[profile] = true
+			changedProfiles[profile] = changedProfiles[profile] || changed(key)
+		}
+	}
+	for key := range current {
+		if profile, _, ok := customModelField(key); ok && changed(key) {
+			changedProfiles[profile] = true
+		}
+	}
+	for _, profile := range presetProfiles {
+		for _, field := range []string{"type", "protocol", "baseUrl", "model", "dimensions"} {
+			if modelFieldChanged(current, next, profile, field) {
+				changedProfiles[profile] = true
+				presentProfiles[profile] = true
+			}
+		}
+	}
+	for _, profile := range slices.Sorted(maps.Keys(changedProfiles)) {
+		if !changedProfiles[profile] || !presentProfiles[profile] {
+			continue
+		}
+		model, _, err := aiModelProfile(next, profile, "")
+		if err != nil {
+			return err
+		}
+		if err := validateEmbeddingProtocol(model); err != nil {
+			return err
+		}
+	}
 	defaultChanged := changed("aiModels.default")
 	for _, use := range append([]AIModelUse{""}, modelUses...) {
 		profile := selectedAIModel(next, use)
-		prefix := "aiModels." + profile + "."
 		routeKey := "aiModels.route." + string(use)
 		selectionChanged := use == "" && defaultChanged ||
 			use != "" && (changed(routeKey) || (defaultChanged && aiModelValue(next, routeKey) == "inherit"))
-		if !selectionChanged && !changed(prefix+"type") {
+		if !selectionChanged && !modelFieldChanged(current, next, profile, "type") &&
+			!(customModelID.MatchString(profile) && changedProfiles[profile]) {
 			continue
 		}
 		m, credentialKey, err := aiModelProfile(next, profile, use)
@@ -183,9 +251,26 @@ func ValidateAIModelChanges(current, next map[string]Value) error {
 		if m.Type != ModelText && m.Type != ModelMultimodal {
 			return Problem("ai_model_type_unsupported." + profile + "." + scene)
 		}
-		if m.ProviderID == "" || m.DisplayName == "" || m.BaseURL == "" || m.Name == "" || !next[credentialKey].Configured {
+		if !completeAIModel(m, next[credentialKey]) {
 			return Problem("ai_model_incomplete." + profile + "." + scene)
 		}
 	}
-	return nil
+	for _, profile := range slices.Sorted(maps.Keys(changedProfiles)) {
+		// Restoring a snapshot from before this model existed removes all its keys.
+		if !customModelID.MatchString(profile) || !changedProfiles[profile] || !presentProfiles[profile] {
+			continue
+		}
+		m, credentialKey, err := aiModelProfile(next, profile, "")
+		if err != nil {
+			return err
+		}
+		if m.Type == "" || !completeAIModel(m, next[credentialKey]) {
+			return Problem("ai_model_incomplete." + profile + ".models")
+		}
+	}
+	return validateKnowledgeEmbedding(next)
+}
+
+func completeAIModel(model AIModel, credential Value) bool {
+	return model.ProviderID != "" && model.DisplayName != "" && model.BaseURL != "" && model.Name != "" && credential.Configured
 }

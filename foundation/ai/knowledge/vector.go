@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
+	"unicode"
 
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
@@ -13,26 +13,18 @@ import (
 	embedopenai "github.com/cloudwego/eino-ext/components/embedding/openai"
 	redisindexer "github.com/cloudwego/eino-ext/components/indexer/redis"
 	redisretriever "github.com/cloudwego/eino-ext/components/retriever/redis"
+	"github.com/cloudwego/eino/components/embedding"
 	"github.com/cloudwego/eino/components/indexer"
 	"github.com/cloudwego/eino/components/retriever"
 	"github.com/cloudwego/eino/schema"
 	"github.com/redis/go-redis/v9"
 )
 
-// Configuration keys behind the vector stack. They stay deployment settings, so
-// a workspace can point at its own embedding service and vector store.
 const (
-	keyEmbeddingBaseURL = "knowledge.embedding.baseUrl"
-	keyEmbeddingModel   = "knowledge.embedding.model"
-	keyEmbeddingDims    = "knowledge.embedding.dimensions"
-	keyEmbeddingToken   = "knowledge.embedding.token"
-	keyVectorURL        = "knowledge.vector.url"
-	keyVectorIndex      = "knowledge.vector.index"
-
-	// vectorField is the RediSearch field that holds the dense vector. The
-	// retriever and the index definition must agree on it.
-	vectorField = "vector"
-	hashPrefix  = "kb:"
+	vectorField       = "vector"
+	hashPrefix        = "kb:"
+	customHashPrefix  = "kb-model-"
+	bailianHashPrefix = "kb-bailian-qwen3-vl-embedding-2560:"
 )
 
 // Vector bundles the Eino components retrieval needs. There is no bespoke
@@ -43,93 +35,88 @@ type Vector struct {
 	Retriever retriever.Retriever
 	Client    *redis.Client
 	Index     string
+	keyPrefix string
 }
 
-// vectors caches one stack per tenant so a page request does not rebuild the
-// Redis client on every keystroke. A configuration change is picked up on
-// restart, which matches how the rest of the platform treats deployment config.
-type vectorCache struct {
-	mu      sync.Mutex
-	entries map[string]*Vector
-}
-
-// vectorFor builds (or returns) the component stack for the caller's workspace.
-// A missing credential is reported as unavailable, never as an internal error:
-// an operator has to configure it, the request is not broken.
+// vectorFor builds the stack from a single committed settings snapshot.
+// Callers close its Redis client once their operation has finished.
 func (s *Store) vectorFor(ctx context.Context, p *identity.Principal) (*Vector, error) {
 	if s == nil || s.Core == nil {
 		return nil, governance.Problem("unavailable")
 	}
-	if cached, ok := s.vectors().get(p.TenantID); ok {
-		return cached, nil
-	}
-	token, err := s.setting(ctx, p, keyEmbeddingToken)
+	config, err := s.Core.KnowledgeVector(ctx, p)
 	if err != nil {
 		return nil, err
 	}
-	if token == "" {
-		return nil, governance.Problem("unavailable")
-	}
-	baseURL, err := s.setting(ctx, p, keyEmbeddingBaseURL)
-	if err != nil {
-		return nil, err
-	}
-	model, err := s.setting(ctx, p, keyEmbeddingModel)
-	if err != nil {
-		return nil, err
-	}
-	dimensionValue, err := s.Core.Setting(ctx, p, keyEmbeddingDims)
-	if err != nil {
-		return nil, err
-	}
-	dimensions, err := governance.Number(dimensionValue)
-	if err != nil {
-		return nil, governance.Problem("unavailable")
-	}
-	url := strings.TrimSpace(s.Core.Options.KnowledgeRedisURL)
-	if url == "" {
-		url, err = s.setting(ctx, p, keyVectorURL)
+	index, prefix := vectorLocation(config)
+	var embedder embedding.Embedder
+	if config.Protocol == governance.DashScopeEmbedding {
+		embedder = dashScopeEmbedder{baseURL: config.BaseURL, token: config.Token, model: config.Name, dimensions: int(config.Dimensions)}
+	} else {
+		openAI := &embedopenai.EmbeddingConfig{
+			APIKey: config.Token, BaseURL: strings.TrimSuffix(config.BaseURL, "/"), Model: config.Name,
+		}
+		if !config.LegacyIndex {
+			dimensions := int(config.Dimensions)
+			openAI.Dimensions = &dimensions
+		}
+		embedder, err = embedopenai.NewEmbedder(ctx, openAI)
 		if err != nil {
 			return nil, err
 		}
 	}
-	index, err := s.setting(ctx, p, keyVectorIndex)
+	client, err := redisClient(config.RedisURL)
 	if err != nil {
+		return nil, governance.Problem("knowledge_vector_store_unavailable")
+	}
+	stack, err := buildVector(ctx, client, embedder, index, prefix, config.Dimensions)
+	if err != nil {
+		client.Close()
 		return nil, err
 	}
-	if strings.TrimSpace(url) == "" || strings.TrimSpace(model) == "" || dimensions <= 0 {
-		return nil, governance.Problem("unavailable")
-	}
+	return stack, nil
+}
 
-	embedder, err := embedopenai.NewEmbedder(ctx, &embedopenai.EmbeddingConfig{
-		APIKey:  token,
-		BaseURL: strings.TrimSuffix(strings.TrimSpace(baseURL), "/"),
-		Model:   model,
-	})
-	if err != nil {
-		return nil, err
+func vectorLocation(config governance.KnowledgeVectorSettings) (index, prefix string) {
+	if config.LegacyIndex {
+		return config.Index, hashPrefix
 	}
-	client, err := redisClient(strings.TrimSpace(url))
-	if err != nil {
-		return nil, governance.Problem("unavailable")
+	if config.Profile == governance.BailianEmbeddingProfile && config.Protocol == governance.DashScopeEmbedding &&
+		config.Name == governance.BailianEmbeddingModel && config.Dimensions == governance.BailianEmbeddingDimensions {
+		return config.Index + "-bailian-qwen3-vl-embedding-2560", bailianHashPrefix
 	}
-	if err = ensureIndex(ctx, client, index, dimensions); err != nil {
-		return nil, err
+	id := governance.Hash(strings.Join([]string{
+		config.Protocol, config.BaseURL, config.Name, strconv.FormatInt(config.Dimensions, 10),
+	}, "\x00"))
+	return config.Index + "-model-" + id, customHashPrefix + id + ":"
+}
+
+func buildVector(ctx context.Context, client *redis.Client, embedder embedding.Embedder, index, prefix string, dimensions int64) (*Vector, error) {
+	if err := ensureIndex(ctx, client, index, prefix, dimensions); err != nil {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		return nil, governance.Problem("knowledge_vector_store_unavailable")
 	}
 	retrieved, err := redisretriever.NewRetriever(ctx, &redisretriever.RetrieverConfig{
-		Client:      client,
-		Index:       index,
-		VectorField: vectorField,
-		Embedding:   embedder,
-		TopK:        int(Limit),
+		Client: client, Index: index, VectorField: vectorField,
+		Embedding: embedder, TopK: int(Limit),
+		ReturnFields: []string{"content", "title", "document_id", "document_version"},
+		DocumentConverter: func(_ context.Context, result redis.Document) (*schema.Document, error) {
+			return &schema.Document{
+				ID: result.ID, Content: result.Fields["content"],
+				MetaData: map[string]any{
+					"title": result.Fields["title"], "document_id": result.Fields["document_id"],
+					"document_version": result.Fields["document_version"],
+				},
+			}, nil
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	stored, err := redisindexer.NewIndexer(ctx, &redisindexer.IndexerConfig{
-		Client:    client,
-		KeyPrefix: hashPrefix,
-		Embedding: embedder,
+		Client: client, KeyPrefix: prefix, Embedding: embedder,
 		DocumentToHashes: func(_ context.Context, doc *schema.Document) (*redisindexer.Hashes, error) {
 			return hashesFor(doc)
 		},
@@ -137,39 +124,7 @@ func (s *Store) vectorFor(ctx context.Context, p *identity.Principal) (*Vector, 
 	if err != nil {
 		return nil, err
 	}
-	stack := &Vector{Indexer: stored, Retriever: retrieved, Client: client, Index: index}
-	s.vectors().put(p.TenantID, stack)
-	return stack, nil
-}
-
-func (s *Store) vectors() *vectorCache {
-	s.vectorOnce.Do(func() { s.vectorCache = &vectorCache{entries: map[string]*Vector{}} })
-	return s.vectorCache
-}
-
-func (c *vectorCache) get(tenant string) (*Vector, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	value, ok := c.entries[tenant]
-	return value, ok
-}
-
-func (c *vectorCache) put(tenant string, value *Vector) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.entries[tenant] = value
-}
-
-func (s *Store) setting(ctx context.Context, p *identity.Principal, key string) (string, error) {
-	raw, err := s.Core.Setting(ctx, p, key)
-	if err != nil {
-		return "", err
-	}
-	value, err := governance.String(raw)
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(value), nil
+	return &Vector{Indexer: stored, Retriever: retrieved, Client: client, Index: index, keyPrefix: prefix}, nil
 }
 
 // redisClient needs protocol 2 with UnstableResp3 enabled: the retriever parses
@@ -193,13 +148,15 @@ func hashesFor(doc *schema.Document) (*redisindexer.Hashes, error) {
 	}
 	documentID, _ := doc.MetaData["documentId"].(int64)
 	title, _ := doc.MetaData["title"].(string)
+	version, _ := doc.MetaData["version"].(string)
 	return &redisindexer.Hashes{
 		Key: doc.ID,
 		Field2Value: map[string]redisindexer.FieldValue{
-			"tenant":      {Value: tenant},
-			"document_id": {Value: documentID},
-			"title":       {Value: title},
-			"content":     {Value: doc.Content, EmbedKey: vectorField},
+			"tenant":           {Value: tenant},
+			"document_id":      {Value: documentID},
+			"title":            {Value: title},
+			"document_version": {Value: version},
+			"content":          {Value: doc.Content, EmbedKey: vectorField},
 		},
 	}, nil
 }
@@ -207,7 +164,7 @@ func hashesFor(doc *schema.Document) (*redisindexer.Hashes, error) {
 // ensureIndex creates the RediSearch index once. The schema is the contract the
 // retriever and indexer rely on, so it is created here rather than left to an
 // operator reading a README.
-func ensureIndex(ctx context.Context, client *redis.Client, index string, dimensions int64) error {
+func ensureIndex(ctx context.Context, client *redis.Client, index, prefix string, dimensions int64) error {
 	exists, err := client.Do(ctx, "FT._LIST").Result()
 	if err != nil {
 		return err
@@ -221,7 +178,7 @@ func ensureIndex(ctx context.Context, client *redis.Client, index string, dimens
 	}
 	err = client.Do(ctx, "FT.CREATE", index,
 		"ON", "HASH",
-		"PREFIX", "1", hashPrefix,
+		"PREFIX", "1", prefix,
 		"SCHEMA",
 		"tenant", "TAG",
 		"document_id", "NUMERIC",
@@ -247,13 +204,42 @@ func (v *Vector) storeDocuments(ctx context.Context, docs []*schema.Document) er
 	return err
 }
 
+func (v *Vector) discardFragments(ctx context.Context, docs []*schema.Document) {
+	keys := make([]string, len(docs))
+	for i, doc := range docs {
+		keys[i] = v.keyPrefix + doc.ID
+	}
+	// Failed generations are invisible to search even if cleanup is interrupted.
+	_ = v.Client.Unlink(ctx, keys...).Err()
+}
+
+func (v *Vector) cleanDocumentVersions(ctx context.Context, tenant string, id int64, shouldRemove func(string, int) bool) error {
+	prefix := fmt.Sprintf("%s%s-%d-", v.keyPrefix, tenant, id)
+	pattern := strings.NewReplacer("\\", "\\\\", "*", "\\*", "?", "\\?", "[", "\\[", "]", "\\]").Replace(prefix) + "*"
+	iterator := v.Client.Scan(ctx, 0, pattern, 200).Iterator()
+	for iterator.Next(ctx) {
+		suffix, found := strings.CutPrefix(iterator.Val(), prefix)
+		version, number, versioned := strings.Cut(suffix, "-")
+		if !versioned {
+			version, number = "", suffix
+		}
+		ordinal, err := strconv.Atoi(number)
+		if found && err == nil && shouldRemove(version, ordinal) {
+			if err := v.Client.Unlink(ctx, iterator.Val()).Err(); err != nil {
+				return err
+			}
+		}
+	}
+	return iterator.Err()
+}
+
 // dropDocument removes every fragment of one document. Keys are prefixed with
 // tenant and document id, so a scan is enough and no secondary index is needed.
 func (v *Vector) dropDocument(ctx context.Context, tenant string, id int64) error {
 	if v == nil || v.Client == nil {
 		return governance.Problem("unavailable")
 	}
-	pattern := fmt.Sprintf("%s%s-%d-*", hashPrefix, tenant, id)
+	pattern := fmt.Sprintf("%s%s-%d-*", v.keyPrefix, tenant, id)
 	iterator := v.Client.Scan(ctx, 0, pattern, 200).Iterator()
 	for iterator.Next(ctx) {
 		if err := v.Client.Del(ctx, iterator.Val()).Err(); err != nil {
@@ -268,9 +254,23 @@ func (v *Vector) retrieve(ctx context.Context, tenant, query string, limit int) 
 	if v == nil || v.Retriever == nil {
 		return nil, governance.Problem("unavailable")
 	}
-	options := []retriever.Option{redisretriever.WithFilterQuery("@" + "tenant" + ":{" + tenant + "}")}
+	options := []retriever.Option{redisretriever.WithFilterQuery(workspaceTagFilter(tenant))}
 	if limit > 0 {
 		options = append(options, retriever.WithTopK(limit))
 	}
 	return v.Retriever.Retrieve(ctx, query, options...)
+}
+
+// Escape Redis's ASCII tag syntax while preserving the stored workspace ID.
+func workspaceTagFilter(tenant string) string {
+	var filter strings.Builder
+	filter.WriteString("@tenant:{")
+	for _, r := range tenant {
+		if r <= unicode.MaxASCII && (unicode.IsPunct(r) || unicode.IsSymbol(r) || unicode.IsSpace(r)) {
+			filter.WriteByte('\\')
+		}
+		filter.WriteRune(r)
+	}
+	filter.WriteByte('}')
+	return filter.String()
 }

@@ -338,6 +338,23 @@ test("workspace panel owns scrolling and keeps its rounded shell stationary", as
   await page.screenshot({ path: testInfo.outputPath("workspace-light.png") });
 });
 
+test("the sidebar opens the knowledge base for an administrator", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Knowledge base", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/knowledge$/);
+  await expect(
+    page.getByRole("heading", { name: "Knowledge base", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("searchbox", { name: "Search titles and document text" }),
+  ).toBeInViewport();
+});
+
 test("an account without resource permissions can request temporary access", async ({
   page,
   request,
@@ -356,6 +373,9 @@ test("an account without resource permissions can request temporary access", asy
     page.getByRole("navigation", { name: "Main navigation" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: /^Accounts/ })).not.toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Knowledge base", exact: true }),
+  ).toHaveCount(0);
   await expect(
     page
       .getByRole("navigation")

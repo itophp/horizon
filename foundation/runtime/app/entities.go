@@ -2,6 +2,8 @@ package app
 
 import (
 	"horizon/foundation/ai/automation"
+	"horizon/foundation/ai/configuration"
+	"horizon/foundation/ai/knowledge"
 
 	"horizon/foundation/integrations/mcp"
 	"horizon/foundation/kernel/capability/contracts"
@@ -25,6 +27,8 @@ func Entities() []contracts.Entity { return EntitiesWithRegistration(Registratio
 func EntitiesWithRegistration(registration Registration) []contracts.Entity {
 	out := append(applicationruntime.Entities(), executionplans.Entities()...)
 	out = append(out, automation.Entities()...)
+	out = append(out, configuration.Entities()...)
+	out = append(out, knowledge.Entities()...)
 	out = append(out, registration.Entities...)
 	if plugins := registration.Plugins; plugins != nil {
 		out = append(out, plugins.Catalog.Entities...)

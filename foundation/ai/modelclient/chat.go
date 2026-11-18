@@ -24,7 +24,7 @@ func NewChat(ctx context.Context, cfg governance.AIModel) (*openai.ChatModel, er
 	config := &openai.ChatModelConfig{
 		BaseURL: cfg.BaseURL, APIKey: cfg.Token, Model: cfg.Name, HTTPClient: client,
 	}
-	if cfg.Profile == "deepseek" {
+	if cfg.ProviderID == "deepseek" {
 		// Tool loops do not require provider-specific reasoning history.
 		config.ExtraFields = map[string]any{"thinking": map[string]string{"type": "disabled"}}
 	}

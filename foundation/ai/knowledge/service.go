@@ -45,15 +45,9 @@ func (s *Service) Ingest(ctx context.Context, title, content string) (int64, err
 
 // Documents lists indexed documents for the tenant.
 func (s *Service) Documents(ctx context.Context) ([]Document, error) {
-	p, err := identity.Current(ctx)
+	p, err := s.readPrincipal(ctx)
 	if err != nil {
-		return nil, governance.Problem("unauthenticated")
-	}
-	if !p.Can("knowledge:read") {
-		return nil, governance.Problem("forbidden")
-	}
-	if s == nil || s.Store == nil || s.Store.Q == nil {
-		return nil, governance.Problem("unavailable")
+		return nil, err
 	}
 	rows, err := s.Store.Documents(ctx, p.TenantID)
 	if err != nil {

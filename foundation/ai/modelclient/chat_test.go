@@ -34,7 +34,7 @@ func TestDeepSeekChatCompletions(t *testing.T) {
 
 	ctx := context.Background()
 	chat, err := NewChat(ctx, governance.AIModel{
-		Enabled: true, Profile: "deepseek", DisplayName: "DeepSeek-V4.1-Flash",
+		Enabled: true, Profile: "deepseek", ProviderID: "deepseek", DisplayName: "DeepSeek-V4.1-Flash",
 		Name: "deepseek-flash", Protocol: governance.ChatCompletions,
 		BaseURL: upstream.URL + "/v1", Token: "test-key",
 	})

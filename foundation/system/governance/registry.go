@@ -89,7 +89,7 @@ func buildRegistry() []Definition {
 	// so they stay workspace scoped and the credential is sealed at rest.
 	assistantScope := []string{"workspace"}
 	add("assistant.enabled", "assistant", "boolean", `false`, assistantScope, false, false, true, 0, 0)
-	add("assistant.baseUrl", "assistant", "string", `"https://open.bigmodel.cn/api/v1"`, assistantScope, false, false, true, 8, 500)
+	add("assistant.baseUrl", "assistant", "string", `"https://open.bigmodel.cn/api/v1"`, assistantScope, false, false, true, 0, 500)
 	add("assistant.model", "assistant", "string", `"glm-5.3-flash"`, assistantScope, false, false, true, 1, 100)
 	add("assistant.token", "assistant", "secret", `""`, assistantScope, true, true, true, 0, 500)
 	// The Eino agent speaks the Chat Completion protocol, so it carries its own
@@ -112,7 +112,9 @@ func buildRegistry() []Definition {
 	add("drive.maxBytes", "files", "integer", `1073741824`, limits, false, false, true, 1, 1073741824)
 	add("drive.quotaBytes", "files", "integer", `0`, limits, false, false, true, 0, 1<<50)
 	add("drive.blockedExtensions", "files", "string", `""`, limits, true, false, true, 0, 2048)
-	return append(out, aiModelDefinitions()...)
+	out = append(out, aiModelDefinitions()...)
+	out = append(out, knowledgeEmbeddingDefinitions()...)
+	return append(out, unifiedModelDefinitions...)
 }
 func FindDefinition(key string) *Definition {
 	for i := range Registry {
@@ -120,7 +122,7 @@ func FindDefinition(key string) *Definition {
 			return &Registry[i]
 		}
 	}
-	return nil
+	return customModelDefinition(Registry, key)
 }
 func Has(values []string, value string) bool {
 	for _, v := range values {
@@ -146,7 +148,10 @@ func (d Definition) Validate(raw string) error {
 		if len([]rune(v)) < int(d.Min) || len([]rune(v)) > int(d.Max) && d.Max > 0 {
 			return Problem("invalid")
 		}
-		if d.Kind == "enum" && !Has(d.Choices, v) {
+		modelSelection := d.Key == "aiModels.default" || strings.HasPrefix(d.Key, "aiModels.route.") || d.Key == KnowledgeEmbeddingProfileKey
+		modelProtocol := strings.HasPrefix(d.Key, "aiModels.") && strings.HasSuffix(d.Key, ".protocol")
+		if d.Kind == "enum" && !Has(d.Choices, v) &&
+			!(modelSelection && isModelProfile(v)) && !(modelProtocol && Has(modelProtocols, v)) {
 			return Problem("invalid")
 		}
 		if strings.HasPrefix(d.Key, "smtp.") && strings.ContainsAny(v, "\r\n\x00") {
@@ -178,8 +183,8 @@ func (d Definition) Validate(raw string) error {
 		if managedModel && (strings.TrimSpace(v) != v || strings.ContainsAny(v, "\r\n\x00")) {
 			return Problem("invalid")
 		}
-		modelEndpoint := managedModel && strings.HasSuffix(d.Key, ".baseUrl") && v != ""
-		if modelEndpoint || d.Key == "assistant.baseUrl" || d.Key == "agent.baseUrl" || d.Key == "knowledge.embedding.baseUrl" {
+		modelEndpoint := managedModel && (strings.HasSuffix(d.Key, ".baseUrl") || strings.HasSuffix(d.Key, ".responsesBaseUrl"))
+		if (modelEndpoint || d.Key == "assistant.baseUrl") && v != "" || d.Key == "agent.baseUrl" || d.Key == "knowledge.embedding.baseUrl" {
 			u, err := url.Parse(v)
 			if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" || strings.ContainsAny(v, "\r\n\x00\t ") {
 				return Problem("invalid")

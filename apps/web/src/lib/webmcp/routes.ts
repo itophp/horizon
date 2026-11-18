@@ -109,6 +109,12 @@ export const webMcpRoutes = [
     connected: true,
   },
   {
+    path: "/knowledge/:id",
+    module: "knowledge",
+    permission: "knowledge:read",
+    connected: false,
+  },
+  {
     path: "/departments",
     module: "administration",
     permission: "departments:read",

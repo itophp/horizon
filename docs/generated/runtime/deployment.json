@@ -149,7 +149,7 @@
     "dependencyVersions": [],
     "pluginId": "builtin:system-settings",
     "version": "1.0.1",
-    "digest": "47657ffc4d1c4f2e2dc87ae5d4691ab084749a16563e9e1edbb045084df9d900",
+    "digest": "7266e0fb0e5c9ca73474fa5c4efa5e866311b8a02e2360de4dfc8ffa6f7c4fbe",
     "applications": [
       "system-settings"
     ],
@@ -163,7 +163,7 @@
     "dependencyVersions": [],
     "pluginId": "builtin:system-settings",
     "version": "1.0.2",
-    "digest": "6156b3fa264c144bf66d50a3c1801d0451a02fbfa6f711734b1e80466c0e6e30",
+    "digest": "60b6fcca80affd80c6325881305951679a25f69cb558a5c3273054cf3db0e87f",
     "applications": [
       "system-settings"
     ],
@@ -177,7 +177,7 @@
     "dependencyVersions": [],
     "pluginId": "builtin:system-settings",
     "version": "1.0.3",
-    "digest": "4a1e064fe3be2dbce68e16885cf1b219f5b6692cc73d959c0f94daa95cc50be1",
+    "digest": "071e746aa5c490bcf538f2af870aa8358d57bd084b4865306d83674aa5009b53",
     "applications": [
       "system-settings"
     ],
@@ -185,6 +185,76 @@
     "base": true,
     "labelKeys": {
       "system-settings": "governance:settings"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:system-settings",
+    "version": "1.0.4",
+    "digest": "2759da20cc251116936ccb857f71efb250f64897d6cda8d16192a0586d0296f7",
+    "applications": [
+      "system-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "system-settings": "governance:settings"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:ai-settings",
+    "version": "1.0.0",
+    "digest": "35d9a61944393f26a6a82f2d6d922866a20ef216509b982bd2acf036b341e037",
+    "applications": [
+      "ai-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "ai-settings": "governance:aiSettings.title"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:ai-settings",
+    "version": "1.0.1",
+    "digest": "827c111b02dc6e17e664ed1bd68a579fa84dc06d99d18cf54d75af5235a70ebf",
+    "applications": [
+      "ai-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "ai-settings": "governance:aiSettings.title"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:ai-settings",
+    "version": "1.0.2",
+    "digest": "65f7334b5e187e3c367e719ec03ccd1efaf013a0af0d7b5b4c34e14c23f0dbdf",
+    "applications": [
+      "ai-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "ai-settings": "governance:aiSettings.title"
+    }
+  },
+  {
+    "dependencyVersions": [],
+    "pluginId": "builtin:ai-settings",
+    "version": "1.0.3",
+    "digest": "290c487f1d9cf356c5f037e729fbd716c4849a42dd003064b118669a94ad49e7",
+    "applications": [
+      "ai-settings"
+    ],
+    "dependencies": [],
+    "base": true,
+    "labelKeys": {
+      "ai-settings": "governance:aiSettings.title"
     }
   },
   {

@@ -5,6 +5,14 @@ import { capabilityInvoke } from "@/api/generated/baseline";
 import { ApiError } from "@/api/client/request";
 import type * as EP from "@/api/generated/capability-execution-plans";
 import type {
+  KnowledgeQueryInput,
+  KnowledgeQueryOutput,
+  KnowledgeReadInput,
+  KnowledgeReadOutput,
+  KnowledgeUpdateInput,
+  KnowledgeUpdateOutput,
+} from "@/api/generated/capability-knowledge";
+import type {
   ChangeEntry,
   ChangeRecord,
   DictionaryDetail,
@@ -678,6 +686,19 @@ export const capabilityKey = (name: string) => ["capability", name] as const;
 // can search without being able to index or delete.
 export const knowledgeList = () =>
   invoke<KnowledgeDocument[]>("knowledge.list");
+
+export const knowledgeQuery = (
+  input: KnowledgeQueryInput,
+  signal?: AbortSignal,
+) => invoke<KnowledgeQueryOutput>("knowledge.query", input, undefined, signal);
+
+export const knowledgeRead = (
+  input: KnowledgeReadInput,
+  signal?: AbortSignal,
+) => invoke<KnowledgeReadOutput>("knowledge.read", input, undefined, signal);
+
+export const knowledgeUpdate = (input: KnowledgeUpdateInput) =>
+  invoke<KnowledgeUpdateOutput>("knowledge.update", input);
 
 export const knowledgeCreate = (input: { title: string; content: string }) =>
   invoke<KnowledgeDocument>("knowledge.create", input);

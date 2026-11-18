@@ -122,6 +122,18 @@
       "title": "知识检索",
       "description": "在工作区知识库中检索制度、配置与已上传文档。"
     },
+    "knowledge_query": {
+      "title": "查询知识库文档",
+      "description": "按标题或正文中的关键词查询当前工作区的文档。"
+    },
+    "knowledge_read": {
+      "title": "读取知识库文档",
+      "description": "读取当前工作区文档的原文和基本信息。"
+    },
+    "knowledge_update": {
+      "title": "更新知识库文档",
+      "description": "保存标题与原文，并重建该文档的向量。"
+    },
     "dictionary_options": {
       "title": "字典选项",
       "description": "读取业务字典的已发布选项。"

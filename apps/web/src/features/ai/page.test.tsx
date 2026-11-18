@@ -251,8 +251,8 @@ it("explains a disabled agent instead of failing on send", async () => {
     await screen.findByText(/not enabled for this workspace/i),
   ).toBeTruthy();
   expect(
-    screen.getByRole("link", { name: "Open system settings" }),
-  ).toBeTruthy();
+    screen.getByRole("link", { name: "Open AI Configuration" }),
+  ).toHaveAttribute("href", "/ai-settings?tab=general");
   expect(
     (screen.getByLabelText("Ask the agent") as HTMLTextAreaElement).disabled,
   ).toBe(true);

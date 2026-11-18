@@ -1,8 +1,11 @@
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ChangeEntry, ConfigEntry } from "@/api/types";
+import { Save as SaveIcon } from "lucide-react";
+import type {
+  AiConfigReadOutput,
+  AiConfigSaveInput,
+} from "@/api/generated/capability-ai-config";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,16 +14,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-const profiles = ["deepseek", "glm", "custom"] as const;
-type Profile = (typeof profiles)[number];
-export const modelTypes = ["text", "embedding", "multimodal"] as const;
-type ModelType = (typeof modelTypes)[number];
 
-export function modelKey(profile: Profile, field: string) {
-  return field.includes(".") ? field : `aiModels.${profile}.${field}`;
+export type AIConfigEntry = AiConfigReadOutput["entries"][number];
+export type AIConfigChange = AiConfigSaveInput["changes"][number];
+export const modelTypes = ["text", "embedding", "multimodal"] as const;
+
+const legacyModelKeys: Record<string, Readonly<Record<string, string>>> = {
+  glm: {
+    baseUrl: "agent.baseUrl",
+    responsesBaseUrl: "assistant.baseUrl",
+    model: "assistant.model",
+    token: "assistant.token",
+  },
+  "legacy-embedding": {
+    baseUrl: "knowledge.embedding.baseUrl",
+    model: "knowledge.embedding.model",
+    dimensions: "knowledge.embedding.dimensions",
+    token: "knowledge.embedding.token",
+  },
+};
+
+export function modelKey(profile: string, field: string) {
+  return legacyModelKeys[profile]?.[field] ?? `aiModels.${profile}.${field}`;
 }
 
-export function value(entries: ConfigEntry[], key: string): string {
+export function modelProtocols(type: string) {
+  return type === "embedding"
+    ? ["openai-embedding", "dashscope-embedding"]
+    : ["chat-completions"];
+}
+
+export function value(entries: AIConfigEntry[], key: string): string {
   try {
     const parsed: unknown = JSON.parse(
       entries.find((e) => e.key === key)?.value || "null",
@@ -31,29 +55,36 @@ export function value(entries: ConfigEntry[], key: string): string {
   }
 }
 
-export function modelsFrom(entries: ConfigEntry[]) {
-  return profiles.map((profile, id) => {
-    const type =
-      profile === "deepseek"
-        ? "multimodal"
-        : value(entries, modelKey(profile, "type")) || "text";
+export function modelsFrom(entries: AIConfigEntry[]) {
+  const customProfiles = entries.flatMap(({ key }) => {
+    const match = /^aiModels\.(custom-[a-z0-9-]+)\.displayName$/.exec(key);
+    return match ? [match[1]] : [];
+  });
+  const legacyCustom = entries.some(
+    ({ key, overridden }) => key.startsWith("aiModels.custom.") && overridden,
+  );
+  const knowledgeModels = entries.some(
+    ({ key }) => key === "knowledge.embedding.profile",
+  )
+    ? ["legacy-embedding", "bailian"]
+    : [];
+  return [
+    "deepseek",
+    "glm",
+    ...(legacyCustom ? ["custom"] : []),
+    ...customProfiles,
+    ...knowledgeModels,
+  ].map((profile, id) => {
+    const type = value(entries, modelKey(profile, "type"));
     return {
       id,
       profile,
-      type: type as ModelType,
+      type: modelTypes.find((kind) => kind === type) ?? "text",
       name: value(entries, modelKey(profile, "displayName")),
       provider: value(entries, modelKey(profile, "providerId")),
-      requestName: value(
-        entries,
-        modelKey(profile, profile === "glm" ? "assistant.model" : "model"),
-      ),
+      requestName: value(entries, modelKey(profile, "model")),
       credential: entries.some(
-        (e) =>
-          e.key ===
-            modelKey(
-              profile,
-              profile === "glm" ? "assistant.token" : "token",
-            ) && e.configured,
+        (entry) => entry.key === modelKey(profile, "token") && entry.configured,
       ),
     };
   });
@@ -61,7 +92,10 @@ export function modelsFrom(entries: ConfigEntry[]) {
 
 export type Model = ReturnType<typeof modelsFrom>[number];
 type Option = { id: string; label: string };
-export type Save = (changes: ChangeEntry[], reason: string) => Promise<boolean>;
+export type Save = (
+  changes: AIConfigChange[],
+  onError?: (code: string) => void,
+) => Promise<boolean>;
 
 export function choiceOptions(
   ids: readonly string[],
@@ -109,29 +143,24 @@ export function Choice({
   );
 }
 
-export function DraftForm({
+export function SaveForm({
   children,
   disabled,
   submit,
 }: {
   children: ReactNode;
   disabled: boolean;
-  submit: (form: FormData, reason: string) => Promise<boolean>;
+  submit: (form: FormData) => Promise<boolean>;
 }) {
   const { t } = useTranslation("governance");
-  const id = useId();
   const [pending, setPending] = useState(false);
-  const [saved, setSaved] = useState(false);
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (disabled || pending) return;
     const form = new FormData(event.currentTarget);
-    const reason = String(form.get("reason") ?? "").trim();
-    if (reason.length < 5) return;
     setPending(true);
-    setSaved(false);
     try {
-      setSaved(await submit(form, reason));
+      await submit(form);
     } finally {
       setPending(false);
     }
@@ -141,28 +170,14 @@ export function DraftForm({
       <fieldset disabled={disabled || pending} className="grid min-w-0 gap-4">
         {children}
         {!disabled && (
-          <>
-            <div className="grid gap-2">
-              <Label htmlFor={id}>{t("reason")}</Label>
-              <Input
-                id={id}
-                name="reason"
-                required
-                minLength={5}
-                maxLength={500}
-              />
-            </div>
-            <div>
-              <Button type="submit">{t("draft")}</Button>
-            </div>
-          </>
+          <div>
+            <Button type="submit">
+              <SaveIcon aria-hidden="true" />
+              {t("save")}
+            </Button>
+          </div>
         )}
       </fieldset>
-      {saved && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {t("aiSettings.draftSaved")}
-        </p>
-      )}
     </form>
   );
 }

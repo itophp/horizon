@@ -38,7 +38,9 @@ import {
   X,
   Command,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
+  BookOpen,
   Boxes,
   Workflow,
 } from "lucide-react";
@@ -197,10 +199,16 @@ export function AdminLayout() {
       permissions: ["assistant:use"],
     },
     {
+      to: "/knowledge",
+      label: t("knowledge:nav"),
+      icon: BookOpen,
+      permissions: ["knowledge:read"],
+    },
+    {
       to: hasRuntimePage("/ai-settings") ? "/ai-settings" : "",
       label: t("governance:aiSettings.title"),
-      icon: Sparkles,
-      permissions: ["settings:read"],
+      icon: SlidersHorizontal,
+      permissions: ["aiConfig:read"],
     },
     {
       to: hasRuntimePage("/settings") ? "/settings" : "",

@@ -96,7 +96,10 @@ func (t *capabilityTool) InvokableRun(ctx context.Context, argumentsInJSON strin
 	}
 	observe("running")
 	if t.adapter.RunID > 0 {
-		ctx = gateway.WithTaskReference(ctx, gateway.TaskReference{RunID: t.adapter.RunID, TenantID: t.adapter.Caller.TenantID, AccountID: t.adapter.Caller.AccountID, DepartmentID: t.adapter.Caller.DepartmentID})
+		ctx = gateway.WithTaskReference(ctx, gateway.TaskReference{
+			RunID: t.adapter.RunID, TenantID: t.adapter.Caller.TenantID, AccountID: t.adapter.Caller.AccountID,
+			DepartmentID: t.adapter.Caller.DepartmentID,
+		})
 	}
 	result, err := t.adapter.Gateway.Invoke(ctx, gateway.Request{
 		Name: t.definition.Name, Version: t.definition.Version, Input: input,

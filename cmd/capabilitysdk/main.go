@@ -1,5 +1,5 @@
-// Command capabilitysdk derives TypeScript types from the registered Memory
-// Center capability contracts. It never executes capabilities or opens a DB.
+// Command capabilitysdk derives TypeScript types from registered capability
+// contracts. It never executes capabilities or opens a DB.
 package main
 
 import (
@@ -130,4 +130,31 @@ func main() {
 		os.Exit(1)
 	}
 
+	var aiConfig strings.Builder
+	aiConfig.WriteString("// Code generated from AI configuration capability definitions. DO NOT EDIT.\n\n")
+	for _, entry := range entries {
+		d := entry.Definition
+		if strings.HasPrefix(d.Name, "ai.config.") {
+			fmt.Fprintf(&aiConfig, "export type %sInput = %s;\n", nameOf(d.Name), tsType(d.Input))
+			fmt.Fprintf(&aiConfig, "export type %sOutput = %s;\n\n", nameOf(d.Name), tsType(d.Output))
+		}
+	}
+	if err := os.WriteFile("../apps/web/src/api/generated/capability-ai-config.ts", []byte(aiConfig.String()), 0644); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	var knowledge strings.Builder
+	knowledge.WriteString("// Code generated from Knowledge Base capability definitions. DO NOT EDIT.\n\n")
+	for _, entry := range entries {
+		d := entry.Definition
+		if d.Name == "knowledge.query" || d.Name == "knowledge.read" || d.Name == "knowledge.update" {
+			fmt.Fprintf(&knowledge, "export type %sInput = %s;\n", nameOf(d.Name), tsType(d.Input))
+			fmt.Fprintf(&knowledge, "export type %sOutput = %s;\n\n", nameOf(d.Name), tsType(d.Output))
+		}
+	}
+	if err := os.WriteFile("../apps/web/src/api/generated/capability-knowledge.ts", []byte(knowledge.String()), 0644); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

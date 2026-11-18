@@ -30,3 +30,15 @@ func TestSplitCapsTheChunkCount(t *testing.T) {
 		t.Fatalf("expected the cap %d, got %d", maxChunks, len(chunks))
 	}
 }
+
+func TestWorkspaceTagFilterTreatsWorkspaceIDAsOneLiteral(t *testing.T) {
+	for _, tt := range []struct{ tenant, want string }{
+		{"workspace", `@tenant:{workspace}`},
+		{"team-west", `@tenant:{team\-west}`},
+		{`研发 team}|{other\*`, `@tenant:{研发\ team\}\|\{other\\\*}`},
+	} {
+		if got := workspaceTagFilter(tt.tenant); got != tt.want {
+			t.Errorf("workspaceTagFilter(%q) = %q, want %q", tt.tenant, got, tt.want)
+		}
+	}
+}

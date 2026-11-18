@@ -2,6 +2,7 @@ package app
 
 import (
 	"horizon/foundation/ai/automation"
+	"horizon/foundation/ai/configuration"
 	"horizon/foundation/ai/harness"
 	"horizon/foundation/ai/knowledge"
 	"horizon/foundation/integrations/mcp"
@@ -77,6 +78,7 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	entries = append(entries, (&orchestration.Module{Engine: m.Orchestration}).Entries()...)
 	entries = append(entries, m.Core.Identity.Entries()...)
 	entries = append(entries, settings.New(m.Core).Entries()...)
+	entries = append(entries, configuration.Entries(m.Core)...)
 	entries = append(entries, dictionaries.New(m.Core).Entries()...)
 	entries = append(entries, fileService.Entries()...)
 	entries = append(entries, notifications.New(m.Core).Entries()...)
@@ -131,7 +133,10 @@ func RuntimeContributions(registration Registration) []ar.ApplicationV2 {
 		automation.RuntimeApplication(), identity.PermissionsRuntimeApplication(),
 		identity.OrganizationsRuntimeApplication(), identity.AccountsRuntimeApplication(),
 		identity.RuntimeProtocolApplication(), analyticsRuntimeApplication("1.0.0"), AnalyticsRuntimeApplication(),
-		legacyAgentCollaborationApplication(), agentCollaborationVersion("1.0.1"), agentCollaborationApplication(), legacyPersonalPreferencesApplication(), personalPreferencesApplication(), legacySystemSettingsApplication(), systemSettingsApplication("1.0.1"), systemSettingsApplication("1.0.2"), systemSettingsApplication("1.0.3"),
+		legacyAgentCollaborationApplication(), agentCollaborationVersion("1.0.1"), agentCollaborationApplication(),
+		legacyPersonalPreferencesApplication(), personalPreferencesApplication(),
+		legacySystemSettingsApplication(), systemSettingsApplication("1.0.1"), systemSettingsApplication("1.0.2"),
+		systemSettingsApplication("1.0.3"), systemSettingsApplication("1.0.4"), legacyAISettingsApplication(), activeAISettingsApplication("1.0.1"), activeAISettingsApplication("1.0.2"), activeAISettingsApplication("1.0.3"),
 	}
 	contributions = append(contributions, registration.Applications...)
 	if plugins := registration.Plugins; plugins != nil {

@@ -8,6 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AiConfiguration struct {
+	TenantID   string
+	Revision   int64
+	ValuesJson []byte
+}
+
 type AiConversation struct {
 	ID         int64
 	TenantID   string
@@ -739,6 +745,7 @@ type KbDocument struct {
 	CreatedAt pgtype.Timestamptz
 	Chunks    int32
 	Content   string
+	Version   string
 }
 
 type McpCallAudit struct {
