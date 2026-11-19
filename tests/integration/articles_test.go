@@ -117,7 +117,7 @@ func TestArticlePublishFlow(t *testing.T) {
 	handler, pool, root := iamFixture(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
 
 	blocked, configured := false, true

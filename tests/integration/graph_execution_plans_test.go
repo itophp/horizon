@@ -21,7 +21,6 @@ import (
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
 	runtime "horizon/foundation/kernel/workflow"
-	"horizon/foundation/kernel/workflow/spec"
 	"horizon/foundation/system/executionplans"
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
@@ -105,10 +104,10 @@ func runGraphPlanCase(t *testing.T, fake *riskGraphModel, success bool, wantCall
 	t.Helper()
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	graphs := spec.BuiltinGraphs()
-	definition := spec.ExampleGraphArchivePlan()
+	graphs := example.Graphs()
+	definition := example.ExampleGraphArchivePlan()
 	if fake.timeout {
 		graphs[0].TimeoutMillis = 500
 		definition.Steps[0].Graph = graphs[0].Reference()
@@ -172,7 +171,7 @@ func runGraphPlanCase(t *testing.T, fake *riskGraphModel, success bool, wantCall
 		}
 	}
 	// Node tools must remain within the caller's current formal permission set.
-	limited, err := identity.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:archive", Effect: "allow"}})
+	limited, err := iam.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:archive", Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +187,7 @@ func runGraphPlanCase(t *testing.T, fake *riskGraphModel, success bool, wantCall
 		t.Fatal(err)
 	}
 	// Source-read permission does not replace authority for the original plan.
-	readOnly, err := identity.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}})
+	readOnly, err := iam.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,9 +288,9 @@ func runGraphPlanCase(t *testing.T, fake *riskGraphModel, success bool, wantCall
 func TestStandaloneGraphPlanPreservesReadContractAndRollback(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	engine := runtime.New(core, nil)
+	engine := runtime.NewWithGraphs(core, nil, example.Graphs())
 	fake := &riskGraphModel{}
 	engine.AgentModel = func(context.Context) (model.ToolCallingChatModel, error) { return fake, nil }
 	exampleModule := example.New(pool)
@@ -374,7 +373,7 @@ func TestStandaloneGraphPlanPreservesReadContractAndRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	var binding contracts.ExecutionBinding
-	if json.Unmarshal(record, &binding) != nil || binding.Plan.Mode != "graph" || binding.Plan.GraphHash != spec.BuiltinGraphs()[0].Hash() {
+	if json.Unmarshal(record, &binding) != nil || binding.Plan.Mode != "graph" || binding.Plan.GraphHash != example.BuiltinGraph().Hash() {
 		t.Fatal("Graph identity lost", string(record))
 	}
 	fallback := contracts.DefaultExecutionBinding(plans.Definitions["example.record.assess@1.0.0"])

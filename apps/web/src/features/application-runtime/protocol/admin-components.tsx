@@ -39,6 +39,7 @@ import { ItemListComponent } from "./item-list";
 import { ChangeListForm } from "./change-list-form";
 import { AIModelSettings } from "./ai-model-settings";
 import { ActionForm } from "./action-form";
+import { MailWorkspace } from "./mail-workspace";
 import { BatchImport } from "./batch-import";
 import { FileReviewForm } from "./file-review-form";
 import { DialogComponent } from "./dialog-component";
@@ -424,6 +425,7 @@ export function createAdminRegistry(): ComponentRegistry {
   registry.register("dictionary-panel", "1.0", DictionaryPanel);
   registry.register("remote-mcp-panel", "1.0", RemoteMcpPanel);
   registry.register("webmcp-panel", "1.0", WebMcpPanel);
+  registry.register("mail-workspace", "1.0", MailWorkspace);
   registry.register("layout-tabs", "1.0", LayoutTabs);
   registry.register("layout-tab-panel", "1.0", LayoutTabPanel);
   registry.register("content-heading", "1.0", ContentHeading);

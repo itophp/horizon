@@ -89,14 +89,21 @@ func TestGovernanceCatalogDoesNotMakeManagementTemporary(t *testing.T) {
 			}
 		}
 	}
-	for _, code := range []string{"executionPlans:read", "executionPlans:edit", "executionPlans:validate", "executionPlans:publish", "executionPlans:bind", "executionPlans:rollback", "executionPlans:records", "orchestration:read", "orchestration:run", "orchestration:cancel", "articles:read", "articles:write", "articles:review", "drive:use", "drive:create", "memory:read", "memory:write", "memory:collect", "memory:replay", "memory:manage", "applications:read", "applications:manage", "aiConfig:read", "aiConfig:update", "knowledge:update"} {
+	for _, code := range []string{"executionPlans:read", "executionPlans:edit", "executionPlans:validate", "executionPlans:publish", "executionPlans:bind", "executionPlans:rollback", "executionPlans:records", "orchestration:read", "orchestration:run", "orchestration:cancel", "memory:read", "memory:write", "memory:collect", "memory:replay", "memory:manage", "applications:read", "applications:manage", "aiConfig:read", "aiConfig:update", "knowledge:update"} {
 		d := permissionDefinition(code)
 		if d == nil || d.TemporaryEligible || d.ScopeConfigurable {
 			t.Fatalf("unsafe management permission: %s", code)
 		}
 	}
+	// Business application permissions are plugin catalog data; the central
+	// directory must never name them again.
+	for _, code := range []string{"articles:read", "drive:use", "mail:read", "projects:read", "example:create"} {
+		if permissionDefinition(code) != nil {
+			t.Fatalf("business permission returned to the central directory: %s", code)
+		}
+	}
 
-	if len(seen) != 81 {
+	if len(seen) != 70 {
 		t.Fatal("unexpected catalog", len(seen))
 	}
 }

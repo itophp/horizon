@@ -3,6 +3,8 @@
 package tests
 
 import (
+	"horizon/applications/example"
+
 	"context"
 	"encoding/json"
 	"errors"
@@ -69,11 +71,12 @@ func TestRuntimeAnalysisUsesRealADKAndSafeReplayEvents(t *testing.T) {
 	ctx := context.Background()
 	iam := identity.New(pool, false)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	registration := deployment.Register(core)
-	if err := iam.ConfigurePluginPermissions(registration.Plugins.Catalog.Permissions); err != nil {
+	manager := deployment.BuiltinPlugins(core)
+	if err := iam.ConfigurePluginPermissions(manager.Catalog.Permissions); err != nil {
 		t.Fatal(err)
 	}
-	engine := workflow.New(core, app.WorkflowDefinitions())
+	registration := deployment.WithPlugins(core, manager)
+	engine := workflow.NewWithGraphs(core, deployment.WorkflowDefinitions(), example.Graphs())
 	module := &runtimeModule.Module{}
 	catalog := registry.New((app.CapabilityModules{Core: core, Runtime: module, Orchestration: engine, Registration: registration}).Entries())
 	if catalog.Err() != nil {

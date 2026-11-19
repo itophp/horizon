@@ -39,6 +39,20 @@ func TestProjectMemoryRequiresMembershipAndParentCapability(t *testing.T) {
 	}
 	dispatcher = gateway.New(gateway.Options{Registry: catalog, Identity: h.iam, Pool: h.pool, Approvals: approval.NewStore(h.pool), Audit: audit.NewStore(h.pool), Events: eventhub.NewStore(h.pool)})
 	m.AttachGateway(dispatcher)
+	m.AttachProjectWritePermission("projects:write")
+	m.AttachProjectAuthority(func(ctx context.Context, projectID int64) error {
+		result, err := dispatcher.Invoke(ctx, gateway.Request{Name: "project.get", Version: "1.0.0", Input: contracts.Input{"id": projectID}, Origin: contracts.OriginCapability})
+		if err != nil {
+			return err
+		}
+		if result.Status != contracts.StatusSucceeded {
+			if result.ErrorCode == "" {
+				return contracts.Problem("unavailable")
+			}
+			return contracts.Problem(result.ErrorCode)
+		}
+		return nil
+	})
 	h.gw = dispatcher
 	owner := h.account(t, "memory-project-owner", "projects:read", "projects:write", "projects:admin", "memory:read", "memory:write")
 	member := h.account(t, "memory-project-member", "projects:read", "memory:read", "memory:write")

@@ -29,7 +29,5 @@ const (
 	MaxDefinitionBytes = spec.MaxDefinitionBytes
 )
 
-func Builtins() []Definition                          { return spec.Builtins() }
-func LifecycleExample() Definition                    { return spec.LifecycleExample() }
 func SpecificationSchema() (*js.Schema, error)        { return spec.SpecificationSchema() }
 func DecodeDefinition(raw []byte) (Definition, error) { return spec.DecodeDefinition(raw) }

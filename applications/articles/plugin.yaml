@@ -1,0 +1,38 @@
+id: com.horizon.articles
+version: 1.0.0
+apiVersion: "1.0"
+mode: builtin
+# The runtime installation key predates the plugin id; installed tenants keep
+# resolving the same package without a data migration.
+installation: builtin:articles
+extensions:
+  - capability
+  - entity
+  - permission
+  - event
+  - application
+  - settings
+permissions:
+  - code: articles:read
+    module: articles
+    function: articles
+    action: read
+  - code: articles:write
+    module: articles
+    function: articles
+    action: write
+  - code: articles:review
+    module: articles
+    function: articles
+    action: review
+# Moderation policy is content configuration, not account security: its own
+# group keeps the word list where an editor looks for it.
+settings:
+  - key: articles.blockedWords
+    group: articles
+    kind: string
+    default: '""'
+    scopes: [workspace]
+    sensitive: true
+    ui: true
+    max: 10000

@@ -16,7 +16,6 @@ import (
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
 	runtime "horizon/foundation/kernel/workflow"
-	"horizon/foundation/kernel/workflow/spec"
 	"horizon/foundation/system/executionplans"
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
@@ -27,9 +26,9 @@ import (
 func TestWorkflowExecutionPlanApprovalRollbackAndRestart(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	conditional := spec.ExampleArchivePlan()
+	conditional := example.ExampleArchivePlan()
 	conditional.Name = "conditional-archive"
 	native := conditional.Steps[1]
 	native.DependsOn = nil
@@ -39,7 +38,7 @@ func TestWorkflowExecutionPlanApprovalRollbackAndRestart(t *testing.T) {
 	second.ID = "archived"
 	second.When = &runtime.When{From: "check", Field: "status", Equals: "archived"}
 	conditional.Steps = []runtime.Step{conditional.Steps[0], native, second}
-	definitions := []runtime.Definition{spec.ExampleArchivePlan(), conditional}
+	definitions := []runtime.Definition{example.ExampleArchivePlan(), conditional}
 	engine := runtime.New(core, definitions)
 	plans := &executionplans.Module{Pool: pool, Definitions: map[string]contracts.Definition{}, ValidateWorkflow: engine.ValidatePlanWithQueries}
 	entries := append(example.New(pool).Entries(), plans.Entries()...)

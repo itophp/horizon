@@ -26,6 +26,25 @@ type Registration struct {
 	Workers       []Worker
 	Workflows     []workflow.Definition
 	Graphs        []workflow.GraphDefinition
+
+	// Application-domain wiring declared by the deployment for platform
+	// services. Values are deployment composition data; the kernel only
+	// carries the references and never hardcodes business names.
+	MemoryActivityPages    []string
+	MemoryProjectWrite     string
+	MemoryProjectAuthority string
+
+	// MemoryEntityScopes declares the application resource types memory may
+	// reference, with the guarding permission and existence capability.
+	MemoryEntityScopes []MemoryEntityScope
+}
+
+// MemoryEntityScope is deployment composition data for one resource type.
+type MemoryEntityScope struct {
+	Resource      string
+	Permission    string
+	AggregateType string
+	Authority     string
 }
 
 type Register func(*governance.Core) Registration

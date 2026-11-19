@@ -78,7 +78,7 @@ func (s *Service) uploadDefinition() contracts.Definition {
 		Tags: []string{"files", "write", "agent"},
 		Input: contracts.Object(map[string]*contracts.Schema{
 			"name":    contracts.Str(1, 200),
-			"purpose": contracts.Enum("attachment", "logo"),
+			"purpose": contracts.Enum(s.Purposes()...),
 			// Base64 of the raw bytes: 29360128 characters decode to a 20 MiB file.
 			"content": contracts.Str(1, 29360128),
 		}, "name", "purpose", "content"),

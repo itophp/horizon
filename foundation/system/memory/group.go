@@ -72,7 +72,8 @@ func (m *Module) groupScope(ctx context.Context, tx pgx.Tx, p *identity.Principa
 	kind, _ := in["scopeType"].(string)
 	if kind == "business_entity" {
 		resource, _ := in["resourceType"].(string)
-		if resource != "example_record" || !p.Can("example:read") {
+		scope, ok := m.entityScope(resource)
+		if !ok || scope.Permission == "" || !p.Can(scope.Permission) {
 			return groupScope{}, contracts.Problem("forbidden")
 		}
 		return groupScope{kind: kind, id: resource + ":" + strconv.FormatInt(valueInt(in["scopeId"]), 10), read: identity.Scope{All: true}, write: identity.Scope{All: true}}, nil

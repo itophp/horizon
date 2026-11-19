@@ -36,6 +36,7 @@ type Principal struct {
 	TemporaryScopes           map[string][]Scope
 	enforcer                  *casbin.Enforcer
 	permissionCodes           []string
+	system                    bool
 }
 type principalKey struct{}
 
@@ -67,7 +68,7 @@ func newPrincipal(account *genidentity.AccountRecord, tenant string, grants []*g
 	if err != nil {
 		return nil, err
 	}
-	p := &Principal{Account: account, TenantID: tenant, Grants: append([]*genidentity.PermissionGrant{}, grants...), PermanentGrants: grants, TemporaryScopes: map[string][]Scope{}, enforcer: e, permissionCodes: append([]string(nil), codes...)}
+	p := &Principal{Account: account, TenantID: tenant, Grants: append([]*genidentity.PermissionGrant{}, grants...), PermanentGrants: grants, TemporaryScopes: map[string][]Scope{}, enforcer: e, permissionCodes: append([]string(nil), codes...), system: account != nil && account.ID == 0}
 	for _, g := range grants {
 		if g == nil {
 			return nil, errors.New("invalid stored policy")
@@ -79,7 +80,10 @@ func newPrincipal(account *genidentity.AccountRecord, tenant string, grants []*g
 	return p, nil
 }
 func (p *Principal) Can(permission string) bool {
-	known := permission == "drive:cleanup" && p.Account.ID == 0
+	// In-process worker principals (account zero) receive their grants from
+	// calling code instead of the editable catalog, so every granted
+	// permission is known without catalog membership.
+	known := p.system
 	for _, code := range p.permissionCodes {
 		if code == permission {
 			known = true
@@ -106,11 +110,14 @@ func (p *Principal) Effective() []string {
 			out = append(out, permission)
 		}
 	}
-	// Account zero is reserved for the in-process retention worker, never an
-	// authenticated human account. The grant is not present in the editable
-	// permission catalog and cleanup executors also check the trusted origin.
-	if p.Account.ID == 0 && p.Can("drive:cleanup") {
-		out = append(out, "drive:cleanup")
+	// Account zero is reserved for in-process workers, never an authenticated
+	// human account. Their effective set is exactly the granted permissions.
+	if p.system {
+		for _, grant := range p.Grants {
+			if grant != nil && grant.Effect == "allow" {
+				out = append(out, grant.Permission)
+			}
+		}
 	}
 	return out
 }

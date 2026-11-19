@@ -748,6 +748,127 @@ type KbDocument struct {
 	Version   string
 }
 
+type MailChannel struct {
+	ID                 int64
+	TenantID           string
+	MailboxID          int64
+	Direction          string
+	Protocol           string
+	Host               string
+	Port               int32
+	TlsMode            string
+	Username           string
+	CredentialID       int64
+	VerificationStatus string
+	LastErrorCode      string
+	LastVerifiedAt     pgtype.Timestamptz
+	NextSyncAt         pgtype.Timestamptz
+	LeaseUntil         pgtype.Timestamptz
+	LeaseOwner         string
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
+}
+
+type MailCredential struct {
+	ID          int64
+	TenantID    string
+	MailboxID   int64
+	Purpose     string
+	Ciphertext  string
+	Fingerprint string
+	Version     int32
+	CreatedAt   pgtype.Timestamptz
+	RotatedAt   pgtype.Timestamptz
+	LastUsedAt  pgtype.Timestamptz
+}
+
+type MailInboxSync struct {
+	ID             int64
+	TenantID       string
+	MailboxID      int64
+	Status         string
+	FetchedCount   int32
+	ImportedCount  int32
+	DuplicateCount int32
+	ErrorCode      string
+	StartedAt      pgtype.Timestamptz
+	FinishedAt     pgtype.Timestamptz
+}
+
+type MailMailbox struct {
+	ID             int64
+	TenantID       string
+	OwnerAccountID int64
+	Name           string
+	EmailAddress   string
+	DefaultSend    bool
+	Status         string
+	Revision       int64
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type MailMessage struct {
+	ID             int64
+	TenantID       string
+	MailboxID      int64
+	OwnerAccountID int64
+	Direction      string
+	Folder         string
+	ProviderUid    string
+	RfcMessageID   string
+	Subject        string
+	FromAddress    string
+	ReplyTo        string
+	BodyText       string
+	BodyHtml       string
+	Snippet        string
+	OccurredAt     pgtype.Timestamptz
+	ReadAt         pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type MailMessageAttachment struct {
+	ID          int64
+	TenantID    string
+	MessageID   int64
+	FileID      int64
+	ContentID   string
+	Filename    string
+	MimeType    string
+	Size        int64
+	Disposition string
+	CreatedAt   pgtype.Timestamptz
+}
+
+type MailMessageRecipient struct {
+	ID          int64
+	TenantID    string
+	MessageID   int64
+	Kind        string
+	Address     string
+	DisplayName string
+	CreatedAt   pgtype.Timestamptz
+}
+
+type MailOutboundDelivery struct {
+	ID            int64
+	TenantID      string
+	MailboxID     int64
+	MessageID     int64
+	Status        string
+	Attempts      int32
+	NextAttemptAt pgtype.Timestamptz
+	LeaseUntil    pgtype.Timestamptz
+	LeaseOwner    string
+	ErrorCode     string
+	SubmittedBy   int64
+	SentAt        pgtype.Timestamptz
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+}
+
 type McpCallAudit struct {
 	ID           int64
 	TenantID     string

@@ -91,5 +91,7 @@ func Load() (Config, error) {
 			c.Governance.SMTPHosts = append(c.Governance.SMTPHosts, h)
 		}
 	}
+	// MAIL_* business limits are mail plugin options resolved by the
+	// deployment; the platform config no longer carries them.
 	return c, nil
 }

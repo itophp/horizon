@@ -28,7 +28,7 @@ func TestWorkflowDiagramProjectsCompiledGraph(t *testing.T) {
 	ctx := context.Background()
 	iam := identity.New(pool, false)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	e := runtime.New(core, runtime.Builtins())
+	e := runtime.NewWithGraphs(core, example.Workflows(), example.Graphs())
 	entries := append(example.New(pool).Entries(), (&orchmodule.Module{Engine: e}).Entries()...)
 	entries = append(entries, (&articles.Module{Pool: pool}).Entries()...)
 	catalog := registry.New(entries)
@@ -75,7 +75,7 @@ func TestWorkflowDiagramProjectsCompiledGraph(t *testing.T) {
 	if !edges["archive->"+compose.END] {
 		t.Fatalf("end edge missing: %+v", diagram.Edges)
 	}
-	if diagram.Hash != runtime.LifecycleExample().Hash() {
+	if diagram.Hash != example.LifecycleExample().Hash() {
 		t.Fatal("diagram hash does not pin the definition")
 	}
 	if _, err := e.Diagram(ctx, "missing-flow", "1.0.0"); err == nil {

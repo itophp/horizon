@@ -40,7 +40,7 @@ type Engine struct {
 }
 
 func New(core *governance.Core, definitions []Definition) *Engine {
-	return NewWithGraphs(core, definitions, spec.BuiltinGraphs())
+	return NewWithGraphs(core, definitions, nil)
 }
 func NewWithGraphs(core *governance.Core, definitions []Definition, graphs []spec.GraphDefinition) *Engine {
 	e := &Engine{Core: core, definitions: map[string]Definition{}, cache: map[string]compose.Runnable[map[string]any, map[string]any]{}, infos: map[string]*compose.GraphInfo{}}
@@ -104,7 +104,7 @@ func (e *Engine) Attach(g *gateway.Gateway, r *registry.Registry) error {
 			continue
 		}
 		if _, _, err := e.compileWithGraph(context.Background(), d, true); err != nil {
-			return err
+			return fmt.Errorf("%s@%s: %w", d.Name, d.Version, err)
 		}
 	}
 	return nil

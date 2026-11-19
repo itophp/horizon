@@ -23,7 +23,9 @@ func entityDefinitions() []contracts.Definition {
 			input.Properties[key] = value
 		}
 		input.Properties["scopeType"] = &contracts.Schema{Type: "string", Enum: []string{"business_entity"}}
-		input.Properties["resourceType"] = &contracts.Schema{Type: "string", Enum: []string{"example_record"}}
+		// The enum stays open: unknown resource types are rejected by the
+		// table-driven authorization path, so no business name lives here.
+		input.Properties["resourceType"] = &contracts.Schema{Type: "string"}
 		input.Required = append(append([]string(nil), group.Input.Required...), "resourceType")
 		parent := group
 		parent.Name = "memory.entity." + op
@@ -53,20 +55,11 @@ func entityDefinitions() []contracts.Definition {
 
 func (m *Module) authorizeEntity(ctx context.Context, in contracts.Input) error {
 	resource, _ := in["resourceType"].(string)
-	if resource != "example_record" {
+	scope, ok := m.entityScope(resource)
+	if !ok || scope.Authorize == nil {
 		return contracts.Problem("forbidden")
 	}
-	r, err := m.gateway.Invoke(ctx, gateway.Request{Name: "example.record.get", Version: "1.0.0", Input: contracts.Input{"id": valueInt(in["scopeId"])}, Origin: contracts.OriginCapability})
-	if err != nil {
-		return err
-	}
-	if r.Status != contracts.StatusSucceeded {
-		if r.ErrorCode == "" {
-			return contracts.Problem("unavailable")
-		}
-		return contracts.Problem(r.ErrorCode)
-	}
-	return nil
+	return scope.Authorize(ctx, valueInt(in["scopeId"]))
 }
 
 func (m *Module) entityFlow(ctx context.Context, name string, in contracts.Input) (contracts.Output, error) {
@@ -97,5 +90,10 @@ func (m *Module) entityFlow(ctx context.Context, name string, in contracts.Input
 		}
 		return contracts.Output{Data: r.Data}, nil
 	}
-	return contracts.Output{Data: r.Data, Events: []contracts.Event{{Type: name + ".completed", AggregateType: "example_record", AggregateID: strconv.FormatInt(valueInt(in["scopeId"]), 10), Payload: map[string]any{}}}}, nil
+	resource, _ := in["resourceType"].(string)
+	aggregate := resource
+	if scope, ok := m.entityScope(resource); ok && scope.AggregateType != "" {
+		aggregate = scope.AggregateType
+	}
+	return contracts.Output{Data: r.Data, Events: []contracts.Event{{Type: name + ".completed", AggregateType: aggregate, AggregateID: strconv.FormatInt(valueInt(in["scopeId"]), 10), Payload: map[string]any{}}}}, nil
 }

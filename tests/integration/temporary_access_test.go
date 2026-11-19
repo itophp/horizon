@@ -81,12 +81,27 @@ func TestTemporaryAccessLifecycleAndBoundaries(t *testing.T) {
 		response := applicantClient.request(t, "GET", "/api/admin/temporary-access", nil, false)
 		checkStatus(t, response, 200)
 		workspace := decodeBody[genidentity.TemporaryAccessWorkspace](t, response)
-		if workspace.CanReview || len(workspace.Catalog) != len(identity.PermissionCatalog()) || len(workspace.Departments) != 2 {
-			t.Fatal("request directory or independent approval permission incorrect")
+		// The workspace catalog merges the platform directory with declarative
+		// plugin permissions, so it must cover the platform set and expose the
+		// plugin-declared codes for requesting temporary access.
+		platformCodes := map[string]bool{}
+		for _, permission := range identity.PermissionCatalog() {
+			platformCodes[permission.Code] = true
 		}
+		workspaceCodes := map[string]bool{}
 		for _, permission := range workspace.Catalog {
+			workspaceCodes[permission.Code] = true
+			delete(platformCodes, permission.Code)
 			if permission.Function == "memory" && permission.TemporaryEligible {
 				t.Fatal("memory permissions must not be eligible for temporary access")
+			}
+		}
+		if workspace.CanReview || len(platformCodes) != 0 || len(workspace.Departments) != 2 {
+			t.Fatal("request directory or independent approval permission incorrect")
+		}
+		for _, declared := range []string{"drive:cleanup", "projects:read", "articles:read", "mail:send", "example:read"} {
+			if !workspaceCodes[declared] {
+				t.Fatalf("plugin permission %s missing from workspace catalog", declared)
 			}
 		}
 		response = manager.request(t, "GET", "/api/admin/temporary-access", nil, false)

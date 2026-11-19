@@ -15,8 +15,13 @@ func TestPluginContractPreservesModuleDeclarations(t *testing.T) {
 		t.Fatalf("entry count: got %d want %d", len(manager.Catalog.Entries), len(direct))
 	}
 	for i, entry := range direct {
+		// The plugin manager derives the runtime installation and application
+		// keys from the manifest; the deployment no longer rewrites entries.
+		want := entry.Definition
+		want.Installation = "com.horizon.projects"
+		want.Application = "projects"
 		got := manager.Catalog.Entries[i]
-		if !reflect.DeepEqual(got.Definition, entry.Definition) || (got.Handler.Execute == nil) != (entry.Handler.Execute == nil) || (got.Handler.ExecuteTx == nil) != (entry.Handler.ExecuteTx == nil) {
+		if !reflect.DeepEqual(got.Definition, want) || (got.Handler.Execute == nil) != (entry.Handler.Execute == nil) || (got.Handler.ExecuteTx == nil) != (entry.Handler.ExecuteTx == nil) {
 			t.Fatalf("entry %d changed", i)
 		}
 	}

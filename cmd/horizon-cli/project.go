@@ -32,7 +32,7 @@ var projectTasks = map[string]projectTask{
 	"db-down":   fixed(rootTool("docker", "compose", "stop")),
 	"migrate":   fixed(goTool("run", "./cmd/migrate")),
 	"generate": fixed(
-		goTool("run", "./cmd/workflowspec", "-out", "../docs/generated/workflows"),
+		goTool("run", "../cmd/workflowspec", "-out", "../docs/generated/workflows"),
 		goTool("run", "goa.design/goa/v3/cmd/goa", "gen", "horizon/foundation/design"),
 		project.generateSQL,
 		rootTool("pnpm", "--filter", "@baseline/web", "generate"),
@@ -40,9 +40,9 @@ var projectTasks = map[string]projectTask{
 		goTool("run", "../cmd/capabilitysdk"),
 		rootTool("pnpm", "--filter", "@baseline/web", "exec", "prettier", "--write", "src/api/generated"),
 	),
-	"generate-workflows": fixed(goTool("run", "./cmd/workflowspec", "-out", "../docs/generated/workflows")),
+	"generate-workflows": fixed(goTool("run", "../cmd/workflowspec", "-out", "../docs/generated/workflows")),
 	"check-workflows": fixed(
-		goTool("test", "./kernel/workflow", "./cmd/workflowspec", "../cmd/workflowcheck"),
+		goTool("test", "./kernel/workflow", "../cmd/workflowspec", "../cmd/workflowcheck"),
 		goTool("run", "../cmd/workflowcheck", "-file", "../docs/generated/workflows/example-lifecycle.workflow.json"),
 	),
 	"check-generated":            fixed(project.checkGenerated),

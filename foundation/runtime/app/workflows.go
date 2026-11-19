@@ -2,10 +2,13 @@ package app
 
 import runtime "horizon/foundation/kernel/workflow/spec"
 
-// WorkflowDefinitions is shared by the deployed composition root and offline generators.
+// WorkflowDefinitions is the platform workflow contribution shared by the
+// deployed composition root and offline generators. Application workflows
+// travel with their plugin packages and are assembled by the deployment.
 func WorkflowDefinitions() []runtime.Definition {
-	return append(append(runtime.Builtins(), runtime.ApplicationAnalyses()...), runtime.RuntimeDesigner())
+	return []runtime.Definition{runtime.RuntimeDesigner()}
 }
 
-// GraphDefinitions is the shared deployment catalog for runtime and offline checks.
-func GraphDefinitions() []runtime.GraphDefinition { return runtime.BuiltinGraphs() }
+// GraphDefinitions is the platform graph contribution. Application graphs are
+// contributed by their plugins and assembled by the deployment.
+func GraphDefinitions() []runtime.GraphDefinition { return nil }

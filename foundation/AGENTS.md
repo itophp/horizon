@@ -26,13 +26,12 @@
 
 ## Go、SQL 与生成边界
 
-- `design/` 是传输契约源，`db/migrations/` 和 `db/query/` 是 SQL 源，业务动作由模块 Definition 声明。禁止手改 `gen/`、根目录 `internal/repository/dbgen/` 或 `apps/web/src/api/generated/`。修改输入后执行 `./horizon-cli generate` 和 `./horizon-cli check-generated`。
+- `design/` 是传输契约源，`db/migrations/` 和 `db/query/` 是 SQL 源，业务动作由模块 Definition 声明。禁止手改 `gen/`、`internal/repository/dbgen/` 或 `apps/web/src/api/generated/`；修改输入后执行 `./horizon-cli generate` 与 `check-generated`。
 - `foundation` 不能依赖 `horizon/applications/...` 或仓库部署装配包，包括测试和间接依赖。仓库顶层 `cmd/` 启动部署，`deployment/` 注册业务贡献，`runtime/app/` 消费注册，`runtime/transport/` 管理传输和 Worker 生命周期。数据访问消费根目录的 sqlc 生成代码。
-- 校验、Payload/Result/Error/HTTP/security 声明回到 DSL；读取生成接口后再实现，不凭记忆猜签名。OpenAPI + Orval 是前端类型来源。
-- 使用锁定 Goa 生成器。`scripts/go.sh` 从 `foundation/` 执行，使用根 `horizon` 模块；验证整个 Go 栈时同时覆盖 `./...` 和 `../applications/...`。格式检查覆盖带 integration build tag 的文件。
-- 配置集中验证，非法安全配置启动失败。统一请求 ID、结构化日志、时间/体积限制和稳定错误映射；日志与错误不得泄露凭证/内部数据。
-- 用小接口/Fake 隔离依赖，context/cancellation 传播到 SQL；明确事务提交回滚，服务关闭有界。
-- 按根规则和 [测试节奏](../docs/testing.md#测试执行节奏) 选择检查。安全变更覆盖允许与拒绝；表结构、查询、事务或数据范围变更使用 [真实数据库测试](../tests/integration/AGENTS.md)。
+- 校验、Payload/Result/Error/HTTP/security 声明回到 DSL；读取生成接口后再实现。OpenAPI + Orval 是前端类型来源。
+- 使用锁定 Goa 生成器。`scripts/go.sh` 从 `foundation/` 执行并使用根 `horizon` 模块；验证整个 Go 栈时覆盖 `./...` 与 `../applications/...`，格式检查含 integration build tag 文件。
+- 配置集中验证，非法安全配置启动失败。统一请求 ID、结构化日志、时间/体积限制和稳定错误映射；日志与错误不得泄露凭证/内部数据。用小接口/Fake 隔离依赖，context/cancellation 传播到 SQL；明确事务提交回滚，服务关闭有界。
+- 按根规则与 [测试节奏](../docs/testing.md#测试执行节奏) 选检查。安全变更覆盖允许与拒绝；表结构、查询、事务或数据范围变更用 [真实数据库测试](../tests/integration/AGENTS.md)。
 
 ## Capability-Centric 分层
 
@@ -43,21 +42,21 @@ AI 任务 SSE 契约在 design/ai.go，传输复用既有 harness.Run 的 Princi
 - `kernel/capability/gateway`：唯一执行入口；顺序固定为身份→权限→Schema→幂等→策略/审批→执行→Outbox→审计。禁止在 Handler 中绕开它直接调用 Executor。
 - `kernel/{policy,approval,audit,outbox,eventhub,metadata}`：确定性策略、审批队列、审计读模型、事务 Outbox 与事件日志。`metadata` 是实体模型：从 embed 迁移解析表/列/外键、从能力目录派生 Capabilities，并执行 E1–E10 校验（`./horizon-cli check-entities`）。
 - `ai/{harness,tools,triggers,context,knowledge,workflow,evaluation}`：AI 任务、工具适配、事件触发与评估。Agent 工具必须经 Gateway；AI 任务与业务调用状态分离。
-- `system/*、../applications/* 与 integrations/*`：业务模块（settings、dictionaries、files、notifications、mcp、example）。每个模块自持领域服务与 `Entries()`，并在 `entity_<name>.go` 声明自己的业务对象（`entities.go` 只汇总），不再声明自己的 Goa 服务或 HTTP 路由；写能力优先实现 `TxExecutor` 并声明 `SuccessEvents`。
-- `design/` 只剩下会话/系统/公开投影与能力、AI、助手契约。新增业务动作不要加 Goa 方法，而是加一条能力定义并在 `runtime/app/capabilities.go` 装配。
+- `system/*、../applications/* 与 integrations/*`：业务模块。每个模块自持领域服务与 `Entries()`，并在 `entity_<name>.go` 声明自己的业务对象（`entities.go` 只汇总），不声明自己的 Goa 服务或 HTTP 路由；写能力优先实现 `TxExecutor` 并声明 `SuccessEvents`。
+- `design/` 只剩会话/系统/公开投影与能力、AI、助手契约。新增业务动作加能力定义并在 `runtime/app/capabilities.go` 装配，不加 Goa 方法。
 
 
 # 服务、安全与数据访问实现
 
 安全相关开发加载 baseline-security，详见 [安全约定](../docs/security.md)。
 
-- Memory Center 按 `docs/security.md` 的当前实现边界约束；新增共享作用域或业务来源必须先经 Gateway 验证原资源授权并在 SQL 强制可信范围，敏感内容不得进入能力审计、事件或模型历史。`manual-only` 能力不向 Agent 工具目录暴露，网关和执行端都拒绝自动化来源；`internal-only` 且声明 `parent:` 的能力只接受网关注入的指定父能力，不得信任客户端传入的父身份。
+- Memory Center 按 `docs/security.md` 约束；新增共享作用域或业务来源须先经 Gateway 验证原资源授权并在 SQL 强制可信范围，敏感内容不得进入能力审计、事件或模型历史。`manual-only` 能力不向 Agent 工具目录暴露，网关与执行端都拒绝自动化来源；`internal-only` 且声明 `parent:` 的能力只接受网关注入的父能力，不信任客户端传入的父身份。
 
-- auth 验证凭证、建立可信 Principal；authorization/Casbin 管资源操作；dataaccess 解析可信范围；repository/sqlc 在 SQL 层强制过滤。四个职责不能互相省略。
-- 受保护请求默认拒绝；客户端 tenant/organization/department/owner 参数只能作为已授权范围内的业务输入，不能决定当前身份/权限。新增公开接口显式说明理由。
+- auth 验证凭证并建立可信 Principal；authorization/Casbin 管资源操作；dataaccess 解析可信范围；repository/sqlc 在 SQL 层强制过滤。四者不可互相省略。
+- 受保护请求默认拒绝；客户端 tenant/organization/department/owner 参数只是已授权范围内的业务输入，不能决定当前身份/权限。新增公开接口须显式说明理由。
 - 每个新资源说明 owner 的含义和 ALL/ORGANIZATION/DEPARTMENT/DEPARTMENT_TREE/OWN/CUSTOM 的解析；所有访问入口保持同等约束。详情/写入不能先无范围读取再判断。
 - 策略只通过约定模型/策略载体更新并测试；缓存须有撤销失效策略，跨进程行为如实说明。禁止各 Handler 复制隐式权限。
-- 响应与输入都用明确字段投影/白名单；新敏感字段检查 DTO、日志、错误、导出与批量入口。SQL 选择最小必要列。
+- 响应与输入用明确字段投影/白名单；新敏感字段检查 DTO、日志、错误、导出与批量入口，SQL 选最小必要列。
 - 数据层错误映射为稳定服务错误，不回传堆栈/SQL/凭证。context 传到数据库，事务不跨池误用，失败不吞异常或默认全量访问。
 - 新增安全能力须有允许/拒绝、跨租户与范围外 ID 测试；适用时覆盖更新/删除、关联/聚合/批量/导出和撤销。运行 ./horizon-cli test-security。
 
@@ -103,21 +102,23 @@ Capability-Centric 平台按 [ADR 015](../docs/decisions/015-capability-centric-
 
 ## 流程规格与生成
 
-流程以 Go Definition/Step 为运行源，`kernel/workflow/spec/` 提供纯规格与生成入口。根目录 `docs/generated/workflows/` 的标准 Schema 与示例从源生成，禁止手改。候选 JSON 先用 `workflowcheck -file` 校验，再审查注册；离线校验不执行、不授权。运行时与离线工具共用 `runtime/app.CapabilityModules` 装配。运行 `./horizon-cli check-workflows` 和 `./horizon-cli check-generated` 检查结构与漂移；完整示例使用 `./horizon-cli test-orchestration-example`。Schema、静态检查与行为测试不能替代 Gateway 或 SQL 范围校验。
+流程以 Go Definition/Step 为运行源，`kernel/workflow/spec/` 只提供类型、校验与通用构造器，业务流程与图由所属插件贡献。`docs/generated/workflows/` 从源生成，禁止手改；候选 JSON 先用 `workflowcheck -file` 校验再审查注册，离线校验不执行、不授权。运行时与离线工具共用 `runtime/app.CapabilityModules` 装配，检查入口为 `check-workflows`、`check-generated` 与 `test-orchestration-example`。Schema、静态检查与行为测试不能替代 Gateway 或 SQL 范围校验。
 
 ## 持久化流程安全
 
 编排使用 Eino Workflow/Graph/ADK，业务节点仍经 Gateway。嵌套来源强制 OriginCapability，继承父调用/深度，事务内互调拒绝。恢复及节点前重建原账号/部门身份；Agent 工具固定版本白名单与当前权限取交集，禁止递归编排。run/read/cancel 权限独立，查询/取消强制 tenant+account；MCP Token 不自动获得新工具。检查点加密绑定 tenant/run/key，不进入明文审计或运行摘要。取消撤销尚未执行的流程审批，已在执行/已提交动作不回滚；审批恢复读取原 invocation，独立动作不因载荷相同共用审批。详情见 docs/orchestration-plan.md（从仓库根解析）。
 
-## 内置插件权限目录
+## 插件声明与内核解释
 
-内置插件可经 kernel/plugin Registrar 声明权限定义；身份服务实例必须在启动工作线程、处理请求或重建 Principal 前校验并合并插件权限。与内置身份目录冲突即失败，重复配置仅允许完全相同的目录；注册不授予权限。会话、部门切换、临时权限及 PrincipalForTask 必须使用同一实例目录，未知权限默认拒绝，deny 优先；不得使用进程级可变目录或信任插件输入作为调用身份。新增权限需声明 scope/临时授权语义，并覆盖 Gateway 允许/拒绝、跨租户、撤权和身份重建。
+内核只做通用解释器：业务名称、业务权限、业务设置键、业务页面、业务流程不得出现在 `foundation/`（代码、迁移、规则文档均算），只加通用扩展点，不为单一业务开分支。业务声明经 manifest 与 Registrar 进入内核：`extensions` 枚举启用通道；`permissions`、`settings` 由 manifest 声明并在 Register 前注入 Registrar（settings 键首段须为插件声明的 permission module，默认值为合法 JSON），业务模块不改 `governance.Registry`；`managed: true` 表示部署基线应用，reconcile 自动安装、升级、发布，租户生命周期与定义能力返回 forbidden；capabilities、entities、applications、ui contracts、workflows、graphs 由 `Register` 或 `Workflows()`/`Graphs()` 等可选接口贡献，部署按类型断言聚合。
+
+身份服务实例必须在启动工作线程、处理请求或重建 Principal 前校验并合并插件权限。与内置身份目录冲突即失败，重复配置仅允许完全相同的目录；注册不授予权限。会话、部门切换、临时权限及 PrincipalForTask 必须使用同一实例目录，未知权限默认拒绝，deny 优先；不得使用进程级可变目录或信任插件输入作为调用身份。新增权限需声明 scope/临时授权语义，并覆盖 Gateway 允许/拒绝、跨租户、撤权和身份重建。
 
 ## Application Runtime
 
-应用定义由所属业务模块贡献，底座装配在 `runtime/app/`，协议与校验在 `kernel/applicationruntime/`，发布与授权投影在 `system/applicationruntime/`。页面协议使用 V3，公共 TS 类型和结构校验从 Go 契约生成。目录按应用、页面、Provider 和动作的实际权限投影，页面定义不能扩大权限或替代 SQL 数据范围；页面动作仍经 Gateway。创建/编辑分别用能力 I/O，派生字段只读，普通更新不依赖状态转移存在。批量组合须经注入的 Gateway 调用器执行子能力，禁止把多个独立事务称为原子事务；operationId/子幂等键与外层调用重放按 ADR 018 区分。
+应用定义由所属业务模块贡献，底座装配在 `runtime/app/`，协议与校验在 `kernel/applicationruntime/`，发布与授权投影在 `system/applicationruntime/`。页面协议使用 V3，公共 TS 类型和结构校验从 Go 契约生成。平台控制台只承载平台视角，业务区块由所属应用贡献；可信组件由插件 `RegisterUIContracts` 注册，`trustedContracts()` 缓存随注册失效，内核不保留业务组件名。目录按应用、页面、Provider 和动作的实际权限投影，页面定义不能扩大权限或替代 SQL 数据范围；页面动作仍经 Gateway。创建/编辑分别用能力 I/O，派生字段只读，普通更新不依赖状态转移存在。批量组合须经注入的 Gateway 调用器执行子能力，禁止把多个独立事务称为原子事务；operationId/子幂等键与外层调用重放按 ADR 018 区分。
 
-Runtime 定义存储见 [数据库版本实施记录](../docs/application-runtime-database.md)。数据库版本不可覆盖更新；生命周期状态和配置内容分别使用运行修订与四级版本，部署重启不得覆盖业务应用的已发布定制。平台托管的基本应用由部署装配分类（`runtime/app/base_applications.go`），reconcile 自动安装/升级并发布部署基线，租户生命周期和定义能力对它返回 forbidden。system-only 能力仅允许系统账号及事件来源，不能借用要求固定父能力的 internal-only 标签。
+Runtime 定义存储见 [数据库版本实施记录](../docs/application-runtime-database.md)。数据库版本不可覆盖更新；生命周期状态和配置内容分别使用运行修订与四级版本，部署重启不得覆盖业务应用的已发布定制。平台托管的基本应用按 `base_applications.go` 平台自有包 + 插件 `Catalog.Managed` 分类（托管语义见上节）。应用版本升级须同步 provisioning 模板迁移，否则部署间新建租户按旧版本 provision 而拿不到发布头。system-only 能力仅允许系统账号及事件来源，不能借用要求固定父能力的 internal-only 标签。
 
 ## 远程 MCP 动态能力目录（现行）
 

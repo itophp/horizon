@@ -1,8 +1,13 @@
 package files
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"path"
+	"strings"
 
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
@@ -40,6 +45,59 @@ func (s *Service) ProfileInTx(ctx context.Context, tx pgx.Tx, tenant string, id 
 // associated business object. It does not itself grant file access.
 func (s *Service) Profile(ctx context.Context, tenant string, id int64) (Profile, error) {
 	return s.profile(ctx, tenant, id)
+}
+
+// CreateBoundInTx stores one already authorized business file using the shared
+// immutable storage profile under the given declared purpose. The caller
+// remains responsible for the business binding and capability audit.
+func (s *Service) CreateBoundInTx(ctx context.Context, tx pgx.Tx, p *identity.Principal, filename, mime, purpose string, data []byte) (dbgen.GovFileRow, func(context.Context) error, error) {
+	filename = strings.TrimSpace(path.Base(strings.ReplaceAll(filename, "\\", "/")))
+	if tx == nil || filename == "" || filename == "." || filename == ".." ||
+		strings.ContainsAny(filename, "\r\n\x00") || mime == "" || len(data) == 0 || !s.HasPurpose(purpose) {
+		return dbgen.GovFileRow{}, nil, governance.Problem("invalid")
+	}
+	service := s.withTx(tx)
+	profile, version, err := service.prepareProfile(ctx, p)
+	if err != nil {
+		return dbgen.GovFileRow{}, nil, err
+	}
+	driver, err := service.Storage.Get(profile.Driver)
+	if err != nil {
+		return dbgen.GovFileRow{}, nil, err
+	}
+	storageKey, err := governance.Token()
+	if err != nil {
+		return dbgen.GovFileRow{}, nil, err
+	}
+	if err = driver.Write(ctx, profile, storageKey, bytes.NewReader(data)); err != nil {
+		return dbgen.GovFileRow{}, nil, err
+	}
+	cleanup := func(cancelContext context.Context) error {
+		return driver.Delete(cancelContext, profile, storageKey)
+	}
+	sum := sha256.Sum256(data)
+	id, err := service.Q.GovCreateFile(ctx, dbgen.GovCreateFileParams{
+		TenantID: p.TenantID, OwnerID: p.Account.ID, OrganizationID: p.Account.OrganizationID,
+		DepartmentID: p.Account.DepartmentID, StorageProfileID: version, StorageKey: storageKey,
+		Name: filename, Mime: mime, Size: int64(len(data)), Purpose: purpose,
+		Sha256: hex.EncodeToString(sum[:]),
+	})
+	if err != nil {
+		_ = cleanup(context.WithoutCancel(ctx))
+		return dbgen.GovFileRow{}, nil, err
+	}
+	row, err := service.Q.GovFile(ctx, dbgen.GovFileParams{TenantID: p.TenantID, ID: id, AllData: false, OwnID: p.Account.ID})
+	if err != nil {
+		_ = cleanup(context.WithoutCancel(ctx))
+		return dbgen.GovFileRow{}, nil, err
+	}
+	return row, cleanup, nil
+}
+
+// ReadBound returns the bytes of a file after the calling business module has
+// authorized its resource-specific binding.
+func (s *Service) ReadBound(ctx context.Context, tenant string, row dbgen.GovFileRow) ([]byte, error) {
+	return s.read(ctx, tenant, row)
 }
 
 // SettingInTx reads a registered shared setting using the active transaction.

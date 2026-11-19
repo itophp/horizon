@@ -9,6 +9,7 @@ import (
 	"horizon/applications/example"
 	"horizon/foundation/kernel/approval"
 	"horizon/foundation/kernel/audit"
+	"horizon/foundation/kernel/capability/contracts"
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
 	"horizon/foundation/kernel/eventhub"
@@ -27,6 +28,22 @@ func TestEntityMemoryReusesResourceAuthorization(t *testing.T) {
 	}
 	h.gw = gateway.New(gateway.Options{Registry: catalog, Identity: h.iam, Pool: h.pool, Approvals: approval.NewStore(h.pool), Audit: audit.NewStore(h.pool), Events: eventhub.NewStore(h.pool)})
 	m.AttachGateway(h.gw)
+	// The deployment supplies the resource scope table; the kernel memory
+	// service never hardcodes business resources or permissions.
+	m.AttachEntityScope(memory.EntityScope{Resource: "example_record", Permission: "example:read", AggregateType: "example_record",
+		Authorize: func(ctx context.Context, id int64) error {
+			result, err := h.gw.Invoke(ctx, gateway.Request{Name: "example.record.get", Version: "1.0.0", Input: contracts.Input{"id": id}, Origin: contracts.OriginCapability})
+			if err != nil {
+				return err
+			}
+			if result.Status != contracts.StatusSucceeded {
+				if result.ErrorCode == "" {
+					return contracts.Problem("unavailable")
+				}
+				return contracts.Problem(result.ErrorCode)
+			}
+			return nil
+		}})
 	owner := h.account(t, "entity-owner", "example:read", "example:create", "memory:read", "memory:write")
 	other := h.account(t, "entity-other", "example:read", "example:create", "memory:read", "memory:write")
 	record := h.ok(t, owner, "example.record.create", map[string]any{"title": "Source record"})

@@ -248,5 +248,42 @@
       "skipped": "已跳过",
       "cancelled": "已取消"
     }
+  },
+  "mail_mailbox": {
+    "label": "邮箱",
+    "states": {
+      "unverified": "未验证",
+      "active": "生效",
+      "disabled": "已停用"
+    }
+  },
+  "mail_channel": {
+    "label": "邮件通道"
+  },
+  "mail_credential": {
+    "label": "邮件凭证"
+  },
+  "mail_message": {
+    "label": "邮件"
+  },
+  "mail_message_recipient": {
+    "label": "邮件收件人"
+  },
+  "mail_message_attachment": {
+    "label": "邮件附件"
+  },
+  "mail_outbound_delivery": {
+    "label": "邮件投递",
+    "states": {
+      "queued": "排队中",
+      "sending": "发送中",
+      "sent": "已发送",
+      "failed": "失败",
+      "ambiguous": "结果未知",
+      "cancelled": "已取消"
+    }
+  },
+  "mail_inbox_sync": {
+    "label": "收件箱同步"
   }
 }

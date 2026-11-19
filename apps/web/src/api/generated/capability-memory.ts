@@ -13,7 +13,7 @@ export type MemoryActivityCollectOutput = { accepted: number };
 
 export type MemoryEntityArchiveInput = {
   id: number;
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
   version: number;
@@ -26,7 +26,7 @@ export type MemoryEntityArchiveOutput = {
 
 export type MemoryEntityCorrectInput = {
   id: number;
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
   summary: string;
@@ -43,7 +43,7 @@ export type MemoryEntityCreateInput = {
   memoryType: string;
   partition:
     "agent" | "activity" | "exception" | "business" | "knowledge" | "execution";
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
   sourceEventId?: string;
@@ -60,7 +60,7 @@ export type MemoryEntityCreateOutput = {
 
 export type MemoryEntityDeleteInput = {
   id: number;
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
   version: number;
@@ -73,7 +73,7 @@ export type MemoryEntityDeleteOutput = {
 
 export type MemoryEntityGetInput = {
   id: number;
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
 };
@@ -100,7 +100,7 @@ export type MemoryEntityListInput = {
   ownerId?: number;
   partition?:
     "agent" | "activity" | "exception" | "business" | "knowledge" | "execution";
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
   status?: "active" | "archived";
@@ -129,7 +129,7 @@ export type MemoryEntityListOutput = {
 
 export type MemoryEntitySourcesInput = {
   id: number;
-  resourceType: "example_record";
+  resourceType: string;
   scopeId: number;
   scopeType: "business_entity";
 };

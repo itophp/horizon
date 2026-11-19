@@ -15,3 +15,5 @@ coverage/
 /horizon-cli.exe
 /horizon-studio/
 /website/
+.gocache/
+.pnpm-store/

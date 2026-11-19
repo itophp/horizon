@@ -14,6 +14,23 @@ const ignored = new Set([
   "test-results",
   "coverage",
 ]);
+// Local working copies of other repositories live here without being part of
+// this project; root .gitignore entries for plain directories are skipped so
+// the inventory only covers tracked guidance.
+async function gitignoredDirs(root) {
+  let raw = "";
+  try {
+    raw = await readFile(resolve(root, ".gitignore"), "utf8");
+  } catch {
+    return;
+  }
+  for (const line of raw.split("\n")) {
+    const entry = line.trim().replace(/^\//, "").replace(/\/$/, "");
+    if (!entry || entry.startsWith("#") || /[*?[]/.test(entry)) continue;
+    if (entry.includes("/")) continue;
+    ignored.add(entry);
+  }
+}
 function requireValue(condition, message) {
   if (!condition) throw new Error(message);
 }
@@ -229,6 +246,7 @@ export async function checkPolicy(root = defaultRoot, suppliedPolicy) {
         `Task ${task.id} references unknown gate: ${gate}`,
       );
   }
+  await gitignoredDirs(root);
   const discovered = await discover(root);
   sameFiles(discovered.instructions, policy.instructions, "AGENTS.md");
   sameFiles(discovered.skills, skillFiles, "SKILL.md");

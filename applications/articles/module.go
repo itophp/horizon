@@ -4,15 +4,17 @@ package articles
 import (
 	"context"
 	"fmt"
+	"strings"
+	"unicode"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"horizon/foundation/kernel/capability/contracts"
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
+	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
 	"horizon/internal/repository/dbgen"
-	"strings"
-	"unicode"
 )
 
 type Module struct {
@@ -21,6 +23,28 @@ type Module struct {
 	// the content, and whether that policy is usable at all. Injecting it keeps
 	// this module independent of the settings subsystem.
 	Blocked func(context.Context, *identity.Principal, string) (bool, bool, error)
+}
+
+// New builds the module and wires the tenant blocked-word policy from the
+// shared settings service. An unreadable policy means no blocked words, never
+// a blocked article.
+func New(core *governance.Core) *Module {
+	module := &Module{Pool: core.Pool}
+	module.Blocked = func(ctx context.Context, p *identity.Principal, content string) (bool, bool, error) {
+		raw, err := core.Setting(ctx, p, "articles.blockedWords")
+		if err != nil {
+			if contracts.Code(err) == "invalid" {
+				return false, false, nil
+			}
+			return false, false, err
+		}
+		words, err := governance.String(raw)
+		if err != nil || strings.TrimSpace(words) == "" {
+			return false, false, err
+		}
+		return ContainsBlocked(content, words), true, nil
+	}
+	return module
 }
 
 // events names the fact each write capability produces. A single map keeps the

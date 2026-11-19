@@ -74,3 +74,6 @@ func TestSecureDeploymentRequiresPublicHTTPSOrigin(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Mail endpoint and limit validation moved to the mail plugin's
+// OptionsFromEnv; see applications/mail/options_test.go.

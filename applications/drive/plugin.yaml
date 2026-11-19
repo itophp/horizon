@@ -1,0 +1,50 @@
+id: com.horizon.drive
+version: 1.0.0
+apiVersion: "1.0"
+mode: builtin
+extensions:
+  - capability
+  - entity
+  - permission
+  - event
+  - settings
+permissions:
+  - code: drive:use
+    module: drive
+    function: drive
+    action: use
+  - code: drive:create
+    module: drive
+    function: drive
+    action: create
+  # Worker-task authorization only: the cleanup loop runs as a task principal,
+  # so the permission is never scope configurable for humans.
+  - code: drive:cleanup
+    module: drive
+    function: drive
+    action: cleanup
+# Storage limits stay in the files display group where admins tune quotas.
+settings:
+  - key: drive.maxBytes
+    group: files
+    kind: integer
+    default: "1073741824"
+    scopes: [workspace]
+    ui: true
+    min: 1
+    max: 1073741824
+  - key: drive.quotaBytes
+    group: files
+    kind: integer
+    default: "0"
+    scopes: [workspace]
+    ui: true
+    max: 1125899906842624
+  - key: drive.blockedExtensions
+    group: files
+    kind: string
+    default: '""'
+    scopes: [workspace]
+    sensitive: true
+    ui: true
+    max: 2048

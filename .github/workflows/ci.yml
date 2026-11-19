@@ -1,7 +1,8 @@
 name: Quality gates
+# Manual only: commits and pushes must not start remote verification. Full browser
+# E2E lives in e2e.yml behind the same manual dispatch.
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -42,16 +43,3 @@ jobs:
         run: ./horizon-cli ci-fast
       - name: Isolated PostgreSQL integration and negative authorization cases
         run: ./horizon-cli test-integration
-      - run: pnpm --filter @baseline/web exec playwright install --with-deps chromium
-      - name: WebMCP real client smoke
-        run: ./horizon-cli test-webmcp-e2e
-      - name: Real frontend and backend end-to-end
-        run: ./horizon-cli test-e2e
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-diagnostics
-          path: |
-            apps/web/playwright-report
-            apps/web/test-results
-          if-no-files-found: ignore

@@ -56,12 +56,12 @@ func loadCatalogKind(kind string) (catalog, *registry.Registry, error) {
 	}
 	var r *registry.Registry
 	if kind == "" || kind == "workflow" {
-		for _, d := range app.WorkflowDefinitions() {
+		for _, d := range deployment.WorkflowDefinitions() {
 			result.Items = append(result.Items, item{Kind: "workflow", ID: d.Name, Version: d.Version, Description: fmt.Sprintf("Workflow %s with %d steps and a declared input contract.", d.Name, len(d.Steps)), Definition: d})
 		}
 	}
 	if kind == "" || kind == "graph" {
-		for _, d := range app.GraphDefinitions() {
+		for _, d := range deployment.GraphDefinitions() {
 			result.Items = append(result.Items, item{Kind: "graph", ID: d.Name, Version: d.Version, Description: fmt.Sprintf("Bounded analysis Graph %s with %d declared capability reads.", d.Name, len(d.Reads)), Definition: d})
 		}
 	}

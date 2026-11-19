@@ -2,13 +2,21 @@ package orchestration
 
 import (
 	"encoding/json"
+	"horizon/foundation/kernel/capability/contracts"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
+func neutralSpecFlow() Definition {
+	return Definition{Name: "fixture-flow", Version: "1.0.0", Input: contracts.Object(map[string]*contracts.Schema{"id": contracts.Int(1, 1<<53), "question": contracts.Str(1, 10)}, "id", "question"), Steps: []Step{
+		{ID: "save", Capability: "fixture.save", Version: "1.0.0", Input: map[string]Mapping{"id": {From: "input", Field: "id"}}},
+		{ID: "wait", Capability: "fixture.get", Version: "1.0.0", Poll: &Poll{DoneField: "ready", MaxSteps: 2}, Input: map[string]Mapping{"id": {From: "save", Field: "id"}}},
+		{ID: "review", DependsOn: []string{"wait"}, Agent: &Agent{Instruction: "Review the fixture record.", Tools: []string{"fixture.read@1.0.0"}, MaxIterations: 3}, Input: map[string]Mapping{"id": {From: "save", Field: "id"}}},
+	}}
+}
+
 func TestGeneratedWorkflowSpecificationRejectsMalformedDeclarations(t *testing.T) {
-	raw, err := json.Marshal(LifecycleExample())
+	raw, err := json.Marshal(neutralSpecFlow())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,10 +31,10 @@ func TestGeneratedWorkflowSpecificationRejectsMalformedDeclarations(t *testing.T
 			v["steps"].([]any)[1].(map[string]any)["poll"].(map[string]any)["maxSteps"] = MaxPollSteps + 1
 		},
 		"unpinned agent tool": func(v map[string]any) {
-			v["steps"].([]any)[2].(map[string]any)["agent"].(map[string]any)["tools"] = []any{"example.record.get"}
+			v["steps"].([]any)[2].(map[string]any)["agent"].(map[string]any)["tools"] = []any{"fixture.read"}
 		},
 		"mixed node kinds": func(v map[string]any) {
-			v["steps"].([]any)[0].(map[string]any)["agent"] = map[string]any{"instruction": "do", "tools": []any{"example.record.get@1.0.0"}, "maxIterations": 3}
+			v["steps"].([]any)[0].(map[string]any)["agent"] = map[string]any{"instruction": "do", "tools": []any{"fixture.read@1.0.0"}, "maxIterations": 3}
 		},
 		"unsupported input keyword": func(v map[string]any) { v["input"].(map[string]any)["$ref"] = "https://untrusted.invalid/schema" },
 	}
@@ -62,18 +70,5 @@ func TestGeneratedWorkflowArtifactsMatchRuntime(t *testing.T) {
 	}
 	if string(checked) != string(append(raw, '\n')) {
 		t.Fatal("workflow schema drift; run make generate-workflows")
-	}
-	for _, d := range Builtins() {
-		raw, err := os.ReadFile(filepath.Join("../../../docs/generated/workflows", d.Name+".workflow.json"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		decoded, err := DecodeDefinition(raw)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if decoded.Hash() != d.Hash() {
-			t.Fatalf("generated definition drift: %s", d.Name)
-		}
 	}
 }

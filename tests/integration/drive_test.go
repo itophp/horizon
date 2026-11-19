@@ -30,7 +30,9 @@ func newDriveHarness(t *testing.T) *projectHarness {
 	t.Helper()
 	h := newProjectHarness(t)
 	core := governance.New(h.pool, h.iam, governance.Options{StorageRoot: t.TempDir()})
-	catalog := registry.New(drive.NewWithFiles(h.pool, files.New(core)).Entries())
+	driveModule := drive.NewWithFiles(h.pool, files.New(core))
+	driveModule.AttachIdentity(h.iam)
+	catalog := registry.New(driveModule.Entries())
 	if err := catalog.Err(); err != nil {
 		t.Fatal(err)
 	}
@@ -442,7 +444,7 @@ func TestDriveCleanupRequiresSystemAndPreservesCompletedFiles(t *testing.T) {
 	if contracts.Code(err) != "forbidden" {
 		t.Fatalf("ordinary account invoked system cleanup: %v", err)
 	}
-	principal, err := identity.NewPrincipal(&genidentity.AccountRecord{ID: 0, DepartmentID: 0, Status: "active"}, "tenant-a",
+	principal, err := pluginIAM(t, h.pool).NewPrincipal(&genidentity.AccountRecord{ID: 0, DepartmentID: 0, Status: "active"}, "tenant-a",
 		[]*genidentity.PermissionGrant{{Permission: "drive:cleanup", Effect: "allow", Scope: "ALL"}})
 	if err != nil {
 		t.Fatal(err)

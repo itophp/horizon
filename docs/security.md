@@ -59,6 +59,12 @@ SMTP 主机由部署白名单约束、证书验证不关闭，测试发送仅本
 
 通知中心遵循 [ADR 008](decisions/008-notification-center.md)：独立正式 notifications:send、服务端组织展开/全部范围校验/账号去重/幂等。正文为不可信 Markdown，禁止原始 HTML/MDX、危险 URL 和任意外部图片。通知附件需要账号/有效归属/通知文件绑定 SQL 校验；收件人例外入口不放宽通用 files:read。附件由发送者拥有，不允许绑定其他人的文件；绑定后禁止删除。同步权限 Skill 与负向回归。
 
+## 个人邮箱
+
+个人邮箱使用 `mail:read`、`mail:send`、`mail:configure` 和系统专用 `mail:sync`，全部不支持临时授权，也不可按组织/部门范围扩权。邮箱、邮件、投递记录和附件均绑定可信 IAM 账号并在 SQL 层强制本人过滤；管理员不能替他人配置或读取正文。SMTP/POP3S endpoint 必须命中部署级精确白名单，证书验证不可关闭；POP3 仅支持 direct TLS，且服务器必须支持 UIDL。
+
+外部凭证使用治理根密钥 AES-GCM 加密，AAD 绑定租户、邮箱、用途和版本；能力 DTO、审计、事件和日志只出现 fingerprint/版本，不出现明文或密文。发送只允许 mailbox 地址作为 From，拒绝 raw MIME、任意 header 和 CRLF 注入；正文 Markdown 在服务端生成 HTML 后经 allowlist 清理，入站 HTML 同样清理并只在前端 sandboxed iframe 渲染。附件复用私有文件存储并以消息绑定校验下载，不放宽全局 files:read。POP3 远端删除只能在一个批次的本地事务提交后通过 QUIT 提交；事务失败、进程崩溃或 QUIT 失败时远端邮件保留，下一批按 UID 去重。外部 SMTP 是至少一次投递，provider 超时进入 ambiguous，不得伪装成确定失败或成功。
+
 ## 云盘空间（开发中）
 
 空间基础能力使用 `drive:use` 和 `drive:create`；旧权限不自动授予新权限。个人空间按可信租户和账号隔离，共享空间按可信账号或当前部门的成员授权过滤。云盘写能力只接受人类页面来源，工具标签不是授权边界。云盘对象使用 `cloud_drive` 用途并排除在通用文件读取、列表和删除查询之外；云盘下载必须验证空间授权且使用非持久化结果。上传分块及存储键不能进入调用审计。云盘一期尚未交付，完整目标和待验收条件见 [云盘 PRD](cloud-drive-prd.md)。

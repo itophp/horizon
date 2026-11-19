@@ -256,11 +256,20 @@ func TestCapabilityConsoleRuntimeDeployment(t *testing.T) {
 		t.Fatal("capability console missing from the published runtime", protocol)
 	}
 
+	// example.record.create belongs to the example application package since
+	// the playground moved out of the platform console.
+	example := invokeCapability(t, client, "application.runtime.resolve", map[string]any{
+		"input": map[string]any{"applicationId": "example-playground"},
+	})
+	if example.Status != "succeeded" {
+		t.Fatal(example)
+	}
+	exampleView := example.Data.(map[string]any)
 	runtimeRef := map[string]any{
-		"applicationId": "capabilities", "pageId": "capabilities.console",
-		"applicationVersion": view["applicationVersion"], "catalogRevision": view["catalogRevision"],
-		"definitionDigest": view["definitionDigest"], "metadataVersion": view["metadataVersion"],
-		"installationRevision": view["installationRevision"],
+		"applicationId": "example-playground", "pageId": "example.playground",
+		"applicationVersion": exampleView["applicationVersion"], "catalogRevision": exampleView["catalogRevision"],
+		"definitionDigest": exampleView["definitionDigest"], "metadataVersion": exampleView["metadataVersion"],
+		"installationRevision": exampleView["installationRevision"],
 	}
 	created := invokeCapability(t, client, "example.record.create", map[string]any{
 		"input":          map[string]any{"title": "Runtime capability console"},
@@ -275,7 +284,7 @@ func TestCapabilityConsoleRuntimeDeployment(t *testing.T) {
 	var published string
 	err := pool.QueryRow(t.Context(), `SELECT published_version FROM runtime_application_heads WHERE tenant_id=$1 AND application_id=$2`,
 		"tenant-console-new", "capabilities").Scan(&published)
-	if err != nil || published != "1.0.1.0" {
+	if err != nil || published != "1.1.0.0" {
 		t.Fatal(published, err)
 	}
 
@@ -316,7 +325,7 @@ func TestCapabilityConsoleRuntimeDeployment(t *testing.T) {
 		SELECT 'tenant-console-upgrade', application_id, '1.0.0.0', 'legacy-capability-snapshot',
 		       definition || '{"version":"1.0.0","pluginVersion":"1.0.0","applicationVersion":"1.0.0.0"}'::jsonb,
 		       'legacy-capability-definition', 'deployment', 0
-		FROM runtime_application_versions WHERE tenant_id='tenant-a' AND application_id='capabilities' AND version='1.0.1.0';
+		FROM runtime_application_versions WHERE tenant_id='tenant-a' AND application_id='capabilities' AND version='1.1.0.0';
 		UPDATE runtime_application_heads SET published_version='1.0.0.0'
 		WHERE tenant_id='tenant-console-upgrade' AND application_id='capabilities';
 	`); err != nil {
@@ -329,7 +338,7 @@ func TestCapabilityConsoleRuntimeDeployment(t *testing.T) {
 	}), iam)
 	err = pool.QueryRow(t.Context(), `SELECT published_version FROM runtime_application_heads WHERE tenant_id=$1 AND application_id=$2`,
 		"tenant-console-existing", "capabilities").Scan(&published)
-	if err != nil || published != "1.0.1.0" {
+	if err != nil || published != "1.1.0.0" {
 		t.Fatal(published, err)
 	}
 	var legacy string
@@ -340,7 +349,7 @@ func TestCapabilityConsoleRuntimeDeployment(t *testing.T) {
 	}
 	err = pool.QueryRow(t.Context(), `SELECT published_version FROM runtime_application_heads WHERE tenant_id=$1 AND application_id=$2`,
 		"tenant-console-upgrade", "capabilities").Scan(&published)
-	if err != nil || !strings.HasPrefix(published, "1.0.1.") {
+	if err != nil || !strings.HasPrefix(published, "1.1.0.") {
 		t.Fatal(published, err)
 	}
 	upgradeClient := loginIAM(t, restarted, "upgrade-console-admin")
@@ -351,12 +360,12 @@ func TestCapabilityConsoleRuntimeDeployment(t *testing.T) {
 	}
 	// Platform base applications upgrade with the deployment, never manually.
 	checkStatus(t, upgradeClient.invoke(t, "application.runtime.installation.upgrade", map[string]any{
-		"pluginId": "builtin:capabilities", "revision": revision, "version": "1.0.1",
+		"pluginId": "builtin:capabilities", "revision": revision, "version": "1.1.0",
 	}, true), 403)
 	resolved = invokeCapability(t, upgradeClient, "application.runtime.resolve", map[string]any{
 		"input": map[string]any{"applicationId": "capabilities"},
 	})
-	if resolved.Status != "succeeded" || !strings.HasPrefix(resolved.Data.(map[string]any)["applicationVersion"].(string), "1.0.1.") {
+	if resolved.Status != "succeeded" || !strings.HasPrefix(resolved.Data.(map[string]any)["applicationVersion"].(string), "1.1.0.") {
 		t.Fatal(resolved)
 	}
 }

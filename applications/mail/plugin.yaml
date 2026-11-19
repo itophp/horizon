@@ -1,0 +1,35 @@
+id: com.horizon.mail
+version: 1.1.0
+apiVersion: "1.0"
+mode: builtin
+# The runtime installation key predates the plugin id; installed tenants keep
+# resolving the same package without a data migration.
+installation: builtin:mail
+# Personal mailboxes ship with every tenant as deployment baseline.
+managed: true
+extensions:
+  - capability
+  - entity
+  - permission
+  - event
+  - application
+  - file-purpose
+permissions:
+  - code: mail:read
+    module: mail
+    function: mail
+    action: read
+  - code: mail:send
+    module: mail
+    function: mail
+    action: send
+  - code: mail:configure
+    module: mail
+    function: mail
+    action: configure
+  - code: mail:sync
+    module: mail
+    function: mail
+    action: sync
+filePurposes:
+  - mail_attachment

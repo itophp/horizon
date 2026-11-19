@@ -19,15 +19,24 @@ import (
 var activityID = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
 // Page identifiers are intentionally not URLs: URL paths and query parameters
-// can contain names, secrets, or business identifiers.
+// can contain names, secrets, or business identifiers. Platform pages are
+// built in; application pages register through the deployment assembly.
 var activityPages = map[string]bool{
-	"analytics": true, "ai": true, "articles": true, "drive": true,
-	"knowledge": true, "projects": true, "orchestration": true,
+	"analytics": true, "ai": true,
+	"knowledge": true, "orchestration": true,
 	"accounts": true, "organizations": true, "departments": true,
 	"roles": true, "settings": true, "preferences": true,
 	"dictionaries": true, "attachments": true, "notifications": true,
 	"permissions": true, "temporary-access": true, "capabilities": true,
 	"mcp": true, "webmcp": true,
+}
+
+// RegisterActivityPages lets the deployment declare application pages that may
+// appear in captured activity. The kernel never hardcodes business domains.
+func RegisterActivityPages(pages ...string) {
+	for _, page := range pages {
+		activityPages[page] = true
+	}
 }
 
 func (m *Module) collectActivity(ctx context.Context, tx pgx.Tx, in contracts.Input) (contracts.Output, error) {

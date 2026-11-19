@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"fmt"
 	assistantservice "horizon/foundation/ai/assistant"
 	"horizon/foundation/ai/harness"
 	"horizon/foundation/ai/knowledge"
@@ -98,6 +99,45 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, registration app.
 	for _, attach := range registration.AttachGateway {
 		attach(dispatcher)
 	}
+	memorysystem.RegisterActivityPages(registration.MemoryActivityPages...)
+	if registration.MemoryProjectWrite != "" {
+		memoryModule.AttachProjectWritePermission(registration.MemoryProjectWrite)
+	}
+	for _, scope := range registration.MemoryEntityScopes {
+		resource, permission, aggregate := scope.Resource, scope.Permission, scope.AggregateType
+		name, version := splitCapabilityReference(scope.Authority)
+		memoryModule.AttachEntityScope(memorysystem.EntityScope{Resource: resource, Permission: permission, AggregateType: aggregate,
+			Authorize: func(ctx context.Context, id int64) error {
+				result, err := dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: contracts.Input{"id": id}, Origin: contracts.OriginCapability})
+				if err != nil {
+					return err
+				}
+				if result.Status != contracts.StatusSucceeded {
+					if result.ErrorCode == "" {
+						return contracts.Problem("unavailable")
+					}
+					return contracts.Problem(result.ErrorCode)
+				}
+				return nil
+			}})
+	}
+	if registration.MemoryProjectAuthority != "" {
+		name, version := splitCapabilityReference(registration.MemoryProjectAuthority)
+		memoryModule.AttachProjectAuthority(func(ctx context.Context, projectID int64) error {
+			result, err := dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: contracts.Input{"id": projectID}, Origin: contracts.OriginCapability})
+			if err != nil {
+				return err
+			}
+			if result.Status != contracts.StatusSucceeded {
+				if result.ErrorCode == "" {
+					return contracts.Problem("unavailable")
+				}
+				return contracts.Problem(result.ErrorCode)
+			}
+			return nil
+		})
+	}
+
 	core.Identity.AttachAnalyticsGateway(func(ctx context.Context, name, version string, input contracts.Input) (*contracts.Result, error) {
 		return dispatcher.Invoke(ctx, gateway.Request{Name: name, Version: version, Input: input})
 	})
@@ -109,10 +149,17 @@ func mountGovernance(mux goahttp.Muxer, core *governance.Core, registration app.
 	}
 	memoryModule.AttachGateway(dispatcher)
 	if err := orchestrator.Attach(dispatcher, catalog); err != nil {
-		panic("invalid workflow definitions")
+		panic(fmt.Sprintf("invalid workflow definitions: %v", err))
 	}
 	if plugins != nil {
 		plugins.AttachCapabilities(runtimeModule.Invoke)
+		// Plugins that compose orchestration capabilities attach the gateway
+		// through the same optional interface the modules use.
+		for _, plugin := range plugins.Plugins() {
+			if attacher, ok := plugin.(interface{ AttachGateway(*gateway.Gateway) }); ok {
+				attacher.AttachGateway(dispatcher)
+			}
+		}
 	}
 	mcpService.AttachGateway(dispatcher)
 	agentService := harness.New(core, catalog, dispatcher, runs, auditStore, documents)
@@ -172,4 +219,12 @@ func (b brandingProjection) Logo(ctx context.Context) (*genbranding.FileContent,
 		return nil, err
 	}
 	return &genbranding.FileContent{Name: res.Name, Mime: res.Mime, Content: res.Content}, nil
+}
+
+// splitCapabilityReference parses a "name@version" deployment reference.
+func splitCapabilityReference(reference string) (string, string) {
+	if at := strings.LastIndex(reference, "@"); at > 0 {
+		return reference[:at], reference[at+1:]
+	}
+	return reference, "1.0.0"
 }

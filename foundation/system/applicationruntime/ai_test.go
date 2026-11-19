@@ -14,9 +14,9 @@ import (
 
 func aiFixture(t *testing.T) (*Module, ar.ApplicationV2) {
 	t.Helper()
-	app := compiledFixture(t, "projects")
-	m := &Module{Definitions: map[string]contracts.Definition{}}
-	for _, provider := range app.Protocol.Providers {
+	app := widgetApplication()
+	m := &Module{Applications: []ar.ApplicationV2{app}, Definitions: map[string]contracts.Definition{}}
+	for _, provider := range app.Providers {
 		if provider.Capability.Name == "" || provider.InputSchema == "" {
 			continue
 		}
@@ -27,7 +27,7 @@ func aiFixture(t *testing.T) (*Module, ar.ApplicationV2) {
 		d := contracts.Definition{Name: provider.Capability.Name, Version: provider.Capability.Version, ReadOnly: true, Input: &input}
 		m.Definitions[d.Key()] = d
 	}
-	component, _ := ar.FindAIComponent(app.Protocol.Pages[2].Root, "project-task-list")
+	component, _ := widgetAIBindings(t)
 	for _, form := range ar.AIForms(component) {
 		for _, command := range []ar.Command{form.Create, form.Edit} {
 			if command.Capability.Name == "" || command.InputSchema == "" {
@@ -37,30 +37,29 @@ func aiFixture(t *testing.T) (*Module, ar.ApplicationV2) {
 			if err := json.Unmarshal([]byte(command.InputSchema), &input); err != nil {
 				t.Fatal(err)
 			}
-			d := contracts.Definition{Name: command.Capability.Name, Version: command.Capability.Version, Permission: "projects:write", Input: &input}
+			d := contracts.Definition{Name: command.Capability.Name, Version: command.Capability.Version, Permission: widgetWrite, Input: &input}
 			m.Definitions[d.Key()] = d
 		}
 	}
-	app.Providers = app.Protocol.Providers
 	return m, app
 }
 
-func TestRuntimeAIAnalysisProjectsOnlyConfiguredFields(t *testing.T) {
+func TestRuntimeAIAnalysisOnlySendsConfiguredFields(t *testing.T) {
 	m, app := aiFixture(t)
-	component, bindings := ar.FindAIComponent(app.Protocol.Pages[1].Root, "project-ai-analysis")
+	component, bindings := widgetAnalysisComponent(t)
 	calls := 0
 	m.Invoke = func(_ context.Context, name, version string, in contracts.Input, _ string) (*contracts.Result, error) {
 		if version != "1.0.0" {
 			t.Fatal(version)
 		}
 		switch name {
-		case "project.get":
+		case "widget.get":
 			if in["id"] != 7 {
 				t.Fatal(in)
 			}
 			return &contracts.Result{Status: contracts.StatusSucceeded, Data: map[string]any{"status": "active", "ownerName": "private"}}, nil
-		case "project.task.list":
-			if in["projectId"] != 7 || in["page"] != 1 || in["pageSize"] != 20 {
+		case "widget.task.list":
+			if in["projectId"] != 7 {
 				t.Fatal(in)
 			}
 			return &contracts.Result{Status: contracts.StatusSucceeded, Data: map[string]any{
@@ -77,7 +76,7 @@ func TestRuntimeAIAnalysisProjectsOnlyConfiguredFields(t *testing.T) {
 		}
 		return `{"summary":"Release preparation is outstanding","evidence":["Prepare release is todo"]}`, nil
 	}
-	in := contracts.Input{"sceneId": "task-blockers", "recordId": 7}
+	in := contracts.Input{"sceneId": "widget-blockers", "recordId": 7}
 	result, err := m.analyzeAI(t.Context(), app, component, bindings, in)
 	if err != nil || calls != 1 {
 		t.Fatal(result, err, calls)
@@ -90,7 +89,7 @@ func TestRuntimeAIAnalysisProjectsOnlyConfiguredFields(t *testing.T) {
 	if _, err := m.analyzeAI(t.Context(), app, component, bindings, in); err == nil || calls != 1 {
 		t.Fatal("forged scene reached the model")
 	}
-	in["sceneId"] = "task-blockers"
+	in["sceneId"] = "widget-blockers"
 	m.Invoke = func(context.Context, string, string, contracts.Input, string) (*contracts.Result, error) {
 		return nil, contracts.Problem("not_found")
 	}
@@ -101,19 +100,19 @@ func TestRuntimeAIAnalysisProjectsOnlyConfiguredFields(t *testing.T) {
 
 func TestRuntimeAIFormRejectsUnlistedDraftAndModelFields(t *testing.T) {
 	m, app := aiFixture(t)
-	component, bindings := ar.FindAIComponent(app.Protocol.Pages[2].Root, "project-task-list")
+	component, bindings := widgetAIBindings(t)
 	p, err := identity.NewPrincipal(&gen.AccountRecord{ID: 1, IsAdmin: true}, "test-tenant", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	m.Invoke = func(_ context.Context, name, version string, in contracts.Input, _ string) (*contracts.Result, error) {
-		if name != "project.get" || version != "1.0.0" || in["id"] != 7 {
+		if name != "widget.get" || version != "1.0.0" || in["id"] != 7 {
 			t.Fatal(name, version, in)
 		}
 		return &contracts.Result{Status: contracts.StatusSucceeded, Data: map[string]any{"id": 7}}, nil
 	}
 	calls := 0
-	response := `{"suggestions":[{"field":"description","value":"Run the release checklist."}]}`
+	response := `{"suggestions":[{"field":"name","value":"Run the release checklist."}]}`
 	m.GenerateAI = func(_ context.Context, _, data string) (string, error) {
 		calls++
 		if strings.Contains(data, "private") {
@@ -121,25 +120,25 @@ func TestRuntimeAIFormRejectsUnlistedDraftAndModelFields(t *testing.T) {
 		}
 		return response, nil
 	}
-	in := contracts.Input{"sceneId": "task.form", "mode": "create", "recordId": 7, "draft": map[string]any{"title": "Release", "description": "private"}}
+	in := contracts.Input{"sceneId": "widget.form", "mode": "create", "recordId": 7, "draft": map[string]any{"title": "Release", "brief": "private"}}
 	if _, err := m.suggestAI(t.Context(), p, app, component, bindings, in); err == nil || calls != 0 {
-		t.Fatal("unlisted draft field reached the model")
+		t.Fatal("unlisted draft field reached the model", err, calls)
 	}
-	in["draft"] = map[string]any{"title": "Release"}
+	in["draft"] = map[string]any{"brief": "Run the release checklist."}
 	if _, err := m.suggestAI(t.Context(), p, app, component, bindings, in); err != nil || calls != 1 {
 		t.Fatal(err, calls)
 	}
 	// Models often add explanation keys; only the consumed fields are validated.
-	response = `{"suggestions":[{"field":"description","value":"Run the release checklist.","reason":"clear"}],"note":"extra"}`
+	response = `{"suggestions":[{"field":"name","value":"Run the release checklist.","reason":"clear"}],"note":"extra"}`
 	if _, err := m.suggestAI(t.Context(), p, app, component, bindings, in); err != nil {
 		t.Fatal("extra model keys rejected", err)
 	}
-	response = `{"suggestions":[{"field":"description","value":"Run the release checklist."}]}`
+	response = `{"suggestions":[{"field":"name","value":"Run the release checklist."}]}`
 	response = `{"suggestions":[{"field":"title","value":"Forbidden overwrite"}]}`
 	if _, err := m.suggestAI(t.Context(), p, app, component, bindings, in); err == nil {
 		t.Fatal("unlisted output field accepted")
 	}
-	response = `{"suggestions":[{"field":"description","value":"A"},{"field":"description","value":"B"}]}`
+	response = `{"suggestions":[{"field":"name","value":"A"},{"field":"name","value":"B"}]}`
 	if _, err := m.suggestAI(t.Context(), p, app, component, bindings, in); err == nil {
 		t.Fatal("duplicate suggestions accepted")
 	}
@@ -285,7 +284,7 @@ func TestRuntimeAIFormFillsTypedConditionalTargets(t *testing.T) {
 // record is read, and an edit form still refuses a missing record.
 func TestRuntimeAIFormSuggestsFromDraftWithoutRecord(t *testing.T) {
 	m, app := aiFixture(t)
-	component, bindings := ar.FindAIComponent(app.Protocol.Pages[2].Root, "project-task-list")
+	component, bindings := widgetAIBindings(t)
 	p, err := identity.NewPrincipal(&gen.AccountRecord{ID: 1, IsAdmin: true}, "test-tenant", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -297,12 +296,12 @@ func TestRuntimeAIFormSuggestsFromDraftWithoutRecord(t *testing.T) {
 	calls := 0
 	m.GenerateAI = func(_ context.Context, _, data string) (string, error) {
 		calls++
-		if !strings.Contains(data, "Release checklist") {
+		if !strings.Contains(data, "Run the release checklist") {
 			t.Fatal(data)
 		}
-		return `{"suggestions":[{"field":"description","value":"Run the release checklist."}]}`, nil
+		return `{"suggestions":[{"field":"name","value":"Run the release checklist."}]}`, nil
 	}
-	in := contracts.Input{"sceneId": "task.form", "mode": "create", "recordId": 0, "draft": map[string]any{"title": "Release checklist"}}
+	in := contracts.Input{"sceneId": "widget.form", "mode": "create", "recordId": 0, "draft": map[string]any{"brief": "Run the release checklist"}}
 	if _, err := m.suggestAI(t.Context(), p, app, component, bindings, in); err != nil || calls != 1 {
 		t.Fatal(err, calls)
 	}

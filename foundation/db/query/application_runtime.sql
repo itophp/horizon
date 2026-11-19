@@ -114,3 +114,4 @@ SELECT application_id,plugin_id,enabled,revision FROM runtime_application_states
 -- Draft head revisions are deliberately excluded from effective catalog freshness.
 SELECT ((SELECT COALESCE(sum(i.revision),0) FROM runtime_installations i WHERE i.tenant_id=$1)
 + (SELECT COALESCE(sum(a.revision),0) FROM runtime_application_states a WHERE a.tenant_id=$1))::bigint AS revision;
+

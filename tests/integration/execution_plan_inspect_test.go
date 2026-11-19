@@ -19,7 +19,6 @@ import (
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
 	runtime "horizon/foundation/kernel/workflow"
-	"horizon/foundation/kernel/workflow/spec"
 	"horizon/foundation/system/executionplans"
 	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
@@ -28,9 +27,9 @@ import (
 func TestExecutionPlanInspectionAndTraceIsolation(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
-	engine := runtime.NewWithGraphs(core, []runtime.Definition{spec.ExampleArchivePlan()}, spec.BuiltinGraphs())
+	engine := runtime.NewWithGraphs(core, []runtime.Definition{example.ExampleArchivePlan()}, example.Graphs())
 	plans := &executionplans.Module{Pool: pool, Definitions: map[string]contracts.Definition{}, ValidateWorkflow: engine.ValidatePlanWithQueries, ValidateGraph: engine.ValidateGraphPlan, References: engine.PlanReferences, Inspect: engine.InspectPlanReference}
 	entries := append(example.New(pool).Entries(), plans.Entries()...)
 	for _, e := range entries {
@@ -99,7 +98,7 @@ func TestExecutionPlanInspectionAndTraceIsolation(t *testing.T) {
 	}
 	limitedAccount := *p.Account
 	limitedAccount.IsAdmin = false
-	limited, e := identity.NewPrincipal(&limitedAccount, p.TenantID, []*gen.PermissionGrant{{Permission: "example:archive", Effect: "allow"}, {Permission: "executionPlans:read", Effect: "allow"}})
+	limited, e := iam.NewPrincipal(&limitedAccount, p.TenantID, []*gen.PermissionGrant{{Permission: "example:archive", Effect: "allow"}, {Permission: "executionPlans:read", Effect: "allow"}})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -172,7 +171,7 @@ func TestExecutionPlanInspectionAndTraceIsolation(t *testing.T) {
 		} else {
 			account.ID += 100000
 		}
-		stranger, e := identity.NewPrincipal(&account, tenant, p.Grants)
+		stranger, e := iam.NewPrincipal(&account, tenant, p.Grants)
 		if e != nil {
 			t.Fatal(e)
 		}

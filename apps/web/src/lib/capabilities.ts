@@ -990,6 +990,182 @@ export const runtimeSave = (
   key: string,
 ) => invokeCapability(name, input, key, "1.0.0");
 
+// ---------------------------------------------------------------- mail
+export type MailChannel = {
+  direction: "send" | "receive";
+  protocol: "smtp" | "pop3";
+  host: string;
+  port: number;
+  tlsMode: "starttls" | "tls";
+  username: string;
+  verificationStatus: "unknown" | "ok" | "failed";
+  lastErrorCode?: string;
+  lastVerifiedAt?: string;
+  credential: { version: number; fingerprint: string };
+};
+
+export type Mailbox = {
+  id: number;
+  name: string;
+  emailAddress: string;
+  defaultSend: boolean;
+  status: "unverified" | "active" | "disabled";
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+  channels: MailChannel[];
+};
+
+export type MailAddress = { address: string; displayName?: string };
+export type MailAttachment = {
+  id: number;
+  fileId: number;
+  filename: string;
+  mime: string;
+  size: number;
+  disposition: "attachment" | "inline";
+};
+export type MailMessageListItem = {
+  id: number;
+  mailboxId: number;
+  direction: "inbound" | "outbound";
+  folder: "inbox" | "sent";
+  subject: string;
+  from: string;
+  snippet: string;
+  occurredAt: string;
+  read: boolean;
+};
+export type MailMessage = MailMessageListItem & {
+  rfcMessageId: string;
+  replyTo: string;
+  bodyText: string;
+  bodyHtml: string;
+  createdAt: string;
+  recipients: {
+    kind: "to" | "cc" | "bcc";
+    address: string;
+    displayName: string;
+  }[];
+  attachments: MailAttachment[];
+};
+export type MailDelivery = {
+  id: number;
+  mailboxId: number;
+  messageId: number;
+  status: "queued" | "sending" | "sent" | "failed" | "ambiguous" | "cancelled";
+  attempts: number;
+  nextAttemptAt: string;
+  errorCode: string;
+  sentAt: string;
+  createdAt: string;
+  subject: string;
+  from: string;
+};
+
+export const mailMailboxList = (signal?: AbortSignal) =>
+  invoke<{ items: Mailbox[] }>("mail.mailbox.list", {}, undefined, signal);
+export const mailMailboxOnboard = (input: {
+  name: string;
+  emailAddress: string;
+  password: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpTls: "starttls" | "tls";
+  smtpUsername?: string;
+  pop3Host: string;
+  pop3Port: number;
+  pop3Username?: string;
+}) => invoke<{ id: number; status: string }>("mail.mailbox.onboard", input);
+export const mailMailboxUpdate = (input: {
+  id: number;
+  revision: number;
+  name: string;
+  emailAddress: string;
+  defaultSend: boolean;
+  smtpHost: string;
+  smtpPort: number;
+  smtpTls: "starttls" | "tls";
+  smtpUsername?: string;
+  pop3Host: string;
+  pop3Port: number;
+  pop3Username?: string;
+}) => invoke<{ id: number }>("mail.mailbox.update", input);
+export const mailCredentialReplace = (
+  mailboxId: number,
+  purpose: "smtp" | "pop3",
+  password: string,
+) =>
+  invoke<{ mailboxId: number; purpose: string; version: number }>(
+    "mail.mailbox.credential.replace",
+    { mailboxId, purpose, password },
+  );
+export const mailMailboxEnable = (id: number) =>
+  invoke<{ id: number; status: string }>("mail.mailbox.enable", { id });
+export const mailMailboxDisable = (id: number) =>
+  invoke<{ id: number; status: string }>("mail.mailbox.disable", { id });
+export const mailConnectionTest = (
+  mailboxId: number,
+  direction: "send" | "receive",
+) =>
+  invoke<{ mailboxId: number; direction: string; status: string }>(
+    "mail.mailbox.connection.test",
+    { mailboxId, direction },
+  );
+export const mailMessageList = (
+  input: {
+    folder: "inbox" | "sent";
+    mailboxId?: number;
+    page?: number;
+    pageSize?: number;
+  },
+  signal?: AbortSignal,
+) =>
+  invoke<{ items: MailMessageListItem[]; total: number }>(
+    "mail.message.list",
+    input,
+    undefined,
+    signal,
+  );
+export const mailMessageGet = (id: number, signal?: AbortSignal) =>
+  invoke<MailMessage>("mail.message.get", { id }, undefined, signal);
+export const mailMessageMarkRead = (id: number) =>
+  invoke<{ id: number; read: boolean }>("mail.message.flag.update", {
+    id,
+    read: true,
+  });
+export const mailMessageSend = (input: {
+  clientKey: string;
+  mailboxId: number;
+  to: MailAddress[];
+  cc?: MailAddress[];
+  bcc?: MailAddress[];
+  subject: string;
+  markdown: string;
+  replyTo?: string;
+  fileIds?: number[];
+}) =>
+  invoke<{ messageId: number; deliveryId: number; status: string }>(
+    "mail.message.send",
+    input,
+  );
+export const mailDeliveryList = (signal?: AbortSignal) =>
+  invoke<{ items: MailDelivery[] }>(
+    "mail.delivery.list",
+    {},
+    undefined,
+    signal,
+  );
+export const mailDeliveryRetry = (id: number) =>
+  invoke<{ id: number; status: string }>("mail.delivery.retry", { id });
+export const mailDeliveryCancel = (id: number) =>
+  invoke<{ id: number; status: string }>("mail.delivery.cancel", { id });
+export const mailAttachmentRead = (messageId: number, attachmentId: number) =>
+  invoke<{ name: string; mime: string; content: string }>(
+    "mail.attachment.read",
+    { messageId, attachmentId },
+  );
+
 export const runtimeExecute = (
   name: string,
   version: string,

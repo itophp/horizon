@@ -36,7 +36,7 @@ func TestApplicationRuntimeArticleQueries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err := identity.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "articles:read", Effect: "allow"}})
+	p, err := pluginIAM(t, pool).NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "articles:read", Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}

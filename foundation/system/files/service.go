@@ -26,7 +26,14 @@ import (
 type Service struct {
 	*governance.Core
 	Storage *Registry
+	// declared holds plugin-declared purposes merged at startup; the platform
+	// purposes stay owned by this module.
+	declared []string
 }
+
+// platformPurposes are the purposes the files module itself owns. Business
+// purposes are contributed by application plugins, never hardcoded here.
+var platformPurposes = []string{"attachment", "cloud_drive", "logo"}
 
 func New(c *governance.Core) *Service {
 	s := &Service{Core: c, Storage: NewRegistry(c.Options.StorageRoot)}
@@ -34,6 +41,40 @@ func New(c *governance.Core) *Service {
 	c.Logos = s
 	c.Storage = s
 	return s
+}
+
+// RegisterPurposes merges plugin-declared file purposes into the service
+// catalog. It must run before composition builds capability definitions.
+func (s *Service) RegisterPurposes(purposes ...string) {
+	seen := map[string]bool{}
+	for _, purpose := range s.declared {
+		seen[purpose] = true
+	}
+	for _, purpose := range purposes {
+		if seen[purpose] {
+			continue
+		}
+		seen[purpose] = true
+		s.declared = append(s.declared, purpose)
+	}
+}
+
+// Purposes returns every accepted purpose: platform-owned plus declared.
+func (s *Service) Purposes() []string {
+	out := append([]string(nil), platformPurposes...)
+	out = append(out, s.declared...)
+	sort.Strings(out)
+	return out
+}
+
+// HasPurpose reports whether a purpose is accepted for stored files.
+func (s *Service) HasPurpose(purpose string) bool {
+	for _, candidate := range s.Purposes() {
+		if candidate == purpose {
+			return true
+		}
+	}
+	return false
 }
 func apiError(err *error) {
 	if *err != nil {

@@ -4,6 +4,7 @@ package plugin
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -22,12 +23,41 @@ import (
 const APIVersion = "1.0"
 
 type Manifest struct {
-	ID           string       `json:"id" yaml:"id"`
-	Version      string       `json:"version" yaml:"version"`
-	APIVersion   string       `json:"apiVersion" yaml:"apiVersion"`
-	Mode         string       `json:"mode" yaml:"mode"`
+	ID         string `json:"id" yaml:"id"`
+	Version    string `json:"version" yaml:"version"`
+	APIVersion string `json:"apiVersion" yaml:"apiVersion"`
+	Mode       string `json:"mode" yaml:"mode"`
+	// Installation is the runtime application-package key this plugin
+	// publishes under. It defaults to the plugin ID. Legacy packages pin
+	// their existing key so installed tenants keep resolving the same
+	// installation without a data migration.
+	Installation string `json:"installation,omitempty" yaml:"installation,omitempty"`
+	// Managed marks the contributed application as deployment-baseline
+	// managed: every tenant receives it and tenant lifecycle stays forbidden.
+	Managed      bool         `json:"managed,omitempty" yaml:"managed,omitempty"`
 	Dependencies []Dependency `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
 	Extensions   []string     `json:"extensions" yaml:"extensions"`
+	Permissions  []Permission `json:"permissions,omitempty" yaml:"permissions,omitempty"`
+	FilePurposes []string     `json:"filePurposes,omitempty" yaml:"filePurposes,omitempty"`
+	// Settings declares configuration keys owned by the plugin's business
+	// domain. Keys must be prefixed by one of the declared permission modules.
+	Settings []Setting `json:"settings,omitempty" yaml:"settings,omitempty"`
+}
+
+// Setting describes a configuration key contributed by a plugin. The value
+// grammar mirrors the platform registry: Default is JSON encoded.
+type Setting struct {
+	Key       string   `json:"key" yaml:"key"`
+	Group     string   `json:"group" yaml:"group"`
+	Kind      string   `json:"kind" yaml:"kind"`
+	Default   string   `json:"default" yaml:"default"`
+	Scopes    []string `json:"scopes" yaml:"scopes"`
+	Choices   []string `json:"choices,omitempty" yaml:"choices,omitempty"`
+	Sensitive bool     `json:"sensitive,omitempty" yaml:"sensitive,omitempty"`
+	Secret    bool     `json:"secret,omitempty" yaml:"secret,omitempty"`
+	UI        bool     `json:"ui" yaml:"ui"`
+	Min       int64    `json:"min,omitempty" yaml:"min,omitempty"`
+	Max       int64    `json:"max,omitempty" yaml:"max,omitempty"`
 }
 
 // Dependency pins a required builtin plugin to an exact semantic version.
@@ -63,12 +93,12 @@ type Plugin interface {
 
 // Permission describes an authorization catalog entry; registering it grants no access.
 type Permission struct {
-	Code              string
-	Module            string
-	Function          string
-	Action            string
-	ScopeConfigurable bool
-	TemporaryEligible bool
+	Code              string `json:"code" yaml:"code"`
+	Module            string `json:"module" yaml:"module"`
+	Function          string `json:"function" yaml:"function"`
+	Action            string `json:"action" yaml:"action"`
+	ScopeConfigurable bool   `json:"scopeConfigurable" yaml:"scopeConfigurable"`
+	TemporaryEligible bool   `json:"temporaryEligible" yaml:"temporaryEligible"`
 }
 
 type Extension struct{ PluginID, PluginVersion, Type, Name, Version string }
@@ -78,6 +108,8 @@ type Registrar struct {
 	entries      []registry.Entry
 	entities     []contracts.Entity
 	permissions  []Permission
+	settings     []Setting
+	failures     []error
 	extensions   []Extension
 }
 
@@ -112,6 +144,12 @@ type Catalog struct {
 	Entities     []contracts.Entity
 	Permissions  []Permission
 	Extensions   []Extension
+	// FilePurposes lists plugin-declared file purposes merged at startup.
+	FilePurposes []string
+	// Managed lists installation keys of deployment-baseline-managed packages.
+	Managed []string
+	// Settings lists plugin-declared configuration keys merged at startup.
+	Settings []Setting
 }
 type Manager struct {
 	plugins    []Plugin
@@ -123,6 +161,8 @@ type Manager struct {
 
 var idPattern = regexp.MustCompile(`^[a-z][a-z0-9.-]*$`)
 var versionPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
+var installPattern = regexp.MustCompile(`^[a-z][a-z0-9.:-]*$`)
+var purposePattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)
 
 func New(plugins ...Plugin) *Manager { return &Manager{plugins: append([]Plugin(nil), plugins...)} }
 
@@ -144,6 +184,14 @@ func (m *Manager) Register(ctx context.Context) error {
 		v := p.Manifest()
 		if !idPattern.MatchString(v.ID) || !versionPattern.MatchString(v.Version) || v.APIVersion != APIVersion || v.Mode != "builtin" || v.Extensions == nil {
 			return fmt.Errorf("invalid manifest for plugin %q", v.ID)
+		}
+		if v.Installation != "" && !installPattern.MatchString(v.Installation) {
+			return fmt.Errorf("invalid installation key for plugin %q", v.ID)
+		}
+		for _, purpose := range v.FilePurposes {
+			if !purposePattern.MatchString(purpose) {
+				return fmt.Errorf("invalid file purpose %q for plugin %q", purpose, v.ID)
+			}
 		}
 		if _, ok := byID[v.ID]; ok {
 			return fmt.Errorf("duplicate plugin %q", v.ID)
@@ -202,13 +250,23 @@ func (m *Manager) Register(ctx context.Context) error {
 		r := &Registrar{manifest: p.Manifest()}
 		allowed := map[string]bool{}
 		for _, kind := range r.manifest.Extensions {
-			if kind != "capability" && kind != "entity" && kind != "permission" && kind != "event" && kind != "application" {
+			if kind != "capability" && kind != "entity" && kind != "permission" && kind != "event" && kind != "application" && kind != "file-purpose" && kind != "settings" {
 				return fmt.Errorf("unknown extension type %q", kind)
 			}
 			if allowed[kind] {
 				return fmt.Errorf("duplicate extension type %q", kind)
 			}
 			allowed[kind] = true
+		}
+		if len(r.manifest.FilePurposes) > 0 && !allowed["file-purpose"] {
+			return fmt.Errorf("plugin %s declares file purposes without the file-purpose extension", r.manifest.ID)
+		}
+		// Manifest-declared permissions and settings enter the registrar
+		// before Register so capability references validate against the
+		// declarative catalog.
+		r.Permissions(r.manifest.Permissions...)
+		if err := r.manifestSettings(); err != nil {
+			return err
 		}
 		if err := p.Register(ctx, r); err != nil {
 			return fmt.Errorf("register plugin %s: %w", p.Manifest().ID, err)
@@ -268,15 +326,73 @@ func (m *Manager) Register(ctx context.Context) error {
 				return fmt.Errorf("plugin %s has unused %s reference", r.manifest.ID, key)
 			}
 		}
-		staged.Entries = append(staged.Entries, r.entries...)
-		staged.Entities = append(staged.Entities, r.entities...)
+		installKey := r.manifest.Installation
+		if installKey == "" {
+			installKey = r.manifest.ID
+		}
+		appIDs := map[string]bool{}
 		for _, application := range r.applications {
-			if application.Source != r.manifest.ID {
-				return fmt.Errorf("plugin %s has invalid application ownership", r.manifest.ID)
+			if application.Source != installKey {
+				return fmt.Errorf("plugin %s has invalid application ownership: %q is not the installation key", r.manifest.ID, application.Source)
+			}
+			appIDs[application.ID] = true
+		}
+		// Capabilities of a plugin that publishes an application package belong
+		// to that installation; the stable keys stay deployment data.
+		if allowed["application"] {
+			for i := range r.entries {
+				r.entries[i].Definition.Installation = installKey
+				if len(appIDs) == 1 {
+					for id := range appIDs {
+						r.entries[i].Definition.Application = id
+					}
+				}
 			}
 		}
+		staged.Entries = append(staged.Entries, r.entries...)
+		staged.Entities = append(staged.Entities, r.entities...)
 		staged.Applications = append(staged.Applications, r.applications...)
-		staged.Permissions = append(staged.Permissions, r.permissions...)
+		seenPermissions := map[string]bool{}
+		for _, code := range staged.Permissions {
+			seenPermissions[code.Code] = true
+		}
+		for _, permission := range r.permissions {
+			if seenPermissions[permission.Code] {
+				return fmt.Errorf("plugin %s declares permission %q more than once", r.manifest.ID, permission.Code)
+			}
+			seenPermissions[permission.Code] = true
+			staged.Permissions = append(staged.Permissions, permission)
+		}
+		for _, purpose := range r.manifest.FilePurposes {
+			extension := Extension{r.manifest.ID, r.manifest.Version, "file-purpose", purpose, r.manifest.Version}
+			key := extension.Type + ":" + extension.Name
+			if seen[key] {
+				return fmt.Errorf("duplicate or empty extension %s", key)
+			}
+			seen[key] = true
+			staged.Extensions = append(staged.Extensions, extension)
+			staged.FilePurposes = append(staged.FilePurposes, purpose)
+		}
+		if len(r.failures) > 0 {
+			return r.failures[0]
+		}
+		seenSettings := map[string]bool{}
+		for _, def := range staged.Settings {
+			seenSettings[def.Key] = true
+		}
+		for _, def := range r.settings {
+			if seenSettings[def.Key] {
+				return fmt.Errorf("plugin %s declares setting %q more than once", r.manifest.ID, def.Key)
+			}
+			seenSettings[def.Key] = true
+			staged.Settings = append(staged.Settings, def)
+		}
+		if len(r.manifest.Settings) > 0 && !allowed["settings"] {
+			return fmt.Errorf("plugin %s declares settings without the settings extension", r.manifest.ID)
+		}
+		if r.manifest.Managed {
+			staged.Managed = append(staged.Managed, installKey)
+		}
 		staged.Extensions = append(staged.Extensions, r.extensions...)
 	}
 	cat := registry.New(staged.Entries)
@@ -342,6 +458,51 @@ func (m *Manager) AttachModel(generate func(context.Context, string, string) (st
 		}); ok {
 			consumer.AttachModel(generate)
 		}
+	}
+}
+
+// Plugins exposes the registered plugin instances so composition layers can
+// adapt optional capabilities (gateway attachment, background workers) with
+// type assertions. The plugin package itself stays free of transport and AI
+// dependencies.
+func (m *Manager) Plugins() []Plugin { return m.plugins }
+
+// manifestSettings seeds registrar state from the manifest declaration.
+func (r *Registrar) manifestSettings() error {
+	r.Settings(r.manifest.Settings...)
+	return nil
+}
+
+// Settings registers plugin-owned configuration keys. The registrar validates
+// that each key lives under a permission module the manifest declares, so a
+// plugin can only own settings inside its own business domain.
+func (r *Registrar) Settings(defs ...Setting) {
+	if len(defs) == 0 {
+		return
+	}
+	modules := map[string]bool{}
+	for _, permission := range r.manifest.Permissions {
+		modules[permission.Module] = true
+	}
+	for _, def := range defs {
+		domain := def.Key
+		if dot := strings.Index(def.Key, "."); dot > 0 {
+			domain = def.Key[:dot]
+		}
+		if domain == "" || def.Key == domain {
+			r.failures = append(r.failures, fmt.Errorf("setting key %q needs a domain prefix", def.Key))
+			continue
+		}
+		if !modules[domain] {
+			r.failures = append(r.failures, fmt.Errorf("setting %q is outside the declared modules of %s", def.Key, r.manifest.ID))
+			continue
+		}
+		if json.Valid([]byte(def.Default)) == false {
+			r.failures = append(r.failures, fmt.Errorf("setting %q has a non-JSON default", def.Key))
+			continue
+		}
+		r.settings = append(r.settings, def)
+		r.extensions = append(r.extensions, Extension{r.manifest.ID, r.manifest.Version, "settings", def.Key, r.manifest.Version})
 	}
 }
 

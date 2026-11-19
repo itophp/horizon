@@ -26,7 +26,7 @@ import (
 func TestExecutionPlanLifecycleAndIsolation(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	p, err := iam.PrincipalForTask(ctx, "tenant-a", root.ID, root.DepartmentID)
 	if err != nil {
 		t.Fatal(err)
@@ -171,7 +171,7 @@ func TestExecutionPlanLifecycleAndIsolation(t *testing.T) {
 		t.Fatal(count, err)
 	}
 	// Unauthorized callers cannot discover or invoke management actions.
-	limited, err := identity.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}})
+	limited, err := iam.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,14 +185,14 @@ func TestExecutionPlanLifecycleAndIsolation(t *testing.T) {
 		}
 	}
 
-	editor, err := identity.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}, {Permission: "executionPlans:edit", Effect: "allow"}})
+	editor, err := iam.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-a", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}, {Permission: "executionPlans:edit", Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err = restricted.Invoke(identity.WithPrincipal(context.Background(), editor), gateway.Request{Name: "execution.plan.publish", Input: planInput, Origin: contracts.OriginHumanUI, IdempotencyKey: "editor-publish"}); contracts.Code(err) != "forbidden" {
 		t.Fatal("editor obtained publish permission", err)
 	}
-	foreign, err := identity.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-b", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}, {Permission: "executionPlans:bind", Effect: "allow"}})
+	foreign, err := iam.NewPrincipal(&gen.AccountRecord{ID: root.ID}, "tenant-b", []*gen.PermissionGrant{{Permission: "example:read", Effect: "allow"}, {Permission: "executionPlans:bind", Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}

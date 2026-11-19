@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,9 +29,6 @@ func buildRegistry() []Definition {
 	add := func(key, group, kind, def string, scopes []string, sensitive, secret, ui bool, min, max int64, choices ...string) {
 		out = append(out, Definition{key, group, kind, def, scopes, choices, sensitive, secret, min, max, ui})
 	}
-	// Article moderation policy is content configuration, not account security:
-	// its own group keeps the word list where an editor looks for it.
-	add("articles.blockedWords", "articles", "string", `""`, workspace, true, false, true, 0, 10000)
 	add("memory.activitySamplePercent", "memory", "integer", `10`, workspace, false, false, true, 0, 100)
 	add("branding.name", "branding", "string", `"Horizon"`, branding, false, false, true, 1, 100)
 	add("branding.tagline", "branding", "string", `"Administration workspace"`, branding, false, false, true, 0, 200)
@@ -109,9 +107,6 @@ func buildRegistry() []Definition {
 	add("files.maxBytes", "files", "integer", `20971520`, limits, false, false, false, 1024, 20971520)
 	add("files.logoMaxBytes", "files", "integer", `2097152`, limits, false, false, false, 1024, 2097152)
 	add("files.extensions", "files", "set", `["png","jpg","jpeg","webp","pdf","txt","csv","docx","xlsx"]`, limits, false, false, false, 0, 0, "png", "jpg", "jpeg", "webp", "pdf", "txt", "csv", "docx", "xlsx")
-	add("drive.maxBytes", "files", "integer", `1073741824`, limits, false, false, true, 1, 1073741824)
-	add("drive.quotaBytes", "files", "integer", `0`, limits, false, false, true, 0, 1<<50)
-	add("drive.blockedExtensions", "files", "string", `""`, limits, true, false, true, 0, 2048)
 	out = append(out, aiModelDefinitions()...)
 	out = append(out, knowledgeEmbeddingDefinitions()...)
 	return append(out, unifiedModelDefinitions...)
@@ -124,6 +119,47 @@ func FindDefinition(key string) *Definition {
 	}
 	return customModelDefinition(Registry, key)
 }
+
+// registeredCores tracks assembled Core instances so plugin-declared settings
+// become visible to cores constructed earlier in the startup sequence. The
+// deployment assembly is sequential, so a simple mutex is sufficient.
+var (
+	registerMu      sync.Mutex
+	registeredCores []*Core
+)
+
+// RegisterDefinitions appends deployment-assembled definitions to the shared
+// registry. It runs once during startup assembly before requests are served;
+// the registry var is read dynamically, so registered keys resolve everywhere.
+func RegisterDefinitions(defs ...Definition) {
+	registerMu.Lock()
+	defer registerMu.Unlock()
+	known := map[string]bool{}
+	for _, existing := range Registry {
+		known[existing.Key] = true
+	}
+	fresh := make([]Definition, 0, len(defs))
+	for _, def := range defs {
+		if known[def.Key] {
+			continue
+		}
+		known[def.Key] = true
+		fresh = append(fresh, def)
+	}
+	Registry = append(Registry, fresh...)
+	for _, core := range registeredCores {
+		coreSeen := map[string]bool{}
+		for _, existing := range core.Definitions {
+			coreSeen[existing.Key] = true
+		}
+		for _, def := range fresh {
+			if !coreSeen[def.Key] {
+				core.Definitions = append(core.Definitions, def)
+			}
+		}
+	}
+}
+
 func Has(values []string, value string) bool {
 	for _, v := range values {
 		if v == value {

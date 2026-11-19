@@ -1,5 +1,17 @@
 # 版本及官方依据
 
+## 2026-11-19 个人邮箱应用
+
+新增固定 Go 依赖并核对本地模块源码与许可证：
+
+| 依赖 | 选定版本 | 官方来源与许可 |
+|---|---|---|
+| `github.com/knadh/go-pop3` | 1.0.2 | [pkg.go.dev](https://pkg.go.dev/github.com/knadh/go-pop3@v1.0.2) · MIT |
+| `github.com/microcosm-cc/bluemonday` | 1.0.27 | [pkg.go.dev](https://pkg.go.dev/github.com/microcosm-cc/bluemonday@v1.0.27) · BSD-3-Clause |
+| `github.com/yuin/goldmark` | 1.8.7 | [pkg.go.dev](https://pkg.go.dev/github.com/yuin/goldmark@v1.8.7) · MIT |
+
+`go-pop3` 传递引入 `github.com/emersion/go-message v0.18.2`（MIT）用于 MIME 解析；bluemonday 传递引入 douceur、gorilla/css 与 `golang.org/x/net`，由 go.sum 固定。goldmark 原为 v1.4.13 间接依赖，因直接用于 Markdown 到 HTML 渲染提升为 v1.8.7 直接依赖。POP3 仅启用 direct TLS；HTML 输入统一经服务端 allowlist 清理，前端仅用 sandboxed iframe 展示。
+
 ## Application Runtime shadcn/ui 组件（2026-11-13）
 
 从 [shadcn 官方 Base Nova Registry](https://ui.shadcn.com/r/styles/base-nova/alert-dialog.json) 引入组件源码，沿用 Base UI、Lucide、cn 和仓库主题。直接依赖固定版本，以下官方 npm 元数据标注 MIT。声明 React peer 的组件支持 React 19，Recharts 的 react-is 与 React 版本对齐。Sonner 沿用仓库的 CSS 主题变量。

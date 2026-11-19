@@ -86,16 +86,16 @@ func (m *workflowModel) Stream(context.Context, []*schema.Message, ...model.Opti
 func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
 	pollCalls := 0
 	pollEntry := registry.Entry{Definition: contracts.Definition{Layer: contracts.LayerAtomic, Name: "test.ready", Version: "1", Entity: "example_record", ReadOnly: true, Risk: contracts.RiskLow, Approval: contracts.ApprovalAuto, Input: contracts.Object(nil)}, Handler: contracts.Handler{Execute: func(context.Context, contracts.Input) (contracts.Output, error) {
 		pollCalls++
 		return contracts.Output{Data: map[string]any{"done": pollCalls >= 2}}, nil
 	}}}
-	definitions := append(runtime.Builtins(), runtime.Definition{Name: "poll", Version: "1", Input: contracts.Object(nil), Steps: []runtime.Step{{ID: "ready", Capability: "test.ready", Version: "1", Poll: &runtime.Poll{DoneField: "done", MaxSteps: 4}}}})
+	definitions := append(example.Workflows(), runtime.Definition{Name: "poll", Version: "1", Input: contracts.Object(nil), Steps: []runtime.Step{{ID: "ready", Capability: "test.ready", Version: "1", Poll: &runtime.Poll{DoneField: "done", MaxSteps: 4}}}})
 	definitions = append(definitions, runtime.Definition{Name: "agent-write", Version: "1", Input: contracts.Object(map[string]*contracts.Schema{"id": {Type: "integer"}}, "id"), Steps: []runtime.Step{{ID: "archiveAgent", Agent: &runtime.Agent{Instruction: "Archive the record using the provided tool.", Tools: []string{"example.record.archive@1.0.0"}, MaxIterations: 3}, Input: map[string]runtime.Mapping{"id": {From: "input", Field: "id"}}}}})
-	e := runtime.New(core, definitions)
+	e := runtime.NewWithGraphs(core, definitions, example.Graphs())
 	observations := &workflowObservations{}
 	e.Observations = observations
 	entries := append(example.New(pool).Entries(), (&orchmodule.Module{Engine: e}).Entries()...)
@@ -168,7 +168,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 		t.Fatalf("approve: %+v %v", r, err)
 	}
 	// Reconstruct the Eino engine and compiled graph, exercising durable restore.
-	e = runtime.New(core, definitions)
+	e = runtime.NewWithGraphs(core, definitions, example.Graphs())
 	e.Observations = observations
 	if err := e.Attach(g, catalog); err != nil {
 		t.Fatal(err)
@@ -242,7 +242,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	if _, err = g.Decide(ctx, cards[0].ID, true, ""); err != nil {
 		t.Fatal(err)
 	}
-	e = runtime.New(core, definitions)
+	e = runtime.NewWithGraphs(core, definitions, example.Graphs())
 	if err := e.Attach(g, catalog); err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 	accountCopy := *p.Account
 	accountCopy.IsAdmin = false
 	accountCopy.ID++
-	unprivileged, err := identity.NewPrincipal(&accountCopy, "tenant-a", nil)
+	unprivileged, err := iam.NewPrincipal(&accountCopy, "tenant-a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 		t.Fatalf("depth ceiling: %v", err)
 	}
 	// A different trusted account and tenant cannot read another run.
-	outsider, err := identity.NewPrincipal(p.Account, "other-tenant", nil)
+	outsider, err := iam.NewPrincipal(p.Account, "other-tenant", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func TestOrchestrationDurableApprovalGraphAndADK(t *testing.T) {
 func TestOrchestrationRetryLimitsAndCompensation(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx := context.Background()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
 	flakyCalls, neverCalls := 0, 0
 	makeRead := func(name string, fn contracts.Executor) registry.Entry {
@@ -355,7 +355,7 @@ func TestOrchestrationRetryLimitsAndCompensation(t *testing.T) {
 	}
 	// Keep the reused create capability's original version explicit.
 	definitions[2].Steps[0].Version = "1.0.0"
-	e := runtime.New(core, definitions)
+	e := runtime.NewWithGraphs(core, definitions, example.Graphs())
 	entries := append([]registry.Entry{flaky, never, failure, create, undo}, (&orchmodule.Module{Engine: e}).Entries()...)
 	catalog := registry.New(entries)
 	if catalog.Err() != nil {

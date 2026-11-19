@@ -2,6 +2,8 @@ package applicationruntime
 
 import (
 	"encoding/json"
+	"sync"
+
 	"horizon/foundation/kernel/capability/contracts"
 )
 
@@ -20,7 +22,20 @@ type UIContract struct {
 
 const batchImportTemplatePathPattern = `^/([A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+[.]xlsx$`
 
-func UIContracts() []UIContract {
+// extraContracts holds trusted component contracts contributed by plugins.
+// The deployment registers them during startup assembly; afterwards the slice
+// is read-only, so a RWMutex keeps the race detector honest.
+// RegisterUIContracts appends plugin-declared trusted component contracts.
+// Components remain trusted by construction: the declaring plugin owns the
+// renderer contract and the frontend registers the actual implementation.
+func RegisterUIContracts(contracts ...UIContract) {
+	contractsMu.Lock()
+	defer contractsMu.Unlock()
+	extraContracts = append(extraContracts, contracts...)
+	trustedCache = nil
+}
+
+func builtinUIContracts() []UIContract {
 	layoutProps := map[string]any{
 		"type": "object",
 		"properties": map[string]any{
@@ -233,12 +248,39 @@ func UIContracts() []UIContract {
 	return appendShadcnUIContracts(result)
 }
 
-var trustedUIContracts = func() map[string]UIContract {
-	result := map[string]UIContract{}
-	for _, item := range UIContracts() {
-		if item.Category == "element" {
-			result[item.Name+"@"+item.Version] = item
-		}
+// trustedContracts returns the element-kind contract index, including plugin
+// contributions. The cache invalidates when plugins register more contracts.
+func trustedContracts() map[string]UIContract {
+	contractsMu.RLock()
+	if trustedCache != nil {
+		result := trustedCache
+		contractsMu.RUnlock()
+		return result
 	}
-	return result
-}()
+	contractsMu.RUnlock()
+	contractsMu.Lock()
+	defer contractsMu.Unlock()
+	if trustedCache == nil {
+		result := map[string]UIContract{}
+		for _, item := range append(builtinUIContracts(), extraContracts...) {
+			if item.Category == "element" {
+				result[item.Name+"@"+item.Version] = item
+			}
+		}
+		trustedCache = result
+	}
+	return trustedCache
+}
+
+var (
+	trustedCache   map[string]UIContract
+	extraContracts []UIContract
+	contractsMu    sync.RWMutex
+)
+
+// UIContracts lists the platform contracts plus plugin-declared contributions.
+func UIContracts() []UIContract {
+	contractsMu.RLock()
+	defer contractsMu.RUnlock()
+	return append(builtinUIContracts(), extraContracts...)
+}

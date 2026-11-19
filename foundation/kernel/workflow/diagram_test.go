@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/cloudwego/eino/compose"
-	"horizon/foundation/kernel/workflow/spec"
+	"horizon/foundation/kernel/capability/contracts"
 )
 
 func TestBuildDiagramIgnoresCompiledFanOut(t *testing.T) {
-	d := LifecycleExample()
+	d := lifecycleFlow()
 	info := &compose.GraphInfo{
 		Nodes: map[string]compose.GraphNodeInfo{
 			"create":  {Name: "create"},
@@ -68,7 +68,7 @@ func TestBuildDiagramIgnoresCompiledFanOut(t *testing.T) {
 }
 
 func TestBuildDiagramMarksBranchEdges(t *testing.T) {
-	d := spec.ArticlePublish()
+	d := neutralFlow()
 	got := buildDiagram(d, nil)
 	kinds := map[string]string{}
 	for _, edge := range got.Edges {
@@ -92,7 +92,7 @@ func TestBuildDiagramMarksBranchEdges(t *testing.T) {
 }
 
 func TestBuildDiagramFallsBackToDeclaredDependencies(t *testing.T) {
-	d := LifecycleExample()
+	d := lifecycleFlow()
 	got := buildDiagram(d, nil)
 	for _, node := range got.Nodes {
 		if node.Kind != "start" && node.Kind != "end" && node.Compiled {
@@ -118,7 +118,7 @@ func TestBuildDiagramFallsBackToDeclaredDependencies(t *testing.T) {
 }
 
 func TestBuildDiagramMarksNodeKinds(t *testing.T) {
-	got := buildDiagram(LifecycleExample(), nil)
+	got := buildDiagram(lifecycleFlow(), nil)
 	byID := map[string]string{}
 	for _, node := range got.Nodes {
 		byID[node.ID] = node.Kind
@@ -132,4 +132,28 @@ func TestBuildDiagramMarksNodeKinds(t *testing.T) {
 	if byID["create"] != "step" {
 		t.Fatalf("capability step kind lost: %+v", byID)
 	}
+}
+
+// neutralFlow is a kernel-owned workflow fixture with agent and branch steps.
+func neutralFlow() Definition {
+	branch := func(id, decision string) Step {
+		return Step{ID: id, Capability: "fixture.action", Version: "1.0.0", DependsOn: []string{"record"}, When: &When{From: "record", Field: "decision", Equals: decision}, Input: map[string]Mapping{}}
+	}
+	return Definition{Name: "fixture-flow", Version: "1.0.0", Input: contracts.Object(map[string]*contracts.Schema{"id": contracts.Int(1, 1<<53)}, "id"), Steps: []Step{
+		{ID: "save", Capability: "fixture.save", Version: "1.0.0", Input: map[string]Mapping{"id": {From: "input", Field: "id"}}},
+		{ID: "review", DependsOn: []string{"save"}, Agent: &Agent{Instruction: "Review the fixture record and return a verdict code.", Tools: []string{"fixture.read@1.0.0"}, MaxIterations: 4, Output: contracts.Object(map[string]*contracts.Schema{"code": {Type: "string", Enum: []string{"safe", "blocked"}}}, "code")}, Input: map[string]Mapping{"id": {From: "save", Field: "id"}}},
+		{ID: "record", Capability: "fixture.record", Version: "1.0.0", DependsOn: []string{"review"}, Input: map[string]Mapping{"code": {From: "review", Field: "code"}}},
+		branch("publish", "approve"), branch("reject", "reject"),
+	}}
+}
+
+// lifecycleFlow mirrors the four-step poll chain the compiled fanout test
+// exercises: create -> wait -> review -> archive.
+func lifecycleFlow() Definition {
+	return Definition{Name: "fixture-lifecycle", Version: "1.0.0", Input: contracts.Object(map[string]*contracts.Schema{"title": {Type: "string"}}, "title"), Steps: []Step{
+		{ID: "create", Capability: "fixture.create", Version: "1.0.0", Input: map[string]Mapping{"title": {From: "input", Field: "title"}}},
+		{ID: "wait", Capability: "fixture.get", Version: "1.0.0", Poll: &Poll{DoneField: "ready", MaxSteps: 2}, Input: map[string]Mapping{"id": {From: "create", Field: "id"}}},
+		{ID: "review", DependsOn: []string{"wait"}, Agent: &Agent{Instruction: "Review the fixture record.", Tools: []string{"fixture.read@1.0.0"}, MaxIterations: 3}, Input: map[string]Mapping{"id": {From: "create", Field: "id"}}},
+		{ID: "archive", Capability: "fixture.archive", Version: "1.0.0", DependsOn: []string{"review"}, Input: map[string]Mapping{"id": {From: "create", Field: "id"}}},
+	}}
 }

@@ -25,6 +25,15 @@
     "mode": {
       "const": "builtin"
     },
+    "installation": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.:-]*$",
+      "description": "Runtime application-package key; defaults to the plugin id. Legacy packages pin their existing key."
+    },
+    "managed": {
+      "type": "boolean",
+      "description": "Marks the contributed application as deployment-baseline managed for every tenant."
+    },
     "extensions": {
       "type": "array",
       "uniqueItems": true,
@@ -35,6 +44,7 @@
           "permission",
           "event",
           "application",
+          "file-purpose",
           "navigation",
           "page",
           "component",
@@ -45,8 +55,49 @@
           "custom-view",
           "shell",
           "theme",
-          "locale"
+          "locale",
+          "settings"
         ]
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "module",
+          "function",
+          "action"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "function": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "scopeConfigurable": {
+            "type": "boolean"
+          },
+          "temporaryEligible": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "filePurposes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
       }
     },
     "dependencies": {
@@ -65,6 +116,71 @@
           },
           "version": {
             "$ref": "#/$defs/version"
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "group",
+          "kind",
+          "default",
+          "scopes"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*\\.[a-z][A-Za-z0-9]*$"
+          },
+          "group": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "string",
+              "integer",
+              "number",
+              "enum",
+              "set",
+              "bool",
+              "secret"
+            ]
+          },
+          "default": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sensitive": {
+            "type": "boolean"
+          },
+          "secret": {
+            "type": "boolean"
+          },
+          "ui": {
+            "type": "boolean"
+          },
+          "min": {
+            "type": "integer"
+          },
+          "max": {
+            "type": "integer"
           }
         }
       }

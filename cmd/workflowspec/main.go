@@ -3,11 +3,12 @@
 package main
 
 import (
+	"horizon/deployment"
+
 	"encoding/json"
 	"flag"
 	"fmt"
 	runtime "horizon/foundation/kernel/workflow/spec"
-	"horizon/foundation/runtime/app"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,7 +58,7 @@ func run(out, file string) error {
 	if err = write("workflow.schema.json", schema); err != nil {
 		return err
 	}
-	for _, d := range app.WorkflowDefinitions() {
+	for _, d := range deployment.WorkflowDefinitions() {
 		name := d.Name + ".workflow.json"
 		expected[name] = true
 		if err = write(name, d); err != nil {

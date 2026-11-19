@@ -49,7 +49,8 @@ func TestPluginPermissionGatewayTenantAndDeny(t *testing.T) {
 	projectID := rowID(t, h.ok(t, h.root, "project.create", map[string]any{"code": "PLUGIN-PERM", "name": "Plugin permission"}))
 	actor := h.account(t, "plugin-reader", projects.ReadPermission)
 	h.ok(t, h.root, "project.member.add", map[string]any{"projectId": projectID, "accountId": actor.id})
-	manager := plugin.New(projects.Plugin{Module: projects.New(h.pool)}, extraPermissionPlugin{pool: h.pool})
+	builtin := deployment.BuiltinPlugins(governance.New(h.pool, identity.New(h.pool, false), governance.Options{StorageRoot: t.TempDir()}))
+	manager := plugin.New(append(builtin.Plugins(), extraPermissionPlugin{pool: h.pool})...)
 	if err := manager.Register(context.Background()); err != nil {
 		t.Fatal(err)
 	}

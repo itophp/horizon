@@ -9,6 +9,16 @@ description: "Change PostgreSQL schema, Goose migrations, sqlc queries, pgx repo
 
 修改前检查已有迁移与 query，明确数据生命周期、约束、租户归属、拥有者语义、查询范围和字段投影。新业务表由实际需求驱动，技术示例表不能直接冒充正式模型。
 
+## 数据库执行归应用生命周期（强制边界）
+
+**数据库 schema 的执行属于应用的安装、升级、卸载流程，不写入内核。** 自本规则生效起：
+
+- 业务应用（`applications/<module>/`）的表结构、约束、索引迁移随插件 manifest 声明，由插件管理器的安装/升级/卸载流程执行；业务迁移文件放 `applications/<module>/migrations/`，不进入 `foundation/db/migrations/`。
+- `foundation/db/migrations/` 只保留平台与身份基础 schema（identity、runtime、审计、审批、文件、设置等内核自有表）。给业务表追加迁移即属越界，按内核违规处理。
+- 应用升级按 manifest 版本推进迁移，卸载按应用生命周期回收数据；执行入口只消费应用自带迁移，内核代码不得引用业务表名或业务迁移路径。
+- 平台能力的表结构变更仍走 `foundation/db/migrations/`（追加版本、Up/Down 往返），但判定标准是"表属于内核服务"，不是"改起来方便"。
+- `foundation/` 下的文件变动（含迁移、规则文档、AGENTS.md）必须先获得用户明确授权才能进行。
+
 - 已应用迁移只追加版本；评估锁表、默认值、回填、索引以及已有数据兼容性。Up/Down 不自动等于生产可安全回滚；不可逆操作要明确记录，不自动执行破坏性生产变更。
 - 表和约束在 `foundation/db/migrations/`，参数化查询在 `foundation/db/query/`。改 SQL 后运行 `./horizon-cli generate`，手写 Repository 只消费根目录 `internal/repository/dbgen/`。禁止直接修补 sqlc 输出。
 - 所有租户数据的 list/get/update/delete/aggregate/export/batch/joins 都在 SQL 层实施可信 tenant + scope，写入优先带范围的原子查询；不先无约束查出再过滤。

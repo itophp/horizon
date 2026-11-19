@@ -492,6 +492,24 @@ func (t *Table) removeForeignKey(name string) {
 	t.ForeignKeys = kept
 }
 
+// clearCheckConstraint drops a stale single-column enum or shape constraint
+// when a migration replaces it, matching PostgreSQL's default
+// <table>_<column>_check naming for unnamed CHECK constraints.
+func (t *Table) clearCheckConstraint(name string) {
+	rest, ok := strings.CutPrefix(name, t.Name+"_")
+	if !ok || !strings.HasSuffix(rest, "_check") {
+		return
+	}
+	column := strings.TrimSuffix(rest, "_check")
+	for i := range t.Columns {
+		if t.Columns[i].Name == column {
+			t.Columns[i].Enum = nil
+			t.Columns[i].Shape = ""
+			return
+		}
+	}
+}
+
 // identifierList parses "a, b, c" into column names.
 func identifierList(source string) []string {
 	out := []string{}
@@ -643,6 +661,9 @@ func applyAlter(byName map[string]*Table, statement string) error {
 		name, _ := leadingIdentifier(strings.TrimSpace(rest[index+len("DROP CONSTRAINT"):]))
 		if name != "" {
 			table.removeForeignKey(name)
+			// A dropped single-column check removes the parsed enum or shape
+			// constraint too, so a later replacement defines the column fresh.
+			table.clearCheckConstraint(name)
 		}
 	case strings.Contains(upper, "ADD CONSTRAINT"), strings.Contains(upper, "ADD FOREIGN KEY"),
 		strings.Contains(upper, "ADD CHECK"), strings.Contains(upper, "ADD UNIQUE"),

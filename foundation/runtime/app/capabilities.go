@@ -61,6 +61,10 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	if fileService == nil {
 		fileService = files.New(m.Core)
 	}
+	// Plugin-declared file purposes join the catalog before definitions build.
+	if plugins := m.Registration.Plugins; plugins != nil && len(plugins.Catalog.FilePurposes) > 0 {
+		fileService.RegisterPurposes(plugins.Catalog.FilePurposes...)
+	}
 	if m.ExecutionPlans == nil {
 		m.ExecutionPlans = &executionplans.Module{Pool: m.Core.Pool}
 	}
@@ -114,7 +118,15 @@ func (m CapabilityModules) Entries() []registry.Entry {
 	m.Runtime.Applications = applications
 	m.Runtime.Versions = versions
 	m.Runtime.Pool = m.Core.Pool
-	m.Runtime.BasePlugins = BaseApplicationPlugins()
+	// Base classification: foundation-owned packages plus plugin-declared
+	// managed applications. The set stays deployment composition data.
+	base := BaseApplicationPlugins()
+	if plugins := m.Registration.Plugins; plugins != nil {
+		for _, id := range plugins.Catalog.Managed {
+			base[id] = true
+		}
+	}
+	m.Runtime.BasePlugins = base
 	m.Runtime.Definitions = map[string]contracts.Definition{}
 	for _, entry := range entries {
 		m.Runtime.Definitions[entry.Definition.Key()] = entry.Definition

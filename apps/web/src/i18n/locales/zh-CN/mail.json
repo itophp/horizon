@@ -1,0 +1,71 @@
+{
+  "heading": "邮箱",
+  "description": "使用本人外部邮箱收发邮件。",
+  "inbox": "收件箱",
+  "sent": "已发送",
+  "message": "邮件",
+  "compose": "写邮件",
+  "deliveries": "发送队列",
+  "mailboxes": "邮箱配置",
+  "mailbox": {
+    "name": "显示名称",
+    "address": "邮箱地址",
+    "password": "密码或应用专用密码",
+    "smtpHost": "SMTP 主机",
+    "popHost": "POP3S 主机",
+    "connect": "连接邮箱",
+    "edit": "编辑",
+    "save": "保存邮箱",
+    "makeDefault": "设为发件邮箱",
+    "newSmtpPassword": "新的 SMTP 密码",
+    "newPopPassword": "新的 POP3 密码",
+    "test": "测试连接",
+    "enable": "启用",
+    "disable": "停用",
+    "autoHint": "协议、端口、用户名和默认邮箱自动选择；主机根据邮箱域名自动预填。",
+    "verifyFailed": "邮箱已保存，但连接检查未通过。请修正主机或密码后再测试。",
+    "credentialApprovalRequired": "更换凭证需要确认，请进入审批中心继续。",
+    "default": "默认发件邮箱",
+    "status": {
+      "unverified": "未验证",
+      "active": "生效",
+      "disabled": "已停用"
+    }
+  },
+  "message": {
+    "body": "邮件正文",
+    "noSubject": "（无主题）",
+    "reply": "回复",
+    "replyAll": "全部回复",
+    "forward": "转发"
+  },
+  "compose": {
+    "from": "发件人",
+    "noMailbox": "暂无可用邮箱",
+    "to": "收件人",
+    "cc": "抄送",
+    "subject": "主题",
+    "body": "Markdown 正文",
+    "attachments": "附件",
+    "removeAttachment": "移除",
+    "send": "提交发送",
+    "approvalRequired": "外发邮件需要确认，请进入审批中心继续。"
+  },
+  "deliveries": {
+    "subject": "主题",
+    "statusLabel": "状态",
+    "status": {
+      "queued": "排队中",
+      "sending": "发送中",
+      "sent": "已发送",
+      "failed": "失败",
+      "ambiguous": "结果未知",
+      "cancelled": "已取消"
+    },
+    "attempts": "尝试次数",
+    "createdAt": "创建时间",
+    "actions": "操作",
+    "retry": "重试",
+    "cancel": "取消"
+  }
+}

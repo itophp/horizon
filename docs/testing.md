@@ -81,6 +81,8 @@ check-rules 能检查结构完整与引用，不理解自然语言是否写对�
 
 通知中心按 ADR 008 覆盖混选组织/账号去重、范围外组织拒绝、重复发送幂等/内容冲突、偏好/失效归属、绑定附件读取及跨租户/未绑定文件拒绝。Markdown 组件覆盖 HTML/脚本 URL/未绑定引用、GFM 与安全图片；真实浏览器用例通过接口落地一条带绑定附件的通知，再验证收到的列表只显示标题与时间、点击进入 `/notifications/:id` 详情、附件下载、标为已读、已发送正文默认收起以及投递记录，SMTP 仅隔离测试服务器。发送页编辑器是第三方富文本组件，浏览器只验证其表单接线由组件测试承担，不在浏览器里驱动 Lexical；写入/校验/幂等由 Go 集成与组件测试覆盖。
 
+个人邮箱的 Go 测试覆盖凭证 AAD、Markdown/HTML 清理、MIME 正文与附件、endpoint 精确白名单和超时分类；组件测试覆盖自动主机/默认邮箱、邮箱编辑与凭证轮换、附件上传、发送重试和 sandbox 渲染。`tests/integration/mail_test.go` 使用真实 PostgreSQL 验证迁移、多邮箱、连接失败保留 unverified、发送主体/收件人/队列/Outbox 同事务、正文审计脱敏与跨账号拒绝。真实 SMTP/POP3 服务器互通需单独配置 `MAIL_ALLOWED_ENDPOINTS` 和一次性外部测试账号，不得向真实用户发信或删除真实邮箱数据。
+
 Playwright 参数直接跟在命令后，例如 `./horizon-cli test-e2e e2e/notifications.spec.ts`。暂停期内只选择本次改动对应的单个 spec。使用该参数交付时报告选择的文件和未覆盖集合。默认 `./horizon-cli ci` 仍运行 WebMCP 专项和完整浏览器集合。
 
 ## WebMCP 验证

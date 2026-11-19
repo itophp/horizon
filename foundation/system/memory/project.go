@@ -111,7 +111,7 @@ func (m *Module) projectFlow(ctx context.Context, name string, in contracts.Inpu
 		return contracts.Output{}, contracts.Problem("unauthenticated")
 	}
 	read := name == "memory.project.list" || name == "memory.project.get" || name == "memory.project.sources" || name == "memory.project.events"
-	if !read && !p.Can("projects:write") {
+	if !read && (m.projectWritePermission == "" || !p.Can(m.projectWritePermission)) {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}
 	projectID := valueInt(in["projectId"])
@@ -140,17 +140,10 @@ func (m *Module) projectFlow(ctx context.Context, name string, in contracts.Inpu
 }
 
 func (m *Module) authorizeProject(ctx context.Context, id int64) error {
-	result, err := m.gateway.Invoke(ctx, gateway.Request{Name: "project.get", Version: "1.0.0", Input: contracts.Input{"id": id}, Origin: contracts.OriginCapability})
-	if err != nil {
-		return err
+	if m.projectAuthority == nil {
+		return contracts.Problem("unavailable")
 	}
-	if result.Status != contracts.StatusSucceeded {
-		if result.ErrorCode == "" {
-			return contracts.Problem("unavailable")
-		}
-		return contracts.Problem(result.ErrorCode)
-	}
-	return nil
+	return m.projectAuthority(ctx, id)
 }
 
 func (m *Module) readProjectData(ctx context.Context, name string, in contracts.Input) (contracts.Output, error) {
@@ -239,7 +232,7 @@ func (m *Module) createProjectData(ctx context.Context, tx pgx.Tx, in contracts.
 	if err != nil {
 		return contracts.Output{}, contracts.Problem("unauthenticated")
 	}
-	if !p.Can("memory:write") || !p.Can("projects:write") {
+	if !p.Can("memory:write") || m.projectWritePermission == "" || !p.Can(m.projectWritePermission) {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}
 	partition, _ := in["partition"].(string)
@@ -281,7 +274,7 @@ func (m *Module) writeProjectData(ctx context.Context, tx pgx.Tx, name string, i
 	if err != nil {
 		return contracts.Output{}, contracts.Problem("unauthenticated")
 	}
-	if !p.Can("memory:write") || !p.Can("projects:write") {
+	if !p.Can("memory:write") || m.projectWritePermission == "" || !p.Can(m.projectWritePermission) {
 		return contracts.Output{}, contracts.Problem("forbidden")
 	}
 	q := dbgen.New(tx)

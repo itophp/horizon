@@ -661,7 +661,7 @@ func validateProtocolLayout(
 		if componentCount > 1 {
 			return fmt.Errorf("layout %s component count", layout.ID)
 		}
-		if _, ok := trustedUIContracts[component.Kind+"@"+component.Version]; !ok {
+		if _, ok := trustedContracts()[component.Kind+"@"+component.Version]; !ok {
 			return fmt.Errorf("component %s kind", component.ID)
 		}
 		if component.Content != nil {
@@ -843,7 +843,7 @@ func validateComponent(comp *ComponentSpec, dataScope map[string]bool) error {
 	if comp.Version == "" {
 		return fmt.Errorf("schema_invalid: component %s missing version", comp.ID)
 	}
-	contract, registered := trustedUIContracts[comp.Kind+"@"+comp.Version]
+	contract, registered := trustedContracts()[comp.Kind+"@"+comp.Version]
 	if !registered {
 		return fmt.Errorf("component_not_registered: %s@%s", comp.Kind, comp.Version)
 	}

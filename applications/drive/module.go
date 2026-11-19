@@ -19,9 +19,15 @@ import (
 )
 
 type Module struct {
-	pool  *pgxpool.Pool
-	files *files.Service
+	pool       *pgxpool.Pool
+	files      *files.Service
+	identities *identity.Service
 }
+
+// AttachIdentity shares the assembled identity catalog so post-change checks
+// resolve plugin-declared permissions exactly like the gateway does. Business
+// modules must never build a second identity instance.
+func (m *Module) AttachIdentity(service *identity.Service) { m.identities = service }
 
 func New(pool *pgxpool.Pool) *Module { return &Module{pool: pool} }
 

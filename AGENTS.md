@@ -15,7 +15,7 @@ Business Capability → Business Event → AI Behavior → Business Capability
 3. 功能开发先用 [baseline-feature-development](.agents/skills/baseline-feature-development/SKILL.md)，按 [任务工具矩阵](docs/agent-tooling.md) 选择 Skill。README 维护见 docs/AGENTS.md。
 4. 使用锁文件版本；升级/新增依赖先核对官方 API、兼容性与许可证，记录于 docs/versions.md / docs/decisions。
 5. 涉及 MCP 暴露面时按能力契约与安全规则确认读写和授权范围。
-6. 分析 Capability、Workflow、Graph、Runtime Application 或 Page Schema 时，必须先从仓库根使用 Horizon CLI。需要发现条目时，直接运行 `./horizon-cli capability`、`./horizon-cli workflow`、`./horizon-cli graph`、`./horizon-cli application` 或 `./horizon-cli page` 列出对应类型，可加 `--full` 批量读取完整定义。分析具体契约时，运行 `./horizon-cli <类型> schema [标识@版本]` 后再读源码核对语义。Windows PowerShell 用 `.\horizon-cli.exe`。二进制不可用或定义未重新构建时，用 `go run ./cmd/horizon-cli` 执行相同参数。见 [Horizon CLI](docs/local-development.md#horizon-cli)。
+6. 分析 Capability、Workflow、Graph、Runtime Application 或 Page Schema 必须先经仓库根 Horizon CLI：`./horizon-cli capability|workflow|graph|application|page` 列条（可加 `--full`），`./horizon-cli <类型> schema [标识@版本]` 看契约后再读源码核对。二进制不可用时用 `go run ./cmd/horizon-cli`。见 [Horizon CLI](docs/local-development.md#horizon-cli)。
 
 ## 跨目录契约
 
@@ -23,6 +23,7 @@ Business Capability → Business Event → AI Behavior → Business Capability
 - 业务模块维护实体、关系与状态转移。新增表、字段、能力或修改状态时同步实体声明，并运行 `./horizon-cli check-entities`。原子业务写入与 Outbox 同事务提交；既有的提交后写事件路径按其实际一致性边界说明。详见 [实体模型](docs/entity-model.md) 和 [底座实现规则](foundation/AGENTS.md)。
 - 服务端以可信身份执行授权和租户、账号范围检查。各入口的审批、幂等与敏感数据保护遵循同一契约。调用、事件和 AI 任务通过关联标识追踪。
 - 生成产物统一由源重新生成。改动契约或生成输入后运行 `./horizon-cli generate` 与 `./horizon-cli check-generated`。禁止手改生成代码、关闭检查、吞异常、删除断言或伪造测试结果。
+- **内核边界与授权**：应用开发不涉及内核变动，内核相关的业务声明一律以 Schema（插件 manifest/plugin.yaml）方式写入，任何业务名称出现在 `foundation/` 内核文件中均属违规。业务应用的数据库 schema 执行归应用安装、升级、卸载流程（迁移随 `applications/<module>/migrations/`），不写入 `foundation/db/migrations/`。**`foundation/` 下任何文件变动（代码、迁移、规则文档、AGENTS.md）必须先获得用户明确授权才能进行**；规则细节见 [baseline-database-change](.agents/skills/baseline-database-change/SKILL.md)。
 
 ## 目录与任务入口
 
@@ -41,10 +42,10 @@ Business Capability → Business Event → AI Behavior → Business Capability
 
 ## 验证与交付
 
-- **E2E 暂停（现行指令，优先于下述历史描述）**：默认不启动任何浏览器验收，包括 `./horizon-cli test-e2e`（未指定 spec）、`./horizon-cli test-e2e-parallel`、`./horizon-cli test-webmcp-e2e`、`./horizon-cli test-mcp-e2e`、`./horizon-cli test-mcp-native-e2e` 和默认 `./horizon-cli ci`。远程 CI 仍执行全量 E2E，因此推送/开 PR 等于触发全量，必须先取得授权。
-- **只跑对应模块**：确需浏览器旁证时，按 `scripts/e2e-changed.mjs` 的现行映射选出改动模块对应的 spec，用 `./horizon-cli test-e2e <spec>` 只跑对应文件；映射未命中（如纯迁移 SQL）就不跑浏览器，在汇报里记未覆盖。一次只跑单个模块文件，不顺手扩大到同栈其它 spec。
-- **全量需授权**：完整浏览器集合（`./horizon-cli test-e2e` 未指定 spec、`test-e2e-parallel`、默认 `./horizon-cli ci`、推送触发远程 CI）必须在当轮得到用户明确授权后才执行；没有授权就写"E2E 未执行（按当前指示暂停）"，不得含糊成"未发现风险"。
-- 测试按变更批次集中执行：普通连续开发累计受影响模块；阶段验收/提交/PR 跑一次 `./horizon-cli ci-fast`；触及表结构加 `./horizon-cli test-integration`。
+- **E2E 暂停（现行指令，优先于下述历史描述）**：默认不启动浏览器验收，包括 `./horizon-cli test-e2e`（未指定 spec）、`test-e2e-parallel`、`test-webmcp-e2e`、`test-mcp-e2e`、`test-mcp-native-e2e` 和默认 `./horizon-cli ci`。远程工作流仅手动触发（`ci.yml`、`e2e.yml` 只有 `workflow_dispatch`）：提交和推送不启动远程验证或全量 E2E，需要时由用户手动 dispatch。
+- **只跑对应模块**：确需浏览器旁证时按 `scripts/e2e-changed.mjs` 映射选出改动模块的 spec，用 `./horizon-cli test-e2e <spec>` 只跑该文件；映射未命中（如纯迁移 SQL）不跑浏览器，汇报里记未覆盖。一次只跑单模块文件，不扩大到同栈其它 spec。
+- **全量需授权**：完整浏览器集合（`./horizon-cli test-e2e` 未指定 spec、`test-e2e-parallel`、默认 `./horizon-cli ci`、手动 dispatch 的远程 E2E 工作流）必须在当轮得到用户明确授权后才执行；没有授权就写"E2E 未执行（按当前指示暂停）"，不得含糊成"未发现风险"。
+- 测试按变更批次集中执行：普通连续开发累计受影响模块；阶段验收/提交/PR 本地跑一次 `./horizon-cli ci-fast`；触及表结构加 `./horizon-cli test-integration`。
 - 浏览器验收优先相关文件；只跑子集必须报告选中文件与未覆盖集合，不能宣称全量通过。
 - 代码生成与浏览器验收串行，避免生成产物干扰 Vite。不要把缺少数据库/浏览器导致的跳过报告为通过。
 - 同一根因连续三轮无解时停止盲改，报告证据与选项。

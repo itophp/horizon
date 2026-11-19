@@ -148,6 +148,38 @@ func normalized(v any) (map[string]any, error) {
 	return out, nil
 }
 func (m *Module) record(ctx context.Context, app ar.ApplicationV2, page ar.PageV2, id any) (map[string]any, error) {
+	// V3 pages keep their provider declarations in the protocol tree rather
+	// than the legacy V2 page list. A detail route has exactly one identifying
+	// record input, represented here by the caller-provided record ID.
+	if app.Protocol != nil {
+		for _, protocolPage := range app.Protocol.Pages {
+			if protocolPage.ID != page.ID || !strings.Contains(protocolPage.Route, ":id") || protocolPage.Root.Layout == nil {
+				continue
+			}
+			for _, data := range protocolPage.Root.Layout.Data {
+				if data.Provider == "" {
+					continue
+				}
+				for _, provider := range app.Providers {
+					if provider.ID != data.Provider {
+						continue
+					}
+					input, mapErr := ar.Map(provider.Input, map[string]any{
+						"route":  map[string]any{"id": id},
+						"record": map[string]any{"id": id},
+					})
+					if mapErr != nil {
+						return nil, contracts.Problem("invalid")
+					}
+					value, callErr := m.providerCall(ctx, app, provider.ID, contracts.Input(input))
+					if callErr != nil {
+						return nil, callErr
+					}
+					return normalized(value)
+				}
+			}
+		}
+	}
 	// Resolve the declared detail provider for the same entity; never trust a client record body.
 	for _, detail := range app.Pages {
 		if detail.EntityRef == page.EntityRef && detail.Type == "detail" {
@@ -334,6 +366,19 @@ func (m *Module) dispatchData(ctx context.Context, kind string, in contracts.Inp
 	semantic := ar.SemanticContext{ApplicationID: app.ID, ApplicationVersion: app.ApplicationVersion, MetadataVersion: app.MetadataVersion, PageID: page.ID, PageType: page.Type, EntityRef: page.EntityRef, Selection: selection, References: []ar.RecordReference{}, AvailableActions: []ar.SemanticAction{}, Source: app.Source, Locale: "", Timezone: "", Fields: []ar.SemanticField{}}
 	if record != nil {
 		semantic.RecordID = fmt.Sprint(record["id"])
+	}
+	if page.Type == "custom" {
+		for _, name := range []string{"title", "name", "code", "status", "priority", "revision", "dueDate", "ownerName", "taskCount", "taskDoneCount"} {
+			value, ok := record[name]
+			if !ok || value == nil {
+				continue
+			}
+			raw, marshalErr := json.Marshal(value)
+			if marshalErr != nil || len(raw) > 300 {
+				continue
+			}
+			semantic.Fields = append(semantic.Fields, ar.SemanticField{Name: name, Value: string(raw)})
+		}
 	}
 	for _, f := range append(append([]ar.FieldV2{}, page.Fields...), page.Table.Columns...) {
 		if !f.Semantic || f.Permission != "" && !p.Can(f.Permission) || f.Sensitive || f.Hidden || f.Name == "body" || f.Name == "description" {

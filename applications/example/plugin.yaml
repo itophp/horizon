@@ -1,0 +1,26 @@
+id: com.horizon.example
+version: 1.0.0
+apiVersion: "1.0"
+mode: builtin
+# The playground page is a deployment-baseline managed application package:
+# reconcile installs and upgrades every tenant automatically.
+managed: true
+extensions:
+  - capability
+  - entity
+  - permission
+  - event
+  - application
+permissions:
+  - code: example:read
+    module: business
+    function: example
+    action: read
+  - code: example:create
+    module: business
+    function: example
+    action: create
+  - code: example:archive
+    module: business
+    function: example
+    action: archive

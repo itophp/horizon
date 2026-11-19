@@ -82,6 +82,9 @@ type Core struct {
 
 func New(pool *pgxpool.Pool, iam *identity.Service, options Options) *Core {
 	c := &Core{Definitions: slices.DeleteFunc(slices.Clone(Registry), func(d Definition) bool { return IsAISetting(d.Key) }), Pool: pool, Identity: iam, Options: options}
+	registerMu.Lock()
+	registeredCores = append(registeredCores, c)
+	registerMu.Unlock()
 	if pool != nil {
 		c.Q = dbgen.New(pool)
 	}

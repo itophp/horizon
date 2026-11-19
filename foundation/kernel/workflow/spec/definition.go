@@ -84,8 +84,10 @@ var identifier = regexp.MustCompile(IdentifierPattern)
 func (d Definition) Hash() string { return contracts.Digest(contracts.Input{"definition": d}) }
 
 // Validate refuses malformed declarations and ambiguous business ordering.
+// It checks no graph references; use ValidateWithGraphs for deployments that
+// register graph contracts.
 func (d Definition) Validate(r *registry.Registry) error {
-	return d.ValidateWithGraphs(r, BuiltinGraphs())
+	return d.ValidateWithGraphs(r, nil)
 }
 func (d Definition) ValidateWithGraphs(r *registry.Registry, graphs []GraphDefinition) error {
 	if err := validateShape(d); err != nil {

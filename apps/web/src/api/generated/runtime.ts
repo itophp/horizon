@@ -133,7 +133,7 @@ export const runtimeDeploymentCandidates = [
     dependencyVersions: [],
     pluginId: "builtin:system-settings",
     version: "1.0.1",
-    digest: "7266e0fb0e5c9ca73474fa5c4efa5e866311b8a02e2360de4dfc8ffa6f7c4fbe",
+    digest: "8fe750188e8238b59a8580ff179412c1e49a4ff3cd4cb28b21022111d34e148d",
     applications: ["system-settings"],
     dependencies: [],
     base: true,
@@ -145,7 +145,7 @@ export const runtimeDeploymentCandidates = [
     dependencyVersions: [],
     pluginId: "builtin:system-settings",
     version: "1.0.2",
-    digest: "60b6fcca80affd80c6325881305951679a25f69cb558a5c3273054cf3db0e87f",
+    digest: "86f03a7c33bc9a614f8ba894ae1767713f21295ad5795c7ca49f7e51a62d73ce",
     applications: ["system-settings"],
     dependencies: [],
     base: true,
@@ -157,7 +157,7 @@ export const runtimeDeploymentCandidates = [
     dependencyVersions: [],
     pluginId: "builtin:system-settings",
     version: "1.0.3",
-    digest: "071e746aa5c490bcf538f2af870aa8358d57bd084b4865306d83674aa5009b53",
+    digest: "515ec4c451429509fb0ac6214931843276e68531b66a3d5a15f75867af6b0604",
     applications: ["system-settings"],
     dependencies: [],
     base: true,
@@ -169,7 +169,7 @@ export const runtimeDeploymentCandidates = [
     dependencyVersions: [],
     pluginId: "builtin:system-settings",
     version: "1.0.4",
-    digest: "2759da20cc251116936ccb857f71efb250f64897d6cda8d16192a0586d0296f7",
+    digest: "ab99ba50d8a9665594020667cb8ac7a25a93b5f0ac260f5e7360cfbe68763620",
     applications: ["system-settings"],
     dependencies: [],
     base: true,
@@ -227,6 +227,18 @@ export const runtimeDeploymentCandidates = [
   },
   {
     dependencyVersions: [],
+    pluginId: "builtin:capabilities",
+    version: "1.1.0",
+    digest: "17db45122a083f9a0fdf4cdbed8aca09d2bfae39929c46c7b5f9d8059ffe573d",
+    applications: ["capabilities"],
+    dependencies: [],
+    base: true,
+    labelKeys: {
+      capabilities: "capability:title",
+    },
+  },
+  {
+    dependencyVersions: [],
     pluginId: "builtin:articles",
     version: "2.0.0",
     digest: "79b707f4bcfcc996ecac4e5c2d66b961e4af0166390ec0bc78f76973b037c841",
@@ -239,14 +251,26 @@ export const runtimeDeploymentCandidates = [
   },
   {
     dependencyVersions: [],
-    pluginId: "builtin:capabilities",
-    version: "1.0.1",
-    digest: "8cd89fbd041c3f9c20bd4943a2889aeef638abf91f344c159eca16ded1757b57",
-    applications: ["capabilities"],
+    pluginId: "com.horizon.example",
+    version: "1.0.0",
+    digest: "d0c7ff246aab66cfbf6db1bd1eee5a2945378c411ea4a8f8398c0dcdf3c9decd",
+    applications: ["example-playground"],
     dependencies: [],
-    base: true,
+    base: false,
     labelKeys: {
-      capabilities: "capability:title",
+      "example-playground": "capability:demo.title",
+    },
+  },
+  {
+    dependencyVersions: [],
+    pluginId: "builtin:mail",
+    version: "1.0.0",
+    digest: "86bdd9c1e0a71daa0539fd337428d451cd88d278e7b55c893cf8b11345c1163c",
+    applications: ["mail"],
+    dependencies: [],
+    base: false,
+    labelKeys: {
+      mail: "mail:heading",
     },
   },
   {
@@ -2029,6 +2053,22 @@ export const runtimeUIContracts = [
     example:
       '{"component":{"id":"typography","kind":"typography","props":{"labelKey":"runtime:components.loading"},"version":"1.0"},"type":"component"}',
   },
+  {
+    name: "mail-workspace",
+    version: "1.0",
+    category: "element",
+    description:
+      "Trusted personal-mail workspace. The component renders sanitized HTML and invokes only mail capabilities through the generated Gateway client.",
+    propsSchema:
+      '{"type":"object","properties":{"mode":{"type":"string","enum":["inbox","sent","detail","compose","deliveries","mailboxes"]},"titleKey":{"type":"string"}},"required":["mode","titleKey"]}',
+    slots: [],
+    events: [],
+    binding: "data",
+    readOnly:
+      "Preserve presentation; Gateway rechecks every provider and action.",
+    example:
+      '{"type":"element","id":"mail-workspace","element":{"kind":"mail-workspace","version":"1.0"}}',
+  },
 ] as const;
 export const runtimeProtocolRoutes = [
   {
@@ -2102,6 +2142,48 @@ export const runtimeProtocolRoutes = [
     pageId: "capabilities.console",
     route: "/capabilities",
     permission: "authenticated",
+  },
+  {
+    applicationId: "example-playground",
+    pageId: "example.playground",
+    route: "/example",
+    permission: "example:read",
+  },
+  {
+    applicationId: "mail",
+    pageId: "mail.inbox",
+    route: "/mail",
+    permission: "mail:read",
+  },
+  {
+    applicationId: "mail",
+    pageId: "mail.sent-page",
+    route: "/mail/sent",
+    permission: "mail:read",
+  },
+  {
+    applicationId: "mail",
+    pageId: "mail.compose-page",
+    route: "/mail/compose",
+    permission: "mail:send",
+  },
+  {
+    applicationId: "mail",
+    pageId: "mail.delivery-page",
+    route: "/mail/deliveries",
+    permission: "mail:read",
+  },
+  {
+    applicationId: "mail",
+    pageId: "mail.mailbox-page",
+    route: "/mail/mailboxes",
+    permission: "mail:configure",
+  },
+  {
+    applicationId: "mail",
+    pageId: "mail.detail-page",
+    route: "/mail/:id",
+    permission: "mail:read",
   },
   {
     applicationId: "organizations",

@@ -75,7 +75,7 @@ func TestExampleLifecycle(t *testing.T) {
 	_, pool, root := iamFixture(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	iam := identity.New(pool, false)
+	iam := pluginIAM(t, pool)
 	core := governance.New(pool, iam, governance.Options{EncryptionKey: []byte("01234567890123456789012345678901")})
 	raw, err := os.ReadFile("../../docs/generated/workflows/example-lifecycle.workflow.json")
 	if err != nil {
@@ -162,7 +162,7 @@ func TestExampleLifecycle(t *testing.T) {
 	// Details retain account ownership even when the caller claims admin status.
 	foreignAccount := *principal.Account
 	foreignAccount.ID++
-	foreign, err := identity.NewPrincipal(&foreignAccount, "tenant-a", nil)
+	foreign, err := iam.NewPrincipal(&foreignAccount, "tenant-a", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

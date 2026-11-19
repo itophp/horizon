@@ -11,15 +11,54 @@ import (
 	"strings"
 )
 
+// EntityScope describes one application resource type memory may reference:
+// the permission that guards reads and the capability that proves existence.
+type EntityScope struct {
+	Resource      string
+	Permission    string
+	AggregateType string
+	Authorize     func(ctx context.Context, id int64) error
+}
+
 type Module struct {
-	pool     *pgxpool.Pool
-	gateway  *gateway.Gateway
-	identity *identity.Service
+	pool                   *pgxpool.Pool
+	gateway                *gateway.Gateway
+	identity               *identity.Service
+	projectWritePermission string
+	projectAuthority       func(ctx context.Context, projectID int64) error
+	entityScopes           map[string]EntityScope
 }
 
 func New(pool *pgxpool.Pool) *Module                 { return &Module{pool: pool, identity: identity.New(pool, false)} }
 func (m *Module) AttachGateway(g *gateway.Gateway)   { m.gateway = g }
 func (m *Module) AttachIdentity(s *identity.Service) { m.identity = s }
+
+// AttachProjectWritePermission declares which permission guards project-domain
+// memory writes. The permission itself is application catalog data, so the
+// kernel memory service only stores the reference given by the deployment.
+func (m *Module) AttachProjectWritePermission(permission string) {
+	m.projectWritePermission = permission
+}
+
+// AttachProjectAuthority supplies the project-domain existence and access
+// check. The capability that enforces it is application catalog data.
+func (m *Module) AttachProjectAuthority(authorize func(ctx context.Context, projectID int64) error) {
+	m.projectAuthority = authorize
+}
+
+// AttachEntityScope registers one application resource type. The kernel memory
+// service never hardcodes business resources or permissions.
+func (m *Module) AttachEntityScope(scope EntityScope) {
+	if m.entityScopes == nil {
+		m.entityScopes = map[string]EntityScope{}
+	}
+	m.entityScopes[scope.Resource] = scope
+}
+
+func (m *Module) entityScope(resource string) (EntityScope, bool) {
+	scope, ok := m.entityScopes[resource]
+	return scope, ok
+}
 
 func (m *Module) Entries() []registry.Entry {
 	entries := []registry.Entry{}

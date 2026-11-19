@@ -11,14 +11,10 @@ import (
 )
 
 func TestProjectionRemovesUnauthorizedProtocolPagesAndEvents(t *testing.T) {
-	source := compiledFixture(t, "articles")
-	definitions := map[string]contracts.Definition{}
-	for _, page := range source.Protocol.Pages {
-		collectFixtureEvents(page.Root, definitions)
-	}
-	m := Module{Applications: []ar.ApplicationV2{source}, Definitions: definitions}
+	source := widgetApplication()
+	m := Module{Applications: []ar.ApplicationV2{source}, Definitions: widgetDefinitions()}
 	entry := m.Entries()[0]
-	if _, err := entry.Handler.Execute(context.Background(), contracts.Input{"applicationId": "articles"}); err == nil {
+	if _, err := entry.Handler.Execute(context.Background(), contracts.Input{"applicationId": "widgets"}); err == nil {
 		t.Fatal("anonymous allowed")
 	}
 	account := &gen.AccountRecord{ID: 1}
@@ -26,14 +22,14 @@ func TestProjectionRemovesUnauthorizedProtocolPagesAndEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := entry.Handler.Execute(identity.WithPrincipal(context.Background(), principal), contracts.Input{"applicationId": "articles"}); err == nil {
+	if _, err := entry.Handler.Execute(identity.WithPrincipal(context.Background(), principal), contracts.Input{"applicationId": "widgets"}); err == nil {
 		t.Fatal("application without read permission exposed")
 	}
-	principal, err = identity.NewPrincipal(account, "tenant-a", []*gen.PermissionGrant{{Permission: "articles:read", Effect: "allow"}})
+	principal, err = identity.NewPrincipal(account, "tenant-a", []*gen.PermissionGrant{{Permission: widgetRead, Effect: "allow"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := entry.Handler.Execute(identity.WithPrincipal(context.Background(), principal), contracts.Input{"applicationId": "articles"})
+	result, err := entry.Handler.Execute(identity.WithPrincipal(context.Background(), principal), contracts.Input{"applicationId": "widgets"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,31 +41,31 @@ func TestProjectionRemovesUnauthorizedProtocolPagesAndEvents(t *testing.T) {
 	if app.Protocol == nil {
 		t.Fatal("protocol missing")
 	}
-	if len(app.Protocol.Pages) < 2 {
-		t.Fatal("read pages missing", principal.Can("articles:read"), app.Permission, app.Protocol.Pages)
+	if len(app.Protocol.Pages) != 2 {
+		t.Fatal("read pages missing", principal.Can(widgetRead), app.Permission, app.Protocol.Pages)
 	}
 	for _, page := range app.Protocol.Pages {
-		if page.Permission != "articles:read" {
+		if page.Permission != widgetRead {
 			t.Fatal("write page exposed to reader", page.ID)
 		}
 	}
 	listPage := app.Protocol.Pages[0]
-	if listPage.ID != "article.list" {
+	if listPage.ID != "widget.list" {
 		t.Fatal("unexpected page order", listPage.ID)
 	}
-	listComponent := listPage.Root.Layout.Children[1].Layout.Children[0].Component
+	listComponent := listPage.Root.Layout.Children[0].Component
 	if _, exists := listComponent.Props["forms"]; exists {
 		t.Fatal("unauthorized form commands exposed to reader")
 	}
 	detail := app.Protocol.Pages[1]
-	if detail.ID != "article.detail" || detail.Root.Layout == nil {
+	if detail.ID != "widget.detail" || detail.Root.Layout == nil {
 		t.Fatal("detail page missing", app.Protocol.Pages)
 	}
-	detailComponent := detail.Root.Layout.Children[0].Layout.Children[0].Component
+	detailComponent := detail.Root.Layout.Children[0].Component
 	if detailComponent == nil || len(detailComponent.Events) != 0 {
 		t.Fatal("unauthorized detail actions exposed")
 	}
-	shared := m.Applications[0].Protocol.Pages[1].Root.Layout.Children[0].Layout.Children[0].Component
+	shared := m.Applications[0].Protocol.Pages[1].Root.Layout.Children[0].Component
 	if shared == nil || len(shared.Events) == 0 {
 		t.Fatal("shared definition mutated")
 	}

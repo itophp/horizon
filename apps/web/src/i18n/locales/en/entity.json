@@ -248,5 +248,42 @@
       "skipped": "Skipped",
       "cancelled": "Cancelled"
     }
+  },
+  "mail_mailbox": {
+    "label": "Mailbox",
+    "states": {
+      "unverified": "Unverified",
+      "active": "Active",
+      "disabled": "Disabled"
+    }
+  },
+  "mail_channel": {
+    "label": "Mail channel"
+  },
+  "mail_credential": {
+    "label": "Mail credential"
+  },
+  "mail_message": {
+    "label": "Email message"
+  },
+  "mail_message_recipient": {
+    "label": "Email recipient"
+  },
+  "mail_message_attachment": {
+    "label": "Email attachment"
+  },
+  "mail_outbound_delivery": {
+    "label": "Email delivery",
+    "states": {
+      "queued": "Queued",
+      "sending": "Sending",
+      "sent": "Sent",
+      "failed": "Failed",
+      "ambiguous": "Outcome unknown",
+      "cancelled": "Cancelled"
+    }
+  },
+  "mail_inbox_sync": {
+    "label": "Inbox sync"
   }
 }

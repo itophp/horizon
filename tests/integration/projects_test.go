@@ -24,6 +24,7 @@ import (
 	"horizon/foundation/kernel/capability/gateway"
 	"horizon/foundation/kernel/capability/registry"
 	"horizon/foundation/kernel/eventhub"
+	"horizon/foundation/system/governance"
 	"horizon/foundation/system/identity"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,7 +51,7 @@ func newProjectHarness(t *testing.T) *projectHarness {
 	t.Helper()
 	_, pool, rootAccount := iamFixture(t)
 	iam := identity.New(pool, false)
-	plugins := deployment.BuiltinPlugins(projects.New(pool))
+	plugins := deployment.BuiltinPlugins(governance.New(pool, iam, governance.Options{}))
 	if err := iam.ConfigurePluginPermissions(plugins.Catalog.Permissions); err != nil {
 		t.Fatal(err)
 	}
